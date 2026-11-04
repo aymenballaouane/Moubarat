@@ -12,7 +12,7 @@ import { useT } from '../lib/i18n.js';
    confidentialité est déjà réglé par LegalConsentGate à ce stade, jamais redemandé ici).
    Pseudo PRÉ-REMPLI avec le nom actuel (décision d'Aymen, 24/10/2026 : "tiré de leur nom
    actuel et modifiable") — réutilise EXACTEMENT POST /me/access-setup, qui réutilise lui-même
-   l'unicité de PATCH /me (même refus NAME_TAKEN). */
+   l'unicité de PATCH /me (même refus NAME_TAKEN). 123*/
 
 /** `aymen.b` depuis « Aymen Ballaouane » — minuscules, un point entre les mots, jamais
     d'espace ni d'accent (règle 28, format du pseudo) : une SUGGESTION, le champ reste
