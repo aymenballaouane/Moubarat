@@ -1,0 +1,193 @@
+/* Groupe RESERVATION + ECOSYSTEME MATCH (BookingFlow / MatchDetail /
+   OrganizerMatchView) — session Premium UI/UX. Prefixe bm-. S'appuie sur les
+   jetons de design/moubarat-ds.css et le socle de styles/player.css sans
+   jamais les redefinir. Le mouvement reduit est neutralise globalement par
+   le DS (§ Mouvement reduit), aucune garde locale necessaire. */
+
+/* --- R2 (patron Reserver.dc.html, estCentre, Lot 5) : badge sport + bouton partager sur la
+   photo, pastilles "Libre ce soir" (disponibilité réelle du jour), liste des terrains réels —
+   remplace l'ancienne grille de tarifs générique .bm-rate-cell (retirée : plus de consommateur,
+   le prix exact par créneau ET par format est déjà dans SlotPicker, l'étape suivante). */
+.bk-hero-info { position: absolute; inset-inline: 18px; bottom: 16px; z-index: 2;
+  display: flex; flex-direction: column; gap: 6px; }
+.bk-herosport { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: var(--r-1); background: rgba(10, 10, 15, .78);
+  font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 600; letter-spacing: .08em;
+  color: #F5F7FA; }
+.bk-herosport .mb-ic { color: #F5F7FA; }
+/* Couleur FIXE (jamais var(--text)) : texte posé sur la photo nocturne, sombre quel que soit le
+   thème — en clair, var(--text) donnerait un nom de centre sombre sur sombre (même choix que
+   .rsv-vrow__badge, reserver.css). */
+.bk-hero-info h1 { margin: 0; color: #F5F7FA; }
+.bk-hero-loc { display: block; color: #F5F7FA; }
+.bk-hero-loc .bk-link { color: var(--gold); }
+
+.bk-quick__row { display: flex; gap: 8px; margin-bottom: 18px; }
+.bk-quick__pill { flex: 1 1 0; height: 54px; border-radius: var(--r-3); cursor: pointer;
+  border: 1px solid var(--line); background: var(--ink-2); color: var(--text);
+  font-family: var(--font-display); font-size: 26px; }
+.bk-quick__pill:hover, .bk-quick__pill:focus-visible { border-color: var(--primary-line); background: var(--primary-wash); }
+
+.bk-terrains { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+.bk-terrain-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px;
+  border-radius: var(--r-3); border: 1px solid var(--line); background: var(--ink-2);
+  text-align: start; cursor: pointer; appearance: none; }
+.bk-terrain-row:hover { border-color: var(--line-strong); background: var(--ink-3); }
+.bk-terrain-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Mini-terrain dessiné (maquette : ligne médiane + rond central), le même pour tous les sports —
+   jamais l'icône du sport, la maquette n'en met pas sur la ligne. */
+.bk-terrain-row__pitch { position: relative; flex: 0 0 46px; width: 46px; height: 62px; box-sizing: border-box;
+  border-radius: var(--r-1); border: 1.5px solid var(--line-strong); background: var(--ink); }
+.bk-terrain-row__pitch::before { content: ""; position: absolute; inset-inline: 0; top: 50%;
+  border-top: 1.5px solid var(--line-strong); }
+.bk-terrain-row__pitch::after { content: ""; position: absolute; left: 50%; top: 50%; width: 14px; height: 14px;
+  margin: -7px 0 0 -7px; box-sizing: border-box; border-radius: var(--r-full); border: 1.5px solid var(--line-strong); }
+.bk-terrain-row__body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.bk-terrain-row__name { font-size: var(--fs-b1); font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bk-terrain-row__meta { font-size: var(--fs-b3); color: var(--text-2); }
+.bk-terrain-row__price { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end;
+  white-space: nowrap; font-size: var(--fs-micro); color: var(--text-3); }
+.bk-terrain-row__price .mb-price { font-size: 26px; line-height: 1; color: var(--text); }
+
+/* --- Statut sous le titre, sur la photo hero (rapprochement visuel du
+   prototype, `.mh-status`) — remplace l'ancienne pastille glass en coin
+   (.bm-hero-badges, retiree : plus de consommateur). Reutilise les tons
+   geles `.mb-status--*` (semantique couleur figee, CLAUDE.md) : le point
+   prend sa couleur via currentColor, aucune nouvelle palette. */
+.bm-status-line { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px;
+  font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; }
+.bm-status-dot { width: 6px; height: 6px; border-radius: var(--r-full); background: currentColor; flex-shrink: 0; }
+
+/* --- Panneau deux-colonnes Match Detail (rapprochement visuel du
+   prototype, `.mh-frame`) : heure/date/lieu/prix a gauche, effectif en
+   GRAND + niveau + apercu joueurs a droite. Nouvelle classe (pas .mt-frame
+   — partage par Créer un match/Défis pour un tout autre usage, jamais
+   touche). */
+.bm-joinframe { display: flex; align-items: stretch; gap: 14px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-4); padding: 14px; }
+.bm-joinframe__col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.bm-joinframe__col--right { align-items: flex-start; }
+.bm-joinframe__divider { width: 1px; background: var(--line-strong); align-self: stretch; }
+.bm-joinframe__time b { font-family: var(--font-display); font-size: var(--fs-d1); line-height: .9; color: var(--text); }
+.bm-joinframe__fact { display: flex; align-items: center; gap: 6px; font-size: var(--fs-micro); color: var(--text-2); }
+.bm-joinframe__fact .mb-ic { color: var(--text-4); flex-shrink: 0; }
+.bm-joinframe__fact .mb-price { font-family: var(--font-display); font-size: var(--fs-b1); color: var(--text); }
+.bm-joinframe__fact--loc span { display: flex; flex-direction: column; min-width: 0; }
+.bm-joinframe__fact--loc b { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bm-joinframe__fact--loc i { font-style: normal; font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--text-4); }
+.bm-joinframe__lbl { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-4); }
+.bm-joinframe__big { display: flex; align-items: baseline; gap: 3px; }
+.bm-joinframe__big b { font-family: var(--font-display); font-size: var(--fs-d2); line-height: .9; color: var(--text); }
+.bm-joinframe__big i { font-style: normal; font-family: var(--font-mono); font-size: var(--fs-tag); color: var(--text-4); }
+.bm-mini-avatars { display: flex; margin-top: 2px; }
+.bm-mini-ava { width: 26px; height: 26px; border-radius: var(--r-full); background: var(--ink-4);
+  border: 2px solid var(--ink-2); display: grid; place-items: center;
+  font-family: var(--font-display); font-size: var(--fs-tag); color: var(--text-2);
+  margin-left: -8px; }
+.bm-mini-ava:first-child { margin-left: 0; }
+.bm-mini-ava--more { background: var(--primary-wash); color: var(--primary-glow); }
+
+/* --- Roster : entree en scene etagee, meme geste que .mb-enter du DS mais
+   posee directement sur les rangees .mt-player (les envelopper d'un div
+   .mb-enter casserait la regle :last-child qui retire la derniere bordure). */
+.bm-roster .mt-player { animation: mb-rise var(--dur-3) var(--ease-out) both; }
+.bm-roster .mt-player:nth-child(2) { animation-delay: 40ms; }
+.bm-roster .mt-player:nth-child(3) { animation-delay: 80ms; }
+.bm-roster .mt-player:nth-child(4) { animation-delay: 120ms; }
+.bm-roster .mt-player:nth-child(5) { animation-delay: 160ms; }
+
+/* --- Deux colonnes Match Detail (rapprochement visuel du prototype,
+   `.two-col`) : roster a gauche, infos match a droite, cote a cote plutot
+   qu'empiles pleine largeur — l'ecart le plus visible avec le HTML avant
+   ce correctif. Roster legerement plus large (les noms ont besoin de
+   place), .bm-roster--compact retrecit .mt-player pour tenir dans ~48%
+   d'un ecran 375px (verifie en direct, pas suppose). */
+.bm-twocol { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; margin-bottom: 16px; }
+.bm-twocol__roster, .bm-twocol__infos { min-width: 0; }
+.bm-roster--compact .mt-player { gap: 7px; padding: 7px 0; }
+.bm-roster--compact .mt-ava { width: 26px; height: 26px; font-size: var(--fs-tag); }
+.bm-roster--compact .n b { font-size: var(--fs-tag); }
+.bm-roster--compact .n span { font-size: 8px; }
+.bm-roster--compact .mb-ovr { transform: scale(.82); transform-origin: right center; }
+.bm-expand-link { display: flex; align-items: center; gap: 5px; width: 100%; min-height: var(--tap-min);
+  margin-top: 4px; font-family: var(--font-mono); font-size: 8.5px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--primary-glow); }
+
+/* --- Infos match, colonne droite : paires icone/libelle/valeur (rapprochement
+   visuel du prototype, `.minfo-row`) plutot que des phrases pleine largeur
+   — remplace .mt-info dans cet ecran uniquement (.mt-info reste inchange,
+   partage par Créer un match/Défis). */
+.bm-info2 { display: flex; flex-direction: column; gap: 10px; }
+.bm-info2__row { display: flex; align-items: center; gap: 8px; }
+.bm-info2__row .mb-ic { color: var(--text-4); flex-shrink: 0; }
+.bm-info2__row span { display: flex; flex-direction: column; min-width: 0; }
+.bm-info2__row b { font-size: var(--fs-tag); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bm-info2__row i { font-style: normal; font-family: var(--font-mono); font-size: 8px; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--text-4); margin-top: 1px; }
+
+/* --- Barre de prix collee au CTA (rapprochement visuel du prototype,
+   `.price-bar`) : avant, le prix ne vivait que dans .bm-joinframe, jamais
+   rappele pres du bouton d'action. */
+.bm-pricebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bm-pricebar__price { display: flex; flex-direction: column; }
+.bm-pricebar__price span { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--text-3); }
+.bm-pricebar__price b { font-family: var(--font-display); font-size: var(--fs-d3); color: var(--text); line-height: 1.1; }
+.bm-pricebar__price b i { font-style: normal; font-size: .6em; color: var(--gold-2); margin-left: 2px; }
+.bm-pricebar .mb-btn { flex-shrink: 0; min-width: 150px; }
+.bm-trustline { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px;
+  font-family: var(--font-mono); font-size: 9.5px; color: var(--text-4); text-align: center; }
+.bm-trustline .mb-ic { color: var(--text-4); flex-shrink: 0; }
+
+/* --- Preuve de reservation : beat de succes centre (le moment celebratoire
+   unique du flux — .mt-check reutilise) ; en etat annule le meme emplacement
+   porte une pastille eteinte, jamais un check vert sur une resa annulee. */
+.bm-proof-head { text-align: center; }
+.bm-proof-head .mb-meta { margin: 0 auto; max-width: 34ch; }
+
+/* --- Ligne « coup d'envoi » de la vue organisateur — rappel du creneau,
+   lecture seule (l'horaire ne se modifie plus une fois le match organise,
+   decision produit du 29/08/2026 : ca bouleverse le programme des joueurs
+   deja inscrits). */
+.bm-slotline {
+  display: flex; align-items: center; gap: 9px; padding: 11px 13px; margin: 2px 0 14px;
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-3);
+  font-size: var(--fs-b3); color: var(--text-3);
+}
+.bm-slotline .mb-ic { color: var(--primary-glow); flex-shrink: 0; }
+.bm-slotline b {
+  margin-left: auto; color: var(--text); font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* --- Horaires (ecran Terrain, rapprochement visuel du prototype
+   `.hours-row`) : ligne « aujourd'hui » en surbrillance, le reste des lignes
+   reste honnete (meme valeur reelle, VENUE.openLabel ne varie pas par jour
+   dans nos donnees — pas de grille 7 jours inventee). Classes bk- propres a
+   ce fichier (pas de doublon dans player.css). */
+.bk-hours { margin-bottom: 16px; border-top: 1px solid var(--line); }
+.bk-hours__row { display: flex; justify-content: space-between; align-items: center;
+  padding: 11px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-b3); color: var(--text-3); }
+.bk-hours__row b { color: var(--text); font-weight: 600; }
+.bk-hours__row--today span { color: var(--text); font-weight: 600; }
+.bk-hours__row--today b { color: var(--primary-glow); }
+/* Lien de contact/itinéraire (BUG-7, 26/09/2026) — or = valeur/attente (DS), même ton que le tel: du CRM. */
+.bk-link { color: var(--gold); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.bk-link:hover, .bk-link:focus-visible { text-decoration: underline; }
+
+
+/* --- Amenites match (Match Detail, rapprochement visuel du prototype
+   `.amenity-box4`) : donnees reelles (format du match, surface/equipements
+   du venue reel), jamais une liste generique inventee. */
+.bm-amenities { display: flex; border: 1px solid var(--line); border-radius: var(--r-4);
+  margin: 14px 0; overflow: hidden; }
+.bm-amenities__item { flex: 1; min-width: 0; text-align: center; padding: 12px 4px; border-right: 1px solid var(--line); }
+.bm-amenities__item:last-child { border-right: none; }
+.bm-amenities__item .mb-ic { color: var(--primary-glow); margin-bottom: 6px; }
+.bm-amenities__item b { display: block; font-size: 11px; color: var(--text); font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bm-amenities__item span { display: block; font-family: var(--font-mono); font-size: 6.5px;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--text-4); margin-top: 2px; }

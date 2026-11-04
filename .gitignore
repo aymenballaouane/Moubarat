@@ -1,0 +1,38 @@
+# Documents business / administratifs (fiscaux, juridiques, secrets) — jamais versionnés
+_business/
+
+# Dépendances et builds
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Environnements et secrets
+.env
+.env.*
+!.env.example
+
+# Audit 07-09/09/2026 (Z6) : réglages locaux de l'outillage — non ignoré par
+# CE dépôt jusqu'ici (seulement par une config git globale de ce poste,
+# invisible à quiconque clone le dépôt ailleurs — l'équipe de développeurs
+# externe, par exemple). Jamais commité.
+.claude/settings.local.json
+
+# Journaux et caches
+*.log
+.cache/
+coverage/
+
+# OS / éditeurs
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# Audit visuel (tools/ui-board, 20/10/2026) — l'outil est commité, ses générations datées
+# (captures PNG, PDF, ZIP, board HTML) ne le sont jamais : refaites à la demande, volumineuses.
+tools/ui-board/output/
+
+# Réglages, worktrees et verrous de l'outillage Claude Code (jamais versionnés)
+.claude/

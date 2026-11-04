@@ -1,0 +1,49 @@
+/* ============================================================================
+   Accueil › bannière qui défile (règle 11, refonte-app-joueur/maquettes/Main(Ar).dc.html) —
+   composant séparé (HomeBanner.tsx) : 3 ou 4 diapositives plein cadre (340px), scroll-snap
+   au doigt, puces synchronisées au défilement réel. Plein cadre = bordure négative -22px
+   pour sortir du gouttière standard de .tab-screen (22px), comme .ho-rail. Propriétés
+   logiques (inset-inline-*) pour le miroir RTL automatique (lot 4a). */
+
+.ho-banner { margin: 14px -22px 0; }
+.ho-banner__track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+  scrollbar-width: none; }
+.ho-banner__track::-webkit-scrollbar { display: none; }
+
+.ho-banner__slide { position: relative; flex: 0 0 100%; height: 340px; scroll-snap-align: start;
+  overflow: hidden; background: #0a0202; }
+.ho-banner__slide img { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 45% 40%; }
+.ho-banner__scrim { position: absolute; inset: 0; z-index: 1;
+  background:
+    radial-gradient(70% 60% at 85% 30%, var(--primary-wash) 0%, transparent 70%),
+    linear-gradient(90deg, rgba(10, 10, 15, .92) 0%, rgba(10, 10, 15, .55) 55%, rgba(10, 10, 15, .15) 100%),
+    linear-gradient(180deg, transparent 55%, var(--ink) 100%); }
+.ho-banner__body { position: absolute; z-index: 2; inset-inline-start: 16px; top: 34px; max-width: 260px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+
+/* Le texte des diapositives est posé sur .ho-banner__slide img/.ho-banner__scrim (toujours
+   sombre) : couleurs FIXES, jamais var(--text*)/var(--primary-glow) qui s'inversent en thème
+   clair — même logique que .ho-sq__lab/.ho-next__loc (styles/home.css). --gold n'est pas
+   redéfini par thème (theme-app-joueur.css), inchangé. */
+.ho-banner__tag { font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: #FF6A4D; line-height: 1.35; }
+.ho-banner__tag--gold { color: var(--gold); }
+.ho-banner__title { margin: 0; font-family: var(--font-display); font-style: italic;
+  font-size: var(--fs-d1); line-height: .9; color: #F5F7FA; }
+.ho-banner__title--accent { color: #FF6A4D; }
+.ho-banner__sub { margin: 0; font-size: var(--fs-b3); line-height: 1.45; color: #C5CCD6; }
+.ho-banner__cta { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px;
+  height: 44px; margin-top: 6px; padding: 0 20px; border-radius: var(--r-full); background: var(--primary);
+  color: #fff; font-size: var(--fs-b2); font-weight: 600; border: 0; cursor: pointer; }
+.ho-banner__cta .mb-ic { width: 16px; height: 16px; }
+.ho-banner__cta[disabled] { opacity: .7; cursor: progress; }
+.ho-banner__meta { margin: 2px 0 0; font-size: var(--fs-label); color: #8A94A6; }
+
+/* Les puces sont sous la diapositive, sur le fond ordinaire de l'écran (pas sur la photo) :
+   elles doivent au contraire SUIVRE le thème — var(--line-strong), déjà le jeton "marquage
+   neutre translucide" utilisé pour les bordures de carte dans toute l'app. */
+.ho-banner__dots { display: flex; justify-content: center; gap: 6px; margin: 10px 0 0; }
+.ho-banner__dots i { display: block; width: 6px; height: 6px; border-radius: var(--r-full);
+  background: var(--line-strong); transition: width var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out); }
+.ho-banner__dots i.on { width: 18px; background: var(--primary); }

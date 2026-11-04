@@ -1,0 +1,148 @@
+/* =============================================================================
+   INSCRIPTION ET CONNEXION — maquettes du 23/10/2026 (Onboarding.dc.html, MdpOublie.dc.html, MdpNouveau.dc.html et leurs variantes arabes),
+   audit final du 26/10/2026 (P1-15, MAQ1-2, décision d'Aymen 27/10/2026) : ces écrans n'avaient jamais été repeints.
+   Tout vit sous `.oa` (classe posée sur la racine de chaque écran) : aucun autre écran de l'app (qui partage `.au-screen`) n'est touché.
+   Jetons de l'app (theme-app-joueur.css) : --ink (page) · --ink-2 (carte/champ) · --ink-3 (puce, fond de progression) · --line · --line-strong ·
+   --primary · --success. Propriétés logiques partout (RTL). Inter (arabe : IBM Plex Sans Arabic) pour tout le texte ; Bebas Neue seulement pour
+   le mot-symbole et les chiffres du code.
+   ============================================================================= */
+
+.au-screen.oa { padding: 0 0 calc(116px + env(safe-area-inset-bottom)); background: var(--ink); color: var(--text-3); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+
+/* --- En-tête : retour · progression · « 1 / 4 » ------------------------------------------------------------------------ */
+.oa-top { display: flex; align-items: center; gap: 14px; padding: max(20px, env(safe-area-inset-top)) 16px 0; }
+.oa-back { flex: 0 0 44px; width: 44px; height: 44px; border-radius: var(--r-full); border: 1px solid var(--line); background: transparent; color: var(--text);
+  display: grid; place-items: center; padding: 0; cursor: pointer; }
+.oa-back .mb-ic { width: 18px; height: 18px; }
+.oa-back:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.oa-progress { flex: 1 1 auto; height: 4px; border-radius: var(--r-full); background: var(--ink-3); overflow: hidden; }
+.oa-progress i { display: block; height: 100%; border-radius: var(--r-full); background: var(--success); transition: width var(--dur-2) var(--ease-out); }
+.oa-count { font-size: 13px; font-weight: 700; color: var(--text); }
+/* Sans progression (Connexion, Mot de passe oublié) : seul le retour, à l'inline-start. */
+.oa-top--plain { justify-content: flex-start; }
+
+.oa-h1 { margin: 0; padding: 28px 16px 0; text-align: center; font-family: var(--font-body); font-weight: 700; font-size: 28px; line-height: 1.2; letter-spacing: -.015em; color: var(--text); }
+.oa-h1--tight { padding-top: 14px; }
+:root[lang="ar"] .oa-h1 { letter-spacing: 0; }
+.oa-sub { margin: 10px 0 0; padding: 0 24px; text-align: center; font-size: 15px; line-height: 1.45; color: var(--text); }
+.oa-sub b { font-weight: 700; }
+
+.oa-sec { padding: 22px 16px 0; display: flex; flex-direction: column; gap: 10px; }
+.oa-q { display: block; font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: var(--text); }
+.oa-row { display: flex; gap: 8px; }
+/* Un numéro de téléphone se lit toujours de gauche à droite : « +213 » à gauche du numéro, aussi en arabe. */
+.oa-row--ltr { direction: ltr; }
+/* Pseudo (« @ », « Libre ») et mot de passe (« Afficher ») : champs latins — leur habillage reste de gauche à droite, sinon le texte saisi (dir=ltr)
+   et les éléments posés à l'inline-end se chevauchent en arabe. Le code SMS aussi : le premier chiffre est le premier à gauche. */
+.oa-field, .oa .au-password-row, .oa .au-otp { direction: ltr; }
+
+/* --- Champs ---------------------------------------------------------------------------------------------------------------- */
+.oa-input { width: 100%; height: 54px; box-sizing: border-box; padding: 0 14px; border-radius: var(--r-3); background: var(--ink-2); border: 1px solid var(--line);
+  color: var(--text); font-family: var(--font-body); font-size: 17px; font-weight: 600; outline: none; }
+.oa-input::placeholder { color: var(--text-3); font-weight: 500; }
+.oa-input:focus { border-color: var(--line-strong); }
+.oa-input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.oa-input[aria-invalid='true'] { border-color: var(--danger-line); }
+.oa-input:disabled { opacity: .6; }
+.oa-prefix { flex: 0 0 auto; height: 54px; box-sizing: border-box; padding: 0 14px; border-radius: var(--r-3); background: var(--ink-2); border: 1px solid var(--line);
+  display: flex; align-items: center; gap: 7px; font-size: 17px; font-weight: 700; color: var(--text); }
+.oa-prefix .mb-ic { width: 14px; height: 14px; color: var(--text-3); }
+.oa-field { position: relative; }
+.oa-field .oa-input--at { padding-inline-start: 34px; padding-inline-end: 92px; }
+.oa-at { position: absolute; inset-inline-start: 14px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 17px; font-weight: 700; color: var(--text-3); pointer-events: none; }
+.oa-status { position: absolute; inset-inline-end: 14px; top: 0; bottom: 0; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; pointer-events: none; white-space: nowrap; }
+.oa-status .mb-ic { width: 13px; height: 13px; }
+.oa-status.ok { color: var(--success); }
+.oa-status.taken { color: var(--danger); }
+
+/* Mot de passe : « Afficher » DANS le champ, à l'inline-end (PasswordField, partagé avec le Profil — seul l'habillage change ici). */
+.oa .au-password-row { position: relative; display: block; }
+.oa .au-password-row .mb-field__control { width: 100%; height: 54px; box-sizing: border-box; padding: 0 78px 0 14px; padding-inline: 14px 78px; border-radius: var(--r-3);
+  background: var(--ink-2); border: 1px solid var(--line); color: var(--text); font-family: var(--font-body); font-size: 17px; font-weight: 600; letter-spacing: .06em; outline: none; }
+.oa .au-password-row .mb-field__control:focus { border-color: var(--line-strong); }
+.oa .au-password-row .mb-field__control:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.oa .au-password-toggle { position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%); min-height: 44px; padding: 0 8px; background: transparent; border: 0;
+  font-size: 13px; font-weight: 700; color: var(--text); }
+.oa .au-password-checks { margin: 0; gap: 8px; justify-content: center; }
+.oa .au-password-checks li { padding: 5px 10px; background: var(--ink-3); font-size: 12px; font-weight: 700; color: var(--text-4); }
+.oa .au-password-checks li.on { background: var(--success-wash); color: var(--success); }
+
+/* --- Lien et accords ---------------------------------------------------------------------------------------------------------- */
+.oa-link { display: block; width: 100%; padding: 0; background: none; border: 0; text-align: center; font-size: 14px; font-weight: 700; color: var(--text);
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 44px; }
+.oa-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.oa-accords { padding: 16px 16px 0; display: flex; flex-direction: column; gap: 4px; }
+.oa-accord { display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 10px 2px; background: transparent; border: 0; text-align: start; cursor: pointer; color: var(--text); }
+.oa-accord:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: var(--r-2); }
+.oa-box { flex: 0 0 24px; width: 24px; height: 24px; box-sizing: border-box; margin-top: 1px; border-radius: 7px; display: grid; place-items: center; color: transparent;
+  border: 2px solid var(--line-strong); background: transparent; }
+.oa-box .mb-ic { width: 14px; height: 14px; }
+.oa-accord[aria-checked='true'] .oa-box { background: var(--primary); border: 0; color: #050505; }
+.oa-accord__t { font-size: 14px; line-height: 1.4; color: var(--text); }
+.oa-opt { font-size: 13px; color: var(--text-2); }
+
+/* --- Code ---------------------------------------------------------------------------------------------------------------------- */
+.oa .au-otp { padding: 30px 16px 0; margin: 0; justify-content: center; gap: 8px; }
+.oa .au-otp input { width: 48px; height: 62px; box-sizing: border-box; border-radius: var(--r-3); background: var(--ink-2); border: 1px solid var(--line); font-size: 30px; color: var(--text); }
+.oa .au-otp input:focus { border: 2px solid var(--line-strong); background: var(--ink-2); outline: none; }
+.oa .au-otp input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.oa .au-otp.err input { border-color: var(--danger-line); }
+.oa .au-otp-note { margin: 22px 0 0; padding: 0 16px; font-size: 15px; text-align: center; color: var(--text); }
+.oa .au-otp-note b { font-weight: 700; }
+.oa .au-changenum { margin-top: 10px; padding: 0 16px; font-size: 14px; font-weight: 700; color: var(--text-2); }
+.oa .au-resend { font-weight: 700; color: var(--primary-glow); text-decoration: underline; text-underline-offset: 3px; min-height: 24px; }
+.oa .au-error { margin: 14px 16px 0; font-size: 13px; justify-content: center; }
+.oa .au-support { margin: 8px 16px 0; justify-content: center; }
+
+.oa .au-otp--fill { padding: 12px 16px 0; }
+.oa .au-otp--fill input { flex: 1 1 0; width: auto; min-width: 0; height: 56px; border-color: var(--line-strong); }
+.oa-hint { margin: 0; padding: 0 6px; font-size: 13px; line-height: 1.4; text-align: center; color: var(--text-2); }
+
+/* --- Ton jeu ------------------------------------------------------------------------------------------------------------------ */
+.oa-seg { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: var(--r-3); background: var(--ink-2); border: 1px solid var(--line); }
+.oa-seg button { height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--text-2); font-size: 15px; font-weight: 700; cursor: pointer; }
+.oa-seg button[aria-pressed='true'] { background: var(--primary-wash); color: var(--primary-glow); box-shadow: inset 0 0 0 1px var(--primary-line); }
+.oa-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.oa-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 92px; border: 0; border-radius: var(--r-3); cursor: pointer;
+  background: var(--ink-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-strong); font-size: 16px; font-weight: 600; line-height: 1.2; }
+.oa-tile .mb-ic { width: 26px; height: 26px; }
+.oa-tile[aria-pressed='true'] { background: var(--primary-wash); color: var(--primary-glow); box-shadow: inset 0 0 0 1px var(--primary-line); }
+.oa-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.oa-chip { height: 42px; padding: 0 16px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 700; background: transparent; color: var(--text); border: 1px solid var(--line-strong); }
+.oa-chip[aria-pressed='true'] { background: var(--primary-wash); color: var(--primary-glow); border-color: var(--primary-line); }
+.oa-levels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.oa-level { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px; border: 0; border-radius: var(--r-3); cursor: pointer; text-align: start;
+  background: var(--ink-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-strong); font-size: 14px; font-weight: 700; }
+.oa-level[aria-pressed='true'] { background: var(--primary-wash); color: var(--primary-glow); box-shadow: inset 0 0 0 1px var(--primary-line); }
+.oa-bars { display: flex; gap: 3px; align-items: flex-end; height: 16px; }
+.oa-bars i { display: block; width: 5px; border-radius: 2px; background: var(--line-strong); }
+.oa-bars i.on { background: var(--primary); }
+.oa-seg button:focus-visible, .oa-tile:focus-visible, .oa-chip:focus-visible, .oa-level:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* --- Pied : le bouton principal, fixé en bas (barre du bas, DA §3) -------------------------------------------------------- */
+.oa-foot { position: fixed; inset-inline: 0; bottom: 0; z-index: 5; box-sizing: border-box; padding: 12px 16px calc(22px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--ink) 96%, transparent); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; }
+.oa-foot .mb-btn { width: 100%; }
+.oa-foot__line { margin: 0; font-size: 14px; text-align: center; color: var(--text); }
+.oa-foot__line .au-resend, .oa-foot__line button { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; color: var(--text); }
+.oa-foot__small { background: none; border: 0; font-size: 13px; text-align: center; color: var(--text); min-height: 24px; cursor: pointer; }
+
+/* --- Bienvenue (O1) : un écran PHOTO — texte blanc dans les deux thèmes (DA §8), fond sombre fixe -------------------------- */
+.au-screen.oa-welcome { position: relative; min-height: 100dvh; padding: 0; overflow: hidden; background: #0A0A0F; color: #F5F7FA; }
+.oa-welcome__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 40%; }
+.oa-welcome__veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,.85) 0%, rgba(10,10,15,.25) 30%, rgba(10,10,15,.10) 45%, rgba(10,10,15,.85) 68%, #0A0A0F 85%); }
+.oa-welcome__glow { position: absolute; left: 50%; top: 38%; width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: var(--r-full);
+  background: radial-gradient(closest-side, rgba(255,255,255,.10), rgba(255,255,255,0)); pointer-events: none; }
+.oa-welcome .au-lang-toggle { z-index: 2; }
+.oa-brand { position: absolute; inset-inline: 0; top: max(96px, calc(env(safe-area-inset-top) + 76px)); display: flex; flex-direction: column; align-items: center; gap: 18px; animation: au-logo-in .65s var(--ease-out) both; }
+.oa-brand svg { width: 76px; height: 76px; }
+.oa-brand__name { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.oa-brand__name b { font-family: 'Bebas Neue', var(--font-display); font-weight: 400; font-size: 64px; line-height: .9; letter-spacing: .05em; color: #F5F7FA; }
+.oa-brand__name span { font-family: 'Bebas Neue', var(--font-display); font-size: 22px; line-height: 1; letter-spacing: .62em; padding-inline-start: .62em; color: var(--primary); }
+.oa-welcome__low { position: absolute; inset-inline: 16px; bottom: max(34px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; text-align: center; }
+.oa-statement { margin: 0 0 10px; font-family: var(--font-body); font-size: 22px; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; color: #F5F7FA; }
+:root[lang="ar"] .oa-statement { letter-spacing: 0; }
+.oa-welcome .mb-btn--secondary { --_fg: #F5F7FA; --_bd: rgba(138, 148, 166, .30); }
+
+/* --- Fin (« Bienvenue, Aymen. ») : mêmes bases que le reste -------------------------------------------------------------- */
+.au-screen.oa-done { align-items: center; text-align: center; justify-content: center; padding: 0 22px; }

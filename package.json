@@ -1,0 +1,20 @@
+{
+  "name": "moubarat",
+  "private": true,
+  "packageManager": "pnpm@11.23.0",
+  "engines": { "node": ">=22 <23" },
+  "scripts": {
+    "test": "pnpm -r --workspace-concurrency=1 test",
+    "typecheck": "pnpm -r typecheck",
+    "db:migrate": "pnpm --filter @moubarat/api db:migrate",
+    "db:seed": "pnpm --filter @moubarat/api db:seed",
+    "dev:api": "pnpm --filter @moubarat/api dev",
+    "superadmin:create": "pnpm --filter @moubarat/api superadmin:create",
+    "reviewer:create": "pnpm --filter @moubarat/api reviewer:create",
+    "crm:create-account": "pnpm --filter @moubarat/api crm:create-account",
+    "demo:seed": "pnpm --filter @moubarat/api demo:seed",
+    "demo:catalogue": "pnpm --filter @moubarat/api demo:catalogue",
+    "demo": "node scripts/demo.mjs",
+    "ui:board": "pnpm --filter @moubarat/ui-board run board"
+  }
+}

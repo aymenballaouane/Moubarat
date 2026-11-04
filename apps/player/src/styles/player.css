@@ -1,0 +1,822 @@
+/* Classes .au-* — portees depuis prototypes/app/auth.html (contrat visuel
+   validé) vers de vraies classes React. Les tokens et primitives .mb-*
+   viennent de design/moubarat-ds.css, jamais redéfinis ici.
+
+   Différence assumée avec le prototype : le prototype est une PAGE DE REVUE
+   desktop montrant l'écran dans un faux cadre de téléphone (.au-device,
+   .au-map, .au-head — bordure arrondie, ombre, chips de navigation entre
+   étapes). Ce cadre n'existe pas dans une vraie PWA : le téléphone EST le
+   cadre. .au-screen devient donc directement la page plein viewport, pas un
+   panneau empilé en position absolute dans une boîte à taille fixe. */
+
+/* Reset natif des <button> : sans ceci un bouton "nu" (texte seul, pas de
+   classe .mb-btn) recoit le chrome par defaut du navigateur (fond gris
+   clair) au lieu de rester transparent — trouve sur .tm-leave (Teams), un
+   bouton texte-seul sans fond explicite. Specificite : les classes de
+   composants (.mb-btn, .mb-back...) fixent deja leur propre fond, elles
+   restent prioritaires sur ce reset par type quel que soit l'ordre. */
+button { font: inherit; background: none; border: 0; color: inherit; padding: 0; margin: 0; }
+
+body.mb {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--ink);
+}
+
+#root { min-height: 100vh; min-height: 100dvh; }
+
+.au-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: max(26px, env(safe-area-inset-top)) 22px max(26px, env(safe-area-inset-bottom));
+}
+
+.au-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; min-height: 36px; }
+
+/* Bouton retour partage par tous les ecrans (Auth/Booking/Match/Teams/Challenges) —
+   une seule definition pour respecter --tap-min (44px) partout, cf. .mb-back--glass
+   pour la variante utilisee sur fond photo. */
+.mb-back { width: var(--tap-min); height: var(--tap-min); display: grid; place-items: center;
+  background: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-2);
+  color: var(--text-2); }
+/* Audit 26/10 (P1-13, direction-artistique §8) : posé sur une PHOTO, le bouton garde un fond sombre et une icône BLANCHE dans les deux thèmes
+   (avant : `color: var(--text-2)` hérité de .mb-back — gris sur photo en clair). */
+.mb-back--glass { background: rgba(5, 5, 5, .45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-color: rgba(138, 148, 166, .30); color: #F5F7FA; }
+/* Espaceur invisible du meme gabarit que .mb-back, pour centrer le libelle
+   dans les entetes "space-between" qui n'ont pas de bouton retour des deux cotes. */
+.mb-back-spacer { width: var(--tap-min); height: var(--tap-min); }
+.au-dots { display: flex; gap: 6px; }
+.au-dots i { width: 6px; height: 6px; border-radius: var(--r-full); background: rgba(255, 255, 255, .16);
+  transition: background var(--dur-2) var(--ease-out), width var(--dur-2) var(--ease-out); font-style: normal; }
+.au-dots i.on { background: var(--primary); width: 18px; }
+
+.au-title { margin: 18px 0 6px; }
+.au-sub { font-size: var(--fs-b2); color: var(--text-3); margin: 0 0 26px; max-width: 30ch; }
+
+.au-spacer { flex: 1; }
+.au-legal { font-size: var(--fs-micro); color: var(--text-4); text-align: center; margin-top: 14px; }
+
+/* Consentement CGU/confidentialité (22/09/2026, étape "profile" + LegalConsentGate) — aucun
+   prototype gelé ne couvre cet écran. */
+.au-legal-doc {
+  max-height: 180px; overflow-y: auto; padding: 12px 14px; margin-bottom: 12px;
+  background: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-3);
+}
+.au-legal-doc__heading { font-size: var(--fs-b3); font-weight: 700; color: var(--text); margin: 0 0 4px; }
+.au-legal-doc__p { font-size: var(--fs-b3); color: var(--text-3); line-height: 1.5; margin: 0 0 10px; }
+.au-legal-doc__p:last-child { margin-bottom: 0; }
+.au-consent-check { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-b3); color: var(--text-2); cursor: pointer; margin-bottom: 16px; }
+.au-consent-check input { margin-top: 3px; accent-color: var(--primary); }
+
+/* Mot de passe (règles 28/29, OnboardingAcces/AccessSetupGate/MdpNouveau) — champ + bouton
+   Afficher/Masquer sur une ligne, puis les 3 critères en direct (coché = respecté). */
+.au-password-row { display: flex; align-items: center; gap: 8px; }
+.au-password-row .mb-field__control { flex: 1; }
+.au-password-toggle {
+  flex-shrink: 0; padding: 0 12px; min-height: var(--tap-min);
+  font-size: var(--fs-b3); font-weight: 600; color: var(--text-2);
+  background: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-2);
+}
+.au-password-checks { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0 0; padding: 0; list-style: none; }
+.au-password-checks li { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: var(--r-full);
+  background: var(--ink-3); font-size: var(--fs-micro); font-weight: 600; color: var(--text-4); }
+.au-password-checks li .mb-ic { width: 12px; height: 12px; }
+.au-password-checks li.on { color: var(--success); background: var(--success-wash); }
+
+/* --- Bienvenue --- */
+#s-welcome { padding: 0; }
+.au-hero { position: relative; height: 58vh; }
+.au-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.au-hero .mb-photo__scrim { background: linear-gradient(180deg, rgba(5, 5, 5, .20) 0%, rgba(5, 5, 5, .45) 55%, #050505 100%); }
+/* Arrivee du wordmark a l'ouverture de l'app (demande directe d'Aymen,
+   29/08/2026 : « une animation pendant l'onboarding avec le logo ») — pas
+   de fichier logo graphique dans design/, donc c'est le wordmark texte lui-
+   meme qui porte le moment d'entree plutot qu'un asset invente. Neutralise
+   automatiquement par la regle mouvement-reduit globale (design/moubarat-
+   ds.css, selecteur universel). */
+.au-wordmark {
+  position: absolute; top: max(26px, env(safe-area-inset-top)); inset-inline-start: 22px;
+  font-family: var(--font-display); font-size: 24px; color: #F5F7FA; letter-spacing: .04em;   /* texte sur photo : blanc dans les deux thèmes (DA §8) */
+  animation: au-logo-in .65s var(--ease-out) both;
+}
+.au-wordmark::after {
+  content: ''; display: inline-block; width: 7px; height: 7px; margin-inline-start: 5px; background: var(--primary);
+  animation: au-logo-dot .4s var(--ease-spring) .5s both;
+}
+/* Bascule FR/عربي (maquette Onboarding.dc.html, écran Bienvenue — lot 4a, lib/lang.ts) :
+   propriétés logiques (inset-inline-*) pour que le miroir RTL soit automatique. */
+.au-lang-toggle {
+  position: absolute; top: max(20px, env(safe-area-inset-top)); inset-inline-end: 16px; z-index: 1;
+  display: flex; padding: 3px; border-radius: var(--r-full);
+  background: rgba(5, 5, 5, .66); border: 1px solid rgba(138, 148, 166, .30);
+}
+.au-lang-toggle span, .au-lang-toggle button { padding: 5px 11px; border-radius: var(--r-full); font-size: 12px; font-weight: 700; }
+.au-lang-toggle span { background: #F5F7FA; color: #0A0A0F; }
+.au-lang-toggle button { color: #F5F7FA; }
+@keyframes au-logo-in { from { opacity: 0; transform: translateY(6px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes au-logo-dot { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+.au-welcome-body { padding: 0 22px max(26px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; flex: 1; margin-top: -54px; position: relative; }
+.au-statement { font-family: var(--font-display); font-size: 42px; line-height: .92; color: var(--text); text-transform: uppercase; margin: 0 0 10px; }
+.au-statement em { font-style: normal; color: var(--primary); }
+
+/* --- Téléphone --- */
+/* Libellé pour les lecteurs d'écran, hors du flux. Jamais « left: -9999 » : en lecture droite-à-gauche,
+   un élément très à gauche agrandit la zone défilable (audit du 26/10, P0-1). */
+.au-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.au-phone-row { display: flex; gap: 10px; }
+.au-prefix {
+  display: flex; align-items: center; gap: 7px; padding: 0 12px; min-height: var(--tap-min);
+  background: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-2);
+  font-family: var(--font-mono); font-size: var(--fs-b1); color: var(--text-2); flex-shrink: 0;
+}
+.au-phone-row .mb-field { flex: 1; }
+
+/* --- OTP --- */
+.au-otp { display: flex; gap: 8px; justify-content: space-between; margin-bottom: 14px; }
+.au-otp input {
+  width: 46px; height: 56px; text-align: center;
+  font-family: var(--font-display); font-size: var(--fs-d3); color: var(--text);
+  background: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-2);
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear, transform var(--dur-1) var(--ease-out);
+}
+.au-otp input:focus { border-color: var(--primary-line); background: var(--ink-4); outline: none; }
+.au-otp.err input { border-color: var(--danger-line); animation: au-shake .3s var(--ease-in-out); }
+@keyframes au-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+/* Pas reçu ? Tu pourras le redemander dans 0:42. / Changer de numéro — maquette Onboarding.dc.html,
+   écran O3 : deux phrases centrées empilées, jamais la rangée "Code valable 5 min / Renvoyer (59 s)"
+   qu'aucune maquette ne montre. */
+.au-otp-note { font-size: var(--fs-b2); color: var(--text); text-align: center; margin: 22px 0 0; }
+.au-changenum { display: block; margin-top: 10px; font-size: var(--fs-b3); font-weight: 700; color: var(--text-3);
+  text-align: center; text-decoration: underline; text-underline-offset: 3px; }
+/* Vrai <button> depuis la revue Premium (focus clavier + zone 44px via .mb-tap) —
+   le reset bouton global suffit, seuls les etats de couleur vivent ici. */
+.au-resend { color: var(--primary-glow); cursor: pointer; position: relative; }
+.au-resend[disabled] { color: var(--text-4); cursor: default; }
+/* Ton pseudo ? — "@" en préfixe + état "Libre"/"Déjà pris" en direct dans le champ (maquette
+   Onboarding.dc.html, écran O4) : jamais de phrase d'aide statique à côté. */
+.au-pseudo-row { position: relative; }
+.au-pseudo-row .mb-field__control { padding-inline-start: 30px; padding-inline-end: 92px; }
+.au-pseudo-at { position: absolute; inset-inline-start: 14px; top: 0; bottom: 0; display: flex; align-items: center;
+  font-weight: 700; color: var(--text-4); pointer-events: none; }
+.au-pseudo-status { position: absolute; inset-inline-end: 14px; top: 0; bottom: 0; display: flex; align-items: center;
+  gap: 5px; font-size: var(--fs-micro); font-weight: 700; pointer-events: none; white-space: nowrap; }
+.au-pseudo-status .mb-ic { width: 13px; height: 13px; }
+.au-pseudo-status.ok { color: var(--success); }
+.au-pseudo-status.taken { color: var(--danger); }
+/* Liens vers "Tes données" (Numéro / Connexion) — maquette Onboarding.dc.html : pas de texte CGU
+   en clair sur l'écran, seulement ce lien. */
+.au-data-link { display: block; text-align: center; font-size: var(--fs-b3); font-weight: 700; color: var(--text);
+  text-decoration: underline; text-underline-offset: 3px; margin: 18px 0 0; background: none; border: 0; width: 100%; }
+.au-footer-link { display: block; text-align: center; font-size: var(--fs-micro); color: var(--text-3); margin-top: 2px; background: none; border: 0; width: 100%; }
+.au-error { display: none; margin: 12px 0 0; font-size: var(--fs-micro); color: var(--danger); }
+.au-error.on { display: flex; gap: 6px; align-items: center; }
+/* Coordonnées du support sous le message « compte suspendu » (22/09/2026) : liens tel:/mailto:/wa.me. */
+.au-support { margin: 8px 0 0; font-size: var(--fs-b3); color: var(--text-2); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.au-support a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; min-height: 24px; }
+.au-demo { margin-top: 18px; align-self: center; }
+
+/* --- Profil --- */
+.au-group { margin-bottom: 20px; }
+.au-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* --- Fin --- */
+#s-done { align-items: center; text-align: center; justify-content: center; }
+.au-check {
+  width: 82px; height: 82px; border-radius: var(--r-full); display: grid; place-items: center;
+  background: var(--success-wash); border: 1px solid rgba(31, 209, 122, .35); color: var(--success);
+  margin-bottom: 26px; animation: au-pop .55s var(--ease-spring) .15s both;
+}
+@keyframes au-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.au-caption { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .1em; text-transform: uppercase; color: var(--text-4); margin-top: 16px; text-align: center; }
+
+/* =============================================================================
+   BOOKING — porte depuis prototypes/app/booking.html. Meme ecart assume que
+   pour Auth : #s-terrain/#s-slots/#s-external/#s-proof remplacent .bk-device/
+   .bk-screen (cadre de telephone de la page de revue), .bk-pad porte le
+   padding reel (avec marge d'encoche) a la place de .au-screen pour laisser
+   le hero du terrain 1 en plein bord. */
+#s-terrain, #s-slots, #s-external, #s-proof { padding: 0; }
+.bk-pad {
+  padding: max(22px, env(safe-area-inset-top)) 22px max(22px, env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; flex: 1;
+}
+.bk-top { display: flex; align-items: center; justify-content: space-between; min-height: 36px; margin-bottom: 4px; }
+.bk-step { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .12em; color: var(--text-4); text-transform: uppercase; }
+
+/* Unité du prix (règle 16 : « / h », « par joueur », « le créneau », en minuscules — maquettes
+   Reserver*, DetailMatch*, Creer*). Le jeton gelé (design/moubarat-ds.css,
+   .mb-price[data-unit]::after) l'écrit en dur « / HEURE », « / JOUEUR », « TOTAL », en Mono
+   majuscules : surcharge côté app seulement, jeton jamais modifié. Corps (Barlow) à --fs-micro :
+   --fs-tag est réservé à la Mono MAJUSCULES. Arabe : valeurs reprises de
+   refonte-app-joueur/i18n/fr-ar.json (« / h », « par joueur », « 9 000 DA le créneau ») — jamais
+   retraduites ici. Marges en propriétés logiques pour le sens RTL. */
+:root .mb-price::after {
+  font-family: var(--font-body); font-size: var(--fs-micro); font-weight: 400; letter-spacing: normal;
+  margin-left: 0; margin-inline-start: 5px;
+}
+:root .mb-price[data-unit="hour"]::after   { content: "/ h"; }
+:root .mb-price[data-unit="player"]::after { content: "par joueur"; }
+:root .mb-price[data-unit="total"]::after  { content: "le créneau"; }
+:root[lang="ar"] .mb-price[data-unit="hour"]::after   { content: "/ سا"; }
+:root[lang="ar"] .mb-price[data-unit="player"]::after { content: "للاعب"; }
+:root[lang="ar"] .mb-price[data-unit="total"]::after  { content: "للموعد"; }
+:root .mb-price__cur { margin-left: 0; margin-inline-start: 2px; }
+
+/* Ecran 1 — terrain (R2, patron Reserver.dc.html : badge sport + titre + itinéraire en bas de
+   la photo, plus haute qu'avant pour leur faire de la place). */
+.bk-hero { position: relative; height: 340px; flex-shrink: 0; }
+.bk-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bk-hero .bk-top { position: absolute; top: max(18px, env(safe-area-inset-top)); left: 18px; right: 18px; z-index: 2; }
+
+/* Titre de section de la fiche (R2, patron Reserver.dc.html : <h2> corps 600 16px, plus de
+   micro-label mono). Note, description, équipements, horaires et bandeau de disponibilité
+   retirés de la fiche « épurée » (décision Aymen 25/10/2026) — leurs règles avec eux. */
+.bk-sec { margin: 26px 0 10px; font-family: var(--font-body); font-size: var(--fs-b1); font-weight: 600;
+  line-height: 1.2; color: var(--text); }
+
+/* Ecran 2 — creneaux */
+.bk-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+/* Chips jour empiles (abrev + grand chiffre Bebas Neue) — 7 chips serres
+   pour tenir sur une ligne a 375px sans emballer. */
+.bk-row--days { flex-wrap: nowrap; gap: 6px; }
+.bk-day-pill { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; min-width: 40px; height: 52px; border-radius: var(--r-3);
+  background: var(--ink-3); border: 1px solid var(--line); color: var(--text-3);
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear, color var(--dur-1) linear; }
+.bk-day-pill__abbr { font-family: var(--font-mono); font-size: 9px; letter-spacing: .04em; text-transform: uppercase; }
+.bk-day-pill__n { font-family: var(--font-display); font-size: var(--fs-d3); line-height: 1; color: var(--text); }
+
+/* Selection de terrain — patron du prototype (.rsv-terrain-select/-opt) :
+   nom + format empiles dans une boite bordee, actif = bordure+fond rouge. */
+.bk-terrain-select { display: flex; gap: 8px; margin-bottom: 22px; }
+.bk-terrain-opt { flex: 1; text-align: center; padding: 11px 4px; border-radius: var(--r-3);
+  border: 1.5px solid var(--line); background: var(--ink-2); }
+.bk-terrain-opt.active { border-color: var(--primary); background: var(--primary-wash); }
+.bk-terrain-opt.soon { opacity: .55; }
+.bk-terrain-opt .n { display: block; font-family: var(--font-display); font-size: var(--fs-b1); color: var(--text); }
+.bk-terrain-opt .s { display: block; font-family: var(--font-mono); font-size: 9px; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--text-4); margin-top: 2px; }
+.bk-day-pill[aria-pressed="true"] { background: var(--primary-wash); border-color: var(--primary-line); color: var(--primary-glow); }
+/* Creneaux groupes par periode (DATE -> PERIODE -> HEURE, demande directe
+   d'Aymen) : sections plates empilees, jamais des onglets — l'objectif est
+   de voir toute la disponibilite d'un coup d'oeil. 2 colonnes en mobile
+   (catalogue de creneaux plutot qu'un calendrier technique dense), 3 des
+   que la largeur le permet. */
+.bk-periods { display: flex; flex-direction: column; gap: 18px; margin-bottom: 6px; }
+.bk-period__label { display: flex; align-items: center; gap: 8px; margin: 0 0 9px;
+  font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text-4); }
+.bk-period__tag { font-family: var(--font-mono); font-size: 8px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--gold-2);
+  background: rgba(242, 183, 5, .14); padding: 2px 7px; border-radius: var(--r-full); }
+.bk-starts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+@media (min-width: 480px) { .bk-starts { grid-template-columns: repeat(3, 1fr); } }
+.bk-start { padding: 10px 6px; text-align: center; background: var(--ink-3);
+  border: 1px solid var(--line); border-radius: var(--r-2); cursor: pointer;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear, transform var(--dur-1) var(--ease-out); }
+.bk-start:active { transform: scale(.96); }
+.bk-start.on { border-color: var(--primary-line); background: var(--primary-wash); }
+.bk-start b { display: block; font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); }
+.bk-start span { font-family: var(--font-mono); font-size: var(--fs-tag); color: var(--text-3); }
+.bk-start.peak span { color: var(--gold); }
+.bk-recap { margin-top: 8px; padding: 14px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-3); display: none; }
+.bk-recap.on { display: block; animation: mb-rise var(--dur-2) var(--ease-out); }
+.bk-band { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-micro); color: var(--text-3); padding: 4px 0; }
+.bk-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 10px; margin-top: 6px; border-top: 1px solid var(--line-strong); }
+/* Formats d'un meme creneau, cote a cote (16/09/2026) — un choix explicite du
+   joueur, jamais presele : prix de chaque format visible avant de choisir. */
+.bk-recap__label { margin: 0 0 8px; font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text-4); }
+.bk-fmts { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.bk-fmt { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; min-height: 44px;
+  background: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-2); cursor: pointer;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear, transform var(--dur-1) var(--ease-out); }
+.bk-fmt:active { transform: scale(.96); }
+.bk-fmt[aria-pressed="true"] { border-color: var(--primary-line); background: var(--primary-wash); }
+.bk-fmt b { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); }
+.bk-fmt small { font-family: var(--font-mono); font-size: var(--fs-tag); color: var(--text-4); }
+.bk-fmt span { font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 700; color: var(--text-2); }
+
+/* Ecran 3 — preuve */
+.bk-proof { margin: 14px 0 16px; padding: 18px; background: var(--ink-2);
+  border: 1px solid var(--line-strong); border-radius: var(--r-4); box-shadow: var(--e-2); }
+/* En-tete photo de la carte recap (rapprochement visuel du prototype,
+   `.mini-tourn-card`) — identifie le lieu d'un coup d'oeil avant le detail
+   texte qui suit. */
+.bk-proof__venue { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.bk-proof__thumb { width: 40px; height: 40px; border-radius: var(--r-2); overflow: hidden; flex-shrink: 0; }
+.bk-proof__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bk-proof__venue b { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); letter-spacing: var(--ls-display); }
+.bk-line { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; font-size: var(--fs-b3); color: var(--text-2); }
+.bk-line span:first-child { color: var(--text-3); }
+.bk-line b { color: var(--text); font-weight: 600; }
+
+/* Toast partage par tous les ecrans (Booking/Match/Teams/Challenges) — une
+   seule definition, cf. .mb-back pour le meme principe applique au bouton
+   retour. */
+.mb-toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 16px);
+  background: var(--ink-3); border: 1px solid var(--line-strong); border-radius: var(--r-3);
+  padding: 11px 16px; font-size: var(--fs-b3); color: var(--text); box-shadow: var(--e-3);
+  opacity: 0; pointer-events: none; transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
+  z-index: 90; max-width: 90vw; }
+.mb-toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* =============================================================================
+   MATCH — porte depuis prototypes/app/match.html. Meme ecart assume que
+   Booking : #s-detail/#s-question/#s-mymatch (ecrans a hero) passent en
+   padding:0 sur .au-screen et portent leur propre padding via .mt-body (avec
+   marge d'encoche) ; #s-config/#s-confirm (sans hero) gardent le padding par
+   defaut de .au-screen, qui joue exactement le role de .mt-top+.mt-screen. */
+#s-detail, #s-question, #s-mymatch { padding: 0; }
+
+.mt-hero { position: relative; height: 260px; flex-shrink: 0; }
+.mt-hero--slim { height: 150px; }
+.mt-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mt-hero .mb-photo__scrim { background: linear-gradient(180deg, rgba(5, 5, 5, .18) 0%, rgba(5, 5, 5, .38) 45%, #050505 100%); }
+.mt-hero-top {
+  position: absolute; top: max(18px, env(safe-area-inset-top)); left: 18px; right: 18px;
+  display: flex; justify-content: space-between; align-items: center; z-index: 2;
+}
+.mt-hero-low { position: absolute; left: 22px; right: 22px; bottom: 8px; z-index: 2; }
+.mt-body { padding: 12px 22px max(22px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; flex: 1; }
+
+.mt-top { display: flex; align-items: center; justify-content: space-between; min-height: 36px; margin-bottom: 8px; }
+
+.mt-check { width: 74px; height: 74px; margin: 18px auto 6px; border-radius: var(--r-full);
+  display: grid; place-items: center; background: var(--success-wash);
+  border: 1px solid rgba(31, 209, 122, .35); color: var(--success); animation: mt-pop .55s var(--ease-spring) .15s both; }
+@keyframes mt-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.mt-frame { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line-strong);
+  border-radius: var(--r-3); overflow: hidden; margin: 14px 0 16px; }
+.mt-frame > div { padding: 12px; border: 0 solid var(--line); }
+.mt-frame > div:nth-child(1) { border-right-width: 1px; border-bottom-width: 1px; }
+.mt-frame > div:nth-child(2) { border-bottom-width: 1px; }
+.mt-frame > div:nth-child(3) { border-right-width: 1px; }
+.mt-frame > div > span:first-child { display: block; font-family: var(--font-mono); font-size: var(--fs-tag);
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text-4); margin-bottom: 3px; }
+.mt-frame .mb-price { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text);
+  letter-spacing: var(--ls-display); text-transform: none; }
+.mt-frame b { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); }
+.mt-frame .mb-price::after { display: block; margin: 3px 0 0; }
+
+.mt-gauge { height: 4px; background: rgba(255, 255, 255, .10); border-radius: var(--r-full); overflow: hidden; margin: 6px 0 16px; }
+.mt-gauge i { display: block; height: 100%; background: var(--primary); transition: width var(--dur-3) var(--ease-out); font-style: normal; }
+.mt-sec { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text-4); margin: 0 0 8px; }
+
+.mt-player { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.mt-player:last-child { border-bottom: 0; }
+.mt-ava { width: 32px; height: 32px; border-radius: var(--r-2); background: var(--ink-4);
+  display: grid; place-items: center; font-family: var(--font-display); font-size: 14px; color: var(--text-2); flex-shrink: 0; }
+.mt-player .n { flex: 1; min-width: 0; }
+.mt-player .n b { display: block; font-size: var(--fs-b3); font-weight: 600; color: var(--text); }
+.mt-player .n span { display: block; font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--text-4); }
+.mt-kick { width: 30px; height: 30px; display: grid; place-items: center; border-radius: var(--r-2);
+  background: transparent; border: 1px solid var(--line); color: var(--text-3); }
+.mt-kick:hover { border-color: var(--danger-line); color: var(--danger); }
+
+.mt-info { display: grid; gap: 8px; margin-bottom: 16px; }
+.mt-info > div { display: flex; align-items: center; gap: 9px; font-size: var(--fs-b3); color: var(--text-2); }
+.mt-info .mb-ic { color: var(--text-4); }
+
+.mt-actions { display: grid; gap: 10px; margin-top: auto; padding-top: 14px; }
+
+.mt-q { display: grid; gap: 12px; margin-top: 10px; }
+.mt-qcard { text-align: left; padding: 18px; background: var(--ink-2); border: 1px solid var(--line);
+  border-radius: var(--r-4); box-shadow: var(--card-shadow); cursor: pointer; display: flex; align-items: center; gap: 14px;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear, transform var(--dur-1) var(--ease-out); }
+.mt-qcard:hover { border-color: var(--primary-line); background: var(--ink-3); }
+.mt-qcard .arr { margin-left: auto; color: var(--text-4); transition: transform var(--dur-1) var(--ease-out), color var(--dur-1) linear; }
+.mt-qcard:hover .arr { transform: translateX(3px); color: var(--primary-glow); }
+.mt-qcard:active { transform: scale(.98); }
+.mt-qcard .mb-ic { width: 24px; height: 24px; color: var(--primary-glow); flex-shrink: 0; }
+.mt-qcard b { display: block; font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); text-transform: uppercase; }
+.mt-qcard span { font-size: var(--fs-micro); color: var(--text-3); }
+
+.mt-bkcard { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 13px; background: var(--ink-2); border: 1px solid var(--line-strong); border-radius: var(--r-3); margin-bottom: 16px; }
+.mt-bkcard b { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); }
+.mt-bkcard span { display: block; font-size: var(--fs-micro); color: var(--text-3); }
+
+.mt-priceline { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 13px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-3); margin: 4px 0 16px; }
+.mt-priceline span:first-child { font-size: var(--fs-micro); color: var(--text-3); }
+
+.mt-cancelled .mt-title { text-decoration: line-through; color: var(--text-4) !important; }
+
+/* =============================================================================
+   TEAMS — inspire de prototypes/app/teams.html (reference, pas spec — mandat
+   produit du 26/08/2026). Reutilise .mt-top/.mt-ava/.n/.mt-player/.mt-kick/
+   .mt-sec/.mt-actions/.mb-toast tels quels (meme vestiaire de composants que
+   Match) ; seuls le bandeau d'equipe (photo en carte, pas plein bord — cet
+   ecran est une destination "onglet", pas un moment de decouverte plein
+   ecran comme Match Detail) et les stats sont propres a Teams. */
+.tm-hero { position: relative; height: 168px; border-radius: var(--r-4);
+  border: 1px solid var(--line-strong); overflow: hidden; margin-bottom: 14px; }
+.tm-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tm-hero-low { position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 2;
+  display: flex; align-items: flex-end; gap: 10px; }
+
+/* Monogramme (2 lettres, cf. teamInitials()) plutot qu'une icone bouclier
+   generique identique pour toutes les equipes — identite distinguable au
+   coup d'oeil dans une liste (inbox Défis, VS...), sans inventer de couleur
+   par equipe (palette de statut deja strictement reservee ailleurs). */
+.tm-crest { width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center;
+  background: rgba(5, 5, 5, .55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--primary-line); border-radius: var(--r-3); color: var(--primary-glow);
+  font-family: var(--font-display); font-size: 17px; letter-spacing: .02em; }
+.tm-crest--sm { width: 40px; height: 40px; font-size: 15px; }
+
+.tm-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 6px; }
+.tm-stats > div { text-align: center; padding: 10px 6px; background: var(--ink-2);
+  border: 1px solid var(--line); border-radius: var(--r-3); }
+.tm-stats b { display: block; font-family: var(--font-display); font-size: var(--fs-d3); color: var(--text); }
+.tm-stats span { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
+
+.tm-leave { text-align: center; font-size: var(--fs-b3); color: var(--danger); padding: 6px;
+  background: none; border: 0; width: 100%; }
+
+.tm-invite-card { display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 28px 20px; margin-top: 8px; background: var(--ink-2); border: 1px solid var(--line);
+  border-radius: var(--r-4); box-shadow: var(--card-shadow); }
+.tm-invite-card .tm-crest { position: static; background: var(--ink-3); border-color: var(--line-strong); color: var(--text-3); width: 52px; height: 52px; }
+.tm-outcome { display: flex; justify-content: center; margin-top: 20px; }
+
+/* =============================================================================
+   CHALLENGES — inspire de prototypes/app/challenges.html (reference, pas
+   spec). Reutilise .mt-qcard (choix d'adversaire, meme carte que le choix de
+   sport sur Match), .bk-line (lignes libelle/valeur, deja utilisees sur
+   Booking), .tm-crest (identite d'equipe, deja sur Teams) et .mt-* generique
+   partout ailleurs — seuls le duo VS et la liste de la boite de reception
+   sont propres a cet ecran. */
+.ch-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.ch-row:last-child { border-bottom: 0; }
+.ch-row .n { flex: 1; min-width: 0; }
+.ch-row .n b { display: block; font-size: var(--fs-b3); font-weight: 600; color: var(--text); }
+.ch-row .n span { display: block; font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .06em; color: var(--text-4); margin-top: 2px; }
+
+.ch-vs { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.ch-team { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+.ch-team b { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); text-transform: uppercase; }
+.ch-team span { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .06em; color: var(--text-4); text-transform: uppercase; }
+.ch-x { font-family: var(--font-display); font-size: var(--fs-b1); color: var(--primary-glow); flex-shrink: 0; }
+
+.ch-msg { padding: 12px; margin: 10px 0; background: var(--ink-2); border: 1px solid var(--line);
+  border-radius: var(--r-3); font-size: var(--fs-b3); color: var(--text-2); font-style: italic; }
+
+.ch-lock { display: flex; gap: 8px; align-items: flex-start; padding: 12px; margin: 8px 0 0;
+  border-radius: var(--r-2); background: rgba(255, 255, 255, .04); border: 1px solid var(--line);
+  font-size: var(--fs-micro); color: var(--text-3); }
+
+/* ============================================================================
+   Coquille de navigation (barre basse + 4 ecrans d'onglet) — gabarit repris
+   du bottom-nav du prototype de reference (4 .nav-item + 1 .nav-fab central),
+   recode avec les vrais tokens de design/moubarat-ds.css (la reference
+   redeclare ses propres couleurs locales dans un iframe, jamais copiees
+   telles quelles). Prefixe .hm-/.pf-/.mx- : ecrans propres a la coquille,
+   pas de .au-/.bk-/.mt-* existants a reutiliser ici. */
+
+/* Barre flottante détachée (communs.barre-navigation, design-system/themes-
+   app-joueur.json) : 16px des bords, 64px de haut, bas = max(20px, calc(
+   env(safe-area-inset-bottom) + 8px)) — jamais collée au trait d'accueil du
+   téléphone (décision d'Aymen, 23/10/2026). `--nav-pos-bottom` est la même
+   formule, réutilisée par `.tab-screen` pour que la réserve de contenu
+   grandisse exactement d'autant. */
+:root { --nav-pos-bottom: max(20px, calc(env(safe-area-inset-bottom) + 8px)); }
+
+.tab-screen {
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; flex-direction: column;
+  padding: max(26px, env(safe-area-inset-top)) 22px
+           calc(64px + var(--nav-pos-bottom) + 24px) 22px;
+}
+
+/* Chantier iOS, décision d'Aymen du 23/10/2026 : la barre d'onglets NATIVE
+   (RootTabBarController) sera retirée — cette pilule web deviendra la SEULE
+   barre de navigation, y compris dans l'habillage natif (jamais deux barres
+   à l'écran). Côté web, ce changement est fait : `.native-shell` ne masque
+   plus `.bottom-nav` ci-dessous. Côté Swift, PAS ENCORE fait — Aymen a
+   explicitement reporté le retrait de RootTabBarController.swift jusqu'à ce
+   que son développeur réussisse une première compilation sur Mac (aucune
+   compilation à ce jour). Tant que ce retrait Swift n'est pas fait, l'app
+   iOS compilée montrerait deux barres ; sans impact aujourd'hui puisque
+   rien ne compile encore. Tâche en attente, à reprendre après ce jalon. */
+
+.bottom-nav {
+  position: fixed; left: 16px; right: 16px; bottom: var(--nav-pos-bottom); z-index: 40;
+  height: 64px;
+  display: flex; align-items: center;
+  padding: 0 6px;
+  border-radius: var(--r-full);
+  background: var(--nav-bg);
+  backdrop-filter: saturate(1.4) blur(18px); -webkit-backdrop-filter: saturate(1.4) blur(18px);
+  border: 1px solid var(--nav-border);
+  box-shadow: var(--nav-shadow);
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  min-height: var(--tap-min);
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  color: var(--text-3);
+}
+.nav-item .mb-ic { width: 21px; height: 21px; }
+.nav-item.active { color: var(--primary); }
+.nav-item.active .mb-ic { color: var(--primary); }
+.nav-fab-slot { flex: 1; display: flex; justify-content: center; }
+.nav-fab {
+  width: 54px; height: 54px; margin-top: -26px; border-radius: var(--r-full);
+  display: grid; place-items: center;
+  background: var(--primary); border: 4px solid var(--ink);
+  color: #fff; box-shadow: 0 8px 22px rgba(255, 43, 0, .40);
+}
+.nav-fab .mb-ic { width: 24px; height: 24px; }
+
+/* --- Accueil --------------------------------------------------------------- */
+.hm-greet { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; }
+.hm-greet .hi { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .12em;
+  color: var(--text-3); text-transform: uppercase; }
+.hm-greet h1 { margin-top: 2px; }
+.hm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); margin-bottom: 24px; }
+.hm-action { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
+  padding: 18px var(--s-3); background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-4); box-shadow: var(--card-shadow); }
+.hm-action .mb-ic { width: 26px; height: 26px; color: var(--primary-glow); }
+.hm-action b { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); text-transform: uppercase; }
+.hm-section-label { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .1em;
+  color: var(--primary-glow); text-transform: uppercase; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+.hm-section-label::before { content: ''; width: 14px; height: 2px; background: var(--primary); display: inline-block; }
+
+/* --- Sous-section nette + pills sport/format — promu depuis create.css
+   (etait scope a CreateMatchFlow, desormais partage avec BookingFlow :
+   meme intention-avant-disponibilite sur les deux parcours de reservation,
+   demande directe d'Aymen 29/08/2026). UN groupe de controles par bloc,
+   jamais un formulaire indifferencie. */
+.cm-sub { margin-bottom: 22px; }
+.cm-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.cm-sports { display: flex; gap: 8px; flex-wrap: wrap; }
+.cm-sport { display: inline-flex; align-items: center; gap: 7px; min-height: var(--tap-min);
+  padding: 0 14px; background: var(--ink-2); border: 1px solid var(--line);
+  border-radius: var(--r-full); font-size: var(--fs-b3); font-weight: 600; color: var(--text-2);
+  cursor: pointer;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear, color var(--dur-1) linear; }
+.cm-sport .mb-ic { width: 15px; height: 15px; color: var(--text-4); }
+.cm-sport[aria-pressed="true"] { background: var(--primary-wash); border-color: var(--primary-line); color: var(--text); }
+.cm-sport[aria-pressed="true"] .mb-ic { color: var(--primary-glow); }
+.cm-sport:disabled { opacity: .55; cursor: not-allowed; }
+.cm-soon { font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--gold); }
+
+.hm-links { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.hm-link { display: flex; align-items: center; gap: 10px; padding: 14px var(--s-3);
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-3);
+  font-size: var(--fs-b3); color: var(--text-2); text-align: left; }
+.hm-link .mb-ic { color: var(--text-4); }
+.hm-link span { flex: 1; }
+
+/* --- Mes matchs -------------------------------------------------------------- */
+.mx-list { display: flex; flex-direction: column; gap: var(--s-3); }
+
+/* --- Profil ------------------------------------------------------------------ */
+.pf-head { display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 12px 0 26px; }
+.pf-ava { width: 72px; height: 72px; border-radius: var(--r-full); background: var(--ink-3);
+  border: 2px solid var(--gold); display: grid; place-items: center;
+  font-family: var(--font-display); font-size: var(--fs-d2); color: var(--text); margin-bottom: 12px; }
+.pf-team { display: flex; align-items: center; gap: 10px; padding: 14px var(--s-3); margin-top: 18px;
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-3); }
+.pf-team span { flex: 1; text-align: left; font-size: var(--fs-b3); color: var(--text-2); }
+.ch-lock .mb-ic { color: var(--text-4); flex-shrink: 0; margin-top: 1px; }
+
+/* ============================================================================
+   SOCLE PREMIUM PARTAGE — session Premium UI/UX. Primitives transverses
+   consommees par plusieurs groupes d'ecrans ; les CSS propres a un groupe
+   vivent dans styles/<groupe>.css, jamais ici. */
+
+/* --- Texture « pitch » — LE geste visuel du benchmark : scrim de marque
+   (halo rouge hors champ + vignettage) + grain par-dessus une surface sombre
+   ou une photo. En pur CSS (sans photo) c'est la surface legitime des
+   vignettes/carres d'action — une seule photo reelle existe dans design/,
+   la repeter partout affaiblirait le hero. Tout contenu pose dessus porte
+   position:relative; z-index:3. */
+.mb-pitch { position: relative; overflow: hidden; background: #0a0202; }
+.mb-pitch::before { content: ''; position: absolute; inset: 0; z-index: 1;
+  background:
+    radial-gradient(ellipse at 50% 130%, rgba(0, 0, 0, .48), transparent 60%),
+    radial-gradient(circle at 15% -10%, rgba(255, 60, 20, .32), transparent 45%),
+    radial-gradient(circle at 85% 0%, rgba(255, 255, 255, .10), transparent 40%),
+    linear-gradient(180deg, rgba(10, 2, 2, .12) 0%, rgba(10, 2, 2, .42) 100%); }
+.mb-pitch::after { content: ''; position: absolute; inset: 0; z-index: 2; opacity: .3;
+  mix-blend-mode: overlay;
+  background-image: radial-gradient(rgba(255, 255, 255, .5) .6px, transparent .9px);
+  background-size: 3px 3px; }
+.mb-pitch > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.mb-pitch > *:not(img) { position: relative; z-index: 3; }
+
+/* Score d'un match joue sur la carte partagee — meme registre Bebas que le
+   prix qu'il remplace (rangee d'historique, cf. MatchCard prop result). */
+.mb-match__score { flex: 0 0 auto; font-family: var(--font-display); font-size: var(--fs-d4);
+  color: var(--text-2); white-space: nowrap; }
+
+/* Chip niveau plein Bebas (or/rouge) — patron repris du hero Home
+   (.ho-hero__lvl), promu ici en primitive partagee pour ne plus le
+   dupliquer a chaque ecran qui affiche un niveau de maniere affirmee
+   (rapprochement visuel du prototype, lot Reservation/Match). */
+.mb-lvl-chip { display: inline-flex; align-items: center; font-family: var(--font-display);
+  font-size: var(--fs-micro); letter-spacing: .04em; color: #1a1200; background: var(--gold-2);
+  padding: 5px 10px; border-radius: var(--r-2); text-transform: uppercase; white-space: nowrap; }
+.mb-lvl-chip--comp { background: var(--primary); color: #fff; }
+.mb-lvl-chip--sm { font-size: var(--fs-tag); padding: 3px 7px; border-radius: var(--r-1); }
+.mb-lvl-chip--overlay { position: absolute; top: 12px; right: 12px; z-index: 4; }
+/* Dans .mb-match__meta, le chip est place EN PREMIER enfant pour la
+   priorite visuelle — mais la regle de troncature du socle cible
+   justement `> span:first-child` (pensee pour le nom du lieu, qui doit
+   pouvoir retrecir). Le chip, lui, ne doit jamais retrecir. */
+.mb-match__meta > .mb-lvl-chip:first-child { flex: 0 0 auto; min-width: auto; overflow: visible; text-overflow: clip; }
+
+/* Variante vignette de .mb-match — photo carree (heure superposee) a la
+   place de la colonne heure texte. Demande directe : rendre « Matchs a
+   rejoindre » du Home plus photo/visuel, comme le prototype .join-card,
+   sans perdre la primaute de l'heure (elle reste l'element le plus
+   visible, juste sur la photo au lieu d'a cote). */
+.mb-match--thumb { grid-template-columns: 60px minmax(0, 1fr); }
+.mb-match__thumb { grid-column: 1; width: 60px; height: 60px; border-radius: var(--r-3);
+  overflow: hidden; position: relative; }
+.mb-match__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Qualifie par le parent : meme correctif de specificite que
+   .mb-match--around__time/-__lvl (voir plus bas) — `.mb-pitch > *:not(img)`
+   ecrasait silencieusement ce position:absolute. */
+.mb-match__thumb > .mb-match__thumb-h { position: absolute; left: 5px; bottom: 4px; z-index: 4;
+  font-family: var(--font-display); font-size: var(--fs-b3); color: var(--text); line-height: 1; }
+
+/* Variante « around » de .mb-match — reproduction fidele de `.around-card`
+   du prototype (Explorer > Matchs) : photo plus large avec heure/niveau
+   superposes, colonne texte, bouton rejoindre en pastille. Structure flex
+   independante du grid `.mb-match` de base (voir MatchCard.tsx pour le
+   pourquoi). */
+.mb-match--around { position: relative; display: flex; align-items: stretch; gap: 12px;
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-4); box-shadow: var(--card-shadow);
+  padding: 12px; margin-bottom: 12px; cursor: pointer;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear; }
+.mb-match--around:hover { border-color: var(--line-strong); background: var(--ink-3); }
+/* La photo s'etire (align-items: stretch du parent) sur toute la hauteur
+   de la colonne texte — plus une vignette basse fixe : c'est ce qui evite
+   l'asymetrie photo/texte relevee par Aymen (capture du prototype a
+   l'appui, 29/08/2026). Largeur seule fixee ; min-height = garde-fou pour
+   un corps tres court (ex. match joue, sans niveau visible). */
+.mb-match--around__thumb { position: relative; width: 108px; min-height: 110px; flex-shrink: 0;
+  border-radius: var(--r-3); overflow: hidden; }
+.mb-match--around__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Selecteur qualifie par le parent (pas juste .mb-match--around__time) :
+   la regle generique `.mb-pitch > *:not(img)` (position: relative, pour
+   les legendes plates de .mb-venue/.mb-hero) a une specificite plus
+   elevee qu'une simple classe et ecrasait silencieusement le
+   position:absolute ici — bug latent, invisible tant qu'un seul badge
+   superposait la photo, revele des l'ajout du niveau (bug reel trouve en
+   verifiant les positions calculees, pas suppose). */
+.mb-match--around__thumb > .mb-match--around__time { position: absolute; top: 7px; left: 7px; z-index: 4;
+  background: var(--primary); color: #fff; font-family: var(--font-display);
+  font-size: var(--fs-b3); padding: 2px 7px; border-radius: var(--r-1); line-height: 1.3; }
+.mb-match--around__body { flex: 1; min-width: 0; display: flex; flex-direction: column;
+  justify-content: center; padding-right: 18px; }
+.mb-match--around__name { font-family: var(--font-display); font-size: var(--fs-b1);
+  color: var(--text); line-height: var(--lh-display); text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+/* Niveau superpose en bas de la photo (patron reel du prototype — capture
+   d'ecran d'Aymen, 29/08/2026 : ce n'est PAS de la pollution visuelle une
+   fois la photo etiree en pleine hauteur, contrairement a l'ancienne
+   vignette basse fixe de 96px ou l'espace manquait). */
+.mb-match--around__thumb > .mb-match--around__lvl { position: absolute; left: 7px; bottom: 7px; z-index: 4; }
+.mb-match--around__loc { display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-tag); color: var(--text-3); margin-top: 5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mb-match--around__loc .mb-ic { color: var(--text-4); flex-shrink: 0; }
+.mb-match--around__meta { display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--fs-micro); color: var(--text-2); margin-top: 6px; }
+.mb-match--around__meta .mb-ic { color: var(--text-4); }
+.mb-match--around__meta b { color: var(--success); }
+/* Separateur sport+format / joueurs — actif seulement avec showFormat
+   (Home), Explorer ne rend jamais cet element. */
+.mb-match--around__dot { font-style: normal; color: var(--text-4); margin: 0 1px; }
+.mb-match--around__price { font-family: var(--font-display); font-size: var(--fs-b1);
+  color: var(--primary-glow); margin-top: 6px; }
+.mb-match--around__price i { font-style: normal; font-family: var(--font-mono);
+  font-size: var(--fs-tag); color: var(--text-3); }
+.mb-match--around__join { align-self: flex-start; margin-top: 8px;
+  font-family: var(--font-display); font-size: var(--fs-tag); color: var(--primary-glow);
+  background: transparent; border: 1.5px solid var(--primary); padding: 8px 14px;
+  border-radius: var(--r-full); letter-spacing: .02em; min-height: var(--tap-min);
+  display: inline-flex; align-items: center; }
+.mb-match--around[data-state="full"] .mb-match--around__join,
+.mb-match--around[data-state="locked"] .mb-match--around__join,
+.mb-match--around[data-state="expired"] .mb-match--around__join { color: var(--text-4); border-color: var(--line); }
+.mb-match--around[data-state="joined"] .mb-match--around__join { color: #fff; background: var(--primary); border-color: var(--primary); }
+.mb-match--around__chevron { position: absolute; top: 16px; right: 12px; color: var(--text-4); }
+
+/* --- Pastille « places restantes » — Home « Matchs à rejoindre » (règle 11, variante 'tile'
+   ci-dessous) : TOUJOURS verte (ces matchs sont déjà filtrés "encore ouverts" par
+   lib/homeFeed.ts), jamais la gradation d'alerte de .mb-status --filling/--full. */
+.mb-places { flex: 0 0 auto; padding: 4px 8px; border-radius: var(--r-full);
+  background: var(--success-wash); color: var(--success); font-size: var(--fs-micro); font-weight: 700;
+  white-space: nowrap; }
+
+/* --- Variante « tile » de .mb-match (Home, lot 4b, Main.dc.html) : carte verticale 160px,
+   vignette photo + format incrusté, heure Bebas + pastille places, nom du centre, wilaya,
+   prix/joueur — structure propre, flex: 0 0 160px fixé par l'appelant (rail défilant). */
+.mb-match--tile { display: block; flex: 0 0 160px; scroll-snap-align: start; border-radius: var(--r-4);
+  overflow: hidden; background: var(--ink-2); border: 1px solid var(--line); text-align: left; cursor: pointer; padding: 0;
+  transition: border-color var(--dur-1) linear, transform var(--dur-1) var(--ease-out); }
+.mb-match--tile:hover { border-color: var(--line-strong); }
+.mb-match--tile:active { transform: scale(.98); }
+.mb-match--tile__thumb { display: block; height: 84px; }
+.mb-match--tile__format { position: absolute; top: 8px; inset-inline-end: 8px; z-index: 4;
+  padding: 3px 8px; border-radius: var(--r-full); background: rgba(10, 10, 15, .72); color: #fff;
+  font-size: var(--fs-micro); font-weight: 700; white-space: nowrap; }
+.mb-match--tile__body { display: flex; flex-direction: column; gap: 3px; padding: 10px 10px 12px; }
+.mb-match--tile__line { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.mb-match--tile__h { font-family: var(--font-display); font-size: var(--fs-d3); line-height: 1; color: var(--text); }
+.mb-match--tile__name { margin: 0; font-size: var(--fs-b3); font-weight: 600; line-height: 1.2; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mb-match--tile__loc { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-tag); color: var(--text-3); }
+.mb-match--tile__loc .mb-ic { color: var(--text-4); flex-shrink: 0; }
+.mb-match--tile__price { margin-top: 3px; white-space: nowrap; font-weight: 700; color: var(--text); font-size: var(--fs-b3); }
+.mb-match--tile__price i { font-style: normal; font-size: var(--fs-tag); font-weight: 400; color: var(--text-3); }
+
+/* --- En-tete de section avec lien « Voir tout » — etend le motif de charte
+   (micro-label mono ROUGE + tiret) d'un lien d'action a droite. */
+.mb-sechead { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 10px; }
+.mb-sechead .hm-section-label { margin: 0; }
+.mb-sechead__link { font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--primary-glow);
+  background: none; border: 0; padding: 0; cursor: pointer; }
+
+/* --- Controle segmente — LES onglets internes d'un ecran (Explorer 3,
+   Mes matchs 2, Defis 2, Notifications 2) : un seul pattern, actif via
+   aria-pressed, jamais des .mb-chip detournees. */
+.mb-seg { display: flex; gap: 4px; padding: 4px; background: var(--ink-2);
+  border: 1px solid var(--line); border-radius: var(--r-3); }
+.mb-seg > button { flex: 1; min-height: 38px; border-radius: var(--r-2);
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
+  transition: background var(--dur-1) linear, color var(--dur-1) linear; }
+.mb-seg > button[aria-pressed="true"] { background: var(--ink-3); color: var(--text);
+  border: 1px solid var(--line-strong); }
+
+/* --- Zone d'actions collante — le CTA principal ne doit jamais defiler hors
+   ecran sur un ecran de decision (spec §5/§6 : terrain-detail, match-detail). */
+.mb-sticky-actions { position: sticky; bottom: 0; margin: auto -22px 0; padding: 14px 22px
+  max(14px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent 0%, var(--ink) 34%);
+  display: grid; gap: 10px; }
+
+/* --- Sheet de confirmation — les 5 actions irreversibles (annuler match/
+   resa, retirer un joueur, quitter l'equipe, retirer un defi) confirment
+   AVANT d'agir (spec §11.11), plus jamais un simple toast apres coup. */
+.mb-sheet-bg { position: fixed; inset: 0; z-index: 80; background: var(--sheet-overlay);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  display: flex; align-items: flex-end; animation: mb-sheet-fade var(--dur-2) var(--ease-out); }
+@keyframes mb-sheet-fade { from { opacity: 0; } }
+.mb-sheet { width: 100%; background: var(--ink-2); border-top: 1px solid var(--line-strong);
+  border-radius: var(--r-4) var(--r-4) 0 0;
+  padding: 22px 22px max(22px, env(safe-area-inset-bottom));
+  animation: mb-sheet-up var(--dur-3) var(--ease-out); }
+@keyframes mb-sheet-up { from { transform: translateY(24px); opacity: 0; } }
+.mb-sheet h3 { font-family: var(--font-display); font-size: var(--fs-d3); color: var(--text);
+  text-transform: uppercase; margin: 0 0 6px; }
+.mb-sheet p { font-size: var(--fs-b3); color: var(--text-3); margin: 0 0 18px; }
+.mb-sheet .mb-btn + .mb-btn { margin-top: 10px; }
+.mb-sheet__close { display: block; width: 100%; margin-top: 14px; padding: 6px 0 0;
+  text-align: center; font-size: var(--fs-b3); font-weight: 700; color: var(--text); }
+
+/* --- Gardes anti-troncature A4 (priorite n°1 du passage qualite, spec §2) :
+   le motif eprouve de .mb-match__title applique en couverture a TOUTES les
+   classes locales portant un nom/titre variable — regle generale, plus
+   jamais un patch par ecran. Les heros Bebas multi-lignes sont bornes a
+   2 lignes (clamp) plutot qu'ellipses sur un mot. */
+.mt-player .n b, .mt-player .n span,
+.ch-row .n b, .ch-row .n span,
+.mt-qcard b, .mt-qcard span,
+.mt-bkcard b, .mt-bkcard span,
+.mt-frame b,
+.bk-line b,
+.hm-link span,
+.pf-team span {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-qcard span > span, .mt-bkcard span > span { display: block; }
+.hm-link span, .pf-team span { min-width: 0; }
+.ch-team { min-width: 0; }
+.ch-team b { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; }
+
+/* « Afficher plus » (L3, 25/09/2026) — bouton commun aux listes paginées (notifications, réservations, historique, fil de l'Explorer). */
+.mb-loadmore { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 18px 0 8px; }
+
+/* Lot 12 (vérification « Retour », FR et AR) : la flèche de retour se retourne en arabe (les maquettes arabes la dessinent avec scaleX(-1) : « > » au lieu de « < »). Une seule règle pour tous
+   les boutons Retour ; les écrans qui retournaient déjà leur flèche eux-mêmes (recherche de l'Explorer) gardent leur règle, plus spécifique. */
+[dir="rtl"] svg:has(> use[href="#i-back"]) { transform: scaleX(-1); }

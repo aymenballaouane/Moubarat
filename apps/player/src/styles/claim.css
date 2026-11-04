@@ -1,0 +1,16 @@
+/* « C'est bien toi ? » (règle 21) — la carte « RÉSERVÉ PAR TÉLÉPHONE » de Creer.dc.html / MesMatchs.dc.html. Le rouge sert à agir : seul « C'est moi » est rouge (direction-artistique.md). */
+.cl-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--r-3); background: var(--ink-2); margin: 18px 0 0; }
+.cl-head { display: flex; align-items: center; gap: 10px; }
+.cl-ic { flex: 0 0 36px; width: 36px; height: 36px; border-radius: var(--r-full); background: var(--ink-4, #2A3342); display: grid; place-items: center; color: var(--text); }
+.cl-ic .mb-ic { width: 18px; height: 18px; }
+.cl-tag { flex: 1 1 auto; font-size: 11px; font-weight: 600; letter-spacing: .06em; color: var(--text-3); }
+.cl-line { font-size: 15px; line-height: 1.35; color: var(--text); }
+.cl-ask { font-size: 15px; font-weight: 700; color: var(--text); }
+.cl-actions { display: flex; gap: 10px; }
+.cl-btn { flex: 1 1 0; height: 46px; border-radius: var(--r-3); font-size: 15px; font-weight: 600; cursor: pointer; }
+.cl-btn:disabled { opacity: .6; cursor: default; }
+.cl-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.cl-btn--yes { border: 0; background: var(--primary); color: #fff; }
+.cl-btn--no { border: 1px solid var(--line-strong); background: transparent; color: var(--text); }
+/* Dans la liste des notifications : les deux boutons sous la ligne (38 px, comme « Prendre la place »). */
+.nt2-actions .cl-btn { flex: 0 0 auto; height: 38px; padding: 0 14px; border-radius: var(--r-2); }

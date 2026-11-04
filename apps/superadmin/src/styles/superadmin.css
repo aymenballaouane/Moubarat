@@ -1,0 +1,181 @@
+/* Console SUPERADMIN — additif uniquement sur design/moubarat-ds.css (gelé,
+   jamais modifié). Vocabulaire visuel propre (préfixe sa-), pas une copie de
+   apps/crm/src/styles/crm.css (préfixe cm-) — un backoffice plateforme
+   distinct, pas un déguisement du CRM (mandat §4). */
+
+body {
+  margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; padding: 24px 16px; background: var(--ink);
+}
+
+/* --- En-tête + coquille ----------------------------------------------------- */
+.sa-head { text-align: center; margin-bottom: 18px; }
+.sa-head b {
+  font-family: var(--font-display); font-size: 26px; letter-spacing: .02em;
+  color: var(--text); text-transform: uppercase;
+}
+.sa-head i {
+  display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em;
+  color: var(--primary-glow); font-style: normal; text-transform: uppercase; margin-top: 4px;
+}
+
+.sa-app {
+  width: 100%; max-width: 1080px; background: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: var(--r-4);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .45); overflow: hidden;
+}
+.sa-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 14px 18px; border-bottom: 1px solid var(--line); background: var(--ink-2);
+}
+.sa-brand b { font-family: var(--font-display); font-size: 20px; letter-spacing: .04em; color: var(--text); }
+.sa-brand span { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; color: var(--text-4); text-transform: uppercase; margin-left: 8px; }
+.sa-right { display: flex; gap: 10px; align-items: center; }
+.sa-who { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; }
+
+.sa-body { display: grid; grid-template-columns: 180px 1fr; min-height: 560px; }
+.sa-nav { border-right: 1px solid var(--line); background: var(--ink-2); padding: 12px 10px; display: flex; flex-direction: column; gap: 3px; }
+.sa-nav button {
+  padding: 10px 12px; border-radius: var(--r-2); background: transparent; border: 1px solid transparent;
+  color: var(--text-3); font-size: var(--fs-b3); text-align: left; cursor: pointer; min-height: var(--tap-min);
+}
+.sa-nav button:hover { color: var(--text); background: var(--ink-3); }
+.sa-nav button.on { color: var(--text); background: var(--primary-wash); border-color: var(--primary-line); }
+
+.sa-main { padding: 20px; min-width: 0; }
+
+/* --- Connexion --------------------------------------------------------------- */
+.sa-login { display: flex; min-height: 100vh; align-items: center; justify-content: center; width: 100%; }
+.sa-login__card {
+  width: 100%; max-width: 360px; background: var(--ink-2); border: 1px solid var(--line-strong);
+  border-radius: var(--r-4); padding: 32px 28px; display: flex; flex-direction: column; gap: 16px;
+  box-shadow: var(--e-3);
+}
+.sa-login__eyebrow {
+  font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: var(--ls-tag);
+  color: var(--primary-glow); text-transform: uppercase; margin: 0;
+}
+.sa-login__title { font-family: var(--font-display); font-size: var(--fs-d2); color: var(--text); margin: 0 0 4px; text-transform: uppercase; }
+
+/* --- Contenu commun ------------------------------------------------------------ */
+.sa-view-note { color: var(--text-3); font-size: var(--fs-b2); margin: 0 0 16px; }
+.sa-view-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.sa-sec {
+  font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: var(--ls-tag); text-transform: uppercase;
+  color: var(--primary-glow); margin: 0 0 10px; display: flex; align-items: center; gap: 8px;
+}
+.sa-sec::before { content: ''; width: 14px; height: 2px; background: var(--primary); flex-shrink: 0; }
+.sa-empty { color: var(--text-4); font-size: var(--fs-b2); }
+.sa-loading { color: var(--text-3); font-size: var(--fs-b2); }
+.sa-error { color: var(--danger); font-size: var(--fs-b2); }
+.sa-text { color: var(--text-2); font-size: var(--fs-b2); line-height: var(--lh-body); margin: 0; }
+
+/* --- Cartes chiffrées ---------------------------------------------------------- */
+.sa-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.sa-card {
+  background: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-3);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
+}
+.sa-card__label { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: var(--ls-tag); text-transform: uppercase; color: var(--text-4); }
+.sa-card__value { font-family: var(--font-display); font-size: var(--fs-d2); color: var(--text); line-height: 1; }
+.sa-card__sub { font-size: var(--fs-micro); color: var(--text-3); margin-top: 2px; }
+
+.sa-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 3px; }
+.sa-dot--active { background: var(--success); }
+.sa-dot--pending { background: var(--gold); }
+.sa-dot--suspended { background: var(--danger); }
+
+/* --- Activité récente ------------------------------------------------------- */
+.sa-activity { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sa-activity__row {
+  display: grid; grid-template-columns: 160px 1fr auto; gap: 10px; align-items: baseline;
+  padding: 9px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-b3);
+}
+.sa-activity__row:last-child { border-bottom: 0; }
+.sa-activity__action { color: var(--text); font-weight: 600; }
+.sa-activity__summary { color: var(--text-2); }
+.sa-activity__at { font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--text-4); white-space: nowrap; }
+
+/* --- Tableaux ------------------------------------------------------------------ */
+.sa-table { width: 100%; border-collapse: collapse; font-size: var(--fs-b3); }
+.sa-table th {
+  text-align: left; font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: var(--ls-tag);
+  text-transform: uppercase; color: var(--text-4); padding: 8px 10px; border-bottom: 1px solid var(--line-strong);
+}
+.sa-table td { padding: 10px; border-bottom: 1px solid var(--line); color: var(--text-2); }
+.sa-table td .sa-badge { white-space: nowrap; }
+.sa-table-wrap { overflow-x: auto; }
+/* « Afficher plus » (L3, 25/09/2026) — Utilisateurs et Journal. */
+.sa-more { display: flex; justify-content: center; margin: 16px 0 6px; }
+.sa-table__row { cursor: pointer; }
+.sa-table__row:hover td { background: var(--ink-3); color: var(--text); }
+
+/* --- Badges de statut (sémantique gelée : positif=vert, attente=or, danger=rouge) -- */
+.sa-badge {
+  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: var(--r-full);
+  font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: var(--ls-tag); text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.sa-badge--active { color: var(--success); background: var(--success-wash); border-color: rgba(31,209,122,.35); }
+.sa-badge--pending { color: var(--gold); background: var(--gold-wash); border-color: rgba(242,183,5,.35); }
+.sa-badge--suspended { color: var(--danger); background: var(--danger-wash); border-color: var(--danger-line); }
+.sa-badge--rejected { color: var(--text-4); background: var(--ink-4); border-color: var(--line-strong); }
+
+/* --- Création de centre ---------------------------------------------------- */
+.sa-create-form { margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; }
+.sa-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* --- Détail centre ----------------------------------------------------------- */
+.sa-detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin: 14px 0 18px; }
+.sa-detail-title { font-family: var(--font-display); font-size: var(--fs-d2); color: var(--text); margin: 0; text-transform: uppercase; }
+.sa-detail-sub { color: var(--text-3); font-size: var(--fs-b3); margin: 4px 0 0; }
+
+.sa-actions { margin-bottom: 20px; }
+.sa-actions__row { display: flex; gap: 10px; flex-wrap: wrap; }
+.sa-confirm { display: inline-flex; align-items: center; gap: 10px; font-size: var(--fs-b3); color: var(--text-2); }
+/* Identifiants d'un compte CRM fraîchement créé/réinitialisé (20/09/2026) : le mot de passe
+   n'est affiché qu'ici, une fois — bordure or (vigilance), jamais rouge (rien n'est en erreur). */
+.sa-creds { margin: 12px 0; padding: 14px; background: var(--ink); border: 1px solid var(--gold); border-radius: var(--r-3); }
+.sa-creds__title { margin: 0 0 4px; font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); }
+.sa-creds__warn { margin: 0 0 10px; font-size: var(--fs-b3); color: var(--gold); }
+.sa-creds__grid { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0 0 12px; }
+.sa-creds__grid dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); align-self: center; }
+.sa-creds__grid dd { margin: 0; user-select: all; }
+.sa-mono { font-family: var(--font-mono); font-size: var(--fs-b3); color: var(--text); }
+.sa-nav-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 8px; border-radius: var(--r-full); background: var(--primary); color: #fff; font-family: var(--font-mono); font-size: 10px; font-weight: 700; }
+.sa-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 14px 0; }
+.sa-tabs button { padding: 7px 12px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-full); color: var(--text-3); font-size: var(--fs-b3); cursor: pointer; }
+.sa-tabs button.on { border-color: var(--primary-line); background: var(--primary-wash); color: var(--text); }
+.sa-request { margin-bottom: 12px; }
+.sa-request__grid { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 12px; font-size: var(--fs-b3); }
+.sa-request__grid dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); align-self: center; }
+.sa-request__grid dd { margin: 0; color: var(--text-2); }
+.sa-request__grid a { color: var(--text); }
+.sa-request__msg { white-space: pre-wrap; }
+.sa-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: var(--fs-b3); }
+.sa-facts dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); align-self: center; }
+.sa-facts dd { margin: 0; color: var(--text-2); }
+.sa-facts a { color: var(--text); }
+.sa-facts__long { white-space: pre-wrap; }
+.sa-check { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-b3); color: var(--text-2); cursor: pointer; }
+.sa-check input { margin-top: 3px; accent-color: var(--primary); }
+
+/* Fiche « Prêt à publier » (A9) : l'état est porté par la pastille ET par un mot en mono — jamais par la seule couleur. */
+.sa-checklist { list-style: none; margin: 0 0 12px; padding: 0; }
+.sa-checklist__row {
+  display: grid; grid-template-columns: 14px 1fr auto; column-gap: 10px; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-b3); color: var(--text-2);
+}
+.sa-checklist__row:last-child { border-bottom: 0; }
+.sa-checklist__row .sa-dot { margin: 0; }
+.sa-checklist__state { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: var(--ls-tag); text-transform: uppercase; color: var(--text-4); }
+.sa-checklist__row.is-blocking .sa-checklist__state { color: var(--danger); }
+.sa-checklist__row.is-advice .sa-checklist__state { color: var(--gold); }
+.sa-checklist__detail { grid-column: 2 / -1; color: var(--text-3); font-size: var(--fs-b3); margin-top: 2px; }
+
+.sa-hours { list-style: none; margin: 0; padding: 0; }
+.sa-hours li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-b3); color: var(--text-2); }
+.sa-hours li:last-child { border-bottom: 0; }
+.sa-hours li span:first-child { color: var(--text-4); text-transform: uppercase; font-family: var(--font-mono); font-size: var(--fs-tag); }
+
+section > .sa-card { margin-bottom: 14px; }

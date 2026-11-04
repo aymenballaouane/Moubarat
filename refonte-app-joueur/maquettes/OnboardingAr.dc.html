@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Moubarat · التسجيل والدخول</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;family=Changa:wght@600&amp;family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background: #0A0A0F}
+a{color:#FFFFFF;text-decoration:none}
+button{font-family:inherit}
+input{font-family:'Inter', system-ui, sans-serif}
+input::placeholder{color:#8A94A6}
+</style>
+</helmet>
+<div dir="rtl" lang="ar" style="{{ racine }}">
+
+  <!-- O1 · BIENVENUE -->
+  <sc-if value="{{ estBienvenue }}" hint-placeholder-val="{{ true }}">
+    <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="ملعب Moubarat مضاء ليلًا" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 40%;">
+    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,0.85) 0%, rgba(10,10,15,0.25) 30%, rgba(10,10,15,0.10) 45%, rgba(10,10,15,0.85) 68%, #0A0A0F 85%);"></div>
+    <div style="position: absolute; right: 50%; top: 38%; width: 420px; height: 420px; margin: -210px -210px 0 0; border-radius: 999px; background: radial-gradient(closest-side, rgba(255,255,255,0.10), rgba(255,255,255,0));"></div>
+    <div style="position: absolute; top: 20px; left: 16px; display: flex; padding: 3px; border-radius: 999px; background: rgba(0,0,0,0.66); border: 1px solid rgba(138,148,166,0.16);">
+      <span style="padding: 5px 11px; border-radius: 999px; background: #F5F7FA; color: #0A0A0F; font-size: 12px; font-weight: 700;">عربي</span>
+      <a href="Onboarding.dc.html" style="padding: 5px 11px; font-size: 13px; font-weight: 700; color: #F5F7FA;">FR</a>
+    </div>
+    <div style="position: absolute; right: 0; left: 0; top: 96px; display: flex; flex-direction: column; align-items: center; gap: 18px;">
+      <svg width="76" height="76" viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,6 92,46 8,46" fill="#FFFFFF"></polygon><polygon points="8,54 92,54 50,94" fill="#FF2B00"></polygon></svg>
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <span style="font-family: 'Bebas Neue', 'Changa', sans-serif; font-size: 64px; line-height: 1.2;  color: #F5F7FA;">MOUBARAT</span>
+        <span style="font-family: 'Bebas Neue', 'Changa', sans-serif; font-size: 22px; line-height: 1; letter-spacing: 0.62em; padding-right: 0.62em;  padding-right: 0.62em; color: #FF2B00;">SPORT</span>
+      </span>
+    </div>
+    <div style="position: absolute; right: 16px; left: 16px; bottom: 34px; display: flex; flex-direction: column; gap: 12px; text-align: center;">
+      <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 22px; line-height: 1.2; color: #F5F7FA; font-weight: 700; ">مباراتك<br>تنتظرك الليلة</span>
+      <span style="height: 10px;"></span>
+      <button onClick="{{ versNumero }}" style="width: 100%; height: 56px; border: 0; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px;  cursor: pointer; font-weight: 600;">إنشاء حسابي</button>
+      <button onClick="{{ versConnexion }}" style="width: 100%; height: 54px; border-radius: 12px; border: 1px solid rgba(138,148,166,0.30); background: transparent; color: #F5F7FA; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 15px;  cursor: pointer; font-weight: 600;">لديّ حساب بالفعل</button>
+    </div>
+  </sc-if>
+
+  <!-- O2 · NUMÉRO + ACCORDS -->
+  <sc-if value="{{ estNumero }}" hint-placeholder-val="{{ false }}">
+    <header style="display: flex; align-items: center; gap: 14px; padding: 20px 16px 0 16px;">
+      <button onClick="{{ retour }}" aria-label="رجوع" style="width: 44px; height: 44px; flex: 0 0 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); background: transparent; display: grid; place-items: center; cursor: pointer; padding: 0;"><svg style="transform: scaleX(-1);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg></button>
+      <span style="flex: 1 1 auto; height: 4px; border-radius: 999px; background: #1C2533; overflow: hidden;"><span style="{{ progres }}"></span></span>
+      <span style="font-size: 13px; font-weight: 700; color: #F5F7FA;">{{ etapeNum }}</span>
+    </header>
+    <section style="padding: 28px 16px 0 16px; text-align: center;">
+      <h1 style="margin: 0; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; ">رقمك</h1>
+    </section>
+    <section style="padding: 22px 16px 0 16px;">
+      <div style="display: flex; gap: 8px;">
+        <span style="flex: 0 0 auto; height: 54px; padding: 0 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); display: flex; align-items: center; font-size: 17px; font-weight: 700; color: #F5F7FA;">+213</span>
+        <input value="550 12 34 56" dir="ltr" inputmode="tel" aria-label="رقم هاتفك" style="height: 54px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); color: #F5F7FA; font-size: 17px; font-weight: 600; outline: none; width: 100%;">
+      </div>
+    </section>
+    <section style="padding: 18px 16px 0 16px; text-align: center;">
+      <a href="NoticeDonneesAr.dc.html" style="font-size: 14px; font-weight: 700; color: #F5F7FA; text-decoration: underline; text-underline-offset: 3px;">ماذا نفعل ببياناتك</a>
+    </section>
+    <section style="padding: 16px 16px 0 16px; display: flex; flex-direction: column; gap: 4px;">
+      <sc-for list="{{ accords }}" as="c" hint-placeholder-count="4">
+        <button onClick="{{ c.pick }}" style="display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 10px 2px; border: 0; background: transparent; text-align: right; cursor: pointer;">
+          <span style="{{ c.boite }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#050505" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,13 9,18 20,6"></polyline></svg></span>
+          <span style="font-size: 14px; line-height: 1.4; color: #F5F7FA;">{{ c.texte }}<span style="{{ c.tagStyle }}">{{ c.tag }}</span></span>
+        </button>
+      </sc-for>
+    </section>
+    <footer style="position: absolute; right: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 16px 22px 16px; background: rgba(10,10,15,0.96); border-top: 1px solid rgba(138,148,166,0.16);">
+      <button onClick="{{ versCode }}" style="{{ ctaNumero }}">استلم رمزي</button>
+    </footer>
+  </sc-if>
+
+  <!-- O3 · CODE SMS -->
+  <sc-if value="{{ estCode }}" hint-placeholder-val="{{ false }}">
+    <header style="display: flex; align-items: center; gap: 14px; padding: 20px 16px 0 16px;">
+      <button onClick="{{ retour }}" aria-label="رجوع" style="width: 44px; height: 44px; flex: 0 0 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); background: transparent; display: grid; place-items: center; cursor: pointer; padding: 0;"><svg style="transform: scaleX(-1);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg></button>
+      <span style="flex: 1 1 auto; height: 4px; border-radius: 999px; background: #1C2533; overflow: hidden;"><span style="{{ progres }}"></span></span>
+      <span style="font-size: 13px; font-weight: 700; color: #F5F7FA;">{{ etapeNum }}</span>
+    </header>
+    <section style="padding: 28px 16px 0 16px; text-align: center;">
+      <h1 style="margin: 0; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; ">رمزك</h1>
+      <p style="margin: 10px 0 0 0; font-size: 15px; line-height: 1.45; color: #F5F7FA;">أرسلناه للتو إلى <b style="color: #F5F7FA;">⁦0550 12 34 56⁩</b>.</p>
+    </section>
+    <section style="padding: 30px 16px 0 16px; display: flex; justify-content: center; gap: 8px;">
+      <sc-for list="{{ chiffres }}" as="d" hint-placeholder-count="6">
+        <span style="{{ d.style }}">{{ d.v }}</span>
+      </sc-for>
+    </section>
+    <p style="margin: 22px 0 0 0; padding: 0 16px; font-size: 15px; text-align: center; color: #F5F7FA;">لم يصلك؟ يمكنك طلبه من جديد بعد <b style="color: #F5F7FA;">0:42</b>.</p>
+    <p style="margin: 10px 0 0 0; padding: 0 16px; font-size: 14px; text-align: center; color: #C5CCD6;"><a href="#" onClick="{{ versNumero }}" style="font-weight: 700; text-decoration: underline; text-underline-offset: 3px;">تغيير الرقم</a></p>
+    <footer style="position: absolute; right: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 16px 22px 16px; background: rgba(10,10,15,0.96); border-top: 1px solid rgba(138,148,166,0.16);">
+      <button onClick="{{ versAcces }}" style="width: 100%; height: 56px; border: 0; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px;  cursor: pointer; font-weight: 600;">تحقّق</button>
+    </footer>
+  </sc-if>
+
+  <!-- O4 · TES ACCÈS -->
+  <sc-if value="{{ estAcces }}" hint-placeholder-val="{{ false }}">
+    <header style="display: flex; align-items: center; gap: 14px; padding: 20px 16px 0 16px;">
+      <button onClick="{{ retour }}" aria-label="رجوع" style="width: 44px; height: 44px; flex: 0 0 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); background: transparent; display: grid; place-items: center; cursor: pointer; padding: 0;"><svg style="transform: scaleX(-1);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg></button>
+      <span style="flex: 1 1 auto; height: 4px; border-radius: 999px; background: #1C2533; overflow: hidden;"><span style="{{ progres }}"></span></span>
+      <span style="font-size: 13px; font-weight: 700; color: #F5F7FA;">{{ etapeNum }}</span>
+    </header>
+    <section style="padding: 28px 16px 0 16px; text-align: center;">
+      <h1 style="margin: 0; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; ">بيانات الدخول</h1>
+    </section>
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">ما اسمك؟</span>
+      <div style="display: flex; gap: 8px;">
+        <input value="أيمن" aria-label="الاسم" style="height: 54px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); color: #F5F7FA; font-size: 17px; font-weight: 600; outline: none; width: 100%;">
+        <input value="بلقاسم" aria-label="اللقب" style="height: 54px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); color: #F5F7FA; font-size: 17px; font-weight: 600; outline: none; width: 100%;">
+      </div>
+    </section>
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">اسم المستخدم؟</span>
+      <div style="position: relative;">
+        <span style="position: absolute; right: 14px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 17px; font-weight: 700; color: #8A94A6;">@</span>
+        <input value="aymen.b" dir="ltr" aria-label="اسم المستخدم" style="height: 54px; box-sizing: border-box; padding: 0 34px 0 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); color: #F5F7FA; font-size: 17px; font-weight: 600; outline: none; width: 100%;">
+        <span style="position: absolute; left: 14px; top: 0; bottom: 0; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: #00C896;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00C896" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,13 9,18 20,6"></polyline></svg>متاح</span>
+      </div>
+    </section>
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">اختر كلمة مرور</span>
+      <div style="position: relative;">
+        <input value="••••••••••" dir="ltr" aria-label="كلمة المرور" style="height: 54px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); color: #F5F7FA; font-size: 17px; font-weight: 600; outline: none; width: 100%; ">
+        <span style="position: absolute; left: 14px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 13px; font-weight: 700; color: #F5F7FA;">إظهار</span>
+      </div>
+      <div style="display: flex; justify-content: center; gap: 8px;">
+        <span style="padding: 5px 10px; border-radius: 999px; background: rgba(0,200,150,0.14); color: #00C896; font-size: 12px; font-weight: 700;">✓ 8 أحرف</span>
+        <span style="padding: 5px 10px; border-radius: 999px; background: rgba(0,200,150,0.14); color: #00C896; font-size: 12px; font-weight: 700;">✓ رقم واحد</span>
+        <span style="padding: 5px 10px; border-radius: 999px; background: rgba(0,200,150,0.14); color: #00C896; font-size: 12px; font-weight: 700;">✓ حرف كبير واحد</span>
+      </div>
+    </section>
+    <footer style="position: absolute; right: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 16px 22px 16px; background: rgba(10,10,15,0.96); border-top: 1px solid rgba(138,148,166,0.16);">
+      <button onClick="{{ versJeu }}" style="width: 100%; height: 56px; border: 0; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px;  cursor: pointer; font-weight: 600;">متابعة</button>
+    </footer>
+  </sc-if>
+
+  <!-- O5 · TON JEU -->
+  <sc-if value="{{ estJeu }}" hint-placeholder-val="{{ false }}">
+    <header style="display: flex; align-items: center; gap: 14px; padding: 20px 16px 0 16px;">
+      <button onClick="{{ retour }}" aria-label="رجوع" style="width: 44px; height: 44px; flex: 0 0 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); background: transparent; display: grid; place-items: center; cursor: pointer; padding: 0;"><svg style="transform: scaleX(-1);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg></button>
+      <span style="flex: 1 1 auto; height: 4px; border-radius: 999px; background: #1C2533; overflow: hidden;"><span style="{{ progres }}"></span></span>
+      <span style="font-size: 13px; font-weight: 700; color: #F5F7FA;">{{ etapeNum }}</span>
+    </header>
+    <section style="padding: 28px 16px 0 16px; text-align: center;">
+      <h1 style="margin: 0; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; ">لعبك</h1>
+    </section>
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">أنت…</span>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 4px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16);">
+        <sc-for list="{{ genres }}" as="g" hint-placeholder-count="2">
+          <button onClick="{{ g.pick }}" style="{{ g.style }}">{{ g.nom }}</button>
+        </sc-for>
+      </div>
+    </section>
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">ماذا تلعب؟</span>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <sc-for list="{{ sports }}" as="s" hint-placeholder-count="2">
+          <button onClick="{{ s.pick }}" style="{{ s.style }}"><sc-if value="{{ s.estFoot }}" hint-placeholder-val="{{ true }}"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.6l3.6 2.6-1.4 4.2H9.8l-1.4-4.2Z"></path><path d="M12 3v4.6M15.6 10.2l4.6-1.4M14.2 14.4l2.8 3.9M9.8 14.4l-2.8 3.9M8.4 10.2L3.8 8.8"></path></svg></sc-if><sc-if value="{{ s.estPadel }}" hint-placeholder-val="{{ false }}"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="13" rx="6"></rect><line x1="12" y1="15.5" x2="12" y2="21.5" stroke-width="3"></line></svg></sc-if><span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px; line-height: 1.2; font-weight: 600;">{{ s.nom }}</span></button>
+        </sc-for>
+      </div>
+    </section>
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">في أي مدينة؟</span>
+      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+        <sc-for list="{{ villes }}" as="q" hint-placeholder-count="6">
+          <button onClick="{{ q.pick }}" style="{{ q.style }}">{{ q.nom }}</button>
+        </sc-for>
+      </div>
+    </section>
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">مستواك؟</span>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{ niveaux }}" as="n" hint-placeholder-count="3">
+          <button onClick="{{ n.pick }}" style="{{ n.tuile }}">
+            <span style="display: flex; gap: 3px; align-items: flex-end; height: 16px;"><span style="{{ n.b1 }}"></span><span style="{{ n.b2 }}"></span><span style="{{ n.b3 }}"></span></span>
+            <span style="font-size: 14px; font-weight: 700;">{{ n.nom }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+    <footer style="position: absolute; right: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 16px 22px 16px; background: rgba(10,10,15,0.96); border-top: 1px solid rgba(138,148,166,0.16);">
+      <a href="{{ suiteJeu }}" style="width: 100%; height: 56px; border: 0; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px;  cursor: pointer; text-decoration: none; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-weight: 600;">هيا بنا</a>
+    </footer>
+  </sc-if>
+
+  <!-- L1 · CONNEXION -->
+  <sc-if value="{{ estConnexion }}" hint-placeholder-val="{{ false }}">
+    <header style="display: flex; align-items: center; padding: 20px 16px 0 16px;"><button onClick="{{ retour }}" aria-label="رجوع" style="width: 44px; height: 44px; flex: 0 0 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); background: transparent; display: grid; place-items: center; cursor: pointer; padding: 0;"><svg style="transform: scaleX(-1);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg></button></header>
+    <section style="padding: 28px 16px 0 16px; text-align: center;">
+      <h1 style="margin: 0; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; ">سعداء برؤيتك من جديد</h1>
+    </section>
+    <section style="padding: 26px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">رقمك أو اسم المستخدم</span>
+      <input value="@aymen.b" dir="ltr" aria-label="الرقم أو اسم المستخدم" style="height: 54px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); color: #F5F7FA; font-size: 17px; font-weight: 600; outline: none; width: 100%;">
+    </section>
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">كلمة المرور</span>
+      <div style="position: relative;">
+        <input value="••••••••••" dir="ltr" aria-label="كلمة المرور" style="height: 54px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); color: #F5F7FA; font-size: 17px; font-weight: 600; outline: none; width: 100%; ">
+        <span style="position: absolute; left: 14px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 13px; font-weight: 700; color: #F5F7FA;">إظهار</span>
+      </div>
+      <a href="MdpOublieAr.dc.html" style="padding-top: 4px; font-size: 14px; font-weight: 700; text-align: center; text-decoration: underline; text-underline-offset: 3px;">نسيت كلمة المرور؟</a>
+    </section>
+    <footer style="position: absolute; right: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 16px 22px 16px; background: rgba(10,10,15,0.96); border-top: 1px solid rgba(138,148,166,0.16); display: flex; flex-direction: column; gap: 12px;">
+      <a href="{{ suiteHref }}" style="width: 100%; height: 56px; border: 0; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px;  cursor: pointer; text-decoration: none; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-weight: 600;">تسجيل الدخول</a>
+      <span style="font-size: 14px; text-align: center; color: #F5F7FA;">ليس لديك حساب بعد؟ <a href="#" onClick="{{ versNumero }}" style="font-weight: 700; text-decoration: underline; text-underline-offset: 3px;">سجّل الآن</a></span>
+      <a href="NoticeDonneesAr.dc.html" style="font-size: 13px; text-align: center; color: #F5F7FA;">بياناتك · شروط الاستخدام</a>
+    </footer>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"etape":{"editor":"enum","options":["bienvenue","numero","code","acces","jeu","connexion"],"default":"bienvenue","section":"Écran"},"suite":{"editor":"enum","options":["accueil","match"],"default":"accueil","section":"Écran"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { etape: null, a: [true, true, true, false], sports: ['foot'], ville: 'الجزائر', genre: 'h', niveau: 'متوسط' }; }
+  renderVals() {
+    const etape = this.state.etape ?? this.props.etape ?? 'bienvenue';
+    const go = e => () => this.setState({ etape: e });
+    const ordre = ['numero', 'code', 'acces', 'jeu'];
+    const k = ordre.indexOf(etape);
+    const accordsTxt = [
+      ['أوافق على شروط الاستخدام وسياسة الخصوصية.', true],
+      ['عمري 18 سنة أو أكثر.', true],
+      ['أوافق على أن يظهر رقمي لمنظّم المباريات التي أنضم إليها، وللاعبي المباريات التي أنظّمها، وللمراكز التي أحجز فيها.', true],
+      ['أريد تلقي عروض المراكز القريبة مني.', false]
+    ];
+    const accords = accordsTxt.map(([texte, oblig], i) => { const on = this.state.a[i]; return { texte, tag: oblig ? '' : '  · اختياري', tagStyle: 'font-size: 13px; color: #C5CCD6;',
+      boite: 'flex: 0 0 24px; width: 24px; height: 24px; box-sizing: border-box; border-radius: 7px; display: grid; place-items: center; margin-top: 1px; ' + (on ? 'background: #FF2B00; border: 0;' : 'background: transparent; border: 2px solid rgba(138,148,166,0.30);') + (on ? '' : ' color: transparent;'),
+      pick: () => { const a = this.state.a.slice(); a[i] = !a[i]; this.setState({ a }); } }; });
+    const okNumero = accordsTxt.every(([t, o], i) => !o || this.state.a[i]);
+    const RED = 'width: 100%; height: 56px; border: 0; border-radius: 12px; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; ';
+    const chiffres = '482917'.split('').map((v, i) => ({ v: i < 4 ? v : '', style: 'width: 48px; height: 62px; box-sizing: border-box; border-radius: 12px; display: grid; place-items: center; font-family: \'Bebas Neue\', \'Changa\', sans-serif; font-size: 30px; color: #F5F7FA; background: #131A24; ' + (i === 4 ? 'border: 2px solid rgba(138,148,166,0.30);' : 'border: 1px solid rgba(138,148,166,0.16);') }));
+    const badge = pd => 'padding: 2px 6px; border-radius: 6px; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 11px; font-weight: 600;  color: #F5F7FA; background: ' + (pd ? 'rgba(10,10,15,0.78)' : 'rgba(10,10,15,0.78)') + ';';
+    const sports = [['foot', 'كرة القدم', 'كرة قدم', false], ['padel', 'بادل', 'بادل', true]].map(([id, nom, tag, pd]) => { const on = this.state.sports.includes(id); return { nom, tag, estFoot: !pd, estPadel: pd, badge: on && !pd ? 'padding: 2px 6px; border-radius: 6px; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 11px; font-weight: 600;  color: #F5F7FA; background: #0A0A0F;' : badge(pd),
+      pick: () => this.setState({ sports: on ? this.state.sports.filter(x => x !== id) : this.state.sports.concat(id) }),
+      style: 'display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 92px; border: 0; border-radius: 12px; cursor: pointer; ' + (on ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; box-shadow: inset 0 0 0 1px rgba(255,43,0,0.45);' : 'background: #131A24; color: #F5F7FA; box-shadow: inset 0 0 0 1px rgba(138,148,166,0.30);') }; });
+    const villes = ['الجزائر', 'وهران', 'قسنطينة', 'عنابة', 'البليدة', 'سطيف', 'أخرى'].map(nom => { const on = this.state.ville === nom; return { nom, pick: () => this.setState({ ville: nom }),
+      style: 'height: 42px; padding: 0 16px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 700; ' + (on ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; border: 1px solid rgba(255,43,0,0.45);' : 'background: transparent; color: #F5F7FA; border: 1px solid rgba(138,148,166,0.30);') }; });
+    const genres = [['h', 'رجل'], ['f', 'امرأة']].map(([id, nom]) => { const on = this.state.genre === id; return { nom, pick: () => this.setState({ genre: id }),
+      style: 'height: 44px; border: 0; border-radius: 9px; cursor: pointer; font-size: 15px; font-weight: 700; ' + (on ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; box-shadow: inset 0 0 0 1px rgba(255,43,0,0.45);' : 'background: transparent; color: #C5CCD6;') }; });
+    const barre = (h, on, a) => 'display: block; width: 5px; height: ' + h + 'px; border-radius: 2px; background: ' + (on ? '#FF2B00' : 'rgba(138,148,166,0.30)') + ';';
+    const niveaux = ['هواة', 'متوسط', 'تنافسي'].map((nom, i) => { const a = this.state.niveau === nom; return { nom, pick: () => this.setState({ niveau: nom }),
+      tuile: 'display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px; border: 0; border-radius: 12px; cursor: pointer; text-align: right; ' + (a ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; box-shadow: inset 0 0 0 1px rgba(255,43,0,0.45);' : 'background: #131A24; color: #F5F7FA; box-shadow: inset 0 0 0 1px rgba(138,148,166,0.30);'),
+      b1: barre(6, true, a), b2: barre(11, i >= 1, a), b3: barre(16, i >= 2, a) }; });
+    const hauteur = { bienvenue: 844, numero: 844, code: 844, acces: 844, jeu: 844, connexion: 844 }[etape];
+    return {
+      racine: 'position: relative; width: 390px; height: ' + hauteur + 'px; overflow: hidden; background: #0A0A0F; color: #8A94A6; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 15px; line-height: 1.5;',
+      estBienvenue: etape === 'bienvenue', estNumero: etape === 'numero', estCode: etape === 'code', estAcces: etape === 'acces', estJeu: etape === 'jeu', estConnexion: etape === 'connexion',
+      etapeNum: (k + 1) + ' / 4', progres: 'display: block; height: 100%; width: ' + ((k + 1) * 25) + '%; background: #00C896; border-radius: 999px;',
+      accords, chiffres, sports, villes, genres, niveaux,
+      ctaNumero: RED + (okNumero ? 'background: #FF2B00; color: #FFFFFF; box-shadow: none;' : 'background: #1C2533; color: #5B6475;'),
+      retour: () => this.setState({ etape: k > 0 ? ordre[k - 1] : 'bienvenue' }),
+      suiteHref: (this.props.suite ?? 'accueil') === 'match' ? 'DetailMatchAr.dc.html' : 'MainAr.dc.html', suiteJeu: (this.props.suite ?? 'accueil') === 'match' ? 'DetailMatchAr.dc.html' : 'VideAr.dc.html',
+      versNumero: go('numero'), versCode: () => okNumero && this.setState({ etape: 'code' }), versAcces: go('acces'), versJeu: go('jeu'), versConnexion: go('connexion')
+    };
+  }
+}
+</script>
+</body>
+</html>

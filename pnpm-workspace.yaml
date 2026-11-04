@@ -1,0 +1,10 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+  - "tools/*"
+allowBuilds:
+  # esbuild télécharge son binaire natif à l'installation (requis par tsx et vitest).
+  esbuild: true
+  # Playwright télécharge Chromium à l'installation (tools/ui-board) — binaire mis en cache
+  # une seule fois pour toute la machine (~/AppData/Local/ms-playwright), jamais dans le dépôt.
+  playwright: true

@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.moubarat.app",
+      "sha256_cert_fingerprints": ["REMPLACER:PAR:LEMPREINTE:SHA-256:DE:LA:CLE:DE:SIGNATURE:GOOGLE:PLAY"]
+    }
+  }
+]

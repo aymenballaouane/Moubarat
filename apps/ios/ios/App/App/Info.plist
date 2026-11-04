@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CAPACITOR_DEBUG</key>
+	<string>$(CAPACITOR_DEBUG)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+        <string>Moubarat</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<!-- Audit final 26/10/2026 (P1-11, STO-3, GO d'Aymen 27/10/2026) : l'app web demande la position (navigator.geolocation) pour trier les terrains et
+	     les matchs par distance. iOS REFUSE l'app (et le système coupe la demande) sans ce texte d'usage. Règle 33 : la position reste sur le téléphone, jamais
+	     envoyée ni enregistrée — le texte le dit. Arabe : à ajouter dans Xcode (ar.lproj/InfoPlist.strings, clé NSLocationWhenInUseUsageDescription) — docs/IOS_HANDOVER.md. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Moubarat utilise ta position, sur ton téléphone seulement, pour te montrer les terrains et les matchs les plus proches. Elle n’est jamais envoyée ni enregistrée.</string>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<!-- Chantier iOS (04/09/2026) : UIMainStoryboardFile retiré à dessein — la
+	     fenêtre est construite EN CODE (AppDelegate.swift → RootTabBarController),
+	     jamais via Main.storyboard, pour ne jamais éditer d'XML Interface
+	     Builder à l'aveugle. Main.storyboard reste dans le projet (référencé
+	     par le template Capacitor) mais n'est plus le point d'entrée réel —
+	     voir docs/IOS_HANDOVER.md §2. -->
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+	</array>
+	<!-- Chantier iOS : jetons APNs + notifications en arrière-plan (rappel H-2,
+	     un joueur a rejoint le match…). Sans cette clé, l'enregistrement
+	     `registerForRemoteNotifications()` fonctionne pour les notifications
+	     affichées, mais le contenu distant en arrière-plan (silencieux) serait
+	     ignoré — aucune notification silencieuse n'est envoyée par le serveur
+	     aujourd'hui (apns-priority 10, jamais 5), donc cette clé n'est utile
+	     qu'en anticipation ; à retirer si elle s'avère inutile. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+</dict>
+</plist>

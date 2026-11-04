@@ -1,0 +1,229 @@
+{
+  "_lisezmoi": "Jetons de l’app joueur Moubarat, version finale du 23/10/2026 (palette d’Aymen). Pour l’app joueur, ils remplacent les valeurs « dark » de tokens.json et les couleurs, polices et boutons de design-system/README.md, qui restent ceux du CRM. Explications dans docs/direction-artistique.md.",
+  "apparence": {
+    "reglage": "Profil → Apparence : auto | clair | sombre",
+    "defaut": "auto",
+    "auto": "suit le réglage clair/sombre du téléphone (prefers-color-scheme), pas d’heure fixe"
+  },
+  "palette": {
+    "rouge": "#FF2B00 (action, marque, « c’est toi »)",
+    "noir-profond": "#0A0A0F (fond)",
+    "bleu-ardoise": "#131A24 (surfaces, cartes)",
+    "or": "#F2B705 (élément clé)",
+    "blanc-casse": "#F5F7FA (texte)",
+    "gris": "#8A94A6 (texte secondaire)",
+    "vert": "#00C896 (disponible, succès)"
+  },
+  "themes": {
+    "sombre": {
+      "page": "#0A0A0F",
+      "carte": {
+        "background": "#131A24",
+        "border": "1px solid rgba(138,148,166,0.16)",
+        "boxShadow": "none"
+      },
+      "surface-2": "#1C2533",
+      "bordure": "rgba(138,148,166,0.16)",
+      "bordure-forte": "rgba(138,148,166,0.30)",
+      "texte": "#F5F7FA",
+      "texte-doux": "#C5CCD6",
+      "texte-secondaire": "#8A94A6",
+      "texte-desactive": "#5B6475",
+      "avatar": {
+        "background": "#2A3342",
+        "color": "#F5F7FA"
+      },
+      "barre-bas": {
+        "background": "rgba(10,10,15,0.96)",
+        "borderTop": "1px solid rgba(138,148,166,0.16)"
+      },
+      "panneau": "#131A24",
+      "voile-panneau": "rgba(0,0,0,0.66)",
+      "etiquette-photo": {
+        "background": "rgba(10,10,15,0.72)",
+        "color": "#FFFFFF"
+      },
+      "rouge-texte": "#FF6A4D",
+      "vert-texte": "#00C896",
+      "rouge-definitif-texte": "#FF8A7A"
+    },
+    "clair": {
+      "page": "#F5F7FA",
+      "carte": {
+        "background": "#FFFFFF",
+        "border": "1px solid rgba(10,10,15,0.08)",
+        "boxShadow": "0 1px 2px rgba(10,10,15,0.06), 0 6px 18px rgba(10,10,15,0.06)"
+      },
+      "surface-2": "#EEF1F5",
+      "bordure": "rgba(10,10,15,0.08)",
+      "bordure-forte": "rgba(10,10,15,0.16)",
+      "texte": "#0A0A0F",
+      "texte-doux": "#374151",
+      "texte-secondaire": "#5B6475",
+      "texte-desactive": "#9AA3B2",
+      "avatar": {
+        "background": "#E3E7ED",
+        "color": "#0A0A0F"
+      },
+      "barre-bas": {
+        "background": "rgba(255,255,255,0.97)",
+        "borderTop": "1px solid rgba(10,10,15,0.08)"
+      },
+      "panneau": "#FFFFFF",
+      "voile-panneau": "rgba(10,10,15,0.45)",
+      "etiquette-photo": {
+        "background": "rgba(10,10,15,0.72)",
+        "color": "#FFFFFF"
+      },
+      "etiquette-hors-photo": {
+        "background": "#E3E7ED",
+        "color": "#0A0A0F"
+      },
+      "rouge-texte": "#D42000",
+      "vert-texte": "#00875F",
+      "rouge-definitif-texte": "#C2410C"
+    }
+  },
+  "communs": {
+    "rouge-action": "#FF2B00",
+    "texte-sur-rouge": "#FFFFFF (15px demi-gras minimum : contraste 3,8:1)",
+    "choisi": {
+      "background": "rgba(255,43,0,0.14)",
+      "border": "1px solid rgba(255,43,0,0.45)",
+      "color": "rouge-texte du thème"
+    },
+    "disponible": {
+      "couleur": "#00C896",
+      "pastille": {
+        "background": "rgba(0,200,150,0.14)",
+        "color": "vert-texte du thème",
+        "radius": "999px"
+      }
+    },
+    "or-element-cle": "#F2B705 (étiquette STADE PARTENAIRE ; OVR plus tard)",
+    "complet": "#8A94A6",
+    "rouge-definitif-contour": "rgba(255,138,122,0.55)",
+    "survol-carte": {
+      "translateY": "-1px",
+      "borderColor": "rgba(255,43,0,0.45) à rgba(255,43,0,0.55)",
+      "boxShadow": "aucun"
+    },
+    "barre-navigation": {
+      "position": "détachée et flottante : 16px des bords, bas = max(20px, calc(env(safe-area-inset-bottom) + 8px)) — jamais collée au trait d'accueil, toujours au moins 8px d'air au-dessus (décision d'Aymen, 23/10/2026) ; le contenu défile dessous",
+      "size": "pleine largeur moins 32px × 64px",
+      "radius": "999px",
+      "background": "rgba(19,26,36,0.88) + backdrop-filter: saturate(1.4) blur(18px) (clair : rgba(255,255,255,0.92))",
+      "border": "1px solid rgba(138,148,166,0.22) (clair : rgba(10,10,15,0.08))",
+      "boxShadow": "0 14px 34px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35) (clair : 0 14px 34px rgba(10,10,15,0.14), 0 2px 8px rgba(10,10,15,0.06))",
+      "actif": "#FF2B00, icône pleine",
+      "inactif": "texte-secondaire du thème",
+      "libelles": "Inter 11px",
+      "plus": {
+        "size": "54px",
+        "background": "#FF2B00",
+        "color": "#FFFFFF",
+        "decalage": "-26px",
+        "liseré": "4px couleur de page",
+        "boxShadow": "0 8px 22px rgba(255,43,0,0.40)"
+      },
+      "reserve-bas": "64px (hauteur de la pilule) + la même distance que « position » ci-dessus (20px, ou plus si la zone de sécurité du bas l'exige) + 24px d'air sous le dernier contenu — grandit avec la zone de sécurité, jamais un total fixe"
+    },
+    "photo": {
+      "filter": "saturate(1.1) contrast(1.15) brightness(1.1)",
+      "voile-bas": "linear-gradient(180deg, rgba(10,10,15,0) 40%, rgba(10,10,15,0.85) 100%)",
+      "banniere": "radial-gradient(70% 60% at 85% 30%, rgba(255,43,0,0.38), transparent 70%) + linear-gradient(90deg, rgba(10,10,15,0.92), rgba(10,10,15,0.55) 55%, rgba(10,10,15,0.15))"
+    },
+    "survol-onglet": {
+      "cible": "onglet non choisi seulement",
+      "borderColor": "rgba(255,43,0,0.45)",
+      "color": "#F5F7FA",
+      "boxShadow": "aucun"
+    },
+    "onglet-choisi": {
+      "ecrans": "Explorer (Matchs / Terrains), Mes matchs (À venir / Passés) ; même style pour le jour choisi (bande des jours d’Explorer et de Réserver, calendrier Choisis un jour) ; format, durée, heure et filtres restent en teinte rouge",
+      "color": "#FFFFFF",
+      "background": "linear-gradient(180deg, #1C2533 0%, #131A24 100%)",
+      "border": "1px solid rgba(255,43,0,0.40)",
+      "boxShadow": "0 0 0 1px rgba(255,43,0,0.10), 0 8px 24px rgba(255,43,0,0.24), inset 0 -2px 0 #FF2B00",
+      "clair": "fond #FFFFFF, texte #0A0A0F, bordure rgba(255,43,0,0.45), ombre 0 6px 18px rgba(255,43,0,0.14) + inset 0 -2px 0 #FF2B00"
+    }
+  },
+  "typographie": {
+    "texte": "Inter 400/500/600/700",
+    "titre-ecran": "Inter 28px 700",
+    "titre-fenetre": "Inter 22px 700",
+    "titre-section-accueil": "Inter 14px 700 capitales, letter-spacing 0.06em",
+    "titre-section": "Inter 18px 700",
+    "bouton": "Inter 16px 600",
+    "bouton-secondaire": "Inter 15px 600",
+    "nom-centre-carte": "Inter 15-16px 600",
+    "corps": "Inter 15px",
+    "secondaire": "Inter 12-13px",
+    "etiquette": "Inter 10-11px 600, capitales, letter-spacing 0.06-0.08em",
+    "affichage": "Bebas Neue, capitales : accroches de la bannière (italique, 2e ligne rouge), grands titres sur photo, heures, prix, grands chiffres, bande TU JOUES, formats de Réserver",
+    "arabe": {
+      "texte": "IBM Plex Sans Arabic",
+      "affichage": "Changa (sans italique)",
+      "letterSpacing": "0"
+    },
+    "echelle-inter": "9 (slogan), 10 (unités), 11, 12, 13, 14, 15, 16, 17, 18, 22, 28 px — pas de demi-taille",
+    "echelle-bebas": "26, 30, 38, 50 px",
+    "avatars": "initiales en Inter 600"
+  },
+  "formes": {
+    "carte": "16px",
+    "carte-dans-section": "12px",
+    "bouton": "12px",
+    "bouton-banniere": "999px, 44px de haut",
+    "champ": "12px",
+    "photo": "12px",
+    "puce": "999px",
+    "bouton-principal-hauteur": "52px à 56px",
+    "cible-tactile-min": "44px",
+    "etiquette": "6px, 22px de haut, Inter 11px 600 capitales 0.06em"
+  },
+  "accueil": {
+    "ordre": [
+      "en-tête : logo Rivalité + MOUBARAT / PLAY · BOOK · CONNECT, ville, cloche, avatar",
+      "bannière qui défile (340px, 4 cartes, points)",
+      "tuiles Réserver un terrain / Créer un match (158px)",
+      "Ton prochain match (si existe) : compte à rebours « Coup d’envoi dans », centre, moment, format",
+      "Matchs à rejoindre, aujourd’hui seulement (défile, pleine largeur)",
+      "Terrains à proximité (défile, pleine largeur)",
+      "Tes amis jouent bientôt (si tes potes ont un match)",
+      "barre de navigation flottante"
+    ],
+    "banniere": [
+      "Le sport nous rassemble → Explorer",
+      "Ton prochain match → le match (si existe)",
+      "Stade partenaire (or) → le centre",
+      "Crée ton match → Créer"
+    ],
+    "carte-match": {
+      "width": "160px",
+      "photo": "84px avec le format",
+      "contenu": "heure (Bebas 26px) + pastille de places, centre, quartier, prix / joueur",
+      "rangée": "padding 0 16px, gap 10px, scroll-snap, la 3e carte dépasse du bord"
+    },
+    "carte-terrain": {
+      "width": "196px",
+      "photo": "66 × 74px",
+      "contenu": "centre, quartier, dès … DA / h, sport"
+    },
+    "prochain-match": {
+      "height": "164px",
+      "compte-a-rebours": "4 cases 56 × 54px, rgba(10,10,15,0.58), chiffres Bebas 30px, unités Inter 9.5px : JOURS · HEURES · MIN · SEC",
+      "libelle": "COUP D’ENVOI DANS, Inter 11px 700, rouge-texte"
+    },
+    "tes-amis": {
+      "ligne": "avatars 32px empilés (-11px), prénoms Inter 14px 600, moment 12.5px, centre 12px, à droite pastille de places ou « Tu y vas » (teinte rouge)"
+    }
+  },
+  "ecriture": {
+    "formats": "5v5",
+    "durees": "1 h 30",
+    "sports": "Foot / Padel",
+    "ponctuation": "espace fine insécable U+202F avant : ; ? !",
+    "dates": "le jour est écrit quand ce n’est pas aujourd’hui"
+  }
+}

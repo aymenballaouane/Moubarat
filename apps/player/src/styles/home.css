@@ -1,0 +1,179 @@
+/* ============================================================================
+   ACCUEIL — refonte app joueur, lot 4b (règles 11, 33, 35, 40 — voir
+   refonte-app-joueur/docs/regles.md et refonte-app-joueur/maquettes/Main(Ar).dc.html).
+   Remplace l'ancien Home "benchmark" (en-tête salutation + hero plein cadre) : nouvel
+   en-tête marque + ville + cloche + avatar (sans OVR, règle 35), bannière qui défile
+   (composant séparé HomeBanner.tsx, styles/home-banner.css), carte réduite "Ton prochain
+   match" avec compte à rebours réel, rails "Matchs à rejoindre"/"Terrains à proximité",
+   section "Tes amis jouent bientôt". Toutes les positions en proprietés logiques
+   (inset-inline-*) pour que le miroir RTL soit automatique (lot 4a). */
+
+/* --- En-tête : marque + ville + cloche + avatar ---------------------------- */
+.ho-head { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 2px 0 18px; }
+.ho-head__brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ho-head__brand svg { flex-shrink: 0; width: 30px; height: 30px; }
+.ho-head__word { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ho-head__name { font-size: var(--fs-b2); font-weight: 700; letter-spacing: .14em; line-height: 1;
+  color: var(--text); white-space: nowrap; }
+.ho-head__tag { font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 600;
+  letter-spacing: .14em; line-height: 1; color: var(--text-3); white-space: nowrap; }
+
+.ho-head__right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ho-city { display: inline-flex; align-items: center; gap: 5px; height: 36px; box-sizing: border-box;
+  padding: 0 10px; border-radius: var(--r-full); background: var(--ink-2); border: 1px solid var(--line);
+  font-size: var(--fs-b3); font-weight: 600; color: var(--text); white-space: nowrap; }
+.ho-city .mb-ic { width: 13px; height: 13px; flex-shrink: 0; }
+.ho-city .mb-ic:last-child { width: 12px; height: 12px; color: var(--text-3); }
+
+.ho-bell { position: relative; width: 36px; height: 36px; flex-shrink: 0; border-radius: var(--r-full);
+  background: var(--ink-2); border: 1px solid var(--line); display: grid; place-items: center;
+  color: var(--text); cursor: pointer;
+  transition: background var(--dur-1) linear, border-color var(--dur-1) linear; }
+.ho-bell .mb-ic { width: 17px; height: 17px; }
+.ho-bell:hover { background: var(--ink-3); border-color: var(--line-strong); }
+.ho-bell:active { transform: scale(.94); }
+.ho-badge { position: absolute; top: 2px; inset-inline-end: 2px; width: 9px; height: 9px;
+  box-sizing: border-box; border-radius: var(--r-full); background: var(--primary); border: 2px solid var(--ink-2); }
+
+/* Avatar — anneau rouge, « la couleur toi » (règle 35) : plus aucun OVR dans cette
+   version (.mb-ovr retiré, jamais réintroduit ici sans accord d'Aymen). */
+.ho-ava { flex-shrink: 0; display: grid; place-items: center; width: 38px; height: 38px;
+  box-sizing: border-box; border-radius: var(--r-full); border: 2px solid var(--primary);
+  background: var(--ink-3); font-family: var(--font-body); font-size: var(--fs-b2); font-weight: 700;
+  color: var(--text); cursor: pointer; transition: transform var(--dur-1) var(--ease-out); }
+.ho-ava:active { transform: scale(.94); }
+
+/* --- Rangée d'actions RESERVER / CREER (Main.dc.html) ---------------------- */
+.ho-actions { display: flex; gap: 12px; margin-top: 8px; }
+.ho-sq { position: relative; flex: 1 1 0; height: 158px; border-radius: var(--r-4); overflow: hidden;
+  border: 1px solid var(--line); background: var(--ink-2); text-align: left; cursor: pointer; padding: 0;
+  transition: border-color var(--dur-1) linear, transform var(--dur-1) var(--ease-out); }
+.ho-sq:hover { border-color: var(--primary-line); }
+.ho-sq:active { transform: scale(.98); }
+.ho-sq__photo { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Scrim propre a la tuile (jamais .mb-pitch, deux vignettes se superposeraient) — degrade sombre
+   litteral comme home-banner.css : lisibilite du texte sur la photo, independant du theme. */
+.ho-sq__scrim { position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(180deg, rgba(19, 26, 36, .20) 0%, rgba(19, 26, 36, .80) 55%, rgba(19, 26, 36, .97) 100%); }
+.ho-sq__ic { position: absolute; top: 16px; inset-inline-start: 14px; z-index: 4; color: var(--primary); }
+.ho-sq__ic .mb-ic { width: 28px; height: 28px; }
+.ho-sq__lab { position: absolute; inset-inline-start: 14px; inset-inline-end: 30px; bottom: 14px; z-index: 4;
+  display: flex; flex-direction: column; gap: 4px; }
+/* Texte posé sur .ho-sq__photo/.ho-sq__scrim (toujours sombre, cf. commentaire du scrim
+   ci-dessus) : couleurs FIXES, jamais var(--text*) qui s'inverse en thème clair — même
+   logique que .status-bar-scrim (theme-app-joueur.css) et confirmée par la maquette
+   MainClair.dc.html (ses règles de repeint excluent explicitement tout conteneur avec
+   un <img>, donc le texte sur photo reste volontairement inchangé entre les deux thèmes). */
+.ho-sq__lab b { display: block; font-size: var(--fs-b1); font-weight: 700; line-height: 1.15; color: #F5F7FA; }
+.ho-sq__lab span { display: block; font-size: var(--fs-label); color: #8A94A6; white-space: nowrap; }
+.ho-sq__chev { position: absolute; inset-inline-end: 12px; bottom: 34px; z-index: 4; color: #F5F7FA; }
+.ho-sq__chev .mb-ic { width: 18px; height: 18px; }
+
+/* --- En-tête de section Home : titre + lien optionnel ---------------------- */
+.ho-sec { margin-top: 26px; }
+.ho-sec-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ho-sec-head__left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ho-sec-head h2 { margin: 0; font-size: var(--fs-b2); font-weight: 700; letter-spacing: .06em;
+  color: var(--text); text-transform: uppercase; white-space: nowrap; }
+.ho-sec-head__pill { padding: 3px 8px; border-radius: var(--r-full); border: 1px solid var(--line-strong);
+  font-size: var(--fs-micro); font-weight: 600; color: var(--text-2); white-space: nowrap; }
+.ho-sec-head__link { display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-label);
+  font-weight: 500; color: var(--text-3); background: none; border: 0; padding: 0; cursor: pointer;
+  transition: color var(--dur-1) linear; }
+.ho-sec-head__link .mb-ic { width: 14px; height: 14px; }
+.ho-sec-head__link:hover { color: var(--text); }
+
+/* --- Carte réduite « Ton prochain match » — centre, moment, format et compte à rebours
+   réel jusqu'au coup d'envoi (règle 11, pas un minuteur factice). ----------------------- */
+.ho-next { position: relative; display: block; height: 164px; margin-top: 12px; border-radius: var(--r-4);
+  overflow: hidden; border: 1px solid var(--line); background: var(--ink-2); text-align: left; cursor: pointer;
+  padding: 0; width: 100%; }
+.ho-next__photo { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover;
+  object-position: 45% 40%; }
+/* Degrade litteral comme .ho-sq__scrim/home-banner.css — ici asymetrique (plus dense a droite,
+   lueur marque en haut-droite), reproduit du prototype, independant du theme. */
+.ho-next__scrim { position: absolute; inset: 0; z-index: 1;
+  background:
+    radial-gradient(60% 90% at 100% 0%, rgba(255, 43, 0, .30) 0%, rgba(255, 43, 0, 0) 70%),
+    linear-gradient(90deg, rgba(10, 10, 15, .95) 0%, rgba(10, 10, 15, .78) 60%, rgba(10, 10, 15, .50) 100%); }
+.ho-next__top { position: absolute; inset-inline: 16px; top: 14px; z-index: 4;
+  display: flex; flex-direction: column; gap: 8px; }
+/* Toute cette carte est posée sur .ho-next__photo/.ho-next__scrim (toujours sombre) :
+   mêmes couleurs FIXES qu'au-dessus (.ho-sq__lab), jamais var(--text*)/var(--primary-glow)
+   qui s'inversent en thème clair. */
+.ho-next__tag { font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 700;
+  letter-spacing: .08em; color: #FF6A4D; text-transform: uppercase; }
+.ho-next__cd { display: flex; gap: 8px; }
+.ho-next__cd i { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; flex: 1 1 0; height: 56px; box-sizing: border-box; border-radius: var(--r-3);
+  background: rgba(10, 10, 15, .58); border: 1px solid rgba(138, 148, 166, .30); font-style: normal; }
+.ho-next__cd b { font-family: var(--font-display); font-size: var(--fs-d3); line-height: 1; color: #F5F7FA; }
+.ho-next__cd span { font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 600;
+  letter-spacing: .06em; color: #8A94A6; text-transform: uppercase; }
+.ho-next__foot { position: absolute; inset-inline: 16px; bottom: 14px; z-index: 4;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.ho-next__loc { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ho-next__loc b { font-size: var(--fs-b1); font-weight: 600; line-height: 1.2; color: #F5F7FA;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ho-next__loc span { font-size: var(--fs-b3); color: #C5CCD6; white-space: nowrap; }
+.ho-next__go { flex: 0 0 auto; display: grid; place-items: center; width: 34px; height: 34px;
+  border-radius: var(--r-full); background: rgba(245, 247, 250, .12); color: #F5F7FA; }
+.ho-next__go .mb-ic { width: 16px; height: 16px; }
+
+/* --- Rails horizontaux « Matchs à rejoindre » / « Terrains à proximité » --- */
+.ho-rail { display: flex; gap: 10px; margin: 12px -22px 0; padding: 0 22px 6px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 22px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.ho-rail::-webkit-scrollbar { display: none; }
+
+/* --- Invite « Active ta position… » (règle 33, position refusée/indisponible) ------- */
+.ho-geo-hint { display: flex; align-items: center; gap: 6px; margin-top: 10px;
+  font-size: var(--fs-label); color: var(--text-3); }
+.ho-geo-hint .mb-ic { width: 14px; height: 14px; color: var(--text-4); flex-shrink: 0; }
+
+/* --- Carte centre « Terrains à proximité » — rangée image + texte (196px) ---------- */
+.ho-venue { flex: 0 0 196px; scroll-snap-align: start; display: flex; gap: 10px; padding: 8px;
+  box-sizing: border-box; border-radius: var(--r-3); background: var(--ink-2); border: 1px solid var(--line);
+  text-align: left; cursor: pointer;
+  transition: border-color var(--dur-1) linear, transform var(--dur-1) var(--ease-out); }
+.ho-venue:hover { border-color: var(--line-strong); }
+.ho-venue:active { transform: scale(.98); }
+.ho-venue[disabled] { opacity: .6; cursor: progress; }
+.ho-venue__ph { position: relative; flex: 0 0 66px; height: 74px; border-radius: var(--r-2); overflow: hidden; }
+.ho-venue__mark { position: absolute; inset: 0; margin: auto; width: 32px; height: 32px;
+  object-fit: contain; opacity: .9; }
+.ho-venue__info { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-top: 2px; }
+.ho-venue__n { display: block; font-size: var(--fs-b2); font-weight: 600; line-height: 1.2; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ho-venue__wilaya { font-size: var(--fs-label); color: var(--text-3); }
+.ho-venue__rate { font-size: var(--fs-label); color: var(--text-2); }
+/* "dès" -> "Dès" en français (maquette : "Dès 3 000 DA / h") sans dupliquer la clé du
+   dictionnaire pour une seule majuscule — sans effet sur l'arabe ("ابتداءً من", pas de casse). */
+.ho-venue__rate::first-letter { text-transform: uppercase; }
+.ho-venue__sport { font-size: var(--fs-label); font-weight: 600; color: var(--text); }
+
+/* --- « Tes amis jouent bientôt » (règle 11 point 5, règle 40) — liste de lignes, pas un
+   rail défilant : s'efface entièrement si vide (useAppStore.friendsMatches === []). --- */
+.ho-friends { margin-top: 12px; border-radius: var(--r-4); background: var(--ink-2);
+  border: 1px solid var(--line); overflow: hidden; }
+.ho-friend { display: flex; align-items: center; gap: 12px; padding: 12px 14px; text-align: left;
+  cursor: pointer; background: none; border: 0; border-top: 1px solid var(--line); width: 100%; }
+.ho-friend:first-child { border-top: 0; }
+.ho-friend:hover { background: var(--ink-3); }
+.ho-friend__avatars { flex: 0 0 auto; display: flex; }
+.ho-friend__avatars span { width: 32px; height: 32px; box-sizing: border-box; margin-inline-start: -11px;
+  border-radius: var(--r-full); border: 2px solid var(--ink-2); background: var(--ink-3);
+  display: grid; place-items: center; font-size: var(--fs-b3); font-weight: 700; color: var(--text); }
+.ho-friend__avatars span:first-child { margin-inline-start: 0; }
+.ho-friend__info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ho-friend__names { font-size: var(--fs-b2); font-weight: 600; line-height: 1.25; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ho-friend__when { font-size: var(--fs-b3); color: var(--text-2); white-space: nowrap; }
+.ho-friend__loc { font-size: var(--fs-label); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ho-friend__right { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
+.ho-friend__right .mb-ic { width: 14px; height: 14px; color: var(--text-3); }
+/* « Tu y vas » — accent marque (pas vert « places ») : le joueur est déjà inscrit. */
+.ho-friend__going { flex: 0 0 auto; padding: 4px 8px; border-radius: var(--r-full);
+  background: var(--primary-wash); color: var(--primary-glow); font-size: var(--fs-micro); font-weight: 700;
+  white-space: nowrap; }

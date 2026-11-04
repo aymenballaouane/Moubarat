@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Moubarat · Tes accords</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>body{margin:0;background: #0A0A0F} a{color:#FFFFFF;text-decoration:none}</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #0A0A0F; color: #8A94A6; font-family: 'Inter', system-ui, sans-serif; font-size: 15px; line-height: 1.5;">
+  <header style="display: flex; align-items: center; padding: 20px 16px 0 16px;">
+    <a href="NoticeDonnees.dc.html" aria-label="Retour" style="width: 44px; height: 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg></a>
+  </header>
+  <section style="padding: 22px 16px 0 16px; text-align: center;">
+    <h1 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; letter-spacing: -0.015em;">Tes accords</h1>
+  </section>
+  <section style="padding: 24px 16px 0 16px;">
+    <div style="border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 16px 14px; border-bottom: 1px solid rgba(138,148,166,0.16);">
+        <span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 3px;"><span style="font-size: 15px; font-weight: 700; color: #F5F7FA;">Conditions d’utilisation et confidentialité</span></span>
+        <span style="font-size: 12px; font-weight: 700; color: #F5F7FA;">Obligatoire</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 16px 14px; border-bottom: 1px solid rgba(138,148,166,0.16);">
+        <span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 3px;"><span style="font-size: 15px; font-weight: 700; color: #F5F7FA;">J’ai 18 ans ou plus</span></span>
+        <span style="font-size: 12px; font-weight: 700; color: #F5F7FA;">Obligatoire</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 16px 14px; border-bottom: 1px solid rgba(138,148,166,0.16);">
+        <span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 3px;"><span style="font-size: 15px; font-weight: 700; color: #F5F7FA;">Mon numéro visible pour jouer</span><span style="font-size: 13px; line-height: 1.4; color: #F5F7FA;">{{ telTexte }}</span></span>
+        <button role="switch" aria-label="Mon numéro visible pour jouer" aria-checked="{{ on_tel }}" onClick="{{ t_tel }}" style="{{ s_tel }}"><span style="{{ k_tel }}"></span></button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 16px 14px; ">
+        <span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 3px;"><span style="font-size: 15px; font-weight: 700; color: #F5F7FA;">Les bons plans des centres près de chez moi</span></span>
+        <button role="switch" aria-label="Les bons plans des centres près de chez moi" aria-checked="{{ on_promo }}" onClick="{{ t_promo }}" style="{{ s_promo }}"><span style="{{ k_promo }}"></span></button>
+      </div>
+    </div>
+  </section>
+  <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+    <p style="margin: 0; font-size: 14px; line-height: 1.45; text-align: center; color: #F5F7FA;">Tu veux tout arrêter ? Tu peux supprimer ton compte : ton nom et ton numéro seront effacés.</p>
+    <a href="ConfSupprimerCompte.dc.html" style="text-align: center; font-size: 14px; font-weight: 700; color: #FF8A7A; text-decoration: underline; text-underline-offset: 3px;">Supprimer mon compte</a>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tel: true, promo: false }; }
+  renderVals() {
+    const v = {};
+    for (const k of ['tel', 'promo']) {
+      const on = this.state[k];
+      v['on_' + k] = on ? 'true' : 'false';
+      v['t_' + k] = () => this.setState({ [k]: !this.state[k] });
+      v['s_' + k] = 'position: relative; flex: 0 0 52px; width: 52px; height: 30px; padding: 0; border: 0; border-radius: 999px; cursor: pointer; background: ' + (on ? '#00C896' : 'rgba(138,148,166,0.30)') + ';';
+      v['k_' + k] = 'position: absolute; top: 3px; ' + (on ? 'right: 3px; background: #FFFFFF;' : 'left: 3px; background: #FFFFFF;') + ' width: 24px; height: 24px; border-radius: 999px;';
+    }
+    v.telTexte = this.state.tel ? 'Par l’organisateur des matchs que tu rejoins, les joueurs des matchs que tu organises et les centres où tu réserves. Sans lui, tu peux seulement regarder.' : 'Accord retiré. Tes inscriptions et réservations déjà prises restent, et ton numéro y reste visible. Pour rejoindre un nouveau match ou réserver, réactive-le.';
+    return v;
+  }
+}
+</script>
+</body>
+</html>

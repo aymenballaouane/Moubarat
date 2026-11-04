@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Audit final 26/10/2026 (P1-11, STO-3) : les deux droits que l'app utilise vraiment et qu'aucun fichier ne déclarait.
+	     - aps-environment : notifications push (APNs). « development » ici ; Xcode le remplace par « production » à l'archivage d'une
+	       version de distribution (profil de provisionnement). Le serveur choisit l'environnement APNs par APNS_ENVIRONMENT.
+	     - associated-domains : liens universels (https://app.moubaratsport.com/m/CODE s'ouvre dans l'app) — nécessite le fichier
+	       /.well-known/apple-app-site-association sur ce domaine (modèle : apps/ios/apple-app-site-association.template.json).
+	     Les deux capacités doivent AUSSI être activées sur l'App ID com.moubarat.app dans le portail Apple Developer (docs/IOS_HANDOVER.md). -->
+	<key>aps-environment</key>
+	<string>development</string>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:app.moubaratsport.com</string>
+	</array>
+</dict>
+</plist>

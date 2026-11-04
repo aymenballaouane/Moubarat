@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Moubarat · Réserver un terrain</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background: #0A0A0F}
+a{color:#FFFFFF;text-decoration:none}
+button{font-family:inherit}
+input{font-family:'Inter', system-ui, sans-serif}
+</style>
+</helmet>
+<div style="{{ racine }}">
+
+  <!-- ================= R1 · TERRAINS ================= -->
+  <sc-if value="{{ estTerrains }}" hint-placeholder-val="{{ true }}">
+    <header style="display: flex; align-items: center; gap: 12px; padding: 20px 16px 0 16px;">
+      <a href="Main.dc.html" aria-label="Retour" style="width: 44px; height: 44px; flex: 0 0 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg>
+      </a>
+      <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #8A94A6;">{{ filArianeR1 }}</span>
+    </header>
+    <section style="padding: 22px 16px 0 16px;">
+      <h1 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; letter-spacing: -0.015em;">Trouve ton terrain</h1>
+    </section>
+    <sc-if value="{{ modeMatch }}" hint-placeholder-val="{{ false }}">
+      <section style="padding: 16px 16px 0 16px;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(255,43,0,0.45); color: #F5F7FA; font-size: 14px; font-weight: 600;">
+          <span style="width: 7px; height: 7px; border-radius: 999px; background: #FF2B00;"></span>Choisis le terrain de ton match
+        </div>
+      </section>
+    </sc-if>
+    <section style="display: flex; gap: 8px; padding: 18px 16px 0 16px;">
+      <sc-for list="{{ filtres }}" as="f" hint-placeholder-count="3">
+        <button onClick="{{ f.pick }}" aria-pressed="{{ f.sel }}" style="{{ f.style }}"><span style="{{ f.coche }}">✓</span>{{ f.nom }}</button>
+      </sc-for>
+    </section>
+    <section style="display: flex; flex-direction: column; gap: 12px; padding: 18px 16px 0 16px;">
+      <sc-for list="{{ centres }}" as="c" hint-placeholder-count="3">
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 10px; border-radius: 12px; border: 1px solid rgba(138,148,166,0.16); background: #131A24;">
+          <button onClick="{{ c.ouvrir }}" aria-label="{{ c.nom }}" style="display: flex; align-items: center; gap: 12px; width: 100%; padding: 0; border: 0; background: transparent; color: #F5F7FA; text-align: left; cursor: pointer; font: inherit;">
+            <span style="position: relative; flex: 0 0 88px; width: 88px; height: 88px; border-radius: 12px; overflow: hidden;">
+              <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: {{ c.cadrage }}; filter: saturate(1.1) contrast(1.15) brightness(1.1);">
+              <span style="position: absolute; top: 6px; left: 6px; {{ c.badge }}">{{ c.sport }}</span>
+            </span>
+            <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">{{ c.nom }}</span>
+              <span style="font-size: 13px; color: #8A94A6;">dès <b style="font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 18px; color: #F5F7FA;">{{ c.prix }}</b> DA / h</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #F5F7FA;"><span style="width: 6px; height: 6px; border-radius: 999px; background: #00C896;"></span>{{ c.libres }}</span>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9,6 15,12 9,18"></polyline></svg>
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <sc-for list="{{ c.slots }}" as="h" hint-placeholder-count="4">
+              <button onClick="{{ h.pick }}" aria-label="{{ h.aria }}" style="flex: 1 1 0; min-width: 0; height: 36px; padding: 0; border-radius: 10px; border: 1px solid rgba(138,148,166,0.16); background: #1C2533; color: #F5F7FA; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;">{{ h.h }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+  </sc-if>
+
+  <!-- ================= R2 · DÉTAIL DU CENTRE ================= -->
+  <sc-if value="{{ estCentre }}" hint-placeholder-val="{{ false }}">
+    <div style="position: relative; height: 340px;">
+      <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="Le Chéraga Arena éclairé de nuit" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 80% 45%;">
+      <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,0.55) 0%, rgba(10,10,15,0.05) 30%, rgba(10,10,15,0.40) 62%, #0A0A0F 100%);"></div>
+      <div style="position: absolute; top: 20px; left: 16px; right: 16px; display: flex; justify-content: space-between;">
+        <button onClick="{{ versTerrains }}" aria-label="Retour" style="width: 44px; height: 44px; border-radius: 999px; background: rgba(0,0,0,0.66); border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center; cursor: pointer; padding: 0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg>
+        </button>
+        <a href="https://wa.me/?text=Ch%C3%A9raga%20Arena%20sur%20Moubarat" aria-label="Partager" style="width: 44px; height: 44px; border-radius: 999px; background: rgba(0,0,0,0.66); border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center; cursor: pointer; padding: 0; text-decoration: none; box-sizing: border-box;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" aria-hidden="true"><circle cx="18" cy="5" r="2.5"></circle><circle cx="6" cy="12" r="2.5"></circle><circle cx="18" cy="19" r="2.5"></circle><line x1="8.3" y1="10.7" x2="15.7" y2="6.3"></line><line x1="8.3" y1="13.3" x2="15.7" y2="17.7"></line></svg>
+        </a>
+      </div>
+      <div style="position: absolute; left: 16px; right: 16px; bottom: 18px; display: flex; flex-direction: column; gap: 6px;">
+        <span style="display: flex; gap: 6px; align-items: center;">
+          <span style="padding: 3px 6px; border-radius: 6px; font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.10em; color: #FFFFFF; background: rgba(10,10,15,0.78);">FOOT</span>
+        </span>
+        <h1 style="margin: 0; font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 50px; line-height: 0.92; color: #F5F7FA;">CHÉRAGA ARENA</h1>
+        <span style="font-size: 14px; color: #F5F7FA;">3,1 km · <a href="https://maps.google.com/?q=Cheraga+Arena+Alger" style="font-weight: 600; border-bottom: 1px solid rgba(138,148,166,0.30);">Itinéraire →</a></span>
+      </div>
+    </div>
+
+    <section style="padding: 26px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <h2 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 16px; line-height: 1.2; color: #F5F7FA;">Libre ce soir</h2>
+      <div style="display: flex; gap: 8px;">
+        <sc-for list="{{ ceSoir }}" as="h" hint-placeholder-count="4">
+          <button onClick="{{ h.pick }}" style="flex: 1 1 0; height: 54px; border-radius: 12px; border: 1px solid rgba(138,148,166,0.16); background: #131A24; color: #F5F7FA; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1;">{{ h.heure }}</span></button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="padding: 26px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <h2 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 16px; line-height: 1.2; color: #F5F7FA;">Les terrains</h2>
+      <sc-for list="{{ terrainsCentre }}" as="t" hint-placeholder-count="2">
+        <button onClick="{{ t.pick }}" style="display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(138,148,166,0.16); background: #131A24; color: #F5F7FA; text-align: left; cursor: pointer;">
+          <span style="width: 46px; height: 62px; flex: 0 0 46px; border-radius: 6px; border: 1.5px solid rgba(138,148,166,0.30); position: relative; background: #0A0A0F;"><span style="position: absolute; left: 0; right: 0; top: 50%; border-top: 1.5px solid rgba(138,148,166,0.30);"></span><span style="position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 999px; border: 1.5px solid rgba(138,148,166,0.30);"></span></span>
+          <span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.25; font-weight: 600;">{{ t.nom }}</span>
+            <span style="font-size: 13px; color: #F5F7FA;">{{ t.formats }}</span>
+          </span>
+          <span style="display: flex; flex-direction: column; align-items: flex-end; white-space: nowrap;"><span style="font-size: 11px; color: #F5F7FA;">dès</span><span><span style="font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1;">{{ t.prix }}</span><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.04em;"> DA</span><span style="font-size: 12px; color: #F5F7FA;"> / h</span></span></span>
+        </button>
+      </sc-for>
+    </section>
+
+    <footer style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 16px 22px 16px; background: rgba(10,10,15,0.96); border-top: 1px solid rgba(138,148,166,0.16);">
+      <button onClick="{{ versCreneau }}" style="width: 100%; height: 56px; border: 0; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', system-ui, sans-serif; font-size: 16px;  cursor: pointer; font-weight: 600;">Réserver</button>
+    </footer>
+  </sc-if>
+
+  <!-- ================= R3 · CRÉNEAU ================= -->
+  <sc-if value="{{ estCreneau }}" hint-placeholder-val="{{ false }}">
+    <header style="display: flex; align-items: center; gap: 12px; padding: 20px 16px 0 16px;">
+      <button onClick="{{ versCentre }}" aria-label="Retour" style="width: 44px; height: 44px; flex: 0 0 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); background: transparent; display: grid; place-items: center; cursor: pointer; padding: 0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg>
+      </button>
+      <span style="display: flex; flex-direction: column; line-height: 1.2;">
+        <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #8A94A6;">{{ filAriane }}</span>
+        <span style="font-size: 14px; font-weight: 600; color: #F5F7FA;">Chéraga Arena</span>
+      </span>
+    </header>
+    <section style="padding: 20px 16px 0 16px;">
+      <h1 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; letter-spacing: -0.015em;">{{ titreR3 }}</h1>
+    </section>
+
+    <p style="margin: 0; padding: 22px 16px 0 16px; display: block; font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">C’est pour quand ?</p>
+    <section style="padding: 12px 16px 0 16px; display: flex; gap: 6px;">
+      <sc-for list="{{ jours }}" as="j" hint-placeholder-count="7">
+        <button onClick="{{ j.pick }}" aria-pressed="{{ j.on }}" style="{{ j.style }}"><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.10em;">{{ j.court }}</span><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.2; font-weight: 600;">{{ j.num }}</span></button>
+      </sc-for>
+    </section>
+
+
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="display: block; font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">Quel format ?</span>
+      <div style="{{ grilleFormats }}">
+        <sc-for list="{{ formats }}" as="f" hint-placeholder-count="4">
+          <button onClick="{{ f.pick }}" style="{{ f.style }}">
+            <span style="font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1;">{{ f.label }}</span>
+            <span style="{{ f.prixStyle }}">{{ f.total }} DA</span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="display: block; font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">Tu joues combien de temps ?</span>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding: 4px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16);">
+        <sc-for list="{{ durees }}" as="d" hint-placeholder-count="4">
+          <button onClick="{{ d.pick }}" style="{{ d.style }}">{{ d.label }}</button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="display: block; font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">À quelle heure ?</span>
+      <sc-if value="{{ uiPeriodes }}" hint-placeholder-val="{{ true }}">
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding: 4px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16);">
+          <sc-for list="{{ periodes }}" as="p" hint-placeholder-count="3">
+            <button onClick="{{ p.pick }}" style="{{ p.style }}"><span style="font-size: 14px; font-weight: 700;">{{ p.nom }}</span></button>
+          </sc-for>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;">
+          <sc-for list="{{ heuresPeriode }}" as="h" hint-placeholder-count="8">
+            <button onClick="{{ h.pick }}" style="{{ h.style }}"><span style="font-family: 'Bebas Neue', sans-serif; font-size: 22px; line-height: 1;">{{ h.heure }}</span></button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ uiDefilement }}" hint-placeholder-val="{{ false }}">
+        <sc-for list="{{ lignesPeriodes }}" as="l" hint-placeholder-count="3">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-size: 13px; font-weight: 700; color: #F5F7FA;">{{ l.nom }} <span style="font-weight: 500; color: #8A94A6;">· {{ l.nb }}</span></span>
+            <div style="display: flex; gap: 8px; overflow: hidden; margin-right: -16px;">
+              <sc-for list="{{ l.heures }}" as="h" hint-placeholder-count="6">
+                <button onClick="{{ h.pick }}" style="{{ h.chip }}">{{ h.heure }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </sc-if>
+      <sc-if value="{{ uiFrise }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16);">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <button onClick="{{ precedent }}" aria-label="Créneau libre précédent" style="width: 48px; height: 48px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.30); background: transparent; color: #F5F7FA; cursor: pointer; display: grid; place-items: center; padding: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg></button>
+            <span style="display: flex; flex-direction: column; align-items: center;"><span style="font-family: 'Bebas Neue', sans-serif; font-size: 44px; line-height: 0.95; color: #F5F7FA;">{{ heureSel }}</span><span style="font-size: 13px; font-weight: 600; color: #F5F7FA;">jusqu’à {{ finSel }}</span></span>
+            <button onClick="{{ suivant }}" aria-label="Créneau libre suivant" style="width: 48px; height: 48px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.30); background: transparent; color: #F5F7FA; cursor: pointer; display: grid; place-items: center; padding: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9,6 15,12 9,18"></polyline></svg></button>
+          </div>
+          <div style="position: relative; height: 34px; border-radius: 8px; background: #1C2533; overflow: hidden;">
+            <sc-for list="{{ friseOccupe }}" as="o" hint-placeholder-count="2"><span style="{{ o.style }}"></span></sc-for>
+            <span style="{{ friseSel }}"></span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: #8A94A6;"><span>8:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>1:00</span></div>
+        </div>
+      </sc-if>
+    </section>
+
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <label for="nomResa" style="display: block; font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">C’est au nom de qui ?</label>
+      <input id="nomResa" value="Aymen Belkacem" style="height: 52px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); color: #F5F7FA; font-size: 17px; font-weight: 600; outline: none;">
+    </section>
+
+    <footer style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 16px 22px 16px; background: rgba(10,10,15,0.96); border-top: 1px solid rgba(138,148,166,0.16);">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 10px;">
+        <span style="font-size: 14px; font-weight: 600; color: #F5F7FA;">{{ recapCourt }}</span>
+        <span style="color: #F5F7FA; white-space: nowrap;"><span style="font-family: 'Bebas Neue', sans-serif; font-size: 30px; line-height: 1;">{{ totalChoisi }}</span><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.04em;"> DA</span><span style="display: block; font-size: 11px; font-weight: 600; text-align: right; color: #F5F7FA;">le créneau, sur place</span></span>
+      </div>
+      <sc-if value="{{ modeMatch }}" hint-placeholder-val="{{ false }}"><a href="CreerConfigCheraga.dc.html" style="display: flex; align-items: center; justify-content: center; box-sizing: border-box; text-decoration: none; width: 100%; height: 56px; border: 0; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', system-ui, sans-serif; font-size: 16px;  cursor: pointer; font-weight: 600;">{{ ctaR3 }}</a></sc-if>
+      <sc-if value="{{ modeResa }}" hint-placeholder-val="{{ true }}"><button onClick="{{ confirmer }}" style="width: 100%; height: 56px; border: 0; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', system-ui, sans-serif; font-size: 16px;  cursor: pointer; font-weight: 600;">{{ ctaR3 }}</button></sc-if>
+    </footer>
+  </sc-if>
+
+  <!-- ================= R4 · C'EST RÉSERVÉ ================= -->
+  <sc-if value="{{ estConfirme }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ consulter }}" hint-placeholder-val="{{ false }}"><a href="MesMatchs.dc.html" aria-label="Retour" style="position: absolute; top: 20px; left: 16px; z-index: 2; width: 44px; height: 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg></a></sc-if>
+    <section style="padding: 44px 16px 0 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
+      <sc-if value="{{ pasConsulter }}" hint-placeholder-val="{{ true }}"><span style="width: 64px; height: 64px; border-radius: 999px; background: rgba(0,200,150,0.14); display: grid; place-items: center;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C896" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,13 9,18 20,6"></polyline></svg>
+      </span></sc-if>
+      <h1 style="margin: 6px 0 0 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; letter-spacing: -0.015em;">{{ titreConfirme }}</h1>
+    </section>
+
+    <section aria-label="Ton ticket" style="padding: 22px 16px 0 16px;">
+      <div style="position: relative; border-radius: 14px; overflow: hidden; border: 1px solid rgba(138,148,166,0.16); background: #131A24;">
+        <div style="position: relative; height: 150px;">
+          <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 80% 45%;">
+          <span style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,0.15) 0%, rgba(10,10,15,0.90) 100%);"></span>
+          <span style="position: absolute; left: 16px; bottom: 12px; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #C5CCD6;">{{ cDate }}</span>
+            <span style="font-family: 'Bebas Neue', sans-serif; font-size: 30px; line-height: 0.95; color: #F5F7FA;">CHÉRAGA ARENA</span>
+          </span>
+        </div>
+        <div style="position: relative; height: 0; border-top: 2px dashed rgba(138,148,166,0.16); margin: 0 14px;"></div>
+        <span style="position: absolute; left: -9px; top: 141px; width: 18px; height: 18px; border-radius: 999px; background: #0A0A0F; border: 1px solid rgba(138,148,166,0.16);"></span>
+        <span style="position: absolute; right: -9px; top: 141px; width: 18px; height: 18px; border-radius: 999px; background: #0A0A0F; border: 1px solid rgba(138,148,166,0.16);"></span>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 14px 16px 16px 16px; gap: 8px;">
+          <span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #8A94A6;">TERRAIN</span><span style="font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1; color: #F5F7FA;">{{ cTerrain }}</span></span>
+          <span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #8A94A6;">À PAYER</span><span style="font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1; color: #F5F7FA;">{{ cTotal }}</span></span>
+          <span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #8A94A6;">CODE</span><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.2; color: #F5F7FA; font-weight: 600;">{{ cCode }}</span></span>
+        </div>
+      </div>
+      <p style="margin: 12px 0 0 0; font-size: 14px; line-height: 1.45; text-align: center; color: #F5F7FA;">Tu paies sur place, en espèces.<br><sc-if value="{{ annulLibre }}" hint-placeholder-val="{{ true }}">Un empêchement ? <a href="ConfAnnulerResa.dc.html" style="color: #F5F7FA; font-weight: 700; text-decoration: underline; text-underline-offset: 3px;">Annule ici</a>, sans souci jusqu’à {{ cLimite }}.</sc-if><sc-if value="{{ annulTard }}" hint-placeholder-val="{{ false }}">Tu réserves à moins de 2 h du début : si tu <a href="ConfAnnulerResaTard.dc.html" style="color: #F5F7FA; font-weight: 700; text-decoration: underline; text-underline-offset: 3px;">annules</a>, ça comptera comme une demi-absence.</sc-if></p>
+    </section>
+
+    <section style="padding: 24px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <a href="CreerConfigCheraga.dc.html" style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF;">
+        <span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.2; font-weight: 600;">Créer un match sur ce créneau</span>
+        </span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
+      </a>
+      <a href="https://wa.me/?text=J%E2%80%99ai%20r%C3%A9serv%C3%A9%20sam.%2024%20%C3%A0%2018%3A00%20%C3%A0%20Ch%C3%A9raga%20Arena" style="height: 52px; border-radius: 12px; border: 1px solid rgba(138,148,166,0.30); display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'Inter', system-ui, sans-serif; font-size: 15px;  color: #F5F7FA; font-weight: 600;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5Z"></path></svg>Partager sur WhatsApp
+      </a>
+      <a href="MesMatchs.dc.html" style="padding-top: 8px; text-align: center; font-size: 14px; font-weight: 600; color: #F5F7FA;">Voir mes matchs</a>
+    </section>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"etape":{"editor":"enum","options":["terrains","centre","creneau","confirme"],"default":"terrains","section":"Écran"},"heure":{"editor":"string","default":"","section":"Écran"},"pris":{"editor":"boolean","default":false,"section":"Écran"},"mode":{"editor":"enum","options":["reserver","match"],"default":"reserver","section":"Écran"},"heuresUI":{"editor":"enum","options":["periodes","defilement","frise"],"default":"periodes","section":"Écran"},"loin":{"editor":"boolean","default":false,"section":"Écran"},"$preview":{"width":390,"height":920}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { etape: null, foot: true, padel: true, jour: null, terrain: 'T1', format: '7v7', heure: null, duree: 90, periode: null }; }
+  renderVals() {
+    const etape = this.state.etape ?? this.props.etape ?? 'terrains';
+    const match = (this.props.mode ?? 'reserver') === 'match';
+    const go = (e, extra) => () => this.setState({ etape: e, ...(extra || {}) });
+    const chip = on => 'height: 40px; padding: 0 14px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; ' + (on ? 'color: #FF6A4D; background: rgba(255,43,0,0.14); border: 1px solid rgba(255,43,0,0.45);' : 'color: #8A94A6; background: transparent; border: 1px solid rgba(138,148,166,0.16);');
+    const seg = on => 'height: 42px; border: 0; border-radius: 9px; cursor: pointer; font-size: 14px; font-weight: 700; ' + (on ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; box-shadow: inset 0 0 0 1px rgba(255,43,0,0.45);' : 'background: transparent; color: #8A94A6;');
+    const badge = pd => 'padding: 3px 6px; border-radius: 6px; font-family: \'Inter\', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.10em; color: #F5F7FA; background: ' + (pd ? 'rgba(10,10,15,0.78)' : 'rgba(10,10,15,0.78)') + ';';
+    const filtres = [['Foot', 'foot'], ['Padel', 'padel']].map(([nom, k]) => { const on = this.state[k]; return { nom, sel: String(on), style: chip(on).replace('height: 40px; padding: 0 14px;', 'height: 40px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px;'), coche: on ? 'font-weight: 800;' : 'display: none;',
+      pick: () => { const autre = k === 'foot' ? 'padel' : 'foot'; if (on && !this.state[autre]) return; this.setState({ [k]: !on }); } }; });
+    const SLOTS = { 'Chéraga Arena': ['19:30', '20:30', '21:00', '23:30'], 'Complexe El Biar': ['19:30', '20:30', '21:00'], 'Complexe Ryad': ['19:30', '20:30', '21:30'], 'Stade de Birkhadem': ['20:00', '22:00', '23:00'] };
+    const tous = [
+      { nom: 'Chéraga Arena', padel: false, terrains: '3 TERRAINS · 5v5 → 11v11', horaire: 'Ouvert jusqu’à 1:00', quartier: 'Chéraga · 3,1 km', libres: '4 créneaux libres ce soir', prix: '5 000', cadrage: '80% 45%' },
+      { nom: 'Complexe El Biar', padel: true, terrains: '2 PISTES · 2v2', horaire: 'Ouvert jusqu’à 0:00', quartier: 'El Biar · 2,1 km', libres: '3 créneaux libres ce soir', prix: '2 400', cadrage: '60% 55%' },
+      { nom: 'Complexe Ryad', padel: false, terrains: '3 TERRAINS · 5v5 · 6v6', horaire: 'Ouvert jusqu’à 2:00', quartier: 'Hydra · 1,2 km', libres: '3 créneaux libres ce soir', prix: '3 000', cadrage: '40% 50%' },
+      { nom: 'Stade de Birkhadem', padel: false, terrains: '4 TERRAINS · 5v5', horaire: 'Ouvert jusqu’à 1:00', quartier: 'Birkhadem · 3,4 km', libres: '3 créneaux libres ce soir', prix: '3 500', cadrage: '15% 40%' }
+    ];
+    const centres = tous.filter(c => c.padel ? this.state.padel : this.state.foot).map(c => ({ ...c, sport: c.padel ? 'PADEL' : 'FOOT', badge: badge(c.padel),
+      voile: 'position: absolute; inset: 0; background: ' + (c.padel ? 'linear-gradient(180deg, rgba(10,10,15,0.15) 0%, rgba(10,10,15,0.92) 100%);' : 'linear-gradient(180deg, rgba(10,10,15,0.15) 0%, rgba(10,10,15,0.92) 100%);'),
+      ouvrir: go('centre'), slots: (SLOTS[c.nom] || []).map(h => ({ h, aria: c.nom + ', ' + h, pick: c.nom === 'Chéraga Arena' ? go('creneau', ['19:30', '20:30'].indexOf(h) !== -1 ? { jour: 0, heure: h, terrain: 'T2', format: '5v5' } : { jour: 0, heure: h, terrain: 'T1' }) : go('centre') })) }));
+    const ceSoir = [['19:30', 'Terrain 2'], ['20:30', 'Terrain 2'], ['21:00', 'Terrain 1'], ['23:30', 'Terrain 1']].map(([heure, terrain]) => ({ heure, terrain, pick: go('creneau', terrain === 'Terrain 1' ? { jour: 0, heure, terrain: 'T1' } : { jour: 0, heure, terrain: 'T2', format: '5v5' }) }));
+    const terrainsCentre = [
+      { id: 'T1', nom: 'Terrain 1', formats: '5v5 · 6v6 · 7v7 · 8v8', prix: '5 000' },
+      { id: 'T2', nom: 'Terrain 2', formats: '5v5', prix: '5 000' },
+      { id: 'T3', nom: 'Grand terrain', formats: '11v11', prix: '12 000' }
+    ].map(t => ({ ...t, pick: go('creneau', { terrain: t.id }) }));
+    const jd = [['AUJ.', '20'], ['MER.', '21'], ['JEU.', '22'], ['VEN.', '23'], ['SAM.', '24'], ['DIM.', '25'], ['LUN.', '26']];
+    const jourSel = this.state.jour ?? (this.props.loin ? 6 : 4);
+    const jours = jd.map(([court, num], i) => { const on = i === jourSel; return { court, num, on: String(on), pick: () => this.setState({ jour: i }),
+      style: 'flex: 1 1 0; min-width: 0; height: 66px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 12px; cursor: pointer; padding: 0; ' + (on ? 'background: linear-gradient(180deg, #1C2533 0%, #131A24 100%); color: #FFFFFF; border: 1px solid rgba(255,43,0,0.40); box-shadow: 0 0 0 1px rgba(255,43,0,0.10), 0 8px 24px rgba(255,43,0,0.24), inset 0 -2px 0 #FF2B00;' : 'background: #131A24; color: #C5CCD6; border: 1px solid rgba(138,148,166,0.16);') }; });
+    const choixTerrains = [['T1', 'Terrain 1'], ['T2', 'Terrain 2']].map(([id, nom]) => ({ nom, style: seg(this.state.terrain === id), pick: () => this.setState({ terrain: id, format: id === 'T2' ? '5v5' : this.state.format }) }));
+    // tarif horaire par format (le vrai calcul passe par quoteRange et les tranches horaires du centre)
+    const horaire = this.state.terrain === 'T2' ? { '5v5': 5000 } : this.state.terrain === 'T3' ? { '11v11': 12000 } : { '5v5': 5000, '6v6': 5600, '7v7': 6000, '8v8': 6400 };
+    const fmts = Object.keys(horaire);
+    const fmt = horaire[this.state.format] ? this.state.format : fmts[0];
+    const duree = this.state.duree;
+    const prixDe = f => Math.round(horaire[f] * duree / 60);
+    const fr = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const formats = fmts.map(f => { const on = f === fmt; return { label: f, total: fr(prixDe(f)), joueurs: (2 * parseInt(f, 10)) + ' joueurs', pick: () => this.setState({ format: f }),
+      style: 'display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 66px; border: 0; border-radius: 12px; cursor: pointer; ' + (on ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; box-shadow: inset 0 0 0 1px rgba(255,43,0,0.45);' : 'background: #131A24; color: #F5F7FA; box-shadow: inset 0 0 0 1px rgba(138,148,166,0.30);'),
+      prixStyle: 'font-size: 12px; font-weight: 700; opacity: ' + (on ? '0.75' : '0.65') + ';' }; });
+    const durees = [[60, '1 h'], [90, '1 h 30'], [120, '2 h']].map(([m, label]) => ({ label, pick: () => this.setState({ duree: m }), style: seg(duree === m) }));
+    const hm = m => { const h = Math.floor(m / 60) % 24, mi = m % 60; return String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0'); };
+    const occupe = (jourSel === 6 ? [[20 * 60, 21 * 60 + 30]] : this.state.terrain === 'T2' ? (jourSel === 0 ? [[22 * 60, 23 * 60]] : [[18 * 60, 19 * 60 + 30]]) : this.state.terrain === 'T3' ? (jourSel === 0 ? [[22 * 60 + 30, 24 * 60]] : [[20 * 60, 22 * 60]]) : [[10 * 60, 12 * 60], [14 * 60, 15 * 60 + 30], [19 * 60 + 30, 21 * 60], [22 * 60 + 30, 23 * 60 + 30]]).concat(this.props.pris && jourSel === 4 ? [[18 * 60, 19 * 60 + 30]] : []);
+    const maintenant = 19 * 60 + 15; // mar. 20 oct., 19:15 : pas de créneau dans le passé
+    const fermeture = 25 * 60;
+    const libresMin = [];
+    for (let m = 8 * 60; m + duree <= fermeture; m += 30) if ((jourSel !== 0 || m >= maintenant) && !occupe.some(([a, b]) => m < b && m + duree > a)) libresMin.push(m);
+    const heureVoulue = this.state.heure ?? this.props.heure;
+    const heureSel = libresMin.map(hm).indexOf(heureVoulue) !== -1 ? heureVoulue : (libresMin.map(hm).indexOf('18:00') !== -1 ? '18:00' : hm(libresMin.find(m => m >= 18 * 60) ?? libresMin[0]));
+    const heures = libresMin.map(m => { const h = hm(m), on = h === heureSel; return { heure: h, fin: hm(m + duree), pick: () => this.setState({ heure: h }),
+      style: 'height: 56px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; ' + (on ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; border: 1px solid rgba(255,43,0,0.45);' : 'background: #131A24; color: #F5F7FA; border: 1px solid rgba(138,148,166,0.16);'),
+      finStyle: 'font-size: 11px; font-weight: 600; opacity: ' + (on ? '0.70' : '0.55') + ';' }; });
+    const debutMin = libresMin[libresMin.map(hm).indexOf(heureSel)];
+    const per = m => m < 12 * 60 ? 'matin' : m < 18 * 60 ? 'apm' : 'soir';
+    const P = [['matin', 'Matin'], ['apm', 'Après-midi'], ['soir', 'Soir']];
+    const periodeSel = this.state.periode ?? per(debutMin);
+    const periodes = P.map(([id, nom]) => { const on = id === periodeSel; const n = libresMin.filter(m => per(m) === id).length; return { nom, nb: n + (n > 1 ? ' libres' : ' libre'), pick: () => this.setState({ periode: id }),
+      style: 'height: 52px; border: 0; border-radius: 9px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; ' + (on ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; box-shadow: inset 0 0 0 1px rgba(255,43,0,0.45);' : 'background: transparent; color: #C5CCD6;'),
+      nbStyle: 'font-size: 11px; font-weight: 600; opacity: 0.7;' }; });
+    const heuresPeriode = heures.filter((h, i) => per(libresMin[i]) === periodeSel);
+    const chipH = on => 'flex: 0 0 auto; height: 44px; padding: 0 14px; border-radius: 10px; cursor: pointer; font-family: \'Inter\', system-ui, sans-serif; font-size: 16px; font-weight: 600; ' + (on ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; border: 1px solid rgba(255,43,0,0.45);' : 'background: #131A24; color: #F5F7FA; border: 1px solid rgba(138,148,166,0.16);');
+    const lignesPeriodes = P.map(([id, nom]) => { const hs = libresMin.filter(m => per(m) === id); return { nom, nb: hs.length + (hs.length > 1 ? ' libres' : ' libre'), heures: hs.map(m => ({ heure: hm(m), chip: chipH(hm(m) === heureSel), pick: () => this.setState({ heure: hm(m) }) })) }; });
+    const idx = libresMin.indexOf(debutMin);
+    const X = m => ((m - 8 * 60) / (17 * 60) * 100).toFixed(2) + '%';
+    const W = d => (d / (17 * 60) * 100).toFixed(2) + '%';
+    const friseOccupe = occupe.map(([a, b]) => ({ style: 'position: absolute; top: 0; bottom: 0; left: ' + X(a) + '; width: ' + W(b - a) + '; background: repeating-linear-gradient(135deg, rgba(255,255,255,0.22) 0 4px, rgba(255,255,255,0.05) 4px 8px);' }));
+    const friseSel = 'position: absolute; top: 0; bottom: 0; left: ' + X(debutMin) + '; width: ' + W(duree) + '; background: #FF2B00; border-radius: 6px;';
+    const ui = this.props.heuresUI ?? 'periodes';
+    const j = jd[jourSel];
+    const hauteurs = { terrains: match ? 980 : 920, centre: 930, creneau: this.props.loin ? 1010 : 940, confirme: 844 };
+    return {
+      racine: 'position: relative; width: 390px; height: ' + hauteurs[etape] + 'px; overflow: hidden; background: #0A0A0F; color: #8A94A6; font-family: \'Inter\', system-ui, sans-serif; font-size: 15px; line-height: 1.5;',
+      estTerrains: etape === 'terrains', estCentre: etape === 'centre', estCreneau: etape === 'creneau', estConfirme: etape === 'confirme', consulter: this.props.vue === 'consulter', pasConsulter: this.props.vue !== 'consulter', titreConfirme: this.props.vue === 'consulter' ? 'Ta réservation' : 'C’est réservé',
+      modeMatch: match, modeResa: !match, filAriane: match ? 'CRÉER UN MATCH · LE TERRAIN' : 'RÉSERVER UN TERRAIN', filArianeR1: match ? 'CRÉER UN MATCH · LE TERRAIN' : '',
+      titreR3: match ? 'Le créneau de ton match' : 'Ta réservation',
+      ctaR3: match ? 'Réserver et configurer le match' : 'Confirmer la réservation',
+      filtres, centres, ceSoir, terrainsCentre, jours, choixTerrains, formats, heures,
+      grilleFormats: 'display: grid; grid-template-columns: repeat(' + Math.min(fmts.length, 4) + ', minmax(0, 1fr)); gap: 8px;',
+      recapCourt: (jourSel === 0 ? 'Ce soir' : j[0].charAt(0) + j[0].slice(1).toLowerCase() + ' ' + j[1]) + ' · ' + heureSel + ' → ' + hm(debutMin + duree) + ' · ' + fmt.toUpperCase() + ' · ' + this.state.terrain,
+      totalChoisi: fr(prixDe(fmt)), durees, nbLibres: libresMin.length,
+      uiPeriodes: ui === 'periodes', uiDefilement: ui === 'defilement', uiFrise: ui === 'frise', periodes, heuresPeriode, lignesPeriodes, friseOccupe, friseSel,
+      heureSel, finSel: hm(debutMin + duree),
+      cDate: (jourSel === 0 ? 'MAR.' : j[0]) + ' ' + j[1] + ' OCT. · ' + heureSel + ' → ' + hm(debutMin + duree), cTerrain: this.state.terrain + ' · ' + fmt.toUpperCase(), cTotal: fr(prixDe(fmt)) + ' DA',
+      cCode: (jourSel === 4 && heureSel === '18:00' && this.state.terrain === 'T1' && fmt === '7v7' && duree === 90) ? 'CHA-0482' : 'CHA-0517', cLimite: (jourSel === 0 ? '' : j[0].toLowerCase() + ' ' + j[1] + ', ') + hm(debutMin - 120), annulLibre: !(jourSel === 0 && debutMin - 120 < maintenant), annulTard: jourSel === 0 && debutMin - 120 < maintenant,
+      precedent: () => idx > 0 && this.setState({ heure: hm(libresMin[idx - 1]) }), suivant: () => idx < libresMin.length - 1 && this.setState({ heure: hm(libresMin[idx + 1]) }),
+      versTerrains: go('terrains'), versCentre: go('centre'), versCreneau: go('creneau'),
+      confirmer: match ? () => {} : go('confirme')
+    };
+  }
+}
+</script>
+</body>
+</html>

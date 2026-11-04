@@ -1,0 +1,207 @@
+/* Explorer repeint (Lot 5, 25/10/2026) — Explorer.dc.html (en-tête, onglets, onglet Terrains) et FiltresExplorer.dc.html.
+   Propriétés logiques partout (miroir RTL automatique) ; jetons du DS uniquement. */
+
+/* --- En-tête : titre + recherche + filtres ------------------------------------------------------------ */
+.xp-head { display: flex; justify-content: space-between; align-items: center; }
+.xp-h1 { margin: 0; font-family: var(--font-body); font-weight: 700; font-size: 28px; line-height: 1.2; letter-spacing: -.015em; color: var(--text); }
+.xp-head__btns { display: flex; gap: 8px; }
+.xp-iconbtn { position: relative; width: 44px; height: 44px; border-radius: var(--r-full); border: 1px solid var(--line); background: transparent;
+  color: var(--text); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.xp-iconbtn[aria-pressed="true"] { border-color: var(--primary-line); color: var(--primary-glow); background: var(--primary-wash); }
+.xp-iconbtn:focus-visible, .xp-tab:focus-visible, .xp-chip:focus-visible, .xp-vcard:focus-visible,
+.xp-pill:focus-visible, .xp-switch:focus-visible, .xp-filters__clear:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.xp-iconbtn__n { position: absolute; top: -4px; inset-inline-end: -4px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box;
+  border-radius: var(--r-full); background: var(--primary); color: #fff; font-size: var(--fs-micro); font-weight: 700; line-height: 18px; text-align: center; }
+
+/* --- Onglets Matchs / Terrains ------------------------------------------------------------------------- */
+.xp-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 20px; }
+.xp-tabs[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.xp-tab { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: var(--r-3); cursor: pointer;
+  font-size: var(--fs-b2); font-weight: 700; letter-spacing: .06em; color: var(--text-3); background: transparent; border: 1px solid var(--line);
+  transition: border-color var(--dur-2), color var(--dur-2), background var(--dur-2), box-shadow var(--dur-2); }
+.xp-tab:hover { border-color: var(--primary-line); color: var(--text); }
+.xp-tab[aria-selected="true"] { color: var(--text); background: var(--ink-3); border-color: var(--primary-line); box-shadow: inset 0 -2px 0 var(--primary); }
+
+/* --- Rangée de puces (Terrains) ------------------------------------------------------------------------ */
+.xp-chips { display: flex; gap: 8px; margin-top: 16px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.xp-chips::-webkit-scrollbar { display: none; }
+.xp-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border-radius: var(--r-2); cursor: pointer;
+  font-size: var(--fs-b2); font-weight: 600; color: var(--text-3); background: transparent; border: 1px solid var(--line); }
+.xp-chip[aria-pressed="true"] { color: var(--primary-glow); background: var(--primary-wash); border-color: var(--primary-line); }
+
+.xp-sec { margin: 24px 0 12px; font-family: var(--font-body); font-weight: 600; font-size: var(--fs-b1); line-height: 1.2; color: var(--text); }
+
+/* --- Carte centre -------------------------------------------------------------------------------------- */
+.xp-vlist { display: flex; flex-direction: column; gap: 12px; }
+.xp-vcard { display: flex; flex-direction: column; border-radius: var(--r-3); overflow: hidden; border: 1px solid var(--line); background: var(--ink-2);
+  color: var(--text); cursor: pointer; text-align: start; padding: 0; width: 100%; appearance: none; }
+.xp-vcard:hover { border-color: var(--primary-line); }
+.xp-vcard[aria-busy="true"] { opacity: .6; pointer-events: none; }
+.xp-vcard__photo { position: relative; display: block; height: 168px; }
+/* .mb-pitch (player.css) étire toute image en couverture et force `position: relative` sur les autres enfants :
+   règles plus spécifiques ici pour garder le signe de marque à ses proportions et le badge dans son coin (même
+   contournement que .rsv-vrow__thumb, reserver.css). */
+.xp-vcard__photo > img.xp-vcard__mark { position: absolute; inset: 50% auto auto 50%; width: 56px; height: 56px; transform: translate(-50%, -50%);
+  object-fit: contain; opacity: .9; z-index: 3; }
+.xp-vcard__photo.mb-pitch > .xp-vcard__badge { position: absolute; z-index: 4; }
+/* Texte posé sur la surface « terrain » sombre du DS (.mb-pitch) : couleurs FIXES, sombres quel que soit le thème. */
+.xp-vcard__badge { position: absolute; top: 10px; inset-inline-end: 10px; padding: 5px 8px; border-radius: var(--r-1); background: rgba(10, 10, 15, .78);
+  font-size: var(--fs-micro); font-weight: 600; letter-spacing: .10em; color: #F5F7FA; }
+.xp-vcard__body { display: flex; flex-direction: column; gap: 6px; padding: 14px; }
+.xp-vcard__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.xp-vcard__name { margin: 0; font-size: var(--fs-b1); line-height: 1.25; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.xp-vcard__price { white-space: nowrap; font-size: var(--fs-b3); color: var(--text); }
+.xp-vcard__price .mb-price { font-size: 22px; }
+.xp-vcard__formats { display: flex; flex-wrap: wrap; gap: 6px; }
+.xp-vcard__format { padding: 4px 8px; border-radius: var(--r-1); background: var(--ink-3); font-size: var(--fs-micro); line-height: 1.2; font-weight: 600; letter-spacing: .06em; color: var(--text); }
+.xp-vcard__foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line); }
+.xp-vcard__free { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-b3); font-weight: 600; color: var(--success); }
+.xp-vcard__free i { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--success); }
+.xp-vcard__free--none { color: var(--text-3); }
+.xp-vcard__free--none i { background: var(--text-4); }
+.xp-vcard__chev { width: 16px; height: 16px; color: var(--text-4); }
+
+/* --- Page « Filtres » ---------------------------------------------------------------------------------- */
+.xp-filters { position: fixed; inset: 0; z-index: 90; overflow-y: auto; background: var(--ink); color: var(--text-3);
+  padding: max(26px, env(safe-area-inset-top)) 16px 120px; animation: mb-rise var(--dur-3) var(--ease-out); }
+.xp-filters__head { display: flex; align-items: center; justify-content: space-between; }
+.xp-filters__clear { background: none; border: 0; padding: 8px 4px; font-size: var(--fs-b2); font-weight: 700; color: var(--text); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; }
+.xp-filters__h1 { margin: 18px 0 0; font-family: var(--font-body); font-weight: 700; font-size: 28px; line-height: 1.2; letter-spacing: -.015em; color: var(--text); }
+.xp-fsec { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+.xp-fsec h2 { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; color: var(--text); }
+.xp-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.xp-pill { display: inline-flex; align-items: center; height: 40px; padding: 0 14px; border-radius: var(--r-full); cursor: pointer;
+  font-size: var(--fs-b2); font-weight: 700; color: var(--text); background: transparent; border: 1px solid var(--line-strong); }
+.xp-pill[aria-pressed="true"] { color: var(--primary-glow); background: var(--primary-wash); border-color: var(--primary-line); }
+.xp-pill--link { border-color: var(--line-strong); }
+.xp-pill--link[aria-pressed="true"] { color: var(--primary-glow); background: var(--primary-wash); border-color: var(--primary-line); }
+.xp-switch { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 16px;
+  background: var(--ink-2); border: 1px solid var(--line); cursor: pointer; text-align: start; font-size: var(--fs-b1); font-weight: 700; color: var(--text); }
+.xp-switch__track { position: relative; flex: 0 0 52px; width: 52px; height: 30px; border-radius: var(--r-full); background: var(--ink-3); }
+.xp-switch__knob { position: absolute; top: 3px; inset-inline-start: 3px; width: 24px; height: 24px; border-radius: var(--r-full); background: #fff;
+  transition: inset-inline-start var(--dur-2) var(--ease-out); }
+.xp-switch[aria-checked="true"] .xp-switch__track { background: var(--success); }
+.xp-switch[aria-checked="true"] .xp-switch__knob { inset-inline-start: 25px; }
+.xp-filters__foot { position: fixed; inset-inline: 0; bottom: 0; padding: 12px 16px max(22px, env(safe-area-inset-bottom)); background: var(--ink);
+  border-top: 1px solid var(--line); }
+
+/* --- « Choisis un jour » : calendrier plein mois (ChoisirJour.dc.html) ---------------------------------------- */
+.xp-cal { position: relative; display: flex; flex-direction: column; gap: 14px; border-radius: 20px 20px 0 0; }
+.xp-cal__close { position: absolute; top: 14px; inset-inline-end: 16px; width: 40px; height: 40px; }
+.xp-cal__nav { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.xp-cal__month { font-size: var(--fs-b1); font-weight: 700; color: var(--text); }
+.xp-cal__arrow { width: 40px; height: 40px; border-radius: var(--r-full); border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+  display: grid; place-items: center; padding: 0; cursor: pointer; }
+.xp-cal__arrow:disabled { opacity: .35; cursor: default; }
+.xp-cal__arrow:focus-visible, .xp-cal__day:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Un seul chevron (i-back, « < ») pour les deux flèches : « suivant » est son miroir ; tout s'inverse en arabe (sens de lecture). */
+.xp-cal__arrow--next .xp-cal__arrow-ic { transform: scaleX(-1); }
+:root[dir="rtl"] .xp-cal__arrow .xp-cal__arrow-ic { transform: scaleX(-1); }
+:root[dir="rtl"] .xp-cal__arrow--next .xp-cal__arrow-ic { transform: none; }
+.xp-cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.xp-cal__wd { text-align: center; font-size: var(--fs-micro); font-weight: 700; color: var(--text-3); }
+.xp-cal__day { position: relative; height: 44px; border-radius: var(--r-2); display: grid; place-items: center; font-size: var(--fs-b1); font-weight: 700;
+  color: var(--text); background: var(--ink-3); border: 1px solid transparent; cursor: pointer; padding: 0; }
+.xp-cal__day--past { background: transparent; color: var(--text-4); cursor: default; }
+.xp-cal__day[aria-pressed="true"] { background: var(--ink-3); color: var(--text); border-color: var(--primary-line); box-shadow: inset 0 -2px 0 var(--primary); }
+.xp-cal__dot { position: absolute; bottom: 6px; inset-inline-start: 50%; width: 5px; height: 5px; margin-inline-start: -2.5px; border-radius: var(--r-full); background: var(--text); }
+.xp-cal__dot--static { position: static; display: inline-block; margin: 0; }
+.xp-cal__legend { margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: var(--fs-b3); color: var(--text-2); }
+
+/* --- Feuille « Tu veux faire quoi ? » du bouton « + » (CreerOuReserver.dc.html) --------------------------------- */
+.xp-cob { display: flex; flex-direction: column; gap: 14px; border-radius: 20px 20px 0 0; }
+.xp-cob__row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px; border-radius: var(--r-3); cursor: pointer;
+  background: var(--ink-3); border: 1px solid var(--line); color: var(--text); text-align: start; }
+.xp-cob__row:focus-visible, .xp-cob__close:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.xp-cob__ic { flex: 0 0 48px; width: 48px; height: 48px; border-radius: var(--r-3); background: var(--ink-4, var(--ink-3)); display: grid; place-items: center; color: var(--text); }
+.xp-cob__ic--brand { background: var(--primary-wash); color: var(--primary-glow); }
+.xp-cob__ic svg { width: 22px; height: 22px; }
+.xp-cob__txt { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.xp-cob__txt b { font-size: var(--fs-b1); line-height: 1.2; font-weight: 600; }
+.xp-cob__txt span { font-size: var(--fs-b2); line-height: 1.4; color: var(--text-2); }
+.xp-cob__chev { flex: 0 0 18px; width: 18px; height: 18px; color: var(--text-3); }
+:root[dir="rtl"] .xp-cob__chev { transform: scaleX(-1); }
+
+/* --- Recherche d'Explorer : page plein écran (Recherche.dc.html) ------------------------------------------------- */
+.xp-search { position: fixed; inset: 0; z-index: 90; overflow-y: auto; background: var(--ink); padding: max(20px, env(safe-area-inset-top)) 16px 40px;
+  animation: mb-rise var(--dur-3) var(--ease-out); }
+.xp-search__head { display: flex; align-items: center; gap: 12px; }
+:root[dir="rtl"] .xp-search__back { transform: scaleX(-1); }
+.xp-search__field { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px; border-radius: var(--r-full);
+  background: var(--ink-2); border: 1px solid var(--line); color: var(--text-3); }
+.xp-search__field:focus-within { border-color: var(--primary-line); }
+.xp-search__field input { flex: 1 1 auto; min-width: 0; background: none; border: 0; outline: none; color: var(--text); font-size: var(--fs-b1); font-weight: 600; }
+.xp-search__field input::-webkit-search-cancel-button, .xp-search__field input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+.xp-search__clear { width: 28px; height: 28px; border-radius: var(--r-full); border: 0; background: none; color: var(--text-3); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.xp-search__h2 { margin: 24px 0 10px; font-family: var(--font-body); font-size: var(--fs-b1); font-weight: 600; color: var(--text); }
+.xp-search__list { display: flex; flex-direction: column; gap: 8px; }
+.xp-search__row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; border-radius: var(--r-3); cursor: pointer;
+  background: var(--ink-2); border: 1px solid var(--line); color: var(--text); text-align: start; }
+.xp-search__row[aria-busy="true"] { opacity: .6; }
+.xp-search__row:focus-visible, .xp-search__clear:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* .mb-pitch étire les images et force position: relative sur les enfants (même contournement que .xp-vcard__photo). */
+.xp-search__thumb { position: relative; flex: 0 0 56px; width: 56px; height: 56px; border-radius: var(--r-2); overflow: hidden; }
+.xp-search__thumb > img.xp-search__mark { position: absolute; inset: 50% auto auto 50%; width: 28px; height: 28px; transform: translate(-50%, -50%); object-fit: contain; opacity: .9; z-index: 3; }
+.xp-search__body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.xp-search__body b { font-size: var(--fs-b1); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.xp-search__tag { font-size: var(--fs-micro); font-weight: 600; letter-spacing: .08em; color: var(--text-3); }
+.xp-search__meta { font-size: var(--fs-b3); color: var(--text-2); }
+.xp-search__chev { flex: 0 0 16px; width: 16px; height: 16px; color: var(--text-4); }
+:root[dir="rtl"] .xp-search__chev { transform: scaleX(-1); }
+.xp-cob__close { background: none; border: 0; padding: 6px 0 0; text-align: center; font-size: var(--fs-b2); font-weight: 700; color: var(--text); cursor: pointer; }
+
+/* Invite de position (règle 33) sous « N centres partenaires » — même ton que celle de l'Accueil. */
+.xp-geo-hint { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; font-size: var(--fs-b3); color: var(--text-3); }
+
+/* --- Onglet Matchs, un jour sans match (ExplorerVide.dc.html) ----------------------------------------------------- */
+.xp-empty { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 36px 8px 0; text-align: center; }
+.xp-empty__mark { width: 68px; height: 68px; border-radius: var(--r-full); background: var(--ink-2); border: 1px solid var(--line); display: grid; place-items: center; color: var(--text-3); }
+.xp-empty__title { margin: 0; font-family: var(--font-body); font-size: 22px; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; color: var(--text); }
+.xp-empty__text { margin: 0; font-size: var(--fs-b1); line-height: 1.5; color: var(--text); }
+.xp-empty .mb-btn { margin-top: 6px; }
+
+/* --- Confirmation d'annulation de réservation : encadré du match lié (ConfAnnulerResaMatch.dc.html) ----------------- */
+.xp-cancel__match { margin: 0; padding: 12px 14px; border-radius: var(--r-3); background: var(--primary-wash); border: 1px solid var(--primary-line);
+  font-size: var(--fs-b2); line-height: 1.45; text-align: center; color: var(--text); }
+
+/* --- Onglet Matchs repeint (Explorer.dc.html) : rail de sept jours + carte de match ---------------------------------- */
+.xp-days { display: flex; gap: 6px; margin-top: 20px; }
+.xp-day { flex: 1 1 0; min-width: 0; height: 62px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: var(--r-3);
+  cursor: pointer; padding: 0; background: var(--ink-2); color: var(--text-2); border: 1px solid var(--line); }
+.xp-day[data-empty="true"] { opacity: .4; }
+.xp-day__abbr { font-size: var(--fs-micro); font-weight: 600; letter-spacing: .08em; }
+.xp-day__n { font-size: var(--fs-b1); line-height: 1.2; font-weight: 600; }
+.xp-day[aria-pressed="true"] { opacity: 1; background: var(--ink-3); color: var(--text); border-color: var(--primary-line); box-shadow: inset 0 -2px 0 var(--primary); }
+.xp-day:focus-visible, .xp-mcard:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.xp-list-gap { height: 22px; }
+.xp-mlist { display: flex; flex-direction: column; gap: 14px; }
+.xp-mcard { position: relative; display: flex; width: 100%; min-height: 126px; padding: 0; border-radius: var(--r-3); overflow: hidden; cursor: pointer; text-align: start;
+  color: var(--text); background: var(--ink-2); border: 1px solid var(--line); }
+.xp-mcard[data-kind="mine"] { background: var(--primary-wash); border-color: var(--primary-line); }
+.xp-mcard__photo { position: relative; flex: 0 0 96px; display: block; }
+.xp-mcard__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.xp-mcard__veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 10, 15, .20), rgba(10, 10, 15, .62)); }
+/* Texte posé sur la photo nocturne : couleurs FIXES (sombres quel que soit le thème). */
+.xp-mcard__stack { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.xp-mcard__badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px; border-radius: var(--r-1); background: rgba(10, 10, 15, .78);
+  font-size: var(--fs-micro); font-weight: 600; letter-spacing: .10em; color: #F5F7FA; }
+.xp-mcard__badge .mb-ic { color: #F5F7FA; }
+.xp-mcard__hour { font-family: var(--font-display); font-weight: 400; font-size: 38px; line-height: .9; color: #F5F7FA; }
+.xp-mcard__tab { position: absolute; top: 0; inset-inline-end: 14px; padding: 5px 10px 4px; border-radius: 0 0 var(--r-1) var(--r-1); font-family: var(--font-display);
+  font-size: 14px; line-height: 1; letter-spacing: .05em; color: #F5F7FA; background: #1C2533; }
+.xp-mcard[data-kind="mine"] .xp-mcard__tab { background: var(--primary); }
+.xp-mcard__body { position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 30px 16px 14px 14px; padding-inline: 14px 16px; }
+.xp-mcard__venue { font-size: var(--fs-b1); line-height: 1.25; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.xp-mcard__format { align-self: flex-start; margin-top: 4px; padding: 4px 8px; border-radius: var(--r-1); background: var(--ink-3); font-size: var(--fs-micro); line-height: 1.2;
+  font-weight: 600; letter-spacing: .06em; }
+.xp-mcard__foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: auto; padding-top: 8px; }
+.xp-mcard__state { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-b3); font-weight: 600; color: var(--text); }
+.xp-mcard__state i { flex: 0 0 7px; width: 7px; height: 7px; border-radius: var(--r-full); background: var(--success); }
+.xp-mcard[data-kind="full"] .xp-mcard__state { color: var(--text-3); }
+.xp-mcard[data-kind="full"] .xp-mcard__state i { background: var(--text-3); }
+.xp-mcard[data-kind="mine"] .xp-mcard__state { color: var(--primary-glow); }
+.xp-mcard[data-kind="mine"] .xp-mcard__state i { background: var(--primary); }
+.xp-mcard__price { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; white-space: nowrap; }
+.xp-mcard__price .mb-price { display: block; text-align: end; font-size: 28px; color: var(--text); }
+.xp-mcard__price .mb-price::after { display: block; margin: 3px 0 0; }

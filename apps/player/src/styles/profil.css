@@ -1,0 +1,266 @@
+/* PROFIL — groupe Premium (spec §7). S'appuie sur les tokens du DS gele et
+   les classes partagees de player.css (.tab-screen, .hm-section-label,
+   .mb-sechead, .tm-crest, .mb-pitch, .mb-ovr) sans jamais les redefinir ;
+   tout ce qui est propre a l'ecran est prefixe .pr-. */
+
+/* --- Entete : titre + icone parametres (reprend le patron `.pr-topbar2` du
+   prototype — "MON" plein, "PROFIL" en rouge). Le bouton reglages est un
+   placeholder honnete : le prototype source lui-meme ne simule pas cet
+   ecran (juste une alerte), reproduit ici via le meme toast que les autres
+   rangees "a construire" de la carte Compte. */
+.pr-topbar2 { display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 0 0; margin-bottom: 4px; }
+.pr-topbar2__h1 { font-family: var(--font-display); font-size: var(--fs-d3);
+  color: var(--text); letter-spacing: var(--ls-display); line-height: 1; }
+.pr-topbar2__h1 b { color: var(--primary-glow); }
+.pr-settings-btn { width: 36px; height: 36px; border-radius: var(--r-full);
+  background: var(--ink-2); border: 1px solid var(--line); color: var(--text-2);
+  display: grid; place-items: center;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear; }
+.pr-settings-btn:hover { border-color: var(--line-strong); background: var(--ink-3); }
+
+/* --- Hero identite : photo pleine largeur (meme actif que le hero Home),
+   avatar + OVR en chevauchement, nom en incrustation — calque sur
+   .pr-hero du prototype de reference (« Profil consolide »). Bleed
+   horizontal seul (le topbar occupe deja le haut de l'ecran, plus de
+   bleed vertical contre le bord). */
+.pr-hero { position: relative; height: 190px; margin: 14px -22px 20px; overflow: hidden; }
+/* Specificite : .mb-pitch > *:not(img) (socle gele) impose position:relative
+   a tout enfant direct non-image — le combinateur enfant reprend la main
+   pour garder l'incrustation en bas de photo. */
+.pr-hero > .pr-hero__inner { position: absolute; left: 22px; right: 22px; bottom: 16px;
+  display: flex; align-items: flex-end; gap: 14px; }
+
+/* Avatar : initiale Bebas sur cercle OR (l'or = valeur, comme le badge OVR
+   qui vient s'y accrocher — c'est le bijou de l'ecran, pas un decor). */
+.pr-avatar { position: relative; width: 72px; height: 72px; border-radius: var(--r-full);
+  border: 2px solid var(--gold); background: var(--ink-3); display: grid; place-items: center;
+  flex-shrink: 0; box-shadow: var(--e-1); }
+.pr-avatar__init { font-family: var(--font-display); font-size: 30px; line-height: 1; color: var(--text); }
+/* Centre en bas de l'avatar (pas a droite) — position exacte du prototype
+   (.pr-ovr : left:50%; transform:translateX(-50%)), corrigee ici. */
+.pr-avatar .mb-ovr { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); box-shadow: var(--e-1); }
+
+.pr-hero__who { flex: 1; min-width: 0; padding-bottom: 2px; }
+/* Garde A4 : prenom variable en Bebas d2 — une ligne, jamais de retour. */
+.pr-hero__name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-hero__handle { margin: 3px 0 0; font-family: var(--font-mono); font-size: var(--fs-micro);
+  color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-hero__meta { margin: 4px 0 0; font-family: var(--font-mono); font-size: var(--fs-tag);
+  font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Triptyque sous le hero, hors carte — calque .pr-hero-stats : les
+   memes chiffres que la carte "Mes stats" plus bas, juste le premier
+   regard avant de scroller. */
+.pr-hero-stats { display: flex; gap: 18px; margin: 0 2px 22px; }
+.pr-hero-stats > div { display: flex; flex-direction: column; gap: 3px; }
+.pr-hero-stats b { color: var(--text); line-height: 1; }
+.pr-hero-stats b.pr-hero-stats__gold { color: var(--gold-2); }
+.pr-hero-stats span { font-family: var(--font-mono); font-size: var(--fs-micro);
+  letter-spacing: .06em; text-transform: uppercase; color: var(--text-4); }
+
+/* Ligne depliable d'explication de l'OVR — l'OVR est explicable (spec §15),
+   jamais un chiffre pose la sans recours. */
+.pr-ovr-toggle { display: flex; align-items: center; gap: 7px; width: 100%;
+  min-height: var(--tap-min); text-align: left; cursor: pointer;
+  font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--text-3);
+  transition: color var(--dur-1) linear; }
+.pr-ovr-toggle:hover { color: var(--text-2); }
+.pr-chev { margin-left: auto; transition: transform var(--dur-2) var(--ease-out); }
+.pr-ovr-toggle[aria-expanded="true"] .pr-chev { transform: rotate(180deg); }
+.pr-ovr-expl { margin: 0 0 4px; padding: 12px; background: var(--ink-2);
+  border: 1px solid var(--line); border-radius: var(--r-3);
+  font-size: var(--fs-b3); color: var(--text-2); line-height: 1.55;
+  animation: mb-rise var(--dur-2) var(--ease-out); }
+
+/* --- Cartes — calque .pr-card du prototype : un seul patron de conteneur
+   pour toutes les sections du profil (stats, equipes, matchs, compte),
+   plutot que des sections nues comme avant. */
+.pr-card { background: var(--ink-2); border: 1px solid var(--line); box-shadow: var(--card-shadow);
+  border-radius: var(--r-4); padding: 14px; margin: 18px 0 0; }
+.pr-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.pr-card-head__t { display: flex; align-items: center; gap: 7px;
+  font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--text); }
+.pr-card-head__t .mb-ic { color: var(--primary-glow); }
+.pr-card-head__link { font-family: var(--font-mono); font-size: 8.5px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--primary-glow); }
+.pr-section { margin-top: 26px; }
+
+/* --- Mes stats : 4 tuiles colorees (calque sur .pr-stat4 du prototype —
+   Matchs neutre, Victoires succes, Defaites danger, Taux or) : une metrique
+   negative (defaites) reste en rouge, la positive en vert, la synthese en
+   or — trois signaux distincts, jamais confondus. */
+.pr-stat4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 16px; }
+.pr-stat-box { text-align: center; padding: 10px 4px; background: var(--ink-2);
+  border: 1px solid var(--line); border-radius: var(--r-3); }
+.pr-stat-box b { display: block; font-family: var(--font-display); font-size: var(--fs-d3); color: var(--text); line-height: 1; }
+.pr-stat-box span { display: block; margin-top: 4px; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--text-4); line-height: 1.3; }
+.pr-stat-box--ok b { color: var(--success); }
+.pr-stat-box--bad b { color: var(--danger); }
+.pr-stat-box--gold b { color: var(--gold); }
+
+/* --- Forme + note : une seule rangee dense (dots a gauche, moyenne calee a
+   droite) — calque sur .pr-forme-row du prototype, qui tient les deux
+   signaux dans le meme regard plutot que deux lignes empilees. */
+.pr-forme-label { font-family: var(--font-mono); font-size: var(--fs-tag);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); margin-bottom: 9px; }
+.pr-forme-row { display: flex; align-items: center; gap: 6px; min-height: var(--tap-min); }
+.pr-line__v { font-size: var(--fs-micro); color: var(--text-3); }
+
+/* Pastilles V/N/D — V en vert succes, N neutre, D sobre : une defaite n'est
+   pas un danger (le rouge danger reste reserve aux vrais etats negatifs). */
+.pr-forme { display: flex; gap: 6px; }
+.pr-dot { width: 26px; height: 26px; border-radius: var(--r-full);
+  display: grid; place-items: center; font-style: normal;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+.pr-dot--w { background: var(--success-wash); border: 1px solid rgba(31, 209, 122, .35); color: var(--success); }
+.pr-dot--n { background: rgba(255, 255, 255, .06); border: 1px solid var(--line); color: var(--text-2); }
+.pr-dot--d { background: transparent; border: 1px solid var(--line); color: var(--text-4); }
+
+/* Note moyenne, calee a droite de la rangee forme : chiffre Bebas + etoile
+   or, libelle mono deux lignes (calque sur .pr-note-avg du prototype). */
+.pr-note-avg { margin-left: auto; text-align: right; flex-shrink: 0; }
+.pr-note-avg__n { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+.pr-note-avg__n .mb-ic { color: var(--gold); width: 14px; height: 14px; }
+.pr-note-avg__n b { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); line-height: 1; }
+.pr-note-avg__l { display: block; margin-top: 3px; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--text-4); line-height: 1.35; max-width: 96px; }
+
+/* --- Rangee equipe — calque .pr-team-row : ecusson + nom/badge capitaine +
+   effectif, OVR d'equipe volontairement absent (aucun calcul core de ce
+   type n'existe, seul computeOvr() au niveau joueur est reel — pas de
+   chiffre invente juste pour remplir la case du prototype). */
+.pr-team-row { display: flex; align-items: center; gap: 10px; width: 100%;
+  min-height: var(--tap-min); padding: 10px; text-align: left;
+  background: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-3);
+  cursor: pointer; margin-bottom: 8px;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear; }
+.pr-team-row:hover { border-color: var(--line-strong); }
+.pr-team-body { flex: 1; min-width: 0; }
+.pr-team-body__row { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.pr-team-body__row b { font-size: var(--fs-b3); font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-team-cap { flex-shrink: 0; font-family: var(--font-mono); font-size: 8px; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--gold-2);
+  background: rgba(242, 183, 5, .14); padding: 2px 6px; border-radius: var(--r-1); }
+.pr-team-meta { display: block; margin-top: 3px; font-family: var(--font-mono);
+  font-size: var(--fs-tag); letter-spacing: .05em; text-transform: uppercase; color: var(--text-4); }
+.pr-team-row > .mb-ic:last-child { color: var(--text-4); flex-shrink: 0; }
+
+/* --- Rangee generique (defis) — reutilisee telle quelle sous la rangee
+   equipe, meme carte. */
+.pr-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px;
+  padding: 12px var(--s-3); text-align: left;
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-3);
+  color: var(--text-2);
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear,
+    transform var(--dur-1) var(--ease-out); }
+button.pr-row { cursor: pointer; }
+button.pr-row:hover { border-color: var(--line-strong); background: var(--ink-3); }
+button.pr-row:active { transform: scale(.985); }
+.pr-row__ic { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center;
+  background: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-2);
+  color: var(--text-3); }
+.pr-row .n { flex: 1; min-width: 0; }
+.pr-row .n b { display: block; font-size: var(--fs-b3); font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-row .n span { display: block; margin-top: 2px; font-family: var(--font-mono);
+  font-size: var(--fs-tag); letter-spacing: .06em; text-transform: uppercase; color: var(--text-4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-row > .mb-ic:last-child { color: var(--text-4); flex-shrink: 0; }
+
+/* --- Matchs recents -------------------------------------------------------- */
+.pr-recent { display: flex; flex-direction: column; gap: var(--s-3); }
+
+/* --- Compte — grille 2 colonnes, calque .pr-settings-grid : icone + libelle,
+   separateur fin, variante rouge pour la deconnexion. Les deux dernieres
+   rangees (danger comprise) n'ont pas de bordure basse (:nth-last-child(2)
+   + :last-child), comme le prototype. */
+.pr-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+/* Lot P1, point 5 — consigne d'installation iOS (carte Profil, visible
+   seulement sur iOS hors mode standalone, voir lib/pwa.ts). Les deux
+   « touches » reprennent les icônes du sprite gelé en ligne dans la phrase. */
+.pr-install { margin: 0; padding: 4px 0 6px; font-size: var(--fs-b3); line-height: 1.5; color: var(--text-2); }
+.pr-install__key { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px;
+  border: 1px solid var(--line-strong); color: var(--text); white-space: nowrap; vertical-align: baseline; }
+.pr-install__key .mb-ic { color: var(--text-4); }
+
+.pr-settings-row { display: flex; align-items: center; gap: 8px; width: 100%;
+  min-height: var(--tap-min); padding: 11px 0; text-align: left;
+  font-size: var(--fs-b3); color: var(--text-2); border-bottom: 1px solid var(--line); }
+.pr-settings-row:nth-last-child(2), .pr-settings-row:last-child { border-bottom: none; }
+.pr-settings-row .mb-ic { color: var(--text-4); flex-shrink: 0; }
+.pr-settings-row--danger { color: var(--danger); }
+.pr-settings-row--danger .mb-ic { color: var(--danger); }
+
+/* --- Apparence (ApparenceSheet.tsx, règle 42) — calque EXACT de
+   maquettes/Apparence.dc.html (23/10/2026, corrections d'Aymen du
+   24/10) : pas de phrase d'intro, pas de description sous les choix,
+   "Fermer" en lien texte. Panneau propre (pas .mb-sheet : rayon 20px,
+   padding 16px, bordure fine — tous différents du gabarit générique
+   partagé avec ConfirmSheet, non revalidé sur ces valeurs). */
+.ap-sheet { width: 100%; background: var(--ink-2); border-top: 1px solid var(--line);
+  border-radius: 20px 20px 0 0;
+  padding: 12px 16px max(26px, env(safe-area-inset-bottom)) 16px;
+  display: flex; flex-direction: column; gap: 14px;
+  animation: mb-sheet-up var(--dur-3) var(--ease-out); }
+.ap-sheet__handle { align-self: center; width: 40px; height: 5px; border-radius: var(--r-full);
+  background: rgba(138, 148, 166, .35); }
+.ap-sheet__title { margin: 0; font-family: var(--font-body); font-weight: 700; font-size: 22px;
+  line-height: 1.2; letter-spacing: -0.01em; text-align: center; color: var(--text); }
+.ap-list { display: flex; flex-direction: column; gap: 14px; }
+.ap-row { display: flex; align-items: center; justify-content: space-between; width: 100%;
+  height: 56px; padding: 0 16px; border-radius: var(--r-3);
+  border: 1px solid var(--line-strong); background: none;
+  font-size: 17px; font-weight: 700; color: var(--text); text-align: start; }
+.ap-row--on { border-color: transparent; background: var(--primary-wash); color: var(--primary-glow); }
+.ap-row__suffix { font-weight: 600; }
+.ap-row__check { color: #050505; flex-shrink: 0; }
+.ap-sheet__close { align-self: stretch; padding: 6px 0 0; background: none; border: none;
+  text-align: center; font-size: 14px; font-weight: 700; color: var(--text); }
+
+/* --- Aide & Support / Paiements (22/09/2026) — écrans d'information sous Profil. Les rangées de contact sont des
+   liens (tel:, mailto:, wa.me) qui reprennent le patron .pr-settings-row (hauteur tactile ≥ 44 px) sur une
+   colonne : micro-label mono, valeur, verbe d'action, flèche. */
+.su-list { display: flex; flex-direction: column; }
+.su-list .su-row { text-decoration: none; gap: 12px; }
+.su-list .su-row:nth-last-child(2) { border-bottom: 1px solid var(--line); }
+.su-list .su-row:last-child { border-bottom: none; }
+.su-k { flex: 0 0 82px; font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
+.su-v { flex: 1; min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+.su-hint { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .06em; text-transform: uppercase; color: var(--primary-glow); }
+.su-row:hover .su-v { text-decoration: underline; }
+.su-row:focus-visible { outline: 2px solid var(--primary-glow); outline-offset: 2px; border-radius: var(--r-2); }
+.su-rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.su-rules li { display: flex; flex-direction: column; gap: 3px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.su-rules li:last-child { border-bottom: none; padding-bottom: 2px; }
+.su-rules b { color: var(--text); font-size: var(--fs-b3); }
+.su-rules span { color: var(--text-2); font-size: var(--fs-b3); line-height: 1.5; }
+/* --- Badges — calque .pr-badge-grid du prototype (emoji remplaces par le
+   sprite gele, zero-emoji oblige). 4 tuiles reelles (pas 5) : le 5e badge
+   du prototype ("Playmaker") est hors scope, cf. commentaire au-dessus de
+   VICTORY_TARGET dans ProfileScreen.tsx. Etat "verrouille" (pas encore
+   obtenu) grise l'icone et affiche une progression chiffree plutot que de
+   pretendre un badge non gagne — jamais de faux "Obtenu". */
+.pr-badge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.pr-badge-item { text-align: center; }
+.pr-badge-item__ic { width: 38px; height: 38px; border-radius: var(--r-3); margin: 0 auto 6px;
+  display: grid; place-items: center; border: 1.5px solid; }
+.pr-badge-item__ic--gold { background: linear-gradient(160deg, rgba(242, 183, 5, .2), rgba(242, 183, 5, .03)); border-color: var(--gold); color: var(--gold-2); }
+.pr-badge-item__ic--red { background: linear-gradient(160deg, rgba(255, 43, 0, .2), rgba(255, 43, 0, .03)); border-color: var(--primary); color: var(--primary-glow); }
+.pr-badge-item__ic--silver { background: linear-gradient(160deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .02)); border-color: #aaa; color: var(--text-2); }
+.pr-badge-item__n { font-family: var(--font-mono); font-size: 8px; font-weight: 700;
+  text-transform: uppercase; line-height: 1.3; color: var(--text-2); }
+.pr-badge-item__l { font-family: var(--font-mono); font-size: 7px; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--gold-2); margin-top: 3px; }
+/* Verrouille = la MEME couleur de badge, juste attenuee (opacite), pas
+   convertie en gris plat — sinon "pas encore obtenu" et "sans couleur"
+   se confondent visuellement (retour direct d'Aymen : la carte entiere
+   semblait grise alors que 2 badges sur 4 sont deja realises). */
+.pr-badge-item--locked .pr-badge-item__ic { opacity: .38; }
+.pr-badge-item--locked .pr-badge-item__l { color: var(--text-4); }

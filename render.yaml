@@ -1,0 +1,135 @@
+# Hébergement Render, région Francfort — LANCEMENT (environ un mois, décision d'Aymen du 03/11/2026),
+# avant un hébergeur algérien. Mode d'emploi, vérifications et départ : docs/PASSATION.md §4.17 et §4.18.
+# Rien ici n'est propre à Render dans le code : l'API est une image Docker standard (apps/api/Dockerfile),
+# les fronts sont des dossiers statiques, la base est un PostgreSQL 16 ordinaire.
+# Les secrets ne sont JAMAIS écrits ici : `sync: false` = Render les demande à la création du Blueprint.
+
+services:
+  # ── API ────────────────────────────────────────────────────────────────────────────────────────────
+  - type: web
+    name: moubarat-api
+    runtime: docker
+    region: frankfurt
+    plan: 0.5c-512mb
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    # Une seule exécution des migrations par déploiement, AVANT le nouveau code (§4.2), connexion directe.
+    preDeployCommand: pnpm --dir /app/apps/api run db:migrate
+    # /health : la base répond. Render bascule le trafic AVANT d'envoyer SIGTERM à l'ancienne instance (60 s après),
+    # et preDeployCommand a déjà migré : /ready (DRAINING, MIGRATIONS_PENDING) n'apporte rien de plus ici.
+    healthCheckPath: /health
+    # Doit dépasser SHUTDOWN_DRAIN_MS + SHUTDOWN_TIMEOUT_MS (5 s + 20 s).
+    maxShutdownDelaySeconds: 40
+    # Déploie seulement si la vérification GitHub (.github/workflows/ci.yml) est verte.
+    autoDeployTrigger: checksPass
+    domains:
+      - api.moubaratsport.com
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: moubarat-db
+          property: connectionString
+      - key: HOST
+        value: 0.0.0.0
+      - key: INSTANCE_NAME
+        value: moubarat-api-1
+      - key: CORS_ORIGINS
+        value: https://app.moubaratsport.com,https://crm.moubaratsport.com,https://admin.moubaratsport.com
+      # Production : jamais le mode dev (sinon aucun SMS ne part, §2.4).
+      - key: OTP_DEV_MODE
+        value: "false"
+      - key: SMS_PROVIDER
+        value: smssak
+      - key: SMSSAK_API_KEY
+        sync: false
+      - key: SMSSAK_PROJECT_ID
+        sync: false
+      - key: SMSSAK_TEMPLATE_ID
+        sync: false
+      # Au moins un des trois, sinon l'API refuse de démarrer (§3). Un canal laissé vide n'est pas affiché.
+      - key: SUPPORT_PHONE
+        sync: false
+      - key: SUPPORT_WHATSAPP
+        sync: false
+      - key: SUPPORT_EMAIL
+        sync: false
+      - key: SHUTDOWN_DRAIN_MS
+        value: "5000"
+      - key: SHUTDOWN_TIMEOUT_MS
+        value: "20000"
+      # TRUST_PROXY_CIDRS volontairement ABSENT au premier déploiement : il se pose après avoir lu l'adresse du
+      # répartiteur de Render dans le journal (§4.17, étape 6). Tant qu'il manque, tous les joueurs partagent une
+      # seule adresse pour les limites par IP : ne rien ouvrir au public avant.
+
+  # ── Fronts (sites statiques, CDN mondial de Render) ────────────────────────────────────────────────
+  # VITE_API_BASE_URL est figée AU BUILD (§3) : la changer exige de reconstruire le site.
+  # Les fichiers existants (assets, /.well-known/…) sont servis avant la règle de repli, qui ne s'applique
+  # qu'aux chemins sans fichier (documentation Render « Redirects and Rewrites »).
+  - type: web
+    name: moubarat-player
+    runtime: static
+    buildCommand: npx --yes pnpm@11.23.0 install --frozen-lockfile --filter "@moubarat/player..." && npx --yes pnpm@11.23.0 --filter @moubarat/player build
+    staticPublishPath: ./apps/player/dist
+    autoDeployTrigger: checksPass
+    domains:
+      - app.moubaratsport.com
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_BASE_URL
+        value: https://api.moubaratsport.com
+    headers:
+      - path: /.well-known/*
+        name: Content-Type
+        value: application/json
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  - type: web
+    name: moubarat-crm
+    runtime: static
+    buildCommand: npx --yes pnpm@11.23.0 install --frozen-lockfile --filter "@moubarat/crm..." && npx --yes pnpm@11.23.0 --filter @moubarat/crm build
+    staticPublishPath: ./apps/crm/dist
+    autoDeployTrigger: checksPass
+    domains:
+      - crm.moubaratsport.com
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_BASE_URL
+        value: https://api.moubaratsport.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  - type: web
+    name: moubarat-admin
+    runtime: static
+    buildCommand: npx --yes pnpm@11.23.0 install --frozen-lockfile --filter "@moubarat/superadmin..." && npx --yes pnpm@11.23.0 --filter @moubarat/superadmin build
+    staticPublishPath: ./apps/superadmin/dist
+    autoDeployTrigger: checksPass
+    domains:
+      - admin.moubaratsport.com
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_BASE_URL
+        value: https://api.moubaratsport.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: moubarat-db
+    region: frankfurt
+    plan: 0.5c-1g
+    postgresMajorVersion: "16"
+    databaseName: moubarat
+    user: moubarat
+    # Aucune connexion depuis Internet : seule l'API (réseau privé de Render) y accède. Pour la copie de départ
+    # vers l'hébergeur suivant, ouvrir temporairement UNE adresse (§4.18), puis refermer.
+    ipAllowList: []

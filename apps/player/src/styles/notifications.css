@@ -1,0 +1,165 @@
+/* =============================================================================
+   NOTIFICATIONS — groupe premium. IA du benchmark (le defi qui attend une
+   reponse est une carte bordee rouge qui « crie », l'activite est une liste
+   de rangees hairline calmes) mariee aux mecanismes d'etat de l'ancien
+   prototype (badge compte, lu/non-lu, « Tout lire », etat vide). S'appuie sur
+   player.css (.mb-back, .mb-seg, .mb-toast, .tm-crest, .hm-section-label) et
+   design/moubarat-ds.css — jamais redefinis ici. Prefixe de groupe : nt-. */
+
+/* --- Entete : retour · titre + badge compte · « Tout lire » ---------------- */
+.nt-top { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  min-height: var(--tap-min); margin-bottom: 14px; }
+.nt-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+/* Badge numerique COMPTE (unreadCount), jamais code en dur ; a zero il ne
+   disparait pas, il s'eteint — regle reprise de l'ancien prototype. */
+.nt-badge { min-width: 24px; height: 24px; padding: 0 7px; border-radius: var(--r-full);
+  display: grid; place-items: center; background: var(--primary); color: #fff;
+  font-family: var(--font-display); font-size: 14px; box-shadow: var(--glow-primary);
+  transition: background var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-spring); }
+.nt-badge--zero { background: var(--ink-3); color: var(--text-4); box-shadow: none; }
+
+/* --- Onglets + labels de section ------------------------------------------ */
+.nt-tabs { margin-bottom: 4px; }
+.nt-sec { margin-top: 18px; }
+
+/* --- Horodatage relatif + point non-lu (partages carte/rangee) ------------- */
+.nt-when { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .05em;
+  color: var(--text-4); flex-shrink: 0; }
+.nt-dot { width: 8px; height: 8px; border-radius: var(--r-full); background: var(--primary);
+  box-shadow: 0 0 8px rgba(255, 43, 0, .55); flex-shrink: 0; font-style: normal; }
+
+/* --- Carte defi ------------------------------------------------------------
+   Le poids de carte raconte qui doit agir : bordure rouge 1.5px (--hot)
+   seulement quand une reponse est attendue de toi ; hairline sinon (un defi
+   envoye ou deja repondu n'exige rien). Toute la carte est tapable. */
+.nt-cards { display: flex; flex-direction: column; gap: 10px; }
+.nt-cards--tab { margin-top: 14px; }
+.nt-defi { display: flex; flex-direction: column; align-items: stretch; gap: 9px;
+  width: 100%; text-align: left; padding: 14px; cursor: pointer;
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-4); box-shadow: var(--card-shadow);
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear,
+    transform var(--dur-1) var(--ease-out); }
+.nt-defi:hover { background: var(--ink-3); border-color: var(--line-strong); }
+.nt-defi:active { transform: scale(.985); }
+.nt-defi--hot { border-color: var(--primary); border-width: 1.5px; }
+.nt-defi--hot:hover { border-color: var(--primary-glow); }
+.nt-defi--unread { background: var(--ink-3); }
+.nt-defi--unread:hover { background: var(--ink-4); }
+
+.nt-defi__top { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.nt-defi__label { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: var(--fs-tag);
+  font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-defi--hot .nt-defi__label { color: var(--primary-glow); }
+
+.nt-defi__row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.nt-defi__id { flex: 1; min-width: 0; }
+.nt-defi__id b { display: block; font-size: var(--fs-b3); font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-defi__id span { display: block; margin-top: 2px; font-family: var(--font-mono);
+  font-size: var(--fs-tag); letter-spacing: .05em; color: var(--text-4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.nt-defi__body { font-size: var(--fs-b3); line-height: 1.45; color: var(--text-3); }
+.nt-defi--unread .nt-defi__body { color: var(--text-2); }
+
+.nt-defi__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.nt-defi__go { display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--primary-glow); }
+.nt-defi__go .mb-ic { width: 13px; height: 13px; transition: transform var(--dur-1) var(--ease-out); }
+.nt-defi:hover .nt-defi__go .mb-ic { transform: translateX(2px); }
+
+/* --- Rangee defi compacte (issue/envoye, onglet Défis) ---------------------
+   Un defi qui n'attend rien de toi (accepte/refuse/retire/expire, ou envoye)
+   redevient une ligne dense — jamais la carte bordee rouge, reservee au seul
+   defi recu encore PENDING. Duplique volontairement .tc-defi-row
+   (teams-challenges.css) : meme composition que le prototype
+   (screen-notif-defis-envoyes → .defi-row-item), fichier de domaine propre,
+   consolidation remise a plus tard (mandat de session). */
+.nt-defi-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 12px; background: var(--ink-2); border: 1px solid var(--line);
+  border-radius: var(--r-3); cursor: pointer;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear; }
+.nt-defi-row:hover { background: var(--ink-3); border-color: var(--line-strong); }
+.nt-defi-row:active { transform: scale(.99); }
+.nt-defi-row .n { flex: 1; min-width: 0; }
+.nt-defi-row .n b { display: block; font-size: var(--fs-b3); font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-defi-row .n span { display: block; font-family: var(--font-mono); font-size: var(--fs-tag);
+  letter-spacing: .06em; color: var(--text-4); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Rangee d'activite -----------------------------------------------------
+   Triage calme et dense : hairline entre rangees, non-lu = fond legerement
+   plus clair + point rouge, lu = titre attenue (texte-3, graisse 500). */
+.nt-list { display: flex; flex-direction: column; }
+.nt-row { display: flex; align-items: flex-start; gap: 11px; text-align: left;
+  min-height: var(--tap-min); padding: 11px 8px; margin: 0 -8px;
+  border-radius: var(--r-2); border-bottom: 1px solid var(--line); cursor: pointer;
+  transition: background var(--dur-1) linear; }
+.nt-row:last-child { border-bottom: 0; }
+.nt-row:hover { background: rgba(255, 255, 255, .03); }
+.nt-row--unread { background: rgba(255, 255, 255, .04); }
+.nt-row--unread:hover { background: rgba(255, 255, 255, .06); }
+
+/* Pastille d'icone RONDE (prototype .activity-row .ic : cercle 32px, fond
+   ink-2, hairline, icone muette) teintee par categorie seulement quand la
+   notif porte une info de vigilance/danger reelle — rouge = defi a traiter,
+   or = attente de confirmation, danger = annulation/refus, neutre sinon. */
+.nt-ic { width: 32px; height: 32px; flex-shrink: 0; display: grid; place-items: center;
+  border-radius: var(--r-full); background: var(--ink-2); border: 1px solid var(--line);
+  color: var(--text-3); }
+.nt-ic .mb-ic { width: 15px; height: 15px; }
+.nt-ic--red { background: var(--primary-wash); border-color: var(--primary-line); color: var(--primary-glow); }
+.nt-ic--gold { background: var(--gold-wash); border-color: rgba(242, 183, 5, .3); color: var(--gold); }
+.nt-ic--danger { background: var(--danger-wash); border-color: var(--danger-line); color: var(--danger); }
+
+.nt-txt { flex: 1; min-width: 0; }
+.nt-row__title { display: block; font-size: var(--fs-b3); font-weight: 500; color: var(--text-3); }
+.nt-row--unread .nt-row__title { font-weight: 600; color: var(--text); }
+.nt-row__body { display: block; margin-top: 1px; font-size: var(--fs-micro); line-height: 1.45;
+  color: var(--text-4); }
+.nt-row--unread .nt-row__body { color: var(--text-3); }
+.nt-row__ctx { display: block; margin-top: 4px; font-family: var(--font-mono);
+  font-size: var(--fs-tag); letter-spacing: .05em; color: var(--text-4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-side { display: flex; flex-direction: column; align-items: flex-end; gap: 7px;
+  flex-shrink: 0; padding-top: 2px; }
+
+/* --- Etat vide ------------------------------------------------------------- */
+.nt-empty { margin-top: 40px; }
+
+/* --- Lot 11 (Notifications.dc.html) : titre, « Tout marquer comme lu », groupes et rangées à pastille ronde 40 px ------------------
+   Remplace la rangée `.nt-row` : titre en gras + horodatage, une ligne de détail, un point rouge à gauche quand elle n'est pas lue,
+   « Prendre la place » sous la ligne. Logique en propriétés logiques (RTL). */
+.nt2-readall { margin-inline-start: auto; padding: 0 4px; background: none; border: 0; cursor: pointer;
+  font-size: var(--fs-b3); font-weight: 700; color: var(--text); }
+.nt2-readall:disabled { color: var(--text-4); cursor: default; }
+.nt2-readall:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: var(--r-1); }
+.nt2-h1 { margin: 4px 0 0; font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: -.015em; color: var(--text); }
+.nt2-group { margin-top: 8px; }
+.nt2-sec { margin: 18px 0 2px; font-size: 16px; line-height: 1.2; font-weight: 600; color: var(--text); }
+.nt2-list { display: flex; flex-direction: column; }
+.nt2-row { position: relative; display: flex; gap: 12px; padding: 16px 0 16px 16px; border-bottom: 1px solid var(--line);
+  text-align: start; cursor: pointer; }
+[dir="rtl"] .nt2-row { padding: 16px 16px 16px 0; }
+.nt2-row:last-child { border-bottom: 0; }
+.nt2-row:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.nt2-dot { position: absolute; inset-inline-start: 4px; top: 22px; width: 7px; height: 7px; border-radius: var(--r-full); background: var(--primary); }
+.nt2-ic { flex: 0 0 40px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--r-full);
+  background: var(--ink-3); color: var(--text); }
+.nt2-ic .mb-ic { width: 18px; height: 18px; }
+.nt2-ic--red { background: var(--primary-wash); color: var(--primary-glow); }
+.nt2-ic--danger { background: var(--danger-wash); color: var(--danger); }
+.nt2-col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.nt2-top { display: flex; justify-content: space-between; gap: 8px; }
+.nt2-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.nt2-line { font-size: var(--fs-b2); line-height: 1.45; color: var(--text); }
+/* Horodatage : --text-4 tombait à 2,4:1 en thème clair (relevé par la vérification du lot 12) — --text-3 le remonte. */
+.nt2-top .nt-when { color: var(--text-3); }
+.nt2-actions { display: flex; gap: 8px; padding-top: 10px; }
+.nt2-cta { height: 38px; padding: 0 14px; border: 0; border-radius: var(--r-2); cursor: pointer;
+  background: var(--primary-wash); color: var(--primary-glow); font-size: 15px; font-weight: 600; }
+.nt2-cta:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

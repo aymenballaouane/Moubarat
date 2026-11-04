@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "REMPLACER_PAR_LE_TEAM_ID_APPLE.com.moubarat.app",
+        "paths": ["/m/*"]
+      }
+    ]
+  }
+}

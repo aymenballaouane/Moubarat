@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Moubarat · Détail du match</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background: #0A0A0F}
+a{color:#FFFFFF;text-decoration:none}
+button{font-family:'Inter', system-ui, sans-serif}
+[data-tap]{transition: transform .2s ease, box-shadow .25s ease}
+[data-tap]:active{transform: scale(0.97)}
+</style>
+</helmet>
+<div style="{{ racine }}">
+
+  <!-- ================= LA FICHE (avant de rejoindre) ================= -->
+  <sc-if value="{{ vueFiche }}" hint-placeholder-val="{{ true }}">
+  <div style="position: relative; height: 270px;">
+    <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="{{ photoAlt }}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 40%;">
+    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,0.55) 0%, rgba(10,10,15,0.05) 30%, rgba(10,10,15,0.40) 62%, #0A0A0F 100%);"></div>
+    <div style="{{ voileSport }}"></div>
+    <div style="position: absolute; top: 20px; left: 16px; right: 16px; display: flex; justify-content: space-between; z-index: 2;">
+      <a href="Explorer.dc.html" aria-label="Retour" style="width: 44px; height: 44px; border-radius: 999px; background: rgba(0,0,0,0.66); border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg></a>
+      <a href="{{ partageHref }}" aria-label="Partager le match" style="width: 44px; height: 44px; border-radius: 999px; background: rgba(0,0,0,0.66); border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.5"></circle><circle cx="6" cy="12" r="2.5"></circle><circle cx="18" cy="19" r="2.5"></circle><line x1="8.3" y1="10.7" x2="15.7" y2="6.3"></line><line x1="8.3" y1="13.3" x2="15.7" y2="17.7"></line></svg></a>
+    </div>
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; gap: 6px; align-items: center;"><span style="padding: 4px 8px; border-radius: 6px; background: rgba(10,10,15,0.72); font-family: 'Inter', system-ui, sans-serif; font-weight: 600; letter-spacing: 0.06em; font-size: 11px; line-height: 1.2; color: #FFFFFF;">{{ sportMaj }}</span><span style="padding: 4px 8px; border-radius: 6px; background: rgba(10,10,15,0.72); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; line-height: 1.2; color: #FFFFFF; font-weight: 600; letter-spacing: 0.06em;">{{ formatMaj }}</span><span style="padding: 4px 8px; border-radius: 6px; background: rgba(10,10,15,0.72); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; line-height: 1.2; color: #FFFFFF; font-weight: 600; letter-spacing: 0.06em;">{{ niveau }}</span></div>
+      <h1 style="margin: 0; font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 38px; line-height: 0.95; color: #F5F7FA;">{{ titre }}</h1>
+    </div>
+  </div>
+
+  <section style="padding: 14px 16px 0 16px;">
+    <div style="padding: 2px 16px; border-radius: 16px; background: #131A24; border: 1px solid rgba(138,148,166,0.16);">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid rgba(138,148,166,0.16);">
+        <span style="flex: 0 0 22px; width: 22px; height: 22px; display: grid; place-items: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2"></rect><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line></svg></span>
+        <span style="flex: 1 1 auto; display: flex; flex-direction: column; line-height: 1.25;"><span style="font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1; color: #F5F7FA;">{{ mDebut }} → {{ mFin }}</span><span style="font-size: 13px; color: #F5F7FA;">{{ quandTexte }}</span></span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid rgba(138,148,166,0.16);">
+        <span style="flex: 0 0 22px; width: 22px; height: 22px; display: grid; place-items: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg></span>
+        <span style="flex: 1 1 auto; display: flex; flex-direction: column; line-height: 1.25;"><span style="font-size: 15px; font-weight: 700; color: #F5F7FA;">{{ lieu }}</span><span style="font-size: 13px; color: #F5F7FA;">{{ distanceTexte }}</span></span>
+        <a href="{{ mapsHref }}" style="flex: 0 0 auto; height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(138,148,166,0.30); display: inline-flex; align-items: center; font-size: 14px; font-weight: 700; color: #F5F7FA;">Itinéraire</a>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 12px 0;">
+        <span style="flex: 0 0 22px; width: 22px; height: 22px; display: grid; place-items: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"></rect><circle cx="12" cy="12" r="2.6"></circle><line x1="6" y1="12" x2="6.01" y2="12"></line><line x1="18" y1="12" x2="18.01" y2="12"></line></svg></span>
+        <span style="flex: 1 1 auto; display: flex; flex-direction: column; line-height: 1.25;"><span style="font-size: 15px; font-weight: 700; color: #F5F7FA;">{{ prixTexte }}</span><span style="font-size: 13px; color: #F5F7FA;">à payer sur place</span></span>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ================= LE TICKET (une fois inscrit) ================= -->
+  <sc-if value="{{ vueTicket }}" hint-placeholder-val="{{ false }}">
+  <div style="position: relative; height: 84px;">
+    <div style="position: absolute; top: 20px; left: 16px; right: 16px; display: flex; justify-content: space-between; z-index: 2;">
+      <a href="Explorer.dc.html" aria-label="Retour" style="width: 44px; height: 44px; border-radius: 999px; background: rgba(0,0,0,0.66); border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg></a>
+      <a href="{{ partageHref }}" aria-label="Partager le match" style="width: 44px; height: 44px; border-radius: 999px; background: rgba(0,0,0,0.66); border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.5"></circle><circle cx="6" cy="12" r="2.5"></circle><circle cx="18" cy="19" r="2.5"></circle><line x1="8.3" y1="10.7" x2="15.7" y2="6.3"></line><line x1="8.3" y1="13.3" x2="15.7" y2="17.7"></line></svg></a>
+    </div>
+  </div>
+  <section style="padding: 0 16px;">
+    <div style="position: relative; border-radius: 16px; overflow: hidden; background: #131A24; border: 1px solid rgba(138,148,166,0.16);">
+      <div style="position: relative; height: 170px;">
+        <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="{{ photoAlt }}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 40%;">
+        <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,0.10) 20%, rgba(10,10,15,0.88) 100%);"></div>
+        <div style="{{ voileSport }}"></div>
+        <div style="position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; gap: 6px; align-items: center;"><span style="padding: 4px 8px; border-radius: 6px; background: rgba(10,10,15,0.72); font-family: 'Inter', system-ui, sans-serif; font-weight: 600; letter-spacing: 0.06em; font-size: 11px; line-height: 1.2; color: #FFFFFF;">{{ sportMaj }}</span><span style="padding: 4px 8px; border-radius: 6px; background: rgba(10,10,15,0.72); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; line-height: 1.2; color: #FFFFFF; font-weight: 600; letter-spacing: 0.06em;">{{ formatMaj }}</span><span style="padding: 4px 8px; border-radius: 6px; background: rgba(10,10,15,0.72); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; line-height: 1.2; color: #FFFFFF; font-weight: 600; letter-spacing: 0.06em;">{{ niveau }}</span></div>
+          <span style="font-family: 'Bebas Neue', sans-serif; font-size: 38px; line-height: 0.95; color: #F5F7FA;">{{ titre }}</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #FF2B00;">
+        <span style="flex: 0 0 26px; width: 26px; height: 26px; border-radius: 999px; background: #FFFFFF; display: grid; place-items: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF2B00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5,12.5 10,17 19,7"></polyline></svg></span>
+        <span style="font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1; letter-spacing: 0.02em; color: #F5F7FA;">{{ maPlace }}</span>
+      </div>
+      <div style="height: 0; border-top: 2px dashed rgba(138,148,166,0.16); margin: 0 18px;"></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr;">
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 14px 16px;"><span style="font-family: 'Inter', system-ui, sans-serif; font-weight: 600; letter-spacing: 0.06em; font-size: 11px; color: #8A94A6;">QUAND</span><span style="font-family: 'Bebas Neue', sans-serif; font-size: 30px; line-height: 1; color: #F5F7FA;">{{ mDebut }}</span><span style="font-size: 13px; color: #F5F7FA;">{{ quandTicket }}</span></div>
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-left: 1px solid rgba(138,148,166,0.16);"><span style="font-family: 'Inter', system-ui, sans-serif; font-weight: 600; letter-spacing: 0.06em; font-size: 11px; color: #8A94A6;">PRIX</span><span style="font-family: 'Bebas Neue', sans-serif; font-size: 30px; line-height: 1; color: #F5F7FA;">{{ prix }} DA</span><span style="font-size: 13px; color: #F5F7FA;">par joueur, sur place</span></div>
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-top: 1px solid rgba(138,148,166,0.16);"><span style="font-family: 'Inter', system-ui, sans-serif; font-weight: 600; letter-spacing: 0.06em; font-size: 11px; color: #8A94A6;">OÙ</span><span style="font-family: 'Bebas Neue', sans-serif; font-size: 28px; line-height: 1; color: #F5F7FA;">{{ lieuMaj }}</span><span style="font-size: 13px; color: #F5F7FA;">{{ distanceTexte }}</span><a href="{{ mapsHref }}" style="padding-top: 4px; font-size: 14px; font-weight: 700; color: #F5F7FA; text-decoration: underline; text-underline-offset: 3px;">Itinéraire</a></div>
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-top: 1px solid rgba(138,148,166,0.16); border-left: 1px solid rgba(138,148,166,0.16);"><span style="font-family: 'Inter', system-ui, sans-serif; font-weight: 600; letter-spacing: 0.06em; font-size: 11px; color: #8A94A6;">{{ tonEquipeLabel }}</span><span style="font-family: 'Bebas Neue', sans-serif; font-size: 30px; line-height: 1; color: #F5F7FA;">{{ monEquipe }}</span><sc-if value="{{ peutChanger }}" hint-placeholder-val="{{ true }}"><button onClick="{{ ouvrirChanger }}" style="align-self: flex-start; padding: 2px 0 0 0; border: 0; background: transparent; cursor: pointer; font-size: 12px; font-weight: 700; color: #F5F7FA; text-decoration: underline; text-underline-offset: 3px; text-align: left;">{{ changerTexte }}</button></sc-if><sc-if value="{{ compoBouclee }}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; color: #F5F7FA;">Compo bouclée</span></sc-if></div>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ligne sous la fiche ou le ticket : désinscription, place libérée, compo bouclée -->
+  <sc-if value="{{ aLigne }}" hint-placeholder-val="{{ true }}">
+  <div style="padding: 10px 16px 0 16px;">
+    <p style="{{ ligneStyle }}"><sc-if value="{{ iconeOuvert }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 15px;"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 7.5-2"></path></svg></sc-if><sc-if value="{{ iconeFerme }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 15px;"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></sc-if><sc-if value="{{ iconePoint }}" hint-placeholder-val="{{ false }}"><span style="flex: 0 0 7px; width: 7px; height: 7px; border-radius: 999px; background: #FF2B00;"></span></sc-if><span>{{ ligneTexte }}</span></p>
+  </div>
+  </sc-if>
+
+  <!-- actions de l'inscrit -->
+  <sc-if value="{{ vueTicket }}" hint-placeholder-val="{{ false }}">
+  <section style="padding: 18px 16px 0 16px; display: flex; flex-direction: column; gap: 8px;">
+    <div style="display: flex; gap: 10px;">
+      <sc-if value="{{ aGroupe }}" hint-placeholder-val="{{ true }}"><a href="{{ groupeHref }}" data-tap="1" style="flex: 1.25 1 0; height: 52px; border-radius: 12px; background: #131A24; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Inter', system-ui, sans-serif; font-size: 15px;  color: #F5F7FA; white-space: nowrap; font-weight: 600;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 11.5a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-4.4A8.5 8.5 0 1 1 20.5 11.5Z"></path><path d="M9.2 8.6c.3-.4.8-.4 1 0l.7 1.3c.2.3.1.7-.2 1l-.4.4a4.6 4.6 0 0 0 2.4 2.4l.4-.4c.3-.3.7-.4 1-.2l1.3.7c.4.2.4.7 0 1-.6.5-1.4.8-2.2.5A6.6 6.6 0 0 1 8.7 10.8c-.3-.8 0-1.6.5-2.2Z" fill="currentColor" stroke="none"></path></svg>Groupe WhatsApp</a></sc-if>
+      <a href="{{ orgTel }}" data-tap="1" aria-label="{{ orgAppel }}" style="flex: 1 1 0; height: 52px; box-sizing: border-box; border-radius: 12px; border: 1px solid rgba(138,148,166,0.30); display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Inter', system-ui, sans-serif; font-size: 15px;  color: #F5F7FA; white-space: nowrap; font-weight: 600;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h3.5l2 5-2.4 1.5a11 11 0 0 0 5.9 5.9l1.5-2.4 5 2v3.5a2 2 0 0 1-2 2A16.5 16.5 0 0 1 3 5.5a2 2 0 0 1 2-2Z"></path></svg>{{ appelerMaj }}</a>
+    </div>
+    <p style="margin: 0; font-size: 13px; line-height: 1.4; color: #8A94A6;">{{ groupeNote }}</p>
+  </section>
+  </sc-if>
+
+  <!-- ================= LES ÉQUIPES ================= -->
+  <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 16px; line-height: 1.2; color: #F5F7FA;">{{ titreEquipes }}</h2>
+      <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; color: #F5F7FA;"><span style="{{ pointPlaces }}"></span>{{ resteTexte }}</span>
+    </div>
+    <sc-for list="{{ equipes }}" as="e" hint-placeholder-count="2">
+      <div style="{{ e.bloc }}">
+        <span style="{{ e.tete }}"><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 15px; line-height: 1.2; color: #F5F7FA; font-weight: 600;">{{ e.nom }}</span><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #F5F7FA;">{{ e.compte }}</span></span>
+        <span style="{{ e.rang }}">
+          <sc-for list="{{ e.places }}" as="a" hint-placeholder-count="5">
+            <sc-if value="{{ a.actif }}" hint-placeholder-val="{{ false }}"><button data-av="{{ a.av }}" onClick="{{ a.pick }}" aria-label="{{ a.aria }}" style="{{ a.st }}">{{ a.txt }}</button></sc-if><sc-if value="{{ a.inerte }}" hint-placeholder-val="{{ true }}"><span role="img" data-av="{{ a.av }}" aria-label="{{ a.aria }}" style="{{ a.st }}">{{ a.txt }}</span></sc-if>
+          </sc-for>
+        </span>
+      </div>
+    </sc-for>
+  </section>
+
+  <!-- match complet : d'autres matchs -->
+  <sc-if value="{{ complet }}" hint-placeholder-val="{{ false }}">
+  <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+    <h2 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 16px; line-height: 1.2; color: #F5F7FA;">D’autres matchs ce soir</h2>
+    <div style="display: flex; gap: 10px;">
+      <a href="DetailMatchAnciens.dc.html" data-tap="1" style="flex: 1 1 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16);"><span style="font-family: 'Bebas Neue', sans-serif; font-size: 30px; line-height: 1; color: #F5F7FA;">22:00</span><span style="font-size: 14px; font-weight: 700; color: #F5F7FA;">Chéraga Arena</span><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #F5F7FA;"><span style="flex: 0 0 7px; width: 7px; height: 7px; border-radius: 999px; background: #00C896;"></span>5v5 · 3 places libres</span></a>
+      <a href="DetailMatchDernier.dc.html" data-tap="1" style="flex: 1 1 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16);"><span style="font-family: 'Bebas Neue', sans-serif; font-size: 30px; line-height: 1; color: #F5F7FA;">23:00</span><span style="font-size: 14px; font-weight: 700; color: #F5F7FA;">Complexe Ryad</span><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #F5F7FA;"><span style="flex: 0 0 7px; width: 7px; height: 7px; border-radius: 999px; background: #00C896;"></span>6v6 · 7 places libres</span></a>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- l'organisateur et son mot -->
+  <section style="padding: 22px 16px 0 16px;">
+    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 16px; background: #131A24; border: 1px solid rgba(138,148,166,0.16);">
+      <span style="display: flex; align-items: center; gap: 10px;"><span style="width: 32px; height: 32px; flex: 0 0 32px; border-radius: 999px; background: #2A3342; display: grid; place-items: center; font-family: 'Inter', system-ui, sans-serif; font-size: 13px; color: #F5F7FA; font-weight: 600;">{{ orgInit }}</span><span style="font-size: 14px; font-weight: 700; color: #F5F7FA;">{{ orgTexte }}</span></span>
+      <span style="font-size: 15px; line-height: 1.5; color: #F5F7FA;">{{ mot }}</span>
+    </div>
+  </section>
+
+  <!-- ================= LE BAS DE L'ÉCRAN ================= -->
+  <sc-if value="{{ aFooter }}" hint-placeholder-val="{{ true }}">
+  <footer style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 16px 22px 16px; background: rgba(10,10,15,0.96); border-top: 1px solid rgba(138,148,166,0.16);">
+    <sc-if value="{{ ouvert }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ ouvrirRejoindre }}" data-tap="1" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 56px; border: 0; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', system-ui, sans-serif; font-size: 16px;  cursor: pointer; font-weight: 600;">Rejoindre le match</button>
+    </sc-if>
+    <sc-if value="{{ complet }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ alerter }}" data-tap="1" style="{{ alerteStyle }}">{{ alerteLabel }}</button>
+    </sc-if>
+    <sc-if value="{{ ferme }}" hint-placeholder-val="{{ false }}">
+      <span style="display: grid; place-items: center; height: 56px; border-radius: 12px; border: 1px solid rgba(138,148,166,0.16); color: #8A94A6; font-family: 'Inter', system-ui, sans-serif; font-size: 16px;  font-weight: 600;">Inscriptions fermées</span>
+    </sc-if>
+    <sc-if value="{{ peutQuitter }}" hint-placeholder-val="{{ false }}">
+      <a href="{{ quitterHref }}" data-tap="1" style="display: flex; align-items: center; justify-content: center; height: 52px; box-sizing: border-box; border-radius: 12px; border: 1px solid rgba(138,148,166,0.30); font-family: 'Inter', system-ui, sans-serif; font-size: 16px;  color: #F5F7FA; font-weight: 600;">Se désinscrire</a>
+    </sc-if>
+  </footer>
+  </sc-if>
+
+  <!-- ================= LE PANNEAU « CHOISIS TON ÉQUIPE » ================= -->
+  <sc-if value="{{ feuilleOuverte }}" hint-placeholder-val="{{ false }}">
+    <button data-voile="1" onClick="{{ fermerFeuille }}" aria-label="Fermer" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; cursor: pointer; background-color: rgba(0,0,0,0.66);"></button>
+    <div data-feuille="1" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px 24px 16px; border-radius: 20px 20px 0 0; background: #131A24; border-top: 1px solid rgba(138,148,166,0.16); display: flex; flex-direction: column; gap: 14px;">
+      <span style="align-self: center; width: 40px; height: 5px; border-radius: 999px; background: rgba(138,148,166,0.35);"></span>
+      <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 22px; line-height: 1.2; text-align: center; color: #F5F7FA; font-weight: 700; letter-spacing: -0.01em;">{{ feuilleTitre }}</span>
+      <div style="display: flex; gap: 10px;">
+        <sc-for list="{{ options }}" as="o" hint-placeholder-count="2">
+          <button onClick="{{ o.pick }}" data-tap="1" aria-label="{{ o.aria }}" style="{{ o.st }}">
+            <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.2; color: #F5F7FA; font-weight: 600;">{{ o.nom }}</span>
+            <span style="display: flex; flex-wrap: wrap; row-gap: 4px;"><sc-for list="{{ o.mini }}" as="m" hint-placeholder-count="4"><span data-av="1" style="{{ m.st }}">{{ m.txt }}</span></sc-for></span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #F5F7FA;"><span style="{{ o.point }}"></span>{{ o.libre }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <p style="margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; line-height: 1.4; color: #F5F7FA; text-align: center;"><span>{{ prixTexte }}, à payer sur place</span><span>{{ feuilleRegle }}</span></p>
+      <button onClick="{{ confirmer }}" data-tap="1" style="{{ confirmerStyle }}">{{ confirmerLabel }}</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"etat":{"editor":"enum","options":["ouvert","inscrit"],"default":"ouvert","section":"Écran"},"format":{"editor":"enum","options":["5v5","6v6","7v7","8v8","11v11"],"default":"5v5","section":"Écran"},"complet":{"editor":"boolean","default":false,"section":"Écran"},"sport":{"editor":"enum","options":["foot","padel"],"default":"foot","section":"Écran"},"phase":{"editor":"enum","options":["normal","remplacement","fige"],"default":"normal","section":"Écran"},"match":{"editor":"enum","options":["night","friday","lions","anciens","hydra","dernier","padel","padelmardi"],"default":"night","section":"Écran"},"feuille":{"editor":"enum","options":["non","rejoindre","changer"],"default":"non","section":"Écran"},"$preview":{"width":390,"height":1020}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const f = props.feuille ?? 'non';
+    this.state = { moi: null, alerte: false, feuille: f === 'non' ? null : f, choix: null };
+  }
+  renderVals() {
+    const padel = (this.props.sport ?? 'foot') === 'padel';
+    const mid = this.props.match ?? (padel ? 'padel' : 'night');
+    const M = {
+      night: { groupe: true, niveau: 'INTERMÉDIAIRE', lieu: 'Stade de Birkhadem · Terrain 3', distance: '3,4 km', maps: 'Stade+de+Birkhadem+Alger', prix: '600', org: 'Yanis R.', orgPrenom: 'Yanis', orgInit: 'Y', tel: 'tel:+213550000000', jour: 'Ce soir', date: 'mar. 20 oct.', debut: '21:30', fin: '23:00', insc: '20:30', desinsc: '19:30', remplis: null, lien: '7KQ2', quitterConf: 'ConfDesinscription.dc.html',
+        pool: ['Yanis', 'Farid', 'Riad', 'Sami', 'Nassim', 'Omar', 'Mehdi', 'Bilal', 'Amine', 'Hamza', 'Ilyes', 'Rayan', 'Sofiane', 'Lotfi', 'Adel', 'Zaki', 'Karim', 'Walid'],
+        mot: '« On joue à la cool mais on joue vite. Ramenez une chasuble blanche et une noire si vous en avez. On se retrouve devant l’accueil à 21:15. »' },
+      padel: { niveau: 'INTERMÉDIAIRE', lieu: 'Complexe El Biar · Piste 2', distance: '2,1 km', maps: 'Complexe+El+Biar+Alger', prix: '900', org: 'Sofiane K.', orgPrenom: 'Sofiane', orgInit: 'S', tel: 'tel:+213661000000', jour: 'Ce soir', date: 'mar. 20 oct.', debut: '22:00', fin: '23:30', insc: '21:00', desinsc: '20:00', remplis: null, lien: '6PDN', quitterConf: 'ConfDesinscription.dc.html',
+        pool: ['Sofiane', 'Nabil', 'Anis', 'Yacine'],
+        mot: '« Niveau correct, on tourne les paires à chaque set. Balles neuves fournies. On se retrouve à l’accueil à 21:45. »' },
+      friday: { groupe: true, niveau: 'LOISIR', lieu: 'Complexe Ryad · Terrain 2', distance: '1,2 km', maps: 'Complexe+Ryad+Alger', prix: '500', org: 'Karim M.', orgPrenom: 'Karim', orgInit: 'K', tel: 'tel:+213552000000', jour: 'Vendredi', date: '23 oct.', debut: '20:00', fin: '21:30', insc: '19:00', desinsc: '18:00', remplis: 6, lien: '4FRN', quitterConf: 'ConfDesinscriptionFriday.dc.html',
+        pool: ['Karim', 'Riad', 'Walid', 'Sami', 'Bilal', 'Omar', 'Nassim', 'Amine', 'Hamza', 'Ilyes'],
+        mot: '« Le vendredi, on joue pour le plaisir. Ramenez une chasuble claire et une foncée. On se retrouve à l’accueil à 19:45. »' },
+      onze: { niveau: 'INTERMÉDIAIRE', lieu: 'Chéraga Arena · Grand terrain', distance: '3,1 km', maps: 'Cheraga+Arena+Alger', prix: '600', org: 'Mourad B.', orgPrenom: 'Mourad', orgInit: 'M', tel: 'tel:+213553000000', jour: 'Ce soir', date: 'mar. 20 oct.', debut: '22:30', fin: '00:00', insc: '21:30', desinsc: '20:30', remplis: null, lien: '9GRD', quitterConf: 'ConfDesinscription.dc.html',
+        pool: ['Mourad', 'Djamel', 'Kamel', 'Rachid', 'Fares', 'Islem', 'Wassim', 'Badr', 'Hichem', 'Samir', 'Toufik', 'Redouane', 'Khaled', 'Lamine', 'Ayoub', 'Chakib', 'Zinedine', 'Larbi', 'Moussa', 'Nadir', 'Aziz'],
+        mot: '« Grand terrain, on joue à 11. Ramenez une chasuble blanche et une noire. Rendez-vous à l’accueil à 22:15, on fait les équipes sur place. »' },
+      lions: { niveau: 'LOISIR', lieu: 'Complexe Ryad · Terrain 3', distance: '1,2 km', maps: 'Complexe+Ryad+Alger', prix: '500', org: 'Lotfi A.', orgPrenom: 'Lotfi', orgInit: 'L', tel: 'tel:+213554000000', jour: 'Ce soir', date: 'mar. 20 oct.', debut: '22:30', fin: '00:00', insc: '21:30', desinsc: '20:30', remplis: 10, lien: '8LNS', quitterConf: 'ConfDesinscription.dc.html',
+        pool: ['Lotfi', 'Bilal', 'Amine', 'Hamza', 'Adel', 'Zaki', 'Rayan', 'Ilyes', 'Nordine', 'Hakim'],
+        mot: '« On joue à fond, mais sans tacles. Rendez-vous à l’accueil à 22:15. »' },
+      anciens: { niveau: 'COMPÉTITION', lieu: 'Chéraga Arena · Terrain 2', distance: '3,1 km', maps: 'Cheraga+Arena+Alger', prix: '500', org: 'Hocine K.', orgPrenom: 'Hocine', orgInit: 'H', tel: 'tel:+213555000000', jour: 'Ce soir', date: 'mar. 20 oct.', debut: '22:00', fin: '23:00', insc: '21:00', desinsc: '20:00', remplis: 7, lien: '5ANC', quitterConf: 'ConfDesinscription.dc.html',
+        pool: ['Hocine', 'Walid', 'Salim', 'Malik', 'Yazid', 'Rafik', 'Kader'],
+        mot: '« Que des anciens du quartier, ça joue propre. Arrivez un quart d’heure avant. »' },
+      hydra: { niveau: 'LOISIR', lieu: 'Complexe Ryad · Terrain 1', distance: '1,2 km', maps: 'Complexe+Ryad+Alger', prix: '500', org: 'Tarek B.', orgPrenom: 'Tarek', orgInit: 'T', tel: 'tel:+213556000000', jour: 'Ce soir', date: 'mar. 20 oct.', debut: '22:00', fin: '23:30', insc: '21:00', desinsc: '20:00', remplis: 9, lien: '6HYD', quitterConf: 'ConfDesinscription.dc.html',
+        pool: ['Tarek', 'Karim', 'Idir', 'Massi', 'Amar', 'Saïd', 'Ali', 'Mounir', 'Bachir'],
+        mot: '« Match tranquille entre collègues. Chasubles fournies, ramenez juste vos chaussures. »' },
+      dernier: { niveau: 'INTERMÉDIAIRE', lieu: 'Complexe Ryad · Terrain 2', distance: '1,2 km', maps: 'Complexe+Ryad+Alger', prix: '500', org: 'Hamid S.', orgPrenom: 'Hamid', orgInit: 'H', tel: 'tel:+213557000000', jour: 'Ce soir', date: 'mar. 20 oct.', debut: '23:00', fin: '00:30', insc: '22:00', desinsc: '21:00', remplis: 5, lien: '4DRN', quitterConf: 'ConfDesinscription.dc.html',
+        pool: ['Hamid', 'Lounis', 'Brahim', 'Smail', 'Ramzi'],
+        mot: '« Le dernier match de la soirée, pour ceux qui n’ont pas sommeil. »' },
+      padelmardi: { niveau: 'LOISIR', lieu: 'Complexe El Biar · Piste 1', distance: '2,1 km', maps: 'Complexe+El+Biar+Alger', prix: '600', org: 'Fethi M.', orgPrenom: 'Fethi', orgInit: 'F', tel: 'tel:+213662000000', jour: 'Ce soir', date: 'mar. 20 oct.', debut: '22:30', fin: '23:30', insc: '21:30', desinsc: '20:30', remplis: 3, lien: '7PDM', quitterConf: 'ConfDesinscription.dc.html',
+        pool: ['Fethi', 'Zohir', 'Rami'],
+        mot: '« Padel détente, tous niveaux bienvenus. Raquettes en location à l’accueil. »' }
+    }[(this.props.format === '11v11' && !padel) ? 'onze' : mid];
+    const format = padel ? '2v2' : (this.props.format ?? '5v5');
+    const parEquipe = ({ '2v2': 2, '5v5': 5, '6v6': 6, '7v7': 7, '8v8': 8, '11v11': 11 })[format] || 5;
+    const total = parEquipe * 2;
+    // places : A0 B0 A1 B1 … ; la place 0 est celle de l'organisateur
+    const spots = [];
+    for (let i = 0; i < parEquipe; i++) { spots.push({ eq: 'A' }); spots.push({ eq: 'B' }); }
+    const phase = this.props.phase ?? 'normal';
+    const complet = this.props.complet === true;
+    const remplis = complet ? total : (M.remplis ?? { '2v2': 3, '5v5': 7, '6v6': 9, '7v7': 10, '8v8': 12, '11v11': 17 }[format] ?? 7);
+    const occupe = {};
+    for (let k = 0; k < remplis; k++) occupe[k] = M.pool[k];
+    if (phase === 'remplacement' && !padel) delete occupe[4];
+    const libres = () => spots.map((s, i) => i).filter(i => !occupe[i]);
+    let moi = this.state.moi;
+    if (moi === null && (this.props.etat ?? 'ouvert') === 'inscrit' && !this.state.quitte) { const lib = libres(); moi = lib.find(i => spots[i].eq === 'A') ?? lib[0]; }
+    const inscrit = moi !== null && moi !== undefined;
+    if (!inscrit) moi = null;
+    const eqMoi = inscrit ? spots[moi].eq : null;
+    const fige = phase === 'fige';
+    const ouvertEtat = !inscrit && !fige && !complet;
+    const motEq = padel ? 'PAIRE' : 'ÉQUIPE';
+    const motEqMin = padel ? 'paire' : 'équipe';
+    const grand = parEquipe >= 6;
+    const taille = grand ? 36 : 40;
+    const parRang = grand ? 7 : 5;
+    const rondBase = 'position: relative; flex: 0 0 ' + taille + 'px; width: ' + taille + 'px; height: ' + taille + 'px; box-sizing: border-box; padding: 0; border-radius: 999px; display: grid; place-items: center; ';
+    const bebas = 'font-family: \'Inter\', system-ui, sans-serif; font-weight: 600; font-size: ' + (grand ? 13 : 15) + 'px; color: #F5F7FA; ';
+    const st = {
+      joueur: rondBase + bebas + 'background: #2A3342; border: 1.5px solid rgba(138,148,166,0.30); cursor: default;',
+      toi: rondBase + 'background: #FF2B00; border: 2px solid rgba(138,148,166,0.30); font-size: ' + (grand ? 11 : 12) + 'px; font-weight: 700; letter-spacing: 0.04em; color: #F5F7FA; cursor: default;',
+      prendre: rondBase + 'background: transparent; border: 2px dashed rgba(138,148,166,0.30); font-size: 22px; font-weight: 700; color: #F5F7FA; cursor: pointer;',
+      vide: rondBase + 'background: transparent; border: 1.5px dashed rgba(138,148,166,0.30); font-size: 16px; color: #8A94A6; cursor: default;'
+    };
+    const place = (i) => {
+      const s = spots[i];
+      if (i === moi) return { av: 'toi', st: st.toi, txt: 'TOI', aria: 'Ta place, ' + motEqMin + ' ' + s.eq, pick: null, actif: false, inerte: true, tri: 0 };
+      if (occupe[i]) return { av: '1', st: st.joueur, txt: occupe[i][0], aria: occupe[i] + (i === 0 ? ', organisateur' : '') + ', ' + motEqMin + ' ' + s.eq, pick: null, actif: false, inerte: true, tri: 1 + i };
+      if (fige) return { av: 'vide', st: st.vide, txt: '–', aria: 'Place vide, inscriptions fermées', pick: null, actif: false, inerte: true, tri: 100 + i };
+      if (inscrit && s.eq === eqMoi) return { av: 'vide', st: st.vide, txt: '', aria: padel ? 'Place libre dans ta paire' : 'Place libre dans ton équipe', pick: null, actif: false, inerte: true, tri: 100 + i };
+      if (inscrit) return { av: 'libre', st: st.prendre, txt: '+', aria: (padel ? 'Passer dans la paire ' : 'Passer dans l’équipe ') + s.eq, pick: () => this.setState({ moi: i }), actif: true, inerte: false, tri: 100 + i };
+      return { av: 'libre', st: st.prendre, txt: '+', aria: (padel ? 'Prendre une place dans la paire ' : 'Prendre une place dans l’équipe ') + s.eq, pick: () => this.setState({ moi: i }), actif: true, inerte: false, tri: 100 + i };
+    };
+    const placesDe = eq => spots.map((s, i) => i).filter(i => spots[i].eq === eq).map(place).sort((a, b) => a.tri - b.tri);
+    const prisDe = eq => spots.filter((s, i) => s.eq === eq && (occupe[i] || i === moi)).length;
+    const libresDe = eq => spots.map((s, i) => i).filter(i => spots[i].eq === eq && !occupe[i] && i !== moi);
+    const equipes = ['A', 'B'].map(eq => ({
+      nom: motEq + ' ' + eq, compte: prisDe(eq) + '/' + parEquipe, places: placesDe(eq),
+      bloc: 'display: flex; ' + (grand ? 'flex-direction: column; align-items: stretch; gap: 10px;' : 'align-items: center; gap: 12px;') + ' padding: 12px 14px; border-radius: 12px; background: #131A24; border: 1px solid ' + (eq === eqMoi ? 'rgba(255,43,0,0.45)' : 'rgba(255,255,255,0.10)') + ';',
+      tete: grand ? 'display: flex; justify-content: space-between; align-items: center; line-height: 1.1;' : 'flex: 0 0 auto; min-width: 70px; white-space: nowrap; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; line-height: 1.1;',
+      rang: 'display: flex; flex-wrap: wrap; gap: ' + (grand ? 6 : 8) + 'px;'
+    }));
+    const n = Object.keys(occupe).length + (inscrit ? 1 : 0);
+    const reste = total - n;
+    // panneau « choisis ton équipe »
+    const feuille = fige || complet ? null : this.state.feuille;
+    const feuilleChanger = feuille === 'changer' && inscrit;
+    const feuilleRejoindre = feuille === 'rejoindre' && !inscrit;
+    const choixPossible = ['A', 'B'].filter(eq => libresDe(eq).length > 0 && !(feuilleChanger && eq === eqMoi));
+    const choix = choixPossible.includes(this.state.choix) ? this.state.choix : (choixPossible.sort((a, b) => libresDe(b).length - libresDe(a).length)[0] ?? null);
+    const options = ['A', 'B'].map(eq => {
+      const k = libresDe(eq).length, actuelle = feuilleChanger && eq === eqMoi, possible = choixPossible.includes(eq), sel = eq === choix;
+      const mini = spots.map((s, i) => i).filter(i => spots[i].eq === eq && (occupe[i] || i === moi)).map((i, j) => ({ txt: i === moi ? 'TOI' : occupe[i][0], st: 'width: 26px; height: 26px; box-sizing: border-box; margin-left: ' + (j === 0 ? 0 : -8) + 'px; border-radius: 999px; background: ' + (i === moi ? '#FF2B00' : '#2A3342') + '; border: 2px solid #131A24; display: grid; place-items: center; ' + (i === moi ? 'font-size: 10px; font-weight: 700;' : 'font-family: \'Inter\', system-ui, sans-serif; font-weight: 600; font-size: 11px;') + ' color: #F5F7FA;' }));
+      return {
+        nom: motEq + ' ' + eq, mini, aria: motEq + ' ' + eq + ', ' + (k === 0 ? 'Complète' : k + (k === 1 ? ' place' : ' places')),
+        libre: actuelle ? (padel ? 'Ta paire' : 'Ton équipe') : k === 0 ? 'Complète' : k + (k === 1 ? ' place' : ' places'),
+        point: 'flex: 0 0 7px; width: 7px; height: 7px; border-radius: 999px; background: ' + (actuelle ? '#FF2B00' : k === 0 ? 'rgba(255,255,255,0.45)' : '#00C896') + ';',
+        st: 'flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px; border-radius: 12px; text-align: left; cursor: ' + (possible ? 'pointer' : 'default') + '; ' + (sel ? 'border: 2px solid #FF2B00; background: rgba(255,43,0,0.14);' : 'border: 1px solid rgba(138,148,166,0.16); background: #1C2533;') + (possible ? '' : ' opacity: 0.55;'),
+        pick: () => { if (possible) this.setState({ choix: eq }); }
+      };
+    });
+    const ferme = !inscrit && fige;
+    const deadline = (mid === 'friday' ? 'vendredi ' : '') + M.desinsc;
+    let ligneTexte = '', icone = 'ouvert';
+    if (inscrit && fige) { ligneTexte = 'Compo bouclée : tu ne peux plus te désinscrire.'; icone = 'ferme'; }
+    else if (inscrit && phase === 'remplacement') { ligneTexte = 'Te désinscrire maintenant compte comme une demi-absence.'; icone = 'ferme'; }
+    else if (fige) { ligneTexte = 'Compo bouclée, inscriptions fermées.'; icone = 'ferme'; }
+    else if (phase === 'remplacement') { ligneTexte = 'Place libérée, à prendre jusqu’à ' + M.insc + '.'; icone = 'point'; }
+    else if (!complet) { ligneTexte = 'Désinscription libre jusqu’à ' + deadline; }
+    const aLigne = ligneTexte !== '';
+    const encadre = icone === 'point';
+    const aFooter = !(inscrit && fige);
+    // hauteur de l'écran
+    const arabe = /[\u0600-\u06FF]/.test(M.mot);
+    const motLignes = Math.ceil(M.mot.length / (arabe ? 44 : 52));
+    const rangs = Math.ceil(parEquipe / parRang);
+    const hBloc = grand ? (12 + 22 + 10 + rangs * taille + (rangs - 1) * 6 + 12 + 2) : 66;
+    const hHaut = inscrit ? 620 : (270 + 14 + 196);
+    const hLigne = aLigne ? (encadre ? 52 : (inscrit && phase === 'remplacement') ? 48 : 30) : 0;
+    const hEquipes = 22 + 26 + 10 + 2 * hBloc + 10;
+    const hAutres = complet && !inscrit ? 159 : 0;
+    const hOrga = 22 + 14 + 32 + 10 + motLignes * 22.5 + 14 + 2;
+    const hFooter = aFooter ? (inscrit ? 86 : 90) : 0;
+    const hauteur = Math.max(844, Math.ceil((hHaut + hLigne + hEquipes + hAutres + hOrga + 64 + hFooter + (arabe ? 15 : 0)) / 10) * 10);
+    const confirmerPossible = choix !== null;
+    return {
+      racine: 'position: relative; width: 390px; height: ' + hauteur + 'px; overflow: hidden; background: #0A0A0F; color: #F5F7FA; font-family: \'Inter\', system-ui, sans-serif; font-size: 15px; line-height: 1.45;',
+      vueFiche: !inscrit, vueTicket: inscrit,
+      photoAlt: 'Le terrain de ' + M.lieu.split(' · ')[0] + ' sous les projecteurs',
+      sportMaj: padel ? 'PADEL' : 'FOOT', formatMaj: format,
+      niveau: M.niveau,
+      titre: M.lieu.split(' · ')[0].toUpperCase(), lieu: M.lieu.split(' · ')[1], lieuMaj: M.lieu.split(' · ')[1].toUpperCase(),
+      distanceTexte: 'à ' + M.distance, mapsHref: 'https://maps.google.com/?q=' + M.maps,
+      partageHref: 'https://wa.me/?text=On%20joue%20%3F%20Rejoins%20le%20match%20%3A%20moubaratsport.com%2Fm%2F' + M.lien,
+      mDebut: M.debut, mFin: M.fin, quandTexte: M.jour + ' · ' + M.date, quandTicket: M.jour + ' → ' + M.fin,
+      prix: M.prix, prixTexte: M.prix + ' DA par joueur',
+      voileSport: padel ? 'position: absolute; inset: 0; background: rgba(10,10,15,0.60);' : 'display: none;',
+      maPlace: inscrit ? 'TU JOUES · ' + motEq + ' ' + eqMoi : '', monEquipe: inscrit ? motEq + ' ' + eqMoi : '',
+      tonEquipeLabel: padel ? 'TA PAIRE' : 'TON ÉQUIPE',
+      peutChanger: inscrit && !fige, compoBouclee: inscrit && fige, changerTexte: 'Changer jusqu’à ' + (M.jour === 'Ce soir' ? '' : M.jour.toLowerCase() + ' ') + M.insc,
+      ouvrirChanger: () => this.setState({ feuille: 'changer', choix: null }),
+      aLigne, ligneTexte, iconeOuvert: icone === 'ouvert', iconeFerme: icone === 'ferme', iconePoint: encadre,
+      ligneStyle: 'margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.4; color: #F5F7FA;' + (encadre ? ' padding: 10px 14px; border-radius: 12px; background: rgba(255,43,0,0.14); font-size: 14px;' : ''),
+      orgInit: M.orgInit, orgTexte: 'Organisé par ' + M.org, orgTel: M.tel, orgAppel: 'Appeler ' + M.org, appelerMaj: 'Appeler ' + M.orgPrenom, aGroupe: !!M.groupe, groupeHref: 'https://chat.whatsapp.com/' + M.lien, groupeNote: M.groupe ? 'Le groupe est facultatif : ses membres y voient ton numéro.' : 'Pas de groupe WhatsApp pour ce match.', mot: M.mot,
+      titreEquipes: padel ? 'Les paires' : 'Les équipes',
+      resteTexte: reste === 0 ? 'Complet' : fige ? (reste === 1 ? '1 place vide' : reste + ' places vides') : (reste === 1 ? '1 place libre' : reste + ' places libres'),
+      pointPlaces: 'flex: 0 0 7px; width: 7px; height: 7px; border-radius: 999px; background: ' + (reste === 0 || fige ? 'rgba(255,255,255,0.45)' : '#00C896') + ';',
+      equipes,
+      complet: complet && !inscrit, ouvert: ouvertEtat, ferme, peutQuitter: inscrit && !fige, aFooter,
+      quitterHref: phase === 'remplacement' ? 'ConfDesinscriptionTard.dc.html' : M.quitterConf,
+      ouvrirRejoindre: () => this.setState({ feuille: 'rejoindre', choix: null }),
+      alerter: () => this.setState({ alerte: !this.state.alerte }),
+      alerteLabel: this.state.alerte ? '✓ On te prévient' : 'Préviens-moi si ça se libère',
+      alerteStyle: 'width: 100%; height: 56px; border-radius: 12px; font-family: \'Inter\', system-ui, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; ' + (this.state.alerte ? 'border: 1px solid rgba(138,148,166,0.30); background: transparent; color: #F5F7FA;' : 'border: 0; background: #FF2B00; box-shadow: none; color: #FFFFFF;'),
+      feuilleOuverte: feuilleChanger || feuilleRejoindre,
+      feuilleTitre: feuilleChanger ? (padel ? 'Change de paire' : 'Change d’équipe') : (padel ? 'Choisis ta paire' : 'Choisis ton équipe'),
+      feuilleRegle: feuilleChanger ? 'Tu peux changer jusqu’à ' + (M.jour === 'Ce soir' ? '' : M.jour.toLowerCase() + ' ') + M.insc + '.' : phase === 'remplacement' ? 'Te désinscrire ensuite comptera comme une demi-absence.' : 'Désinscription libre jusqu’à ' + deadline + '.',
+      options,
+      fermerFeuille: () => this.setState({ feuille: null, choix: null }),
+      confirmerLabel: !confirmerPossible ? (padel ? 'L’autre paire est complète' : 'L’autre équipe est complète') : feuilleChanger ? (padel ? 'Je passe dans la paire ' : 'Je passe dans l’équipe ') + choix : (padel ? 'Je rejoins la paire ' : 'Je rejoins l’équipe ') + choix,
+      confirmerStyle: 'display: flex; align-items: center; justify-content: center; width: 100%; height: 56px; border-radius: 12px; font-family: \'Inter\', system-ui, sans-serif; font-size: 16px; font-weight: 600; ' + (confirmerPossible ? 'border: 0; background: #FF2B00; box-shadow: none; color: #FFFFFF; cursor: pointer;' : 'border: 1px solid rgba(138,148,166,0.16); background: transparent; color: #8A94A6; cursor: default;'),
+      confirmer: () => { if (!confirmerPossible) return; const i = libresDe(choix)[0]; this.setState({ moi: i, feuille: null, choix: null, quitte: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

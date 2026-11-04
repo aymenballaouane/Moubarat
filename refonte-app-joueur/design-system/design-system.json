@@ -1,0 +1,311 @@
+{
+ "v": 3,
+ "assetGroups": {
+  "Icons": {
+   "files": {
+    "i-arrow.svg": {
+     "blob": "0fca3d99bdc1c96d6664407baedd6c96",
+     "name": "i-arrow.svg",
+     "size": 349,
+     "type": "image/svg+xml"
+    },
+    "i-back.svg": {
+     "blob": "b8acea924cd8fe9b44c36bad0a565521",
+     "name": "i-back.svg",
+     "size": 245,
+     "type": "image/svg+xml"
+    },
+    "i-basket.svg": {
+     "blob": "91ce1325f97b50fcf29db1bf3128e93f",
+     "name": "i-basket.svg",
+     "size": 326,
+     "type": "image/svg+xml"
+    },
+    "i-bell.svg": {
+     "blob": "586d40ac08930899d018ca2f122bae21",
+     "name": "i-bell.svg",
+     "size": 351,
+     "type": "image/svg+xml"
+    },
+    "i-bulb.svg": {
+     "blob": "eaa1e9dfc6525b55bb3956f448c469bd",
+     "name": "i-bulb.svg",
+     "size": 360,
+     "type": "image/svg+xml"
+    },
+    "i-cal.svg": {
+     "blob": "c1f1fb31371fe575d425af430b51bdb0",
+     "name": "i-cal.svg",
+     "size": 497,
+     "type": "image/svg+xml"
+    },
+    "i-cash.svg": {
+     "blob": "bd34924ded367bfcdadf79e5d8d03952",
+     "name": "i-cash.svg",
+     "size": 294,
+     "type": "image/svg+xml"
+    },
+    "i-chat.svg": {
+     "blob": "60802d35864f8b0d0df50d0a1926f111",
+     "name": "i-chat.svg",
+     "size": 214,
+     "type": "image/svg+xml"
+    },
+    "i-check.svg": {
+     "blob": "4904e6184f1a4a1345a7f1e4afb3669a",
+     "name": "i-check.svg",
+     "size": 244,
+     "type": "image/svg+xml"
+    },
+    "i-chevdown.svg": {
+     "blob": "1ec0e35e6e374581a6a3c21de2859fc7",
+     "name": "i-chevdown.svg",
+     "size": 244,
+     "type": "image/svg+xml"
+    },
+    "i-clock.svg": {
+     "blob": "139641d5ff94df06a597a91d6e665392",
+     "name": "i-clock.svg",
+     "size": 333,
+     "type": "image/svg+xml"
+    },
+    "i-dots.svg": {
+     "blob": "1a6562f795d535c2716c50d1b0e0ac69",
+     "name": "i-dots.svg",
+     "size": 271,
+     "type": "image/svg+xml"
+    },
+    "i-filter.svg": {
+     "blob": "eb139276fcdf1bcc7a1e20ababaa6c33",
+     "name": "i-filter.svg",
+     "size": 412,
+     "type": "image/svg+xml"
+    },
+    "i-football.svg": {
+     "blob": "dac677c426427324d7ec117ae758ec21",
+     "name": "i-football.svg",
+     "size": 290,
+     "type": "image/svg+xml"
+    },
+    "i-gear.svg": {
+     "blob": "7d9983974de12e4701602a7752aa2393",
+     "name": "i-gear.svg",
+     "size": 903,
+     "type": "image/svg+xml"
+    },
+    "i-grass.svg": {
+     "blob": "4b6b26022b5ba77c6886875ad03a5ae1",
+     "name": "i-grass.svg",
+     "size": 206,
+     "type": "image/svg+xml"
+    },
+    "i-grid.svg": {
+     "blob": "5bad6e209f83ab25595e51200e61ba53",
+     "name": "i-grid.svg",
+     "size": 381,
+     "type": "image/svg+xml"
+    },
+    "i-help.svg": {
+     "blob": "abe4d3c44e7c84b2f21b1340fc332e41",
+     "name": "i-help.svg",
+     "size": 380,
+     "type": "image/svg+xml"
+    },
+    "i-home.svg": {
+     "blob": "9e1eefc17706ac386852609a7ba9b3f7",
+     "name": "i-home.svg",
+     "size": 357,
+     "type": "image/svg+xml"
+    },
+    "i-list.svg": {
+     "blob": "19752c82891e3bcf32794f914bc10817",
+     "name": "i-list.svg",
+     "size": 581,
+     "type": "image/svg+xml"
+    },
+    "i-locate.svg": {
+     "blob": "ed5500313bcc82eecfa31f480c7fb798",
+     "name": "i-locate.svg",
+     "size": 603,
+     "type": "image/svg+xml"
+    },
+    "i-lock.svg": {
+     "blob": "4cb36f007c77ea60f87cf3f0fdd799b9",
+     "name": "i-lock.svg",
+     "size": 297,
+     "type": "image/svg+xml"
+    },
+    "i-logout.svg": {
+     "blob": "96aaa28d39d4281ad5e890cdde9ff735",
+     "name": "i-logout.svg",
+     "size": 486,
+     "type": "image/svg+xml"
+    },
+    "i-padel.svg": {
+     "blob": "6a6d73d0123962f9fb6f34e6cde379d5",
+     "name": "i-padel.svg",
+     "size": 295,
+     "type": "image/svg+xml"
+    },
+    "i-park.svg": {
+     "blob": "8eb64b9ab274136e1cac0e87ae38217c",
+     "name": "i-park.svg",
+     "size": 351,
+     "type": "image/svg+xml"
+    },
+    "i-pin.svg": {
+     "blob": "4044d3037ec921c497cc943be686d9dd",
+     "name": "i-pin.svg",
+     "size": 236,
+     "type": "image/svg+xml"
+    },
+    "i-plus.svg": {
+     "blob": "33c3b8d3d39726009a017068c26c14ff",
+     "name": "i-plus.svg",
+     "size": 310,
+     "type": "image/svg+xml"
+    },
+    "i-search.svg": {
+     "blob": "b47d305cda08bac122e3a8b445aee8e9",
+     "name": "i-search.svg",
+     "size": 297,
+     "type": "image/svg+xml"
+    },
+    "i-share.svg": {
+     "blob": "e375d143679977e0095219c70f33f45f",
+     "name": "i-share.svg",
+     "size": 544,
+     "type": "image/svg+xml"
+    },
+    "i-shield.svg": {
+     "blob": "b31f42baa7c943ab1f0b0326ccf0633d",
+     "name": "i-shield.svg",
+     "size": 246,
+     "type": "image/svg+xml"
+    },
+    "i-shirt.svg": {
+     "blob": "f2af9c7ec820a016c15a9ab889ac66a2",
+     "name": "i-shirt.svg",
+     "size": 239,
+     "type": "image/svg+xml"
+    },
+    "i-star.svg": {
+     "blob": "274dd44fe6e8f4aaad92890331f59730",
+     "name": "i-star.svg",
+     "size": 210,
+     "type": "image/svg+xml"
+    },
+    "i-trophy.svg": {
+     "blob": "e206e399a42a4b7e08aac86e76ee7dca",
+     "name": "i-trophy.svg",
+     "size": 618,
+     "type": "image/svg+xml"
+    },
+    "i-user1.svg": {
+     "blob": "0f58c125ffe4add39401937aa30a3c7f",
+     "name": "i-user1.svg",
+     "size": 306,
+     "type": "image/svg+xml"
+    },
+    "i-users.svg": {
+     "blob": "07e97afa564ab441adc38f73a4451acd",
+     "name": "i-users.svg",
+     "size": 471,
+     "type": "image/svg+xml"
+    },
+    "i-whistle.svg": {
+     "blob": "516eebce6c41b3c4f75be20d1cd0acfa",
+     "name": "i-whistle.svg",
+     "size": 364,
+     "type": "image/svg+xml"
+    },
+    "i-x.svg": {
+     "blob": "0fef464cb33591db54387251af0bc223",
+     "name": "i-x.svg",
+     "size": 308,
+     "type": "image/svg+xml"
+    }
+   },
+   "name": "Icons",
+   "order": [
+    "i-arrow.svg",
+    "i-back.svg",
+    "i-basket.svg",
+    "i-bell.svg",
+    "i-bulb.svg",
+    "i-cal.svg",
+    "i-cash.svg",
+    "i-chat.svg",
+    "i-check.svg",
+    "i-chevdown.svg",
+    "i-clock.svg",
+    "i-dots.svg",
+    "i-filter.svg",
+    "i-football.svg",
+    "i-gear.svg",
+    "i-grass.svg",
+    "i-grid.svg",
+    "i-help.svg",
+    "i-home.svg",
+    "i-list.svg",
+    "i-locate.svg",
+    "i-lock.svg",
+    "i-logout.svg",
+    "i-padel.svg",
+    "i-park.svg",
+    "i-pin.svg",
+    "i-plus.svg",
+    "i-search.svg",
+    "i-share.svg",
+    "i-shield.svg",
+    "i-shirt.svg",
+    "i-star.svg",
+    "i-trophy.svg",
+    "i-user1.svg",
+    "i-users.svg",
+    "i-whistle.svg",
+    "i-x.svg"
+   ],
+   "tile": "s"
+  },
+  "Images": {
+   "files": {
+    "terrain-nuit.jpg": {
+     "blob": "e5e015649a38792b3da49ba168aae4da",
+     "name": "terrain-nuit.jpg",
+     "size": 43493,
+     "type": "image/jpeg"
+    }
+   },
+   "name": "Images",
+   "order": [
+    "terrain-nuit.jpg"
+   ],
+   "tile": "l"
+  }
+ },
+ "blobs": {},
+ "createdOnFiles": {
+  "at": "2026-10-20T16:22:58Z",
+  "v": 1
+ },
+ "docs": {
+  "readme": "project/README.md",
+  "sections": []
+ },
+ "groups": [
+  "Images",
+  "Icons"
+ ],
+ "lastChange": {
+  "by": "Aymen",
+  "at": "2026-10-20T19:25:00Z",
+  "via": "Claude",
+  "note": "Règle du rouge (agis / c’est toi) et couleurs de sport foot / padel"
+ },
+ "layout": "files",
+ "libraries": [],
+ "namespace": "Moubarat",
+ "sections": {},
+ "title": "Moubarat"
+}

@@ -1,0 +1,39 @@
+# Vérification automatique avant chaque mise en ligne (03/11/2026, docs/PASSATION.md §4.17).
+# Render ne déploie un commit de master que si cette vérification est verte (`autoDeployTrigger: checksPass`).
+name: Vérification
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      # Les tests de l'API créent des bases éphémères sur un vrai PostgreSQL 16 (apps/api/tests/helpers.ts).
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PG_ADMIN_URL: postgres://postgres@localhost:5432/postgres
+      # tools/ui-board télécharge Chromium à l'installation : inutile ici.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g pnpm@11.23.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test

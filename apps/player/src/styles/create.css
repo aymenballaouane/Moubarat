@@ -1,0 +1,146 @@
+/* =============================================================================
+   CRÉER UN MATCH — Creer.dc.html (Lot 6, 26/10/2026) : « Ton créneau », « Configure ton match », « Ton match est en ligne »
+   (+ variantes padel : même structure, badge PADEL et voile sur la photo). Remplace l'ancien parcours en quatre étapes.
+   S'appuie sur les tokens de design/moubarat-ds.css et les primitives de player.css (.au-screen, .mb-btn, .mb-tap) ; le
+   gabarit (gouttières 22 px de .au-screen, entête rond + fil d'Ariane) est celui de R3 (reserver.css). Propriétés logiques
+   partout (RTL). Préfixe du groupe : .cr-* ; texte posé sur la photo nocturne = couleurs FIXES (sombres quel que soit le thème).
+   ============================================================================= */
+
+.au-screen.cr { padding-bottom: 0; }
+
+/* --- Entête + suivi en trois étapes (Créneau · Détails · Publié) ------------------------------------------------- */
+.cr-head { display: flex; align-items: center; gap: 12px; }
+.cr-back { flex: 0 0 44px; width: 44px; height: 44px; border-radius: var(--r-full); display: grid; place-items: center; padding: 0;
+  border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; }
+.cr-crumb { flex: 1 1 auto; font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em; color: var(--text-3); }
+.cr-back:focus-visible, .cr-resa:focus-visible, .cr-level:focus-visible, .cr-other:focus-visible, .cr-note:focus-visible,
+.cr-cta:focus-visible, .cr-ghost:focus-visible, .cr-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.cr-steps { display: flex; align-items: center; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+.cr-step { display: flex; align-items: center; gap: 8px; }
+.cr-step__dot { flex: 0 0 26px; width: 26px; height: 26px; box-sizing: border-box; border-radius: var(--r-full); display: grid; place-items: center;
+  font-size: var(--fs-b3); font-weight: 700; border: 1.5px solid var(--line-strong); color: var(--text-3); }
+.cr-step[data-state="done"] .cr-step__dot, .cr-step[data-state="current"] .cr-step__dot { background: var(--primary); border-color: var(--primary); color: #fff; }
+.cr-step__dot .mb-ic { width: 13px; height: 13px; }
+.cr-step__label { font-size: var(--fs-b3); font-weight: 500; color: var(--text-2); }
+.cr-step[data-state="current"] .cr-step__label, .cr-step[data-state="done"] .cr-step__label { color: var(--text); }
+.cr-step[data-state="current"] .cr-step__label { font-weight: 700; }
+.cr-steps__bar { flex: 1 1 auto; height: 2px; border-radius: 2px; background: var(--line-strong); }
+.cr-steps__bar[data-on="true"] { background: var(--primary); }
+
+.cr-h1 { margin: 22px 0 0; font-family: var(--font-body); font-weight: 700; font-size: 28px; line-height: 1.2; letter-spacing: -.015em; color: var(--text); }
+.cr-h2 { margin: 0; font-family: var(--font-body); font-weight: 600; font-size: 16px; line-height: 1.2; color: var(--text); }
+.cr-q { display: block; margin: 0; font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: var(--text); }
+.cr-block { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+
+/* --- C0 · Ton créneau : une grande carte photo par réservation ---------------------------------------------------- */
+.cr-list { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
+.cr-resa { position: relative; display: block; width: 100%; height: 168px; padding: 0; border-radius: var(--r-4); overflow: hidden; cursor: pointer;
+  border: 1px solid var(--line); background: var(--ink-2); color: #F5F7FA; text-align: start; }
+.cr-resa img, .cr-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cr-resa__veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 10, 15, .15) 0%, rgba(10, 10, 15, .92) 100%); }
+.cr-resa__tags { position: absolute; top: 14px; inset-inline-start: 14px; display: flex; gap: 6px; }
+.cr-resa__body { position: absolute; inset-inline: 16px; bottom: 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.cr-resa__txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cr-resa__day { font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em; color: #C5CCD6; }
+.cr-resa__line { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.cr-resa__hour { font-family: var(--font-display); font-size: 50px; line-height: .85; }
+.cr-resa__venue { font-size: 16px; line-height: 1.25; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cr-resa__sub { font-size: var(--fs-b3); color: #F5F7FA; }
+.cr-resa__sub .mb-price { font-family: var(--font-body); font-size: var(--fs-b3); color: #F5F7FA; }
+.cr-resa__sub .mb-price .mb-price__cur { color: #F5F7FA; font-size: 1em; }
+.cr-resa__sub .mb-price::after { color: #F5F7FA; font-size: var(--fs-b3); }
+.cr-resa__go { flex: 0 0 44px; width: 44px; height: 44px; border-radius: var(--r-full); background: #fff; color: #050505; display: grid; place-items: center; }
+.cr-resa__go .mb-ic { width: 16px; height: 16px; }
+.cr-resa:active { transform: scale(.985); }
+
+.cr-badge { display: inline-flex; align-items: center; padding: 3px 6px; border-radius: var(--r-1); background: rgba(10, 10, 15, .78);
+  font-size: var(--fs-micro); font-weight: 600; letter-spacing: .10em; color: #F5F7FA; }
+.cr-tag { display: inline-flex; align-items: center; padding: 3px 6px; border-radius: var(--r-1); background: rgba(0, 0, 0, .66);
+  border: 1px solid rgba(138, 148, 166, .30); font-size: var(--fs-micro); font-weight: 600; letter-spacing: .10em; color: #F5F7FA; }
+
+.cr-other { margin-top: 24px; height: 54px; border-radius: var(--r-3); border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+  display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.cr-other .mb-ic { width: 18px; height: 18px; }
+
+/* --- C1 · Configure ton match ------------------------------------------------------------------------------------- */
+.cr-h1--row { margin-top: 18px; }
+.cr-preview { margin-top: 14px; }
+.cr-card { position: relative; border-radius: var(--r-4); overflow: hidden; border: 1px solid var(--line); background: var(--ink-2); color: #F5F7FA; }
+.cr-card--c1 { height: 236px; }
+.cr-card--c2 { height: 300px; }
+.cr-card__veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 10, 15, .55) 0%, rgba(10, 10, 15, .15) 35%, rgba(10, 10, 15, .94) 100%); }
+.cr-card--c2 .cr-card__veil { background: linear-gradient(180deg, rgba(10, 10, 15, .45) 0%, rgba(10, 10, 15, .10) 35%, rgba(10, 10, 15, .92) 100%); }
+.cr-card__padel { position: absolute; inset: 0; background: rgba(10, 10, 15, .60); }
+.cr-card__tags { position: absolute; top: 14px; inset-inline-start: 14px; display: flex; gap: 6px; align-items: center; }
+.cr-card__lvl { position: absolute; top: 14px; inset-inline-end: 14px; padding: 4px 8px; border-radius: var(--r-1); background: rgba(10, 10, 15, .72);
+  font-size: var(--fs-micro); line-height: 1.2; font-weight: 600; letter-spacing: .06em; color: #fff; }
+.cr-card__body { position: absolute; inset-inline: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 4px; }
+.cr-card__date { font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em; color: #C5CCD6; }
+.cr-card__name { font-family: var(--font-display); font-size: 50px; line-height: .92; color: #F5F7FA; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cr-card__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 4px; }
+.cr-card__field { font-size: var(--fs-b3); color: #F5F7FA; min-width: 0; }
+.cr-card__price { white-space: nowrap; }
+.cr-card__price .mb-price { font-size: 26px; color: #F5F7FA; }
+.cr-card__price .mb-price .mb-price__cur { color: #F5F7FA; font-size: .42em; margin-inline-start: 4px; }
+.cr-card__price .mb-price::after { color: #F5F7FA; font-size: var(--fs-micro); font-weight: 600; margin-inline-start: 4px; }
+.cr-change { display: flex; justify-content: flex-end; padding: 10px 2px 0; }
+.cr-change button { font-size: var(--fs-b3); font-weight: 600; color: var(--text); background: none; border: 0; padding: 0; cursor: pointer; min-height: 44px;
+  display: inline-flex; align-items: center; }
+.cr-change button > span { border-bottom: 1px solid var(--line-strong); }
+
+.cr-levels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cr-level { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px; border: 0; border-radius: var(--r-3); cursor: pointer; text-align: start;
+  background: var(--ink-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-strong); font-size: var(--fs-b2); font-weight: 700; }
+.cr-level[aria-checked="true"] { background: var(--primary-wash); color: var(--primary-glow); box-shadow: inset 0 0 0 1px var(--primary-line); }
+.cr-level__bars { display: flex; gap: 3px; align-items: flex-end; height: 16px; }
+.cr-level__bars i { display: block; width: 5px; border-radius: 2px; background: var(--line-strong); }
+.cr-level__bars i[data-on="true"] { background: var(--primary); }
+
+.cr-note { display: block; width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: var(--r-3); background: var(--ink-2); border: 1px solid var(--line-strong);
+  color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.45; resize: none; }
+.cr-note::placeholder { color: var(--text-3); }
+.cr-count { align-self: flex-end; font-size: var(--fs-micro); color: var(--text-3); }
+
+.cr-foot { position: sticky; bottom: 0; margin: auto -22px 0; padding: 12px 22px max(22px, env(safe-area-inset-bottom)); background: var(--ink);
+  border-top: 1px solid var(--line); }
+.cr-pad { height: 28px; flex: 0 0 auto; }
+.cr-cta { width: 100%; height: 56px; border: 0; border-radius: var(--r-3); background: var(--primary); color: #fff; font-family: var(--font-body);
+  font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; box-sizing: border-box; }
+.cr-cta[disabled] { opacity: .5; pointer-events: none; }
+.cr-cta[data-loading="true"] { opacity: .7; pointer-events: none; }
+.cr-cta .mb-ic { width: 19px; height: 19px; }
+.cr-err { margin: 10px 0 0; font-size: var(--fs-b3); color: var(--danger); text-align: center; }
+
+/* --- C2 · Ton match est en ligne ---------------------------------------------------------------------------------- */
+.cr-done { margin-top: 40px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.cr-done__check { width: 64px; height: 64px; border-radius: var(--r-full); background: rgba(0, 200, 150, .14); color: var(--success); display: grid; place-items: center; }
+.cr-done__check .mb-ic { width: 28px; height: 28px; }
+.cr-done h1 { margin: 6px 0 0; font-family: var(--font-body); font-weight: 700; font-size: 28px; line-height: 1.2; letter-spacing: -.015em; color: var(--text); }
+.cr-done p { margin: 0; max-width: 300px; font-size: 15px; color: var(--text); }
+.cr-card--c2 .cr-card__date { margin-bottom: 0; }
+.cr-card__big { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.cr-card__hour { font-family: var(--font-display); font-size: 72px; line-height: .85; color: #F5F7FA; }
+.cr-card__title { font-family: var(--font-display); font-size: 30px; line-height: 1; color: #F5F7FA; min-width: 0; overflow-wrap: anywhere; }
+.cr-card__meta { font-size: var(--fs-b3); color: #F5F7FA; }
+.cr-card__meta .mb-price { font-family: var(--font-body); font-size: var(--fs-b3); color: #F5F7FA; }
+.cr-card__meta .mb-price .mb-price__cur { color: #F5F7FA; font-size: 1em; }
+.cr-card__meta .mb-price::after { color: #F5F7FA; font-size: var(--fs-b3); }
+.cr-gauge { display: flex; align-items: center; gap: 10px; padding-top: 8px; }
+.cr-gauge__bar { flex: 1 1 auto; height: 6px; border-radius: var(--r-full); background: #1C2533; overflow: hidden; }
+.cr-gauge__bar i { display: block; height: 100%; background: var(--success); border-radius: var(--r-full); }
+.cr-gauge__txt { font-size: var(--fs-b3); color: #F5F7FA; white-space: nowrap; }
+.cr-actions { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+.cr-ghost { margin-top: 6px; height: 52px; border-radius: var(--r-3); border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+  display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; box-sizing: border-box; width: 100%; }
+
+/* --- « Qui peut venir ? » (C1) et la ligne du lien (C2) — rétablis avec les liens de match (lot 7) ------------------------------------------------ */
+.cr-seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 4px; border-radius: var(--r-3); background: var(--ink-2); border: 1px solid var(--line); }
+.cr-seg__b { height: 42px; border: 0; border-radius: var(--r-2); cursor: pointer; background: transparent; color: var(--text-3); font-size: var(--fs-b2); font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.cr-seg__b .mb-ic { width: 16px; height: 16px; }
+.cr-seg__b[aria-checked="true"] { background: var(--primary-wash); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--primary); }
+.cr-linkrow { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 6px 0 14px; border-radius: var(--r-3); background: var(--ink-2); border: 1px solid var(--line); }
+.cr-linkrow > .mb-ic { width: 16px; height: 16px; color: var(--text-3); flex: 0 0 16px; }
+.cr-linkrow__t { flex: 1 1 auto; min-width: 0; font-size: 15px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cr-copy { height: 40px; padding: 0 14px; border: 0; border-radius: var(--r-2); background: var(--primary-wash); color: var(--primary-glow); font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; }

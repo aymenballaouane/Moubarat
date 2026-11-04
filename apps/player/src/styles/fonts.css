@@ -1,0 +1,32 @@
+/* Polices EMBARQUÉES dans l'app (décision d'Aymen, 27/10/2026) — plus aucun appel à Google Fonts : l'app marche hors ligne avec ses vraies polices, et
+   aucune adresse de joueur n'est envoyée à un tiers au chargement.
+   Sources : paquets @fontsource (licence SIL OFL — Inter, IBM Plex Sans Arabic, Changa, Bebas Neue), fichiers .woff2 copiés par Vite dans /assets.
+   Sous-ensembles : « latin » suffit au français (é è ê à ç œ ’ inclus) ; « arabic » pour l'arabe. Pas de latin-ext, cyrillique, grec, vietnamien :
+   des dizaines de Ko en moins à précacher. Le service worker (public/sw.js) les précache avec la coquille. IBM Plex Sans Arabic est derrière Inter
+   (--font-body), Changa derrière Bebas Neue (--font-display) : voir theme-app-joueur.css.
+   Le design system gelé (design/moubarat-ds.css) importe encore Barlow / IBM Plex Mono depuis Google : le plugin de vite.config.ts retire cet @import
+   POUR L'APP JOUEUR seulement (le fichier gelé et le CRM ne changent pas) — ni Barlow ni la Mono ne sont utilisées ici (--font-body / --font-mono = Inter). */
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('../../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('../../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('../../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../../node_modules/@fontsource/ibm-plex-sans-arabic/files/ibm-plex-sans-arabic-arabic-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('../../node_modules/@fontsource/ibm-plex-sans-arabic/files/ibm-plex-sans-arabic-arabic-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('../../node_modules/@fontsource/ibm-plex-sans-arabic/files/ibm-plex-sans-arabic-arabic-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('../../node_modules/@fontsource/ibm-plex-sans-arabic/files/ibm-plex-sans-arabic-arabic-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Changa'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../../node_modules/@fontsource/changa/files/changa-arabic-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Changa'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('../../node_modules/@fontsource/changa/files/changa-arabic-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Changa'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('../../node_modules/@fontsource/changa/files/changa-arabic-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Bebas Neue'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../../node_modules/@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2') format('woff2'); }

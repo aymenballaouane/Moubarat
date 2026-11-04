@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Moubarat · مبارياتي</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;family=Changa:wght@600&amp;family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background: #0A0A0F}
+a{color:#FFFFFF;text-decoration:none}
+button{font-family:inherit}
+</style>
+</helmet>
+<div dir="rtl" lang="ar" style="{{ racine }}">
+  <header style="padding: 28px 16px 0 16px;">
+    <h1 style="margin: 0; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; ">مبارياتي</h1>
+  </header>
+  <div role="tablist" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px 16px 0 16px;">
+    <button role="tab" aria-selected="{{ selAvenir }}" onClick="{{ voirAvenir }}" style="{{ tabAvenir }}">{{ tabLabel }}</button>
+    <button role="tab" aria-selected="{{ selPasses }}" onClick="{{ voirPasses }}" style="{{ tabPasses }}">السابقة</button>
+  </div>
+
+  <sc-if value="{{ avenir }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ vide }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 36px 24px 0 24px; text-align: center;">
+          <span style="width: 68px; height: 68px; border-radius: 999px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2"></rect><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line></svg></span>
+          <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 22px; line-height: 1.2; color: #F5F7FA; font-weight: 700; ">لا شيء مبرمج<br>حاليًا</span>
+          <span style="font-size: 15px; line-height: 1.5; color: #F5F7FA;">انضم إلى مباراة قريبة منك، أو احجز ملعبًا مع رفاقك.</span>
+          <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; padding-top: 6px;"><a href="ExplorerAr.dc.html" style="display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px;  font-weight: 600;">اعثر على مباراة</a><a href="ReserverAr.dc.html" style="display: flex; align-items: center; justify-content: center; height: 52px; border-radius: 12px; border: 1px solid rgba(138,148,166,0.30); color: #F5F7FA; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 15px;  font-weight: 600;">احجز ملعبًا</a></div>
+        </div>
+    </sc-if>
+    <sc-if value="{{ plein }}" hint-placeholder-val="{{ true }}">
+    <section style="padding: 18px 16px 0 16px;">
+      <div data-alerte="1" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 12px; background: #131A24; box-shadow: none;">
+        <div style="display: flex; align-items: center; gap: 10px;"><span style="flex: 0 0 36px; width: 36px; height: 36px; border-radius: 999px; background: #2A3342; display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"></path></svg></span><span style="flex: 1 1 auto; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 600;  color: #8A94A6;">محجوز بالهاتف</span></div>
+        <span style="font-size: 15px; line-height: 1.35; color: #F5F7FA;"><b>مركب رياض</b> · الخميس 22، 21:00 ← 22:30</span>
+        <span style="font-size: 15px; font-weight: 700; color: #F5F7FA;">هل هذا أنت؟</span>
+        <div style="display: flex; gap: 10px;"><a href="CestMoiAr.dc.html" style="flex: 1 1 0; height: 46px; border: 0; background: #FF2B00; color: #FFFFFF; border-radius: 12px; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 15px;  cursor: pointer; text-decoration: none; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-weight: 600;">نعم، أنا</a><a href="PasMoiAr.dc.html" style="flex: 1 1 0; height: 46px; border: 1px solid rgba(138,148,166,0.30); background: transparent; color: #F5F7FA; border-radius: 12px; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 15px;  cursor: pointer; text-decoration: none; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-weight: 600;">لست أنا</a></div>
+      </div>
+    </section>
+
+
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 12px;">
+      <sc-for list="{{ prochains }}" as="m" hint-placeholder-count="3">
+        <a href="{{ m.lien }}" style="{{ m.carte }}">
+          <span style="position: relative; flex: 0 0 104px; overflow: hidden;">
+            <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: {{ m.cadrage }};">
+            <span style="{{ m.voile }}"></span>
+            <span style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;">
+              <span style="{{ m.badge }}">{{ m.sport }}</span>
+              <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 600;  color: #C5CCD6;">{{ m.jour }}</span>
+              <span style="font-family: 'Bebas Neue', 'Changa', sans-serif; font-size: 38px; line-height: 1.2; color: #F5F7FA;">{{ m.heure }}</span>
+            </span>
+          </span>
+          <span style="flex: 0 0 0; border-right: 2px dashed rgba(138,148,166,0.16);"></span>
+          <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 12px 14px;">
+            <span style="{{ m.etatStyle }}">{{ m.etat }}</span>
+            <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px; line-height: 1.25; color: #F5F7FA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">{{ m.nom }}</span>
+            <span style="display: flex; align-items: center; gap: 8px; min-width: 0;"><span style="flex: 0 0 auto; display: inline-block; padding: 4px 8px 3px 8px; border-radius: 6px; background: #1C2533; border: 1px solid rgba(138,148,166,0.30); font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; line-height: 1.2;  color: #F5F7FA; font-weight: 600; ">{{ m.fmtMaj }}</span><span style="font-size: 13px; color: #F5F7FA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ m.lieu }}</span></span>
+            <span style="{{ m.basStyle }}">{{ m.bas }}</span>
+          </span>
+        </a>
+      </sc-for>
+    </section>
+    </sc-if>
+  </sc-if>
+
+  <sc-if value="{{ passes }}" hint-placeholder-val="{{ false }}">
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 4px;">
+      <sc-for list="{{ anciens }}" as="m" hint-placeholder-count="5">
+        <div style="display: flex; align-items: center; gap: 14px; padding: 14px 4px; border-bottom: 1px solid rgba(138,148,166,0.16);">
+          <span style="flex: 0 0 52px; display: flex; flex-direction: column; align-items: center;">
+            <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 600;  color: #8A94A6;">{{ m.mois }}</span>
+            <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 22px; line-height: 1.2; color: #F5F7FA; font-weight: 700; ">{{ m.jourNum }}</span>
+          </span>
+          <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+            <span style="display: flex; align-items: center; gap: 8px;"><span style="{{ m.badge }}">{{ m.sport }}</span><span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px; line-height: 1.25; color: #F5F7FA; font-weight: 600;">{{ m.nom }}</span></span>
+            <span style="font-size: 13px; color: #F5F7FA;">{{ m.lieu }}</span>
+          </span>
+          <span style="{{ m.etatStyle }}">{{ m.etat }}</span>
+        </div>
+      </sc-for>
+    </section>
+  </sc-if>
+
+  <nav aria-label="التنقّل الرئيسي" style="position: absolute; right: 16px; left: 16px; bottom: 20px; height: 64px; box-sizing: border-box; padding: 0 6px; border-radius: 999px; background: rgba(19,26,36,0.88); -webkit-backdrop-filter: saturate(1.4) blur(18px); backdrop-filter: saturate(1.4) blur(18px); border: 1px solid rgba(138,148,166,0.22); box-shadow: 0 14px 34px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center;">
+    <a href="MainAr.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #8A94A6;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>
+      <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 500; white-space: nowrap;">الرئيسية</span>
+    </a>
+    <a href="ExplorerAr.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #8A94A6;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 500; white-space: nowrap;">استكشف</span>
+    </a>
+    <a href="CreerOuReserverAr.dc.html" aria-label="أنشئ أو احجز" style="justify-self: center; display: grid; place-items: center; width: 54px; height: 54px; margin-top: -26px; border-radius: 999px; background: #FF2B00; border: 4px solid #0A0A0F; box-shadow: 0 8px 22px rgba(255,43,0,0.40); color: #FFFFFF;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    </a>
+    <a href="MesMatchsAr.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #FF2B00;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2"></rect><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line></svg>
+      <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 500; white-space: nowrap;">مبارياتي</span>
+    </a>
+    <a href="ProfilAr.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #8A94A6;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c1-4 4.5-6 8-6s7 2 8 6"></path></svg>
+      <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 500; white-space: nowrap;">حسابي</span>
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"onglet":{"editor":"enum","options":["avenir","passes"],"default":"avenir","section":"Écran"},"vide":{"editor":"boolean","default":false,"section":"Écran"},"$preview":{"width":390,"height":1010}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { onglet: null }; }
+  renderVals() {
+    const onglet = this.state.onglet ?? this.props.onglet ?? 'avenir';
+    const tab = on => 'height: 46px; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 700;  ' + (on ? 'color: #FFFFFF; background: linear-gradient(180deg, #1C2533 0%, #131A24 100%); border: 1px solid rgba(255,43,0,0.40); box-shadow: 0 0 0 1px rgba(255,43,0,0.10), 0 8px 24px rgba(255,43,0,0.24), inset 0 -2px 0 #FF2B00;' : 'color: #8A94A6; background: transparent; border: 1px solid rgba(138,148,166,0.16);');
+    const badge = pd => 'padding: 2px 5px; border-radius: 6px; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 11px; font-weight: 600;  color: #F5F7FA; background: ' + (pd ? 'rgba(10,10,15,0.78)' : 'rgba(10,10,15,0.78)') + ';';
+    const mono = c => 'font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 10px; font-weight: 600;  color: ' + c + ';';
+    const prochains = [
+      { jour: 'الأربعاء 21', heure: '18:30', nom: 'مركب الأبيار', lieu: 'الملعب 1', fmt: '2v2', etat: 'محجوز · بلا مباراة', bas: 'أنشئ مباراة عليه ←', type: 'resa', cadrage: '60% 55%', lien: 'CreerConfigPadelAr.dc.html', pd: true },
+      { jour: 'الأربعاء 21', heure: '21:30', nom: 'ملعب بئر خادم', lieu: '', fmt: '5v5', etat: 'أنت المنظّم', bas: 'بقي 3 لاعبين للعثور عليهم', type: 'orga', cadrage: '25% 45%', lien: 'OrgaMatchAr.dc.html' },
+      { jour: 'الجمعة 23', heure: '20:00', nom: 'مركب رياض', lieu: '', fmt: '5v5', etat: 'أنت تلعب · الفريق أ', bas: '500 دج تُدفع في المكان', type: 'joue', cadrage: '50% 50%', lien: 'DetailMatchFridayAr.dc.html' },
+      { jour: 'السبت 24', heure: '18:00', nom: 'أرينا الشراقة', lieu: 'الملعب 1', fmt: '7v7', etat: 'محجوز · بلا مباراة', bas: 'عرض حجزك ←', type: 'resa', cadrage: '80% 45%', lien: 'ReserverVoirAr.dc.html' }
+    ].map(m => ({ ...m, fmtMaj: m.fmt.toUpperCase(), sport: m.pd ? 'بادل' : 'كرة قدم', badge: badge(!!m.pd),
+      carte: 'position: relative; display: flex; min-height: 118px; border-radius: 12px; overflow: hidden; color: #F5F7FA; ' + (m.type === 'joue' ? 'background: rgba(255,43,0,0.14); border: 1px solid rgba(255,43,0,0.45); box-shadow: none;' : 'background: #131A24; border: 1px solid rgba(138,148,166,0.16);'),
+      voile: 'position: absolute; inset: 0; background: ' + (m.type === 'joue' ? 'linear-gradient(180deg, rgba(10,10,15,0.45), rgba(10,10,15,0.80));' : 'linear-gradient(180deg, rgba(10,10,15,0.45), rgba(10,10,15,0.80));'),
+      etatStyle: mono(m.type === 'joue' ? '#FF2B00' : m.type === 'orga' ? '#FFFFFF' : 'rgba(255,255,255,0.65)'),
+      basStyle: 'font-size: 13px; font-weight: ' + (m.type === 'resa' ? 700 : 500) + '; color: ' + '#FFFFFF' + ';' + (m.type === 'resa' ? ' text-decoration: underline; text-underline-offset: 3px;' : '') }));
+    const pastille = k => 'flex: 0 0 auto; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; ' + (k === 'ok' ? 'color: #F5F7FA; background: #1C2533;' : 'color: #8A94A6; border: 1px dashed rgba(138,148,166,0.30);');
+    const anciens = [
+      ['أكتوبر', '18', 'ملعب بئر خادم', '5v5 · ألغاها يانيس', 'أُلغيت', 'ko', false],
+      ['أكتوبر', '16', 'مركب رياض', '5v5 · الفريق B', 'لُعبت', 'ok', false],
+      ['أكتوبر', '14', 'ملعب بئر خادم', '5v5 · من تنظيمك', 'لُعبت', 'ok', false],
+      ['أكتوبر', '13', 'مركب الأبيار', '2v2 · الثنائي A', 'لُعبت', 'ok', true],
+      ['أكتوبر', '09', 'مركب رياض', '5v5 · الفريق A', 'لُعبت', 'ok', false],
+      ['أكتوبر', '06', 'أرينا الشراقة', '5v5', 'أُلغيت', 'ko', false]
+    ].map(([mois, jourNum, nom, lieu, etat, k, pd]) => ({ mois, jourNum, nom, lieu, etat, sport: pd ? 'بادل' : 'كرة قدم', badge: badge(pd), etatStyle: pastille(k) }));
+    return {
+      racine: 'position: relative; width: 390px; height: ' + (this.props.vide ? 844 : onglet === 'avenir' ? 1010 : 844) + 'px; overflow: hidden; background: #0A0A0F; color: #8A94A6; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 14px; line-height: 1.45;',
+      avenir: onglet === 'avenir', passes: onglet === 'passes', selAvenir: String(onglet === 'avenir'), selPasses: String(onglet === 'passes'),
+      tabAvenir: tab(onglet === 'avenir'), tabPasses: tab(onglet === 'passes'),
+      voirAvenir: () => this.setState({ onglet: 'avenir' }), voirPasses: () => this.setState({ onglet: 'passes' }),
+      prochains, anciens, vide: !!this.props.vide, plein: !this.props.vide, tabLabel: this.props.vide ? 'القادمة' : 'القادمة · 4'
+    };
+  }
+}
+</script>
+</body>
+</html>

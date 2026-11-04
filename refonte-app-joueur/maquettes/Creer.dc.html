@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Moubarat · Créer un match</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background: #0A0A0F}
+a{color:#FFFFFF;text-decoration:none}
+button{font-family:inherit}
+input,textarea{font-family:'Inter', system-ui, sans-serif}
+input::placeholder,textarea::placeholder{color:#8A94A6}
+</style>
+</helmet>
+<div style="{{ racine }}">
+
+  <header style="display: flex; align-items: center; gap: 12px; padding: 20px 16px 0 16px;">
+    <a href="Main.dc.html" aria-label="Retour" style="width: 44px; height: 44px; flex: 0 0 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,18 9,12 15,6"></polyline></svg>
+    </a>
+    <span style="flex: 1 1 auto; font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #8A94A6;">CRÉER UN MATCH</span>
+  </header>
+  <ol aria-label="Étapes" style="display: flex; align-items: center; gap: 8px; margin: 0; padding: 16px 16px 0 16px; list-style: none;">
+    <li style="display: flex; align-items: center; gap: 8px;" aria-current="{{ cur1 }}"><span style="{{ rond1 }}">{{ num1 }}</span><span style="{{ lab1 }}">Créneau</span></li>
+    <li aria-hidden="true" style="{{ trait1 }}"></li>
+    <li style="display: flex; align-items: center; gap: 8px;" aria-current="{{ cur2 }}"><span style="{{ rond2 }}">{{ num2 }}</span><span style="{{ lab2 }}">Détails</span></li>
+    <li aria-hidden="true" style="{{ trait2 }}"></li>
+    <li style="display: flex; align-items: center; gap: 8px;" aria-current="{{ cur3 }}"><span style="{{ rond3 }}">{{ num3 }}</span><span style="{{ lab3 }}">Publié</span></li>
+  </ol>
+
+  <!-- ================= C0 · TON CRÉNEAU ================= -->
+  <sc-if value="{{ estCreneau }}" hint-placeholder-val="{{ true }}">
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 6px;">
+      <h1 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; letter-spacing: -0.015em;">Ton créneau</h1>
+    </section>
+
+    <sc-if value="{{ noir }}" hint-placeholder-val="{{ true }}">
+    <section aria-label="Réservation à reconnaître" style="padding: 20px 16px 0 16px;">
+      <div data-alerte="1" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 12px; background: #131A24; box-shadow: none;">
+        <div style="display: flex; align-items: center; gap: 10px;"><span style="flex: 0 0 36px; width: 36px; height: 36px; border-radius: 999px; background: #2A3342; display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"></path></svg></span><span style="flex: 1 1 auto; font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #8A94A6;">RÉSERVÉ PAR TÉLÉPHONE</span></div>
+        <span style="font-size: 15px; line-height: 1.4; color: #F5F7FA;"><b>Complexe Ryad</b> · jeu. 22, 21:00 → 22:30 · Terrain 2 · 5v5</span>
+        <span style="font-size: 15px; font-weight: 700; color: #F5F7FA;">C’est bien toi ?</span>
+        <div style="display: flex; gap: 10px;"><a href="#" onClick="{{ cestMoi }}" style="flex: 1 1 0; height: 46px; border: 0; background: #FF2B00; color: #FFFFFF; border-radius: 12px; font-family: 'Inter', system-ui, sans-serif; font-size: 15px;  cursor: pointer; text-decoration: none; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-weight: 600;">C’est moi</a><a href="PasMoi.dc.html" style="flex: 1 1 0; height: 46px; border: 1px solid rgba(138,148,166,0.30); background: transparent; color: #F5F7FA; border-radius: 12px; font-family: 'Inter', system-ui, sans-serif; font-size: 15px;  cursor: pointer; text-decoration: none; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-weight: 600;">Ce n’est pas moi</a></div>
+      </div>
+    </section>
+
+    <section aria-label="Tes réservations sans match" style="padding: 28px 16px 0 16px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <h2 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 16px; line-height: 1.2; color: #F5F7FA;">Tes réservations</h2>
+      </div>
+      <sc-for list="{{ resas }}" as="r" hint-placeholder-count="2">
+        <button onClick="{{ r.choisir }}" aria-label="{{ r.aria }}" style="position: relative; display: flex; width: 100%; height: 124px; padding: 0; border-radius: 12px; overflow: hidden; background: #131A24; border: 1px solid rgba(138,148,166,0.16); color: #F5F7FA; text-align: left; cursor: pointer;">
+          <span style="position: relative; flex: 0 0 112px; overflow: hidden;">
+            <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: {{ r.cadrage }};">
+            <span style="position: absolute; inset: 0; background: rgba(0,0,0,0.66);"></span>
+            <span style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px;">
+              <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #C5CCD6;">{{ r.jour }}</span>
+              <span style="font-family: 'Bebas Neue', sans-serif; font-size: 38px; line-height: 0.9;">{{ r.heure }}</span>
+              <span style="font-size: 12px; color: #F5F7FA;">{{ r.duree }}</span>
+            </span>
+          </span>
+          <span style="position: relative; flex: 0 0 0; border-left: 2px dashed rgba(138,148,166,0.16);"></span>
+          <span style="flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 0 16px;">
+            <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.25; font-weight: 600;">{{ r.centre }}</span>
+            <span style="font-size: 13px; color: #F5F7FA;">{{ r.terrain }}</span>
+            <span style="font-size: 13px; color: #F5F7FA;">{{ r.prix }}</span>
+          </span>
+          <span style="align-self: center; margin-right: 14px; width: 36px; height: 36px; flex: 0 0 36px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.30); display: grid; place-items: center;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
+          </span>
+        </button>
+      </sc-for>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{ couleur }}" hint-placeholder-val="{{ false }}">
+    <section aria-label="Réservation à reconnaître" style="padding: 20px 16px 0 16px;">
+      <div data-alerte="1" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 12px; background: #131A24; box-shadow: none;">
+        <div style="display: flex; align-items: center; gap: 10px;"><span style="flex: 0 0 36px; width: 36px; height: 36px; border-radius: 999px; background: #2A3342; display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"></path></svg></span><span style="flex: 1 1 auto; font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #8A94A6;">RÉSERVÉ PAR TÉLÉPHONE</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><span style="display: flex; flex-direction: column; align-items: center; padding-right: 14px; border-right: 1px dashed rgba(138,148,166,0.30);"><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #8A94A6;">JEU. 22</span><span style="font-family: 'Bebas Neue', sans-serif; font-size: 38px; line-height: 0.9; color: #F5F7FA;">21:00</span></span><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.25; color: #F5F7FA; font-weight: 600;">Complexe Ryad</span><span style="font-size: 13px; color: #F5F7FA;">Terrain 2 · 5v5 · jusqu’à 22:30</span></span></div>
+        <span style="font-size: 15px; font-weight: 700; color: #F5F7FA;">C’est bien toi ?</span>
+        <div style="display: flex; gap: 10px;"><a href="#" onClick="{{ cestMoi }}" style="flex: 1 1 0; height: 46px; border: 0; background: #FF2B00; color: #FFFFFF; border-radius: 12px; font-family: 'Inter', system-ui, sans-serif; font-size: 15px;  cursor: pointer; text-decoration: none; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-weight: 600;">C’est moi</a><a href="PasMoi.dc.html" style="flex: 1 1 0; height: 46px; border: 1px solid rgba(138,148,166,0.30); background: transparent; color: #F5F7FA; border-radius: 12px; font-family: 'Inter', system-ui, sans-serif; font-size: 15px;  cursor: pointer; text-decoration: none; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-weight: 600;">Ce n’est pas moi</a></div>
+      </div>
+    </section>
+
+    <section aria-label="Tes réservations sans match" style="padding: 28px 16px 0 16px; display: flex; flex-direction: column; gap: 12px;">
+      <h2 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 16px; line-height: 1.2; color: #F5F7FA;">Tes réservations sans match</h2>
+      <sc-for list="{{ resas }}" as="r" hint-placeholder-count="2">
+        <button onClick="{{ r.choisir }}" aria-label="{{ r.aria }}" style="position: relative; display: block; width: 100%; height: 168px; padding: 0; border-radius: 14px; overflow: hidden; border: 1px solid rgba(138,148,166,0.16); color: #F5F7FA; text-align: left; cursor: pointer; background: #131A24;">
+          <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: {{ r.cadrage }};">
+          <span style="{{ r.voile }}"></span>
+          <span style="position: absolute; top: 14px; left: 14px; display: flex; gap: 6px;">
+            <span style="{{ r.badgeSport }}">{{ r.sportMaj }}</span>
+            <span style="padding: 3px 6px; border-radius: 6px; font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.10em; color: #F5F7FA; background: rgba(0,0,0,0.66); border: 1px solid rgba(138,148,166,0.30);">{{ r.formatsCourt }}</span>
+          </span>
+          <span style="position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;">
+            <span style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #C5CCD6;">{{ r.jour }} · {{ r.duree }}</span>
+              <span style="display: flex; align-items: baseline; gap: 10px;"><span style="font-family: 'Bebas Neue', sans-serif; font-size: 50px; line-height: 0.85;">{{ r.heure }}</span><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.25; font-weight: 600;">{{ r.centre }}</span></span>
+              <span style="font-size: 13px; color: #F5F7FA;">{{ r.terrainCourt }} · {{ r.prix }}</span>
+            </span>
+            <span style="width: 44px; height: 44px; flex: 0 0 44px; border-radius: 999px; background: #FFFFFF; display: grid; place-items: center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#050505" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
+            </span>
+          </span>
+        </button>
+      </sc-for>
+    </section>
+    </sc-if>
+
+    <section style="padding: 24px 16px 0 16px;">
+      <a href="ReserverMatch.dc.html" style="height: 54px; border-radius: 12px; border: 1px solid rgba(138,148,166,0.30); display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'Inter', system-ui, sans-serif; font-size: 15px;  color: #F5F7FA; font-weight: 600;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Réserver un autre créneau
+      </a>
+    </section>
+  </sc-if>
+
+  <!-- ================= C1 · CONFIGURE TON MATCH ================= -->
+  <sc-if value="{{ estConfig }}" hint-placeholder-val="{{ false }}">
+    <section style="padding: 18px 16px 0 16px; display: flex; align-items: baseline; justify-content: space-between;">
+      <h1 style="margin: 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; letter-spacing: -0.01em;">Configure ton match</h1>
+    </section>
+
+    <section aria-label="Aperçu de ton match" style="padding: 14px 16px 0 16px;">
+      <div style="position: relative; height: 236px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(138,148,166,0.16);">
+        <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: {{ recapCadrage }};">
+        <span style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,0.55) 0%, rgba(10,10,15,0.15) 35%, rgba(10,10,15,0.94) 100%);"></span>
+        <span style="{{ voileSport }}"></span>
+        <span style="position: absolute; top: 14px; left: 14px; display: flex; gap: 6px; align-items: center;">
+          <span style="{{ badgeSport }}">{{ sportMaj }}</span>
+          <span style="padding: 3px 6px; border-radius: 6px; font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.10em; color: #F5F7FA; background: rgba(0,0,0,0.66); border: 1px solid rgba(138,148,166,0.30);">{{ formatMaj }}</span>
+        </span>
+        <span style="position: absolute; top: 14px; right: 14px; padding: 4px 8px; border-radius: 6px; background: rgba(10,10,15,0.72); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; line-height: 1.2; color: #FFFFFF; font-weight: 600; letter-spacing: 0.06em;">{{ niveauMaj }}</span>
+        <span style="position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #C5CCD6;">{{ recapDate }}</span>
+          <span style="font-family: 'Bebas Neue', sans-serif; font-size: 50px; line-height: 0.92; color: #F5F7FA;">{{ nomAffiche }}</span>
+          <span style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 4px;">
+            <span style="font-size: 13px; color: #F5F7FA;">{{ recapCentre }}</span>
+            <span style="white-space: nowrap; color: #F5F7FA;"><span style="font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1;">{{ prixJoueur }}</span><span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.04em;"> DA / JOUEUR</span></span>
+          </span>
+        </span>
+      </div>
+      <div style="display: flex; justify-content: flex-end; align-items: center; padding: 10px 2px 0 2px;">
+        <a href="#" onClick="{{ versCreneau }}" style="font-size: 13px; font-weight: 600; color: #F5F7FA; border-bottom: 1px solid rgba(138,148,166,0.30);">Changer de créneau</a>
+      </div>
+    </section>
+
+
+    <section style="padding: 24px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="display: block; font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">Quel niveau ?</span>
+      <div role="radiogroup" aria-label="Niveau" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{ niveaux }}" as="n" hint-placeholder-count="3">
+          <button role="radio" aria-checked="{{ n.actif }}" onClick="{{ n.choisir }}" style="{{ n.tuile }}">
+            <span style="display: flex; gap: 3px; align-items: flex-end; height: 16px;"><span style="{{ n.b1 }}"></span><span style="{{ n.b2 }}"></span><span style="{{ n.b3 }}"></span></span>
+            <span style="font-size: 14px; font-weight: 700;">{{ n.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+
+    <section style="padding: 24px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="display: block; font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">Qui peut venir ?</span>
+      <div role="radiogroup" aria-label="Visibilité" style="{{ segFond2 }}">
+        <sc-for list="{{ visibilites }}" as="v" hint-placeholder-count="2">
+          <button role="radio" aria-checked="{{ v.actif }}" onClick="{{ v.choisir }}" style="{{ v.style }}"><span style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;"><sc-if value="{{ v.globe }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"></path></svg></sc-if><sc-if value="{{ v.cadenas }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></sc-if>{{ v.titre }}</span></button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="padding: 24px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <label for="mot" style="display: block; font-size: 17px; font-weight: 700; line-height: 1.3; text-align: center; color: #F5F7FA;">Un petit mot pour les joueurs ?</label>
+      <div style="position: relative;">
+        <textarea id="mot" rows="3" placeholder="On joue à la cool. Ramenez une chasuble blanche et une noire." style="{{ zone }}"></textarea>
+      </div>
+    </section>
+
+    <footer style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 16px 22px 16px; background: rgba(10,10,15,0.96); border-top: 1px solid rgba(138,148,166,0.16);">
+      <button onClick="{{ publier }}" style="width: 100%; height: 56px; border: 0; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', system-ui, sans-serif; font-size: 16px;  cursor: pointer; font-weight: 600;">Publier le match</button>
+    </footer>
+  </sc-if>
+
+  <!-- ================= C2 · MATCH PUBLIÉ ================= -->
+  <sc-if value="{{ estPublie }}" hint-placeholder-val="{{ false }}">
+    <section style="padding: 40px 16px 0 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
+      <span style="width: 64px; height: 64px; border-radius: 999px; background: rgba(0,200,150,0.14); display: grid; place-items: center;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C896" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,13 9,18 20,6"></polyline></svg>
+      </span>
+      <h1 style="margin: 6px 0 0 0; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; letter-spacing: -0.015em;">Ton match est en ligne</h1>
+      <p style="margin: 0; max-width: 300px; font-size: 15px; color: #F5F7FA;">{{ msgPublie }}</p>
+    </section>
+
+    <section aria-label="Aperçu du match" style="padding: 26px 16px 0 16px;">
+      <div style="position: relative; height: 300px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(138,148,166,0.16);">
+        <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="Le terrain du Stade de Birkhadem sous les projecteurs" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 40%;">
+        <span style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,0.45) 0%, rgba(10,10,15,0.10) 35%, rgba(10,10,15,0.92) 100%);"></span>
+        <span style="{{ voileSport }}"></span>
+        <span style="position: absolute; top: 14px; left: 14px;"><span style="{{ badgeSport }}">{{ sportMaj }}</span></span>
+        <span style="position: absolute; top: 14px; right: 14px; padding: 4px 8px; border-radius: 6px; background: rgba(10,10,15,0.72); font-family: 'Inter', system-ui, sans-serif; font-size: 11px; line-height: 1.2; color: #FFFFFF; font-weight: 600; letter-spacing: 0.06em;">{{ niveauMaj }}</span>
+        <span style="position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #C5CCD6;">{{ c2Jour }}</span>
+          <span style="display: flex; align-items: baseline; gap: 10px;">
+            <span style="font-family: 'Bebas Neue', sans-serif; font-size: 72px; line-height: 0.85; color: #F5F7FA;">{{ c2Heure }}</span>
+            <span style="font-family: 'Bebas Neue', sans-serif; font-size: 30px; line-height: 1; color: #F5F7FA;">{{ nomAffiche }}</span>
+          </span>
+          <span style="font-size: 13px; color: #F5F7FA;">{{ formatMaj }} · {{ prixJoueur }} DA par joueur</span>
+          <span style="display: flex; align-items: center; gap: 10px; padding-top: 8px;">
+            <span style="flex: 1 1 auto; height: 6px; border-radius: 999px; background: #1C2533; overflow: hidden;"><span style="{{ jauge }}"></span></span>
+            <span style="font-size: 13px; color: #F5F7FA; white-space: nowrap;"><b>1</b>/{{ joueurs }} · il en manque {{ manque }}</span>
+          </span>
+        </span>
+      </div>
+    </section>
+
+    <section style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+      <a href="{{ partageHref }}" style="height: 56px; border-radius: 12px; background: #FF2B00; box-shadow: none; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'Inter', system-ui, sans-serif; font-size: 16px;  color: #FFFFFF; font-weight: 600;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5Z"></path></svg>Inviter sur WhatsApp
+      </a>
+      <div style="display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 6px 0 14px; border-radius: 12px; background: #131A24; border: 1px solid rgba(138,148,166,0.16);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.72)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
+        <span style="flex: 1 1 auto; font-size: 15px; font-weight: 600; color: #F5F7FA;">{{ lienTexte }}</span>
+        <button style="height: 40px; padding: 0 14px; border: 0; border-radius: 9px; background: rgba(255,43,0,0.14); color: #FF6A4D; font-family: 'Inter', system-ui, sans-serif; font-size: 15px;  cursor: pointer; font-weight: 600;" onClick="{{ copier }}">{{ copierLabel }}</button>
+      </div>
+      <a href="{{ voirMatchHref }}" style="margin-top: 6px; height: 52px; border-radius: 12px; border: 1px solid rgba(138,148,166,0.30); display: flex; align-items: center; justify-content: center; font-family: 'Inter', system-ui, sans-serif; font-size: 15px;  color: #F5F7FA; font-weight: 600;">Voir le match</a>
+    </section>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"etape":{"editor":"enum","options":["creneau","config","publie"],"default":"creneau","section":"Écran"},"theme":{"editor":"enum","options":["noir","couleur"],"default":"couleur","section":"Écran"},"sport":{"editor":"enum","options":["foot","padel"],"default":"foot","section":"Écran"},"terrain":{"editor":"enum","options":["deux formats","plusieurs formats"],"default":"deux formats","section":"Écran"},"resa":{"editor":"enum","options":["brk","cha","elb","ryd"],"default":"brk","section":"Écran"},"$preview":{"width":390,"height":930}}'>
+const etapes = e => {
+  const n = { creneau: 1, config: 2, publie: 3 }[e], o = {};
+  [1, 2, 3].forEach(k => {
+    const fait = k < n || e === 'publie', ici = k === n && e !== 'publie';
+    o['num' + k] = fait ? '✓' : String(k);
+    o['cur' + k] = ici ? 'step' : 'false';
+    o['rond' + k] = 'flex: 0 0 26px; width: 26px; height: 26px; box-sizing: border-box; border-radius: 999px; display: grid; place-items: center; font-size: 13px; font-weight: 700; ' + (fait || ici ? 'background: #FF2B00; color: #FFFFFF;' : 'border: 1.5px solid rgba(138,148,166,0.30); color: #8A94A6;');
+    o['lab' + k] = 'font-size: 13px; font-weight: ' + (ici ? 700 : 500) + '; color: ' + (fait || ici ? '#FFFFFF' : 'rgba(255,255,255,0.65)') + ';';
+    if (k < 3) o['trait' + k] = 'flex: 1 1 auto; height: 2px; border-radius: 2px; background: ' + (k < n || e === 'publie' ? '#FF2B00' : 'rgba(255,255,255,0.22)') + ';';
+  });
+  return o;
+};
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { etape: null, niveau: 'Intermédiaire', format: '5v5', visi: 'tous', viaTel: false, copie: false }; }
+  renderVals() {
+    const etape = this.state.etape ?? this.props.etape ?? 'creneau';
+    const go = (e, extra) => () => this.setState({ etape: e, ...(extra || {}) });
+    const badge = pd => 'padding: 3px 6px; border-radius: 6px; font-family: \'Inter\', system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.10em; color: #F5F7FA; background: ' + (pd ? 'rgba(10,10,15,0.78)' : 'rgba(10,10,15,0.78)') + ';';
+    const coul = (this.props.theme ?? 'couleur') === 'couleur' && etape === 'creneau';
+    const plusieurs = (this.props.terrain ?? 'deux formats') === 'plusieurs formats';
+    const padel = (this.props.sport ?? 'foot') === 'padel';
+    const RES = {
+      brk: { total: 6000, totalTexte: '6 000 DA', fmts: ['5v5'], date: 'MER. 21 OCT. · 21:30 → 23:00', lieu: 'Stade de Birkhadem · Terrain 3 · 6 000 DA', ref: 'BRK-0731', jour: 'MER. 21 OCT.', heure: '21:30', lien: '3FJ9', cad: '30% 45%' },
+      cha: { total: 9000, totalTexte: '9 000 DA', fmts: ['7v7'], date: 'SAM. 24 OCT. · 18:00 → 19:30', lieu: 'Chéraga Arena · Terrain 1 · 9 000 DA', ref: 'CHA-0482', jour: 'SAM. 24 OCT.', heure: '18:00', lien: '9CH2', cad: '85% 50%' },
+      elb: { total: 3600, totalTexte: '3 600 DA', fmts: ['2v2'], date: 'MER. 21 OCT. · 18:30 → 20:00', lieu: 'Complexe El Biar · Piste 1 · 3 600 DA', ref: 'ELB-0217', jour: 'MER. 21 OCT.', heure: '18:30', lien: '5PD8', cad: '60% 55%' },
+      ryd: { total: 5000, totalTexte: '5 000 DA', fmts: ['5v5'], date: 'JEU. 22 OCT. · 21:00 → 22:30', lieu: 'Complexe Ryad · Terrain 2 · 5 000 DA', ref: 'RYD-0519', jour: 'JEU. 22 OCT.', heure: '21:00', lien: '2RY7', cad: '50% 50%' }
+    };
+    const resaId = this.state.resa ?? this.props.resa ?? (padel ? 'elb' : plusieurs ? 'cha' : 'brk');
+    const T = RES[resaId] || RES.brk;
+    const fmt = T.fmts.indexOf(this.state.format) !== -1 ? this.state.format : T.fmts[0];
+    const nbJ = f => 2 * parseInt(f, 10);
+    const fmtPrix = v => Number.isInteger(v) ? v.toLocaleString('fr-FR') : v.toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+    const joueurs = nbJ(fmt);
+    const prixJoueur = fmtPrix(Math.ceil(T.total / joueurs / 10) * 10); // arrondi à la dizaine supérieure (décision du 22/10)
+    // surfaces
+    const fond = '#131A24';
+    const bord = coul ? 'rgba(138,148,166,0.22)' : 'rgba(255,255,255,0.12)';
+    const choisi = coul ? 'background: rgba(255,43,0,0.14); color: #F5F7FA; box-shadow: inset 0 0 0 1.5px #FF2B00;' : 'background: rgba(255,43,0,0.14); color: #FF6A4D; box-shadow: inset 0 0 0 1px rgba(255,43,0,0.45);';
+    const champ = 'height: 52px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; background: ' + fond + '; border: 1px solid ' + (coul ? 'rgba(138,148,166,0.30)' : 'rgba(255,255,255,0.18)') + '; color: #F5F7FA; font-size: 17px; font-weight: 600; outline: none;';
+    const zone = 'display: block; width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; background: ' + fond + '; border: 1px solid ' + (coul ? 'rgba(138,148,166,0.30)' : 'rgba(255,255,255,0.18)') + '; color: #F5F7FA; font-size: 15px; line-height: 1.45; resize: none; outline: none;';
+    const segFondN = n => 'display: grid; grid-template-columns: repeat(' + n + ', minmax(0, 1fr)); gap: 0; padding: 4px; border-radius: 12px; background: ' + fond + '; border: 1px solid ' + bord + ';';
+    const seg = actif => 'height: 42px; border: 0; border-radius: 9px; cursor: pointer; font-size: 14px; font-weight: 700; ' + (actif ? choisi : 'background: transparent; color: #8A94A6;');
+    const barre = (h, on, a) => 'display: block; width: 5px; height: ' + h + 'px; border-radius: 2px; background: ' + (on ? '#FF2B00' : 'rgba(138,148,166,0.30)') + ';';
+    const niveaux = ['Loisir', 'Intermédiaire', 'Compétition'].map((n, k) => { const a = this.state.niveau === n; return { label: n, actif: String(a), choisir: () => this.setState({ niveau: n }),
+      tuile: 'display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px; border: 0; border-radius: 12px; cursor: pointer; text-align: left; ' + (a ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; box-shadow: inset 0 0 0 1px rgba(255,43,0,0.45);' : 'background: #131A24; color: #F5F7FA; box-shadow: inset 0 0 0 1px rgba(138,148,166,0.30);'),
+      b1: barre(6, true, a), b2: barre(11, k >= 1, a), b3: barre(16, k >= 2, a) }; });
+    const formats = T.fmts.map(f => { const a = fmt === f; return { label: f, actif: String(a), choisir: () => this.setState({ format: f }),
+      style: 'height: 46px; border: 0; border-radius: 9px; cursor: pointer; font-family: \'Inter\', system-ui, sans-serif; font-size: 16px; font-weight: 600; ' + (a ? 'background: rgba(255,43,0,0.14); color: #FF6A4D; box-shadow: inset 0 0 0 1px rgba(255,43,0,0.45);' : 'background: transparent; color: #C5CCD6;') }; });
+    const visibilites = [{ id: 'tous', titre: 'Ouvert à tous' }, { id: 'invit', titre: 'Sur invitation' }].map(v => { const a = this.state.visi === v.id; return { ...v, globe: v.id === 'tous', cadenas: v.id === 'invit', actif: String(a), choisir: () => this.setState({ visi: v.id }), style: seg(a) }; });
+    const resas = [
+      ...([{ id: 'elb', jour: 'MER. 21', heure: '18:30', duree: '1 h 30', centre: 'Complexe El Biar', terrain: 'Piste 1 · 2v2', terrainCourt: 'Piste 1', formatsCourt: '2V2', prix: '3 600 DA le créneau', cadrage: '60% 55%', teinte: 'rgba(10,10,15,0.15) 0%, rgba(10,10,15,0.92) 100%' }]),
+      ...([{ id: 'cha', jour: 'SAM. 24', heure: '18:00', duree: '1 h 30', centre: 'Chéraga Arena', terrain: 'Terrain 1 · 7v7', terrainCourt: 'Terrain 1', formatsCourt: '7V7', prix: '9 000 DA le créneau', cadrage: '85% 50%', teinte: 'rgba(10,10,15,0.15) 0%, rgba(10,10,15,0.92) 100%' }])
+    ].map(r => ({ ...r, padel: r.formatsCourt === '2V2', badgeSport: badge(r.formatsCourt === '2V2'), sportMaj: r.formatsCourt === '2V2' ? 'PADEL' : 'FOOT', voile: 'position: absolute; inset: 0; background: linear-gradient(180deg, ' + r.teinte + ');', aria: 'Créer le match sur ' + r.centre + ', ' + r.jour.toLowerCase() + ' à ' + r.heure, choisir: go('config', { resa: r.id }) }));
+    return {
+      racine: 'position: relative; width: 390px; height: ' + ({ creneau: 930, config: 940, publie: 870 }[etape]) + 'px; overflow: hidden; background: #0A0A0F; color: #8A94A6; font-family: \'Inter\', system-ui, sans-serif; font-size: 15px; line-height: 1.5;',
+      estCreneau: etape === 'creneau', estConfig: etape === 'config', estPublie: etape === 'publie',
+      ...etapes(etape),
+      noir: !coul, couleur: coul, badgeSport: badge(padel), sportMaj: padel ? 'PADEL' : 'FOOT',
+      voileSport: padel ? 'position: absolute; inset: 0; background: rgba(10,10,15,0.60);' : 'display: none;',
+      formatUnique: true, formatChoix: false, formatNote: padel ? 'Le format de la piste' : 'Tu l’as choisi en réservant',
+      c2Jour: T.jour, c2Heure: T.heure, champ, zone, segFond: segFondN(3), segFond2: segFondN(2),
+      recapDate: T.date, recapLieu: T.lieu, recapCentre: T.lieu.split(' · ')[1], recapCadrage: T.cad,
+      nomAffiche: T.lieu.split(' · ')[0].toUpperCase(),
+      pastilles: Array.from({ length: joueurs }, (_, i) => ({ style: 'display: block; width: 8px; height: 8px; border-radius: 999px; background: ' + (i === 0 ? '#FF2B00' : 'rgba(255,255,255,0.35)') + ';' })), totalTexte: T.totalTexte,
+      recapAccent: coul ? 'position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #FF2B00;' : 'display: none;',
+      formatsTitre: T.fmts.length + ' ACCEPTÉS PAR CE TERRAIN',
+      formatsGrille: 'display: grid; grid-template-columns: repeat(' + T.fmts.length + ', minmax(0, 1fr)); gap: 0; padding: 4px;',
+      visiAide: this.state.visi === 'tous' ? 'Visible dans Explorer par les joueurs du coin.' : 'Seuls ceux qui ont ton lien peuvent rejoindre.',
+      voirMatchHref: resaId === 'brk' ? 'OrgaMatch.dc.html' : 'MesMatchs.dc.html',
+      resas, niveaux, formats, visibilites, joueurs, prixJoueur, manque: joueurs - 1,
+      formatMaj: fmt.toUpperCase(), niveauMaj: this.state.niveau.toUpperCase(),
+      msgResa: 'TA RÉSERVATION · ' + T.ref, lienTexte: 'moubaratsport.com/m/' + T.lien,
+      partageHref: 'https://wa.me/?text=On%20joue%20%3F%20Rejoins%20le%20match%20%3A%20moubaratsport.com%2Fm%2F' + T.lien,
+      cestMoi: go('config', { resa: 'ryd', viaTel: true }),
+      msgPublie: this.state.visi === 'tous' ? 'Envoie le lien à tes potes.' : 'Seuls ceux qui ont le lien peuvent le rejoindre.',
+      jauge: 'display: block; height: 100%; width: ' + Math.round(100 / joueurs) + '%; background: #00C896; border-radius: 999px;',
+      versCreneau: go('creneau'), publier: go('publie'),
+      copier: () => this.setState({ copie: true }), copierLabel: this.state.copie ? 'Copié ✓' : 'Copier'
+    };
+  }
+}
+</script>
+</body>
+</html>

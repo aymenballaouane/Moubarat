@@ -1,0 +1,11 @@
+/* « Signaler » (audit final 26/10/2026, P1-10) — la feuille de signalement : deux listes à choix unique et un champ libre. Aucune maquette ; mêmes jetons que les feuilles existantes. */
+.rp-sheet { max-height: 92vh; overflow-y: auto; }
+.rp-label { font-size: 13px; font-weight: 600; color: var(--text-2); margin-top: 4px; }
+.rp-opts { display: flex; flex-direction: column; gap: 8px; }
+.rp-opt { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 10px 14px; border-radius: var(--r-3); border: 1px solid var(--line-strong); background: transparent; color: var(--text); font-size: 15px; text-align: start; cursor: pointer; }
+.rp-opt[aria-checked='true'] { border-color: var(--primary); background: var(--primary-wash); color: var(--text); font-weight: 600; }
+.rp-opt:focus-visible, .rp-note:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.rp-note { min-height: 84px; width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: var(--r-3); border: 1px solid var(--line-strong); background: var(--ink-2); color: var(--text); font: inherit; font-size: 15px; resize: vertical; }
+.rp-error { margin: 0; font-size: 14px; color: var(--cancelled); }
+.rp-link { display: block; margin: 18px auto 0; padding: 10px 14px; min-height: 44px; background: transparent; border: 0; color: var(--text-3); font-size: 13px; text-decoration: underline; cursor: pointer; }
+.rp-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

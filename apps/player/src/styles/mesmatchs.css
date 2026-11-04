@@ -1,0 +1,86 @@
+/* GROUPE MES MATCHS — styles locaux de MatchesScreen (prefixe mms-).
+   S'appuie sur le DS gele (.mb-match, .mb-status, .mb-note, .mb-btn) et le
+   socle premium de player.css (.mb-seg, .mb-sheet, .mb-toast) sans jamais
+   les redefinir. */
+
+/* --- En-tete : titre Bebas + onglets segmentes --------------------------- */
+.mms-head { margin-bottom: 16px; }
+.mms-head h1 { margin: 0 0 14px; }
+
+/* --- Rangee reservation (onglet "Mes reservations", 29/08/2026) — entite
+   Booking, pas Match : composition propre, pas une variante de .mb-match
+   (une reservation sans match n'a ni titre, ni capacite, ni niveau). Point
+   vert/gris = a venir/passee, derive de booking.range.start en direct,
+   jamais stocke — meme semantique de couleur que le reste de l'app
+   (--success = positif, gris = neutre/eteint). */
+.mms-resa { display: flex; align-items: flex-start; gap: 11px; padding: 14px;
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-4); box-shadow: var(--card-shadow); }
+.mms-resa__dot { flex-shrink: 0; width: 9px; height: 9px; border-radius: var(--r-full);
+  margin-top: 6px; background: var(--text-4); }
+.mms-resa[data-state="upcoming"] .mms-resa__dot { background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-wash); }
+.mms-resa__body { flex: 1; min-width: 0; }
+.mms-resa__venue { font-family: var(--font-display); font-size: var(--fs-b1);
+  color: var(--text); text-transform: uppercase; margin: 0 0 3px; }
+.mms-resa[data-state="past"] .mms-resa__venue { color: var(--text-3); }
+.mms-resa__line { margin: 0; font-family: var(--font-mono); font-size: var(--fs-tag);
+  letter-spacing: .04em; color: var(--text-3); }
+.mms-resa__line + .mms-resa__line { margin-top: 2px; }
+.mms-resa__foot { display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-top: 10px; }
+.mms-resa__foot .mb-price { font-family: var(--font-display); font-size: var(--fs-b1); color: var(--text); }
+.mms-resa[data-state="past"] .mms-resa__foot .mb-price { color: var(--text-3); }
+/* BUG-2 (26/09/2026) : référence (ce qu'on donne à l'accueil) et rangée d'actions réelles (annuler, créer un match). */
+.mms-resa__ref { margin: 2px 0 0; font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .06em; color: var(--text-4); }
+.mms-resa__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.mms-resa[data-state="cancelled"] .mms-resa__venue, .mms-resa[data-state="cancelled"] .mms-resa__foot .mb-price { color: var(--text-3); }
+
+/* --- Rangee passee : variante vignette de .mb-match ----------------------
+   Photo carree (primitive --thumb du DS) au lieu de la colonne heure texte —
+   composition fidele au mm-card du prototype. Le score remplace le prix
+   (spec §6) ; pas de jauge de remplissage — la donnee n'a plus de sens une
+   fois le match joue. Photo desaturee/assombrie (meme grammaire que le
+   prototype : grayscale + brightness reduite) pour lire « passe » d'un
+   coup d'oeil, additif a l'opacite d'etat 'expired' deja fournie par le DS.
+   La rangee n'est pas navigable (pas de detail passe en V1) : on neutralise
+   l'affordance de clic heritee du DS, seul le CTA noter est interactif. */
+.mb-match.mms-past { cursor: default; }
+.mb-match.mms-past:hover { border-color: var(--line); background: var(--ink-2); }
+.mb-match.mms-past:active { transform: none; }
+.mb-match.mms-past .mb-match__thumb img { filter: grayscale(1) brightness(.55); }
+
+/* Le score vient de la primitive partagee .mb-match__score (player.css) —
+   ne reste ici que le tiret attenue, modificateur additif. */
+.mms-score i { font-style: normal; color: var(--text-4); margin: 0 2px; }
+
+/* Defaite : une issue sportive, pas une erreur systeme — jamais --danger.
+   Neutre, un cran plus present que « Joue » (text-2 vs text-4). */
+.mb-status.mms-loss { color: var(--text-2); background: rgba(255, 255, 255, .05);
+  border-color: var(--line-strong); }
+
+/* Pied de rangee : statut de notation (or = valeur) + CTA noter. */
+.mms-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end;
+  gap: var(--s-3); min-width: 0; margin-top: 2px; }
+.mms-rated { display: inline-flex; align-items: center; gap: 5px; margin-right: auto;
+  font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 600;
+  letter-spacing: var(--ls-tag); text-transform: uppercase; color: var(--gold);
+  white-space: nowrap; }
+.mms-rated .mb-ic { color: var(--gold); }
+.mms-rate .mb-ic { color: var(--gold); }
+
+/* --- Etat vide : deux CTA reels ------------------------------------------ */
+.mms-empty-ctas { display: flex; gap: 10px; justify-content: center; margin-top: var(--s-1); }
+
+/* --- Sheet de notation --------------------------------------------------- */
+.mb-sheet .mms-sheet-title { font-size: var(--fs-b2); color: var(--text-2);
+  margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mms-stars { display: flex; justify-content: center; gap: var(--s-2); margin: 6px 0 20px; }
+.mms-star { width: var(--tap-min); height: var(--tap-min); display: grid; place-items: center;
+  border-radius: var(--r-2); color: var(--text-4); background: var(--ink-3);
+  border: 1px solid var(--line);
+  transition: color var(--dur-1) linear, border-color var(--dur-1) linear,
+    background var(--dur-1) linear, transform var(--dur-1) var(--ease-out); }
+.mms-star:hover { color: var(--text-2); border-color: var(--line-strong); }
+.mms-star:active { transform: scale(.94); }
+.mms-star.on { color: var(--gold); background: var(--gold-wash);
+  border-color: rgba(242, 183, 5, .28); }

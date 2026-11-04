@@ -1,0 +1,17 @@
+# Contexte de construction de l'image de l'API (apps/api/Dockerfile, contexte = racine du dépôt).
+# Jamais de secret ni de dépendance installée sur le poste : l'image réinstalle tout elle-même.
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!.env.example
+.git
+.github
+.claude
+_business
+prototypes
+refonte-app-joueur
+design
+docs
+tools/ui-board/output
+**/*.log

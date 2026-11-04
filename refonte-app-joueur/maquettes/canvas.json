@@ -1,0 +1,1663 @@
+{
+ "v": 3,
+ "attachments": {},
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 1500,
+   "w": 390,
+   "h": 1710,
+   "title": "Accueil · avec un match prévu"
+  },
+  "Vide.dc.html": {
+   "x": 470,
+   "y": 1500,
+   "w": 390,
+   "h": 1110,
+   "title": "Accueil · nouveau joueur"
+  },
+  "Explorer.dc.html": {
+   "x": 0,
+   "y": 3580,
+   "w": 390,
+   "h": 1420,
+   "title": "Explorer · Matchs",
+   "is_interactive": true
+  },
+  "ExplorerTerrains.dc.html": {
+   "x": 470,
+   "y": 3580,
+   "w": 390,
+   "h": 1610,
+   "title": "Explorer · Terrains"
+  },
+  "DetailMatch.dc.html": {
+   "x": 0,
+   "y": 5660,
+   "w": 390,
+   "h": 1020,
+   "title": "Détail du match · la fiche, avant de rejoindre",
+   "is_interactive": true
+  },
+  "DetailMatchInscrit.dc.html": {
+   "x": 470,
+   "y": 5660,
+   "w": 390,
+   "h": 1160,
+   "title": "Détail du match · le ticket, une fois inscrit"
+  },
+  "DetailMatch11.dc.html": {
+   "x": 940,
+   "y": 5660,
+   "w": 390,
+   "h": 1160,
+   "title": "Détail du match · 11v11"
+  },
+  "DetailMatchRemplacement.dc.html": {
+   "x": 2350,
+   "y": 5660,
+   "w": 390,
+   "h": 1040,
+   "title": "Détail · entre H-2 et H-1 (dernières places)"
+  },
+  "DetailMatchFige.dc.html": {
+   "x": 2820,
+   "y": 5660,
+   "w": 390,
+   "h": 1070,
+   "title": "Détail · après H-1 (compo figée)"
+  },
+  "DetailMatchInscritRemplacement.dc.html": {
+   "x": 3290,
+   "y": 5660,
+   "w": 390,
+   "h": 1180,
+   "title": "Détail · inscrit entre H-2 et H-1"
+  },
+  "Creer.dc.html": {
+   "x": 0,
+   "y": 9820,
+   "w": 390,
+   "h": 930,
+   "title": "C0 · Ton créneau",
+   "is_interactive": true
+  },
+  "CreerConfig.dc.html": {
+   "x": 470,
+   "y": 9820,
+   "w": 390,
+   "h": 940,
+   "title": "C1 · Configure ton match"
+  },
+  "CreerPublie.dc.html": {
+   "x": 940,
+   "y": 9820,
+   "w": 390,
+   "h": 870,
+   "title": "C2 · Match publié"
+  },
+  "LienMatch.dc.html": {
+   "x": 1410,
+   "y": 9820,
+   "w": 390,
+   "h": 760,
+   "title": "Lien partagé · page vue sans l’app"
+  },
+  "CreerPadel.dc.html": {
+   "x": 0,
+   "y": 11620,
+   "w": 390,
+   "h": 930,
+   "title": "Padel · C0 Ton créneau"
+  },
+  "CreerConfigPadel.dc.html": {
+   "x": 470,
+   "y": 11620,
+   "w": 390,
+   "h": 940,
+   "title": "Padel · C1 Configure"
+  },
+  "CreerPubliePadel.dc.html": {
+   "x": 940,
+   "y": 11620,
+   "w": 390,
+   "h": 870,
+   "title": "Padel · C2 Publié"
+  },
+  "DetailMatchPadel.dc.html": {
+   "x": 1410,
+   "y": 11620,
+   "w": 390,
+   "h": 1020,
+   "title": "Padel · Détail du match"
+  },
+  "Reserver.dc.html": {
+   "x": 0,
+   "y": 13880,
+   "w": 390,
+   "h": 920,
+   "title": "R1 · Trouve ton terrain",
+   "is_interactive": true
+  },
+  "ReserverCentre.dc.html": {
+   "x": 470,
+   "y": 13880,
+   "w": 390,
+   "h": 930,
+   "title": "R2 · Détail du centre"
+  },
+  "ReserverCreneau.dc.html": {
+   "x": 940,
+   "y": 13880,
+   "w": 390,
+   "h": 940,
+   "title": "R3 · Ta réservation"
+  },
+  "ReserverConfirme.dc.html": {
+   "x": 1410,
+   "y": 13880,
+   "w": 390,
+   "h": 844,
+   "title": "R4 · C’est réservé"
+  },
+  "ReserverMatch.dc.html": {
+   "x": 1880,
+   "y": 13880,
+   "w": 390,
+   "h": 980,
+   "title": "R1 en mode match (depuis Créer)"
+  },
+  "MesMatchs.dc.html": {
+   "x": 0,
+   "y": 16560,
+   "w": 390,
+   "h": 980,
+   "title": "Mes matchs · à venir",
+   "is_interactive": true
+  },
+  "MesMatchsPasses.dc.html": {
+   "x": 470,
+   "y": 16560,
+   "w": 390,
+   "h": 844,
+   "title": "Mes matchs · passés"
+  },
+  "Profil.dc.html": {
+   "x": 940,
+   "y": 16560,
+   "w": 390,
+   "h": 1270,
+   "title": "Profil"
+  },
+  "ReserverHeuresPeriodes.dc.html": {
+   "x": 0,
+   "y": 15130,
+   "w": 390,
+   "h": 1010,
+   "title": "R3 · une journée chargée (lun. 26)"
+  },
+  "Onboarding.dc.html": {
+   "x": 0,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "O1 · Bienvenue",
+   "is_interactive": true
+  },
+  "OnboardingNumero.dc.html": {
+   "x": 470,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "O2 · Ton numéro + accords"
+  },
+  "OnboardingCode.dc.html": {
+   "x": 940,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "O3 · Code SMS (à l’inscription)"
+  },
+  "OnboardingAcces.dc.html": {
+   "x": 1410,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "O4 · Tes accès"
+  },
+  "OnboardingJeu.dc.html": {
+   "x": 1880,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "O5 · Ton jeu"
+  },
+  "OnboardingConnexion.dc.html": {
+   "x": 2350,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "L1 · Connexion (sans SMS)"
+  },
+  "NoticeDonnees.dc.html": {
+   "x": 2820,
+   "y": -1200,
+   "w": 390,
+   "h": 2460,
+   "title": "Notice complète · « Lire la notice complète »"
+  },
+  "Notifications.dc.html": {
+   "x": 0,
+   "y": 18580,
+   "w": 390,
+   "h": 890,
+   "title": "Notifications (la cloche)"
+  },
+  "NotificationsPush.dc.html": {
+   "x": 470,
+   "y": 18580,
+   "w": 390,
+   "h": 844,
+   "title": "Notifications push sur le téléphone"
+  },
+  "Accords.dc.html": {
+   "x": 3290,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "Tes accords (depuis « Mes accords »)"
+  },
+  "IconeApp.dc.html": {
+   "x": 940,
+   "y": 18580,
+   "w": 390,
+   "h": 520,
+   "title": "Icône d’app · 3 fonds"
+  },
+  "OrgaMatch.dc.html": {
+   "x": 0,
+   "y": 20200,
+   "w": 390,
+   "h": 1410,
+   "title": "Ton match · vue organisateur"
+  },
+  "DetailMatchComplet.dc.html": {
+   "x": 3760,
+   "y": 5660,
+   "w": 390,
+   "h": 1130,
+   "title": "Détail · match complet (Complexe Ryad 22:30)"
+  },
+  "ConfDesinscription.dc.html": {
+   "x": 0,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Se désinscrire (à temps)"
+  },
+  "ConfDesinscriptionTard.dc.html": {
+   "x": 470,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Se désinscrire (moins de 2 h)"
+  },
+  "ConfAnnulerResa.dc.html": {
+   "x": 940,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Annuler une réservation (sans match)"
+  },
+  "ConfAnnulerMatch.dc.html": {
+   "x": 1410,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Annuler le match (organisateur)"
+  },
+  "ConfRetirer.dc.html": {
+   "x": 1880,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Retirer un joueur (organisateur)"
+  },
+  "ErreurReseau.dc.html": {
+   "x": 940,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "Pas de réseau"
+  },
+  "ErreurCreneauPris.dc.html": {
+   "x": 1410,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "Créneau pris entre-temps"
+  },
+  "FiltresExplorer.dc.html": {
+   "x": 0,
+   "y": 25538,
+   "w": 390,
+   "h": 910,
+   "title": "Filtres d’Explorer"
+  },
+  "ModifierProfil.dc.html": {
+   "x": 470,
+   "y": 25538,
+   "w": 390,
+   "h": 1180,
+   "title": "Modifier mon profil"
+  },
+  "ExplorerVide.dc.html": {
+   "x": 0,
+   "y": 23834,
+   "w": 390,
+   "h": 1420,
+   "title": "Explorer · aucun match ce jour (dans l’écran)"
+  },
+  "MesMatchsVide.dc.html": {
+   "x": 470,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "Mes matchs · rien de prévu (nouveau joueur)"
+  },
+  "ChoisirJour.dc.html": {
+   "x": 940,
+   "y": 25538,
+   "w": 390,
+   "h": 844,
+   "title": "Filtres · « Choisir un jour »"
+  },
+  "CreerOuReserver.dc.html": {
+   "x": 0,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "Bouton + · Créer ou réserver"
+  },
+  "Recherche.dc.html": {
+   "x": 470,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "Explorer · Recherche"
+  },
+  "PasMoi.dc.html": {
+   "x": 940,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "« Ce n’est pas moi »"
+  },
+  "MdpOublie.dc.html": {
+   "x": 1410,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "Mot de passe oublié · numéro"
+  },
+  "MdpNouveau.dc.html": {
+   "x": 1880,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "Mot de passe oublié · nouveau"
+  },
+  "ConfSupprimerCompte.dc.html": {
+   "x": 2350,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "Supprimer mon compte"
+  },
+  "MotAuxJoueurs.dc.html": {
+   "x": 2820,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "Orga · Modifier ton mot"
+  },
+  "ChangerPhoto.dc.html": {
+   "x": 3290,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "Profil · Changer la photo"
+  },
+  "Langue.dc.html": {
+   "x": 3760,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "Profil · Langue"
+  },
+  "ReglagesNotifs.dc.html": {
+   "x": 4230,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "Profil · Notifications"
+  },
+  "OnboardingAr.dc.html": {
+   "x": 5200,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "AR · O1 · Bienvenue",
+   "is_interactive": true
+  },
+  "OnboardingNumeroAr.dc.html": {
+   "x": 5670,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "AR · O2 · Ton numéro + accords"
+  },
+  "OnboardingCodeAr.dc.html": {
+   "x": 6140,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "AR · O3 · Code SMS (à l’inscription)"
+  },
+  "OnboardingAccesAr.dc.html": {
+   "x": 6610,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "AR · O4 · Tes accès"
+  },
+  "OnboardingJeuAr.dc.html": {
+   "x": 7080,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "AR · O5 · Ton jeu"
+  },
+  "OnboardingConnexionAr.dc.html": {
+   "x": 7550,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "AR · L1 · Connexion (sans SMS)"
+  },
+  "NoticeDonneesAr.dc.html": {
+   "x": 8020,
+   "y": -1200,
+   "w": 390,
+   "h": 2180,
+   "title": "AR · Notice complète · « Lire la notice complète »"
+  },
+  "MainAr.dc.html": {
+   "x": 5200,
+   "y": 1500,
+   "w": 390,
+   "h": 1720,
+   "title": "AR · Accueil · avec un match prévu"
+  },
+  "VideAr.dc.html": {
+   "x": 5670,
+   "y": 1500,
+   "w": 390,
+   "h": 1110,
+   "title": "AR · Accueil · nouveau joueur"
+  },
+  "ExplorerAr.dc.html": {
+   "x": 5200,
+   "y": 3580,
+   "w": 390,
+   "h": 1420,
+   "title": "AR · Explorer · Matchs",
+   "is_interactive": true
+  },
+  "ExplorerTerrainsAr.dc.html": {
+   "x": 5670,
+   "y": 3580,
+   "w": 390,
+   "h": 1610,
+   "title": "AR · Explorer · Terrains"
+  },
+  "DetailMatchAr.dc.html": {
+   "x": 5200,
+   "y": 5660,
+   "w": 390,
+   "h": 1040,
+   "title": "AR · Détail du match · la fiche, avant de rejoindre",
+   "is_interactive": true
+  },
+  "DetailMatchInscritAr.dc.html": {
+   "x": 5670,
+   "y": 5660,
+   "w": 390,
+   "h": 1170,
+   "title": "AR · Détail du match · le ticket, une fois inscrit"
+  },
+  "DetailMatch11Ar.dc.html": {
+   "x": 6140,
+   "y": 5660,
+   "w": 390,
+   "h": 1180,
+   "title": "AR · Détail du match · 11v11"
+  },
+  "DetailMatchRemplacementAr.dc.html": {
+   "x": 7550,
+   "y": 5660,
+   "w": 390,
+   "h": 1060,
+   "title": "AR · Détail · entre H-2 et H-1 (dernières places)"
+  },
+  "DetailMatchFigeAr.dc.html": {
+   "x": 8020,
+   "y": 5660,
+   "w": 390,
+   "h": 1090,
+   "title": "AR · Détail · après H-1 (compo figée)"
+  },
+  "DetailMatchInscritRemplacementAr.dc.html": {
+   "x": 8490,
+   "y": 5660,
+   "w": 390,
+   "h": 1200,
+   "title": "AR · Détail · inscrit entre H-2 et H-1"
+  },
+  "CreerAr.dc.html": {
+   "x": 5200,
+   "y": 9820,
+   "w": 390,
+   "h": 930,
+   "title": "AR · C0 · Ton créneau",
+   "is_interactive": true
+  },
+  "CreerConfigAr.dc.html": {
+   "x": 5670,
+   "y": 9820,
+   "w": 390,
+   "h": 940,
+   "title": "AR · C1 · Configure ton match"
+  },
+  "CreerPublieAr.dc.html": {
+   "x": 6140,
+   "y": 9820,
+   "w": 390,
+   "h": 870,
+   "title": "AR · C2 · Match publié"
+  },
+  "LienMatchAr.dc.html": {
+   "x": 6610,
+   "y": 9820,
+   "w": 390,
+   "h": 760,
+   "title": "AR · Lien partagé · page vue sans l’app"
+  },
+  "CreerPadelAr.dc.html": {
+   "x": 5200,
+   "y": 11620,
+   "w": 390,
+   "h": 930,
+   "title": "AR · Padel · C0 Ton créneau"
+  },
+  "CreerConfigPadelAr.dc.html": {
+   "x": 5670,
+   "y": 11620,
+   "w": 390,
+   "h": 940,
+   "title": "AR · Padel · C1 Configure"
+  },
+  "CreerPubliePadelAr.dc.html": {
+   "x": 6140,
+   "y": 11620,
+   "w": 390,
+   "h": 870,
+   "title": "AR · Padel · C2 Publié"
+  },
+  "DetailMatchPadelAr.dc.html": {
+   "x": 6610,
+   "y": 11620,
+   "w": 390,
+   "h": 1040,
+   "title": "AR · Padel · Détail du match"
+  },
+  "ReserverAr.dc.html": {
+   "x": 5200,
+   "y": 13880,
+   "w": 390,
+   "h": 950,
+   "title": "AR · R1 · Trouve ton terrain",
+   "is_interactive": true
+  },
+  "ReserverCentreAr.dc.html": {
+   "x": 5670,
+   "y": 13880,
+   "w": 390,
+   "h": 930,
+   "title": "AR · R2 · Détail du centre"
+  },
+  "ReserverCreneauAr.dc.html": {
+   "x": 6140,
+   "y": 13880,
+   "w": 390,
+   "h": 940,
+   "title": "AR · R3 · Ta réservation"
+  },
+  "ReserverConfirmeAr.dc.html": {
+   "x": 6610,
+   "y": 13880,
+   "w": 390,
+   "h": 844,
+   "title": "AR · R4 · C’est réservé"
+  },
+  "ReserverMatchAr.dc.html": {
+   "x": 7080,
+   "y": 13880,
+   "w": 390,
+   "h": 1010,
+   "title": "AR · R1 en mode match (depuis Créer)"
+  },
+  "MesMatchsAr.dc.html": {
+   "x": 5200,
+   "y": 16560,
+   "w": 390,
+   "h": 1010,
+   "title": "AR · Mes matchs · à venir",
+   "is_interactive": true
+  },
+  "MesMatchsPassesAr.dc.html": {
+   "x": 5670,
+   "y": 16560,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Mes matchs · passés"
+  },
+  "ProfilAr.dc.html": {
+   "x": 6140,
+   "y": 16560,
+   "w": 390,
+   "h": 1270,
+   "title": "AR · Profil"
+  },
+  "ReserverHeuresPeriodesAr.dc.html": {
+   "x": 5200,
+   "y": 15130,
+   "w": 390,
+   "h": 1010,
+   "title": "AR · R3 · une journée chargée (lun. 26)"
+  },
+  "NotificationsAr.dc.html": {
+   "x": 5200,
+   "y": 18580,
+   "w": 390,
+   "h": 890,
+   "title": "AR · Notifications (la cloche)"
+  },
+  "NotificationsPushAr.dc.html": {
+   "x": 5670,
+   "y": 18580,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Notifications push sur le téléphone"
+  },
+  "AccordsAr.dc.html": {
+   "x": 8490,
+   "y": -1200,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Tes accords (depuis « Mes accords »)"
+  },
+  "OrgaMatchAr.dc.html": {
+   "x": 5200,
+   "y": 20200,
+   "w": 390,
+   "h": 1410,
+   "title": "AR · Ton match · vue organisateur"
+  },
+  "DetailMatchCompletAr.dc.html": {
+   "x": 8960,
+   "y": 5660,
+   "w": 390,
+   "h": 1140,
+   "title": "AR · Détail · match complet (Complexe Ryad 22:30)"
+  },
+  "ConfDesinscriptionAr.dc.html": {
+   "x": 5200,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Se désinscrire (à temps)"
+  },
+  "ConfDesinscriptionTardAr.dc.html": {
+   "x": 5670,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Se désinscrire (moins de 2 h)"
+  },
+  "ConfAnnulerResaAr.dc.html": {
+   "x": 6140,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Annuler une réservation (sans match)"
+  },
+  "ConfAnnulerMatchAr.dc.html": {
+   "x": 6610,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Annuler le match (organisateur)"
+  },
+  "ConfRetirerAr.dc.html": {
+   "x": 7080,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Retirer un joueur (organisateur)"
+  },
+  "ExplorerVideAr.dc.html": {
+   "x": 5200,
+   "y": 23834,
+   "w": 390,
+   "h": 1420,
+   "title": "AR · Explorer · aucun match ce jour (dans l’écran)"
+  },
+  "MesMatchsVideAr.dc.html": {
+   "x": 5670,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Mes matchs · rien de prévu (nouveau joueur)"
+  },
+  "ErreurReseauAr.dc.html": {
+   "x": 6140,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Pas de réseau"
+  },
+  "ErreurCreneauPrisAr.dc.html": {
+   "x": 6610,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Créneau pris entre-temps"
+  },
+  "FiltresExplorerAr.dc.html": {
+   "x": 5200,
+   "y": 25538,
+   "w": 390,
+   "h": 910,
+   "title": "AR · Filtres d’Explorer"
+  },
+  "ModifierProfilAr.dc.html": {
+   "x": 5670,
+   "y": 25538,
+   "w": 390,
+   "h": 1180,
+   "title": "AR · Modifier mon profil"
+  },
+  "ChoisirJourAr.dc.html": {
+   "x": 6140,
+   "y": 25538,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Filtres · « Choisir un jour »"
+  },
+  "CreerOuReserverAr.dc.html": {
+   "x": 5200,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Bouton + · Créer ou réserver"
+  },
+  "RechercheAr.dc.html": {
+   "x": 5670,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Explorer · Recherche"
+  },
+  "PasMoiAr.dc.html": {
+   "x": 6140,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · « Ce n’est pas moi »"
+  },
+  "MdpOublieAr.dc.html": {
+   "x": 6610,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Mot de passe oublié · numéro"
+  },
+  "MdpNouveauAr.dc.html": {
+   "x": 7080,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Mot de passe oublié · nouveau"
+  },
+  "ConfSupprimerCompteAr.dc.html": {
+   "x": 7550,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Supprimer mon compte"
+  },
+  "MotAuxJoueursAr.dc.html": {
+   "x": 8020,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Orga · Modifier ton mot"
+  },
+  "ChangerPhotoAr.dc.html": {
+   "x": 8490,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Profil · Changer la photo"
+  },
+  "LangueAr.dc.html": {
+   "x": 8960,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Profil · Langue"
+  },
+  "ReglagesNotifsAr.dc.html": {
+   "x": 9430,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Profil · Notifications"
+  },
+  "DetailMatchFriday.dc.html": {
+   "x": 4230,
+   "y": 5660,
+   "w": 390,
+   "h": 1160,
+   "title": "Détail · ton prochain match (Complexe Ryad, vendredi)"
+  },
+  "CreerConfigCheraga.dc.html": {
+   "x": 1880,
+   "y": 9820,
+   "w": 390,
+   "h": 940,
+   "title": "C1 · sur ta réservation de Chéraga"
+  },
+  "CreerConfigRyad.dc.html": {
+   "x": 2350,
+   "y": 9820,
+   "w": 390,
+   "h": 940,
+   "title": "C1 · sur la réservation par téléphone"
+  },
+  "ConfDesinscriptionFriday.dc.html": {
+   "x": 2350,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Se désinscrire (vendredi, Complexe Ryad)"
+  },
+  "ConfAnnulerResaMatch.dc.html": {
+   "x": 2820,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Annuler la réservation d’un match organisé"
+  },
+  "CestMoi.dc.html": {
+   "x": 4700,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "« C’est moi » confirmé"
+  },
+  "DetailMatchFridayAr.dc.html": {
+   "x": 9430,
+   "y": 5660,
+   "w": 390,
+   "h": 1170,
+   "title": "AR · Détail · ton prochain match (Complexe Ryad, vendredi)"
+  },
+  "CreerConfigCheragaAr.dc.html": {
+   "x": 7080,
+   "y": 9820,
+   "w": 390,
+   "h": 940,
+   "title": "AR · C1 · sur ta réservation de Chéraga"
+  },
+  "CreerConfigRyadAr.dc.html": {
+   "x": 7550,
+   "y": 9820,
+   "w": 390,
+   "h": 940,
+   "title": "AR · C1 · sur la réservation par téléphone"
+  },
+  "ConfDesinscriptionFridayAr.dc.html": {
+   "x": 7550,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Se désinscrire (vendredi, Complexe Ryad)"
+  },
+  "ConfAnnulerResaMatchAr.dc.html": {
+   "x": 8020,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Annuler la réservation d’un match organisé"
+  },
+  "CestMoiAr.dc.html": {
+   "x": 9900,
+   "y": 27178,
+   "w": 390,
+   "h": 844,
+   "title": "AR · « C’est moi » confirmé"
+  },
+  "OnboardingDepuisLien.dc.html": {
+   "x": 2820,
+   "y": 9820,
+   "w": 390,
+   "h": 844,
+   "title": "Lien partagé · inscription puis retour au match",
+   "is_interactive": true
+  },
+  "ReserverCreneauRepli.dc.html": {
+   "x": 1880,
+   "y": 23834,
+   "w": 390,
+   "h": 940,
+   "title": "Créneau pris · autre créneau proposé",
+   "is_interactive": true
+  },
+  "DetailMatchAnciens.dc.html": {
+   "x": 0,
+   "y": 7660,
+   "w": 390,
+   "h": 1000,
+   "title": "Détail · Chéraga Arena 22:00 (pote Walid)",
+   "is_interactive": true
+  },
+  "DetailMatchHydra.dc.html": {
+   "x": 470,
+   "y": 7660,
+   "w": 390,
+   "h": 1000,
+   "title": "Détail · Complexe Ryad 22:00 (pote Karim)",
+   "is_interactive": true
+  },
+  "DetailMatchDernier.dc.html": {
+   "x": 940,
+   "y": 7660,
+   "w": 390,
+   "h": 1050,
+   "title": "Détail · Complexe Ryad 23:00 (6v6)",
+   "is_interactive": true
+  },
+  "DetailMatchPadelMardi.dc.html": {
+   "x": 1410,
+   "y": 7660,
+   "w": 390,
+   "h": 1000,
+   "title": "Détail · padel El Biar 22:30",
+   "is_interactive": true
+  },
+  "OnboardingDepuisLienAr.dc.html": {
+   "x": 8020,
+   "y": 9820,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Lien partagé · inscription puis retour au match",
+   "is_interactive": true
+  },
+  "ReserverCreneauRepliAr.dc.html": {
+   "x": 7080,
+   "y": 23834,
+   "w": 390,
+   "h": 940,
+   "title": "AR · Créneau pris · autre créneau proposé",
+   "is_interactive": true
+  },
+  "DetailMatchAnciensAr.dc.html": {
+   "x": 5200,
+   "y": 7660,
+   "w": 390,
+   "h": 1010,
+   "title": "AR · Détail · Chéraga Arena 22:00 (pote Walid)",
+   "is_interactive": true
+  },
+  "DetailMatchHydraAr.dc.html": {
+   "x": 5670,
+   "y": 7660,
+   "w": 390,
+   "h": 1010,
+   "title": "AR · Détail · Complexe Ryad 22:00 (pote Karim)",
+   "is_interactive": true
+  },
+  "DetailMatchDernierAr.dc.html": {
+   "x": 6140,
+   "y": 7660,
+   "w": 390,
+   "h": 1050,
+   "title": "AR · Détail · Complexe Ryad 23:00 (6v6)",
+   "is_interactive": true
+  },
+  "DetailMatchPadelMardiAr.dc.html": {
+   "x": 6610,
+   "y": 7660,
+   "w": 390,
+   "h": 1010,
+   "title": "AR · Détail · padel El Biar 22:30",
+   "is_interactive": true
+  },
+  "ConfAnnulerResaTard.dc.html": {
+   "x": 3290,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Annuler une réservation (moins de 2 h)"
+  },
+  "PasPossible.dc.html": {
+   "x": 3760,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Garde-fou · 2 réservations par jour"
+  },
+  "PasPossibleAvenir.dc.html": {
+   "x": 4230,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Garde-fou · 4 réservations à venir"
+  },
+  "PasPossibleChevauchement.dc.html": {
+   "x": 2350,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "Garde-fou · deux matchs à la même heure"
+  },
+  "PasPossibleAbsences.dc.html": {
+   "x": 2820,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "Garde-fou · 2 absences, 1re fois (7 jours)"
+  },
+  "ConfAnnulerResaTardAr.dc.html": {
+   "x": 8490,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Annuler une réservation (moins de 2 h)"
+  },
+  "PasPossibleAr.dc.html": {
+   "x": 8960,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Garde-fou · 2 réservations par jour"
+  },
+  "PasPossibleAvenirAr.dc.html": {
+   "x": 9430,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Garde-fou · 4 réservations à venir"
+  },
+  "PasPossibleChevauchementAr.dc.html": {
+   "x": 7550,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Garde-fou · deux matchs à la même heure"
+  },
+  "PasPossibleAbsencesAr.dc.html": {
+   "x": 8020,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Garde-fou · 2 absences, 1re fois (7 jours)"
+  },
+  "PasPossibleAbsences30.dc.html": {
+   "x": 3290,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "Garde-fou · 2 absences, 2e fois (30 jours)"
+  },
+  "PasPossibleAbsences30Ar.dc.html": {
+   "x": 8490,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Garde-fou · 2 absences, 2e fois (30 jours)"
+  },
+  "PasPossibleAbsencesSupport.dc.html": {
+   "x": 3760,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "Garde-fou · 2 absences, 3e fois (contacter le support)"
+  },
+  "PasPossibleAbsencesSupportAr.dc.html": {
+   "x": 8960,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Garde-fou · 2 absences, 3e fois (contacter le support)"
+  },
+  "PasPossibleRetire.dc.html": {
+   "x": 4230,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "Garde-fou · joueur retiré par l’organisateur"
+  },
+  "PasPossibleAccord.dc.html": {
+   "x": 4700,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "Garde-fou · accord « numéro visible » retiré"
+  },
+  "PasPossibleRetireAr.dc.html": {
+   "x": 9430,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Garde-fou · joueur retiré par l’organisateur"
+  },
+  "PasPossibleAccordAr.dc.html": {
+   "x": 9900,
+   "y": 23834,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Garde-fou · accord « numéro visible » retiré"
+  },
+  "Apparence.dc.html": {
+   "x": 0,
+   "y": 28700,
+   "w": 390,
+   "h": 844,
+   "title": "Profil · Apparence (auto, clair, sombre)"
+  },
+  "MainClair.dc.html": {
+   "x": 470,
+   "y": 28700,
+   "w": 390,
+   "h": 1710,
+   "title": "Mode clair · Accueil"
+  },
+  "ExplorerClair.dc.html": {
+   "x": 940,
+   "y": 28700,
+   "w": 390,
+   "h": 1420,
+   "title": "Mode clair · Explorer"
+  },
+  "DetailMatchClair.dc.html": {
+   "x": 1410,
+   "y": 28700,
+   "w": 390,
+   "h": 1020,
+   "title": "Mode clair · Détail du match"
+  },
+  "ReserverCreneauClair.dc.html": {
+   "x": 1880,
+   "y": 28700,
+   "w": 390,
+   "h": 940,
+   "title": "Mode clair · Réserver, le créneau"
+  },
+  "MesMatchsClair.dc.html": {
+   "x": 2350,
+   "y": 28700,
+   "w": 390,
+   "h": 980,
+   "title": "Mode clair · Mes matchs"
+  },
+  "OrgaMatchClair.dc.html": {
+   "x": 2820,
+   "y": 28700,
+   "w": 390,
+   "h": 1410,
+   "title": "Mode clair · Organiser"
+  },
+  "ProfilClair.dc.html": {
+   "x": 3290,
+   "y": 28700,
+   "w": 390,
+   "h": 1270,
+   "title": "Mode clair · Profil"
+  },
+  "DetailMatchChoixEquipe.dc.html": {
+   "x": 1880,
+   "y": 7660,
+   "w": 390,
+   "h": 1020,
+   "title": "Détail · Rejoindre → choisis ton équipe",
+   "is_interactive": true
+  },
+  "DetailMatchChangerEquipe.dc.html": {
+   "x": 2350,
+   "y": 7660,
+   "w": 390,
+   "h": 1160,
+   "title": "Détail · inscrit → change d’équipe",
+   "is_interactive": true
+  },
+  "DetailMatchChoixEquipeAr.dc.html": {
+   "x": 7080,
+   "y": 7660,
+   "w": 390,
+   "h": 1040,
+   "title": "AR · Détail · Rejoindre → choisis ton équipe",
+   "is_interactive": true
+  },
+  "DetailMatchChangerEquipeAr.dc.html": {
+   "x": 7550,
+   "y": 7660,
+   "w": 390,
+   "h": 1170,
+   "title": "AR · Détail · inscrit → change d’équipe",
+   "is_interactive": true
+  },
+  "ApparenceAr.dc.html": {
+   "x": 5200,
+   "y": 28700,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Profil · Apparence (auto, clair, sombre)"
+  },
+  "GroupeWhatsApp.dc.html": {
+   "x": 4700,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "Groupe WhatsApp du match (organisateur)"
+  },
+  "OrgaMatchGroupe.dc.html": {
+   "x": 470,
+   "y": 20200,
+   "w": 390,
+   "h": 1410,
+   "title": "Ton match · groupe WhatsApp ajouté"
+  },
+  "ReserverVoir.dc.html": {
+   "x": 2350,
+   "y": 13880,
+   "w": 390,
+   "h": 844,
+   "title": "Ta réservation (depuis Mes matchs)"
+  },
+  "ReserverVoirAr.dc.html": {
+   "x": 7550,
+   "y": 13880,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Ta réservation (depuis Mes matchs)"
+  },
+  "OrgaMatchGroupeAr.dc.html": {
+   "x": 5670,
+   "y": 20200,
+   "w": 390,
+   "h": 1410,
+   "title": "AR · Ton match · groupe WhatsApp ajouté"
+  },
+  "GroupeWhatsAppAr.dc.html": {
+   "x": 9900,
+   "y": 22390,
+   "w": 390,
+   "h": 844,
+   "title": "AR · Groupe WhatsApp du match (organisateur)"
+  }
+ },
+ "createdOnFiles": {
+  "at": "2026-10-20T19:05:00Z",
+  "v": 1
+ },
+ "designSystems": [
+  {
+   "artifact": "https://claude.ai/artifact/YGYqTXYpxEJa7aFRVZLUHq",
+   "copiedAt": "2026-10-20T19:05:00Z",
+   "namespace": "moubarat",
+   "title": "Moubarat",
+   "version": null
+  }
+ ],
+ "launch": {
+  "view": "canvas"
+ },
+ "notes": {
+  "heures-explique": {
+   "kind": "title1",
+   "maxW": 1400,
+   "text": "Horaires rangés par moment de la journée (validé).",
+   "w": 240,
+   "x": 0,
+   "y": 15040
+  },
+  "titre": {
+   "kind": "title1",
+   "maxW": 860,
+   "text": "Accueil",
+   "w": 240,
+   "x": 0,
+   "y": 1200
+  },
+  "titre-arabe": {
+   "kind": "title1",
+   "maxW": 4600,
+   "text": "Version arabe (de droite à gauche)",
+   "w": 240,
+   "x": 5200,
+   "y": -1800
+  },
+  "titre-clair": {
+   "kind": "title1",
+   "maxW": 3700,
+   "text": "Mode clair (au choix du joueur) et réglage Apparence",
+   "w": 240,
+   "x": 0,
+   "y": 28580
+  },
+  "titre-complements": {
+   "kind": "title1",
+   "maxW": 4600,
+   "text": "Écrans ajoutés (liens et réglages)",
+   "w": 240,
+   "x": 0,
+   "y": 26878
+  },
+  "titre-confirmations": {
+   "kind": "title1",
+   "maxW": 2400,
+   "text": "Confirmations",
+   "w": 240,
+   "x": 0,
+   "y": 22090
+  },
+  "titre-creer": {
+   "kind": "title1",
+   "maxW": 1800,
+   "text": "Créer un match",
+   "w": 240,
+   "x": 0,
+   "y": 9520
+  },
+  "titre-detail": {
+   "kind": "title1",
+   "maxW": 3700,
+   "text": "Détail du match",
+   "w": 240,
+   "x": 0,
+   "y": 5360
+  },
+  "titre-explorer": {
+   "kind": "title1",
+   "maxW": 1800,
+   "text": "Explorer",
+   "w": 240,
+   "x": 0,
+   "y": 3280
+  },
+  "titre-filtres": {
+   "kind": "title1",
+   "maxW": 2400,
+   "text": "Filtres et profil",
+   "w": 240,
+   "x": 0,
+   "y": 25238
+  },
+  "titre-moi": {
+   "kind": "title1",
+   "maxW": 1800,
+   "text": "Mes matchs et profil",
+   "w": 240,
+   "x": 0,
+   "y": 16260
+  },
+  "titre-notifs": {
+   "kind": "title1",
+   "maxW": 1400,
+   "text": "Notifications",
+   "w": 240,
+   "x": 0,
+   "y": 18280
+  },
+  "titre-onboarding": {
+   "kind": "title1",
+   "maxW": 3000,
+   "text": "Inscription et connexion",
+   "w": 240,
+   "x": 0,
+   "y": -1500
+  },
+  "titre-orga": {
+   "kind": "title1",
+   "maxW": 1400,
+   "text": "Vue organisateur",
+   "w": 240,
+   "x": 0,
+   "y": 19900
+  },
+  "titre-padel": {
+   "kind": "title1",
+   "maxW": 1800,
+   "text": "Padel",
+   "w": 240,
+   "x": 0,
+   "y": 11320
+  },
+  "titre-reserver": {
+   "kind": "title1",
+   "maxW": 2400,
+   "text": "Réserver",
+   "w": 240,
+   "x": 0,
+   "y": 13580
+  },
+  "titre-états": {
+   "kind": "title1",
+   "maxW": 2400,
+   "text": "États vides et erreurs",
+   "x": 0,
+   "y": 23534
+  }
+ },
+ "order": [
+  "Onboarding.dc.html",
+  "OnboardingNumero.dc.html",
+  "OnboardingCode.dc.html",
+  "OnboardingAcces.dc.html",
+  "OnboardingJeu.dc.html",
+  "OnboardingConnexion.dc.html",
+  "NoticeDonnees.dc.html",
+  "Main.dc.html",
+  "Vide.dc.html",
+  "Explorer.dc.html",
+  "ExplorerTerrains.dc.html",
+  "DetailMatch.dc.html",
+  "DetailMatchInscrit.dc.html",
+  "DetailMatch11.dc.html",
+  "DetailMatchRemplacement.dc.html",
+  "DetailMatchFige.dc.html",
+  "DetailMatchInscritRemplacement.dc.html",
+  "Creer.dc.html",
+  "CreerConfig.dc.html",
+  "CreerPublie.dc.html",
+  "LienMatch.dc.html",
+  "OnboardingDepuisLien.dc.html",
+  "CreerPadel.dc.html",
+  "CreerConfigPadel.dc.html",
+  "CreerPubliePadel.dc.html",
+  "DetailMatchPadel.dc.html",
+  "Reserver.dc.html",
+  "ReserverCentre.dc.html",
+  "ReserverCreneau.dc.html",
+  "ReserverConfirme.dc.html",
+  "ReserverMatch.dc.html",
+  "ReserverVoir.dc.html",
+  "MesMatchs.dc.html",
+  "MesMatchsPasses.dc.html",
+  "Profil.dc.html",
+  "ReserverHeuresPeriodes.dc.html",
+  "Notifications.dc.html",
+  "NotificationsPush.dc.html",
+  "Accords.dc.html",
+  "IconeApp.dc.html",
+  "OrgaMatch.dc.html",
+  "OrgaMatchGroupe.dc.html",
+  "DetailMatchComplet.dc.html",
+  "ConfDesinscription.dc.html",
+  "ConfDesinscriptionTard.dc.html",
+  "ConfAnnulerResa.dc.html",
+  "ConfAnnulerMatch.dc.html",
+  "ConfRetirer.dc.html",
+  "GroupeWhatsApp.dc.html",
+  "ExplorerVide.dc.html",
+  "MesMatchsVide.dc.html",
+  "ErreurReseau.dc.html",
+  "ErreurCreneauPris.dc.html",
+  "ReserverCreneauRepli.dc.html",
+  "FiltresExplorer.dc.html",
+  "ModifierProfil.dc.html",
+  "ChoisirJour.dc.html",
+  "CreerOuReserver.dc.html",
+  "Recherche.dc.html",
+  "PasMoi.dc.html",
+  "MdpOublie.dc.html",
+  "MdpNouveau.dc.html",
+  "ConfSupprimerCompte.dc.html",
+  "MotAuxJoueurs.dc.html",
+  "ChangerPhoto.dc.html",
+  "Langue.dc.html",
+  "ReglagesNotifs.dc.html",
+  "OnboardingAr.dc.html",
+  "OnboardingNumeroAr.dc.html",
+  "OnboardingCodeAr.dc.html",
+  "OnboardingAccesAr.dc.html",
+  "OnboardingJeuAr.dc.html",
+  "OnboardingConnexionAr.dc.html",
+  "NoticeDonneesAr.dc.html",
+  "MainAr.dc.html",
+  "VideAr.dc.html",
+  "ExplorerAr.dc.html",
+  "ExplorerTerrainsAr.dc.html",
+  "DetailMatchAr.dc.html",
+  "DetailMatchInscritAr.dc.html",
+  "DetailMatch11Ar.dc.html",
+  "DetailMatchRemplacementAr.dc.html",
+  "DetailMatchFigeAr.dc.html",
+  "DetailMatchInscritRemplacementAr.dc.html",
+  "CreerAr.dc.html",
+  "CreerConfigAr.dc.html",
+  "CreerPublieAr.dc.html",
+  "LienMatchAr.dc.html",
+  "CreerPadelAr.dc.html",
+  "CreerConfigPadelAr.dc.html",
+  "CreerPubliePadelAr.dc.html",
+  "DetailMatchPadelAr.dc.html",
+  "ReserverAr.dc.html",
+  "ReserverCentreAr.dc.html",
+  "ReserverCreneauAr.dc.html",
+  "ReserverConfirmeAr.dc.html",
+  "ReserverMatchAr.dc.html",
+  "MesMatchsAr.dc.html",
+  "MesMatchsPassesAr.dc.html",
+  "ProfilAr.dc.html",
+  "ReserverHeuresPeriodesAr.dc.html",
+  "NotificationsAr.dc.html",
+  "NotificationsPushAr.dc.html",
+  "AccordsAr.dc.html",
+  "OrgaMatchAr.dc.html",
+  "DetailMatchCompletAr.dc.html",
+  "ConfDesinscriptionAr.dc.html",
+  "ConfDesinscriptionTardAr.dc.html",
+  "ConfAnnulerResaAr.dc.html",
+  "ConfAnnulerMatchAr.dc.html",
+  "ConfRetirerAr.dc.html",
+  "ExplorerVideAr.dc.html",
+  "MesMatchsVideAr.dc.html",
+  "ErreurReseauAr.dc.html",
+  "ErreurCreneauPrisAr.dc.html",
+  "FiltresExplorerAr.dc.html",
+  "ModifierProfilAr.dc.html",
+  "ChoisirJourAr.dc.html",
+  "CreerOuReserverAr.dc.html",
+  "RechercheAr.dc.html",
+  "PasMoiAr.dc.html",
+  "MdpOublieAr.dc.html",
+  "MdpNouveauAr.dc.html",
+  "ConfSupprimerCompteAr.dc.html",
+  "MotAuxJoueursAr.dc.html",
+  "ChangerPhotoAr.dc.html",
+  "LangueAr.dc.html",
+  "ReglagesNotifsAr.dc.html",
+  "DetailMatchFriday.dc.html",
+  "DetailMatchAnciens.dc.html",
+  "DetailMatchHydra.dc.html",
+  "DetailMatchDernier.dc.html",
+  "DetailMatchPadelMardi.dc.html",
+  "DetailMatchChoixEquipe.dc.html",
+  "DetailMatchChangerEquipe.dc.html",
+  "CreerConfigCheraga.dc.html",
+  "CreerConfigRyad.dc.html",
+  "ConfDesinscriptionFriday.dc.html",
+  "ConfAnnulerResaMatch.dc.html",
+  "ConfAnnulerResaTard.dc.html",
+  "PasPossible.dc.html",
+  "PasPossibleAvenir.dc.html",
+  "PasPossibleChevauchement.dc.html",
+  "PasPossibleAbsences.dc.html",
+  "PasPossibleAbsences30.dc.html",
+  "PasPossibleAbsencesSupport.dc.html",
+  "PasPossibleRetire.dc.html",
+  "PasPossibleAccord.dc.html",
+  "CestMoi.dc.html",
+  "DetailMatchFridayAr.dc.html",
+  "CreerConfigCheragaAr.dc.html",
+  "CreerConfigRyadAr.dc.html",
+  "ConfDesinscriptionFridayAr.dc.html",
+  "ConfAnnulerResaMatchAr.dc.html",
+  "CestMoiAr.dc.html",
+  "OnboardingDepuisLienAr.dc.html",
+  "ReserverCreneauRepliAr.dc.html",
+  "DetailMatchAnciensAr.dc.html",
+  "DetailMatchHydraAr.dc.html",
+  "DetailMatchDernierAr.dc.html",
+  "DetailMatchPadelMardiAr.dc.html",
+  "ConfAnnulerResaTardAr.dc.html",
+  "PasPossibleAr.dc.html",
+  "PasPossibleAvenirAr.dc.html",
+  "PasPossibleChevauchementAr.dc.html",
+  "PasPossibleAbsencesAr.dc.html",
+  "PasPossibleAbsences30Ar.dc.html",
+  "PasPossibleAbsencesSupportAr.dc.html",
+  "PasPossibleRetireAr.dc.html",
+  "PasPossibleAccordAr.dc.html",
+  "Apparence.dc.html",
+  "MainClair.dc.html",
+  "ExplorerClair.dc.html",
+  "DetailMatchClair.dc.html",
+  "ReserverCreneauClair.dc.html",
+  "MesMatchsClair.dc.html",
+  "OrgaMatchClair.dc.html",
+  "ProfilClair.dc.html",
+  "DetailMatchChoixEquipeAr.dc.html",
+  "DetailMatchChangerEquipeAr.dc.html",
+  "ApparenceAr.dc.html",
+  "ReserverVoirAr.dc.html",
+  "OrgaMatchGroupeAr.dc.html",
+  "GroupeWhatsAppAr.dc.html"
+ ],
+ "pages": [],
+ "title": "Moubarat — App joueur"
+}

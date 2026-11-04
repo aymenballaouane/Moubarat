@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <!-- Valeur de secours avant que le JS ne s'exécute (lib/theme.ts met à jour cette
+       balise à chaque thème — règle 42, corrections d'Aymen du 24/10/2026) : couleur
+       de page sombre (--ink), le thème par défaut. -->
+  <meta name="theme-color" content="#0A0A0F" />
+  <link rel="manifest" href="/manifest.json" />
+  <!-- Signe « Rivalité » (design/moubarat-icon.svg → scripts/pwa-icons.mjs), même marque partout.
+       iOS ignore les SVG pour apple-touch-icon (Lot P1, point 5). -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <!-- "black-translucent" : la seule valeur qui laisse le contenu passer sous la barre
+       d'état (nécessaire pour la bannière/les photos plein écran) — ses icônes (heure,
+       batterie) sont TOUJOURS blanches, jamais ajustables en JS après coup (limite
+       WebKit connue). Lisibles en clair comme en sombre grâce au voile sombre fixe
+       sous la zone de sécurité du haut (.status-bar-scrim, main.tsx), pas par un
+       changement de cette valeur. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Moubarat" />
+  <title>Moubarat</title>
+</head>
+<body class="mb">
+  <!-- Thème posé AVANT le premier affichage (pas d'éclair clair sur un téléphone clair) : mêmes règles que lib/theme.ts — sombre par défaut
+       (décision d'Aymen, 26/10/2026), « clair » ou « auto » seulement si le joueur l'a choisi dans Apparence (clé v2). -->
+  <script>
+    try {
+      var choice = window.localStorage.getItem('moubarat.theme.v2');
+      if (choice === 'clair') document.body.setAttribute('data-theme', 'clair');
+      else if (choice !== 'auto') document.body.setAttribute('data-theme', 'sombre');
+    } catch (e) { document.body.setAttribute('data-theme', 'sombre'); }
+  </script>
+  <!-- iPhone, PWA installée : "black-translucent" ci-dessus laisse le contenu passer
+       sous la barre d'état avec des icônes TOUJOURS blanches (heure, batterie) —
+       invisibles sur un fond clair sans ce voile, toujours sombre quel que soit le
+       thème de la page (zéro hauteur hors zone de sécurité : rien sur Android/bureau). -->
+  <div class="status-bar-scrim" aria-hidden="true"></div>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

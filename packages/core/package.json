@@ -1,0 +1,15 @@
+{
+  "name": "@moubarat/core",
+  "version": "1.0.0",
+  "description": "Moubarat — règles métier partagées entre l'app joueur et le CRM centre. Source de vérité unique (spec §22).",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "5.5",
+    "vitest": "^2.1.9"
+  }
+}

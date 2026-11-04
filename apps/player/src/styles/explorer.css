@@ -1,0 +1,56 @@
+/* =============================================================================
+   EXPLORER — écran à onglets (Matchs / Terrains / Équipes). Reconstruit
+   pour une fidélité littérale au prototype v6 (retour direct d'Aymen,
+   29/08/2026). Ne définit QUE ce qui est propre à cet écran (préfixe ex-) ;
+   le reste vient des jetons du DS et des classes partagées de player.css
+   (.mb-seg, .mb-pitch, .mb-sechead, .hm-section-label, .bk-hero,
+   .mb-match--around) — jamais redéfinies ici.
+
+   Lot 5 (25/10/2026) : l'en-tête, les onglets, l'onglet Terrains et la page « Filtres » vivent dans explorer-v2.css
+   (Explorer.dc.html, FiltresExplorer.dc.html) ; ne reste ici que ce que le corps de l'onglet Matchs et l'onglet
+   Équipes utilisent encore (recherche, rail jour, puces rapides, rangée équipe). */
+
+/* Le panneau se rejoue à l'arrivée sur un onglet — même geste d'apparition
+   que .mb-enter, neutralisé globalement par prefers-reduced-motion. */
+.ex-panel { animation: mb-rise var(--dur-3) var(--ease-out); }
+
+/* --- Recherche (repliable, derriere l'icone loupe — sauf onglet Equipes
+   qui garde la sienne en permanence, fidele au prototype) ------------------ */
+.ex-search { position: relative; margin-bottom: 12px; }
+.ex-search__ic { position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  color: var(--text-4); pointer-events: none; }
+.ex-search .mb-field__control { padding-left: 38px; padding-right: 46px; }
+.ex-search .mb-field__control::-webkit-search-cancel-button,
+.ex-search .mb-field__control::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+.ex-search__clear { position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; display: grid; place-items: center;
+  color: var(--text-3); border-radius: var(--r-2); cursor: pointer;
+  transition: background var(--dur-1) linear, color var(--dur-1) linear; }
+.ex-search__clear:hover { color: var(--text); background: var(--ink-4); }
+
+/* --- Rangée équipe (onglet Équipes) — patron .team-row2 du prototype :
+   crest degrade + lettre, nom, effectif+matchs, sans OVR (donnee non
+   fondee — voir DECISIONS.md). ---------------------------------------------- */
+.ex-teams { display: grid; gap: 10px; }
+.ex-team2 { display: flex; align-items: center; gap: 12px; width: 100%;
+  min-height: var(--tap-min); padding: 12px; background: var(--ink-2);
+  border: 1px solid var(--line); border-radius: var(--r-4); box-shadow: var(--card-shadow);
+  text-align: left; cursor: pointer;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear; }
+.ex-team2:hover { border-color: var(--line-strong); background: var(--ink-3); }
+.ex-team2__crest { width: 44px; height: 50px; flex-shrink: 0; border-radius: var(--r-3) var(--r-3) 40% 40%;
+  display: grid; place-items: center; font-family: var(--font-display); font-size: var(--fs-b1);
+  color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .4);
+  border: 1px solid rgba(255, 255, 255, .2); }
+.ex-team2__body { flex: 1; min-width: 0; }
+.ex-team2__name { display: flex; align-items: center; gap: 8px; min-width: 0;
+  font-size: var(--fs-b2); font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ex-team2__badge { flex-shrink: 0; font-style: normal; font-family: var(--font-mono);
+  font-size: var(--fs-tag); font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--primary-glow);
+  background: var(--primary-wash); border: 1px solid var(--primary-line);
+  border-radius: var(--r-full); padding: 2px 8px; }
+.ex-team2__meta { display: block; margin-top: 4px; font-family: var(--font-mono);
+  font-size: var(--fs-tag); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

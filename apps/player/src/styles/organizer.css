@@ -1,0 +1,70 @@
+/* =============================================================================
+   VUE ORGANISATEUR — OrgaMatch.dc.html (Lot 7, 26/10/2026) : « TU ORGANISES », la jauge, « Tes joueurs », « Gérer le match », le groupe WhatsApp,
+   « Ton mot aux joueurs ». Réutilise les briques du détail (match-detail.css : .md-pad, .md-sec, .md-round, .md-veil, .md-foot, .md-cta) ; propriétés
+   logiques partout (RTL) ; texte sur la photo = couleurs fixes. Préfixe : .og-*.
+   ============================================================================= */
+
+#s-mymatch.og { padding: 0; gap: 0; }
+
+.og-hero { position: relative; height: 300px; flex: 0 0 auto; color: #F5F7FA; }
+.og-hero > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 40%; }
+.og-top { position: absolute; top: max(20px, env(safe-area-inset-top)); inset-inline: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 2; }
+.og-top__sp { flex: 0 0 44px; }
+.og-pill { padding: 6px 12px; border-radius: var(--r-full); background: rgba(10, 10, 15, .78); color: #fff; font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em; }
+.og-hero__low { position: absolute; inset-inline: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 4px; }
+.og-hero__date { font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em; color: #C5CCD6; }
+.og-hero__name { font-family: var(--font-display); font-size: 50px; line-height: .92; color: #F5F7FA; overflow-wrap: anywhere; }
+.og-hero__sub { font-size: var(--fs-b2); color: #F5F7FA; }
+
+.og-gauge { margin-top: 18px; display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: var(--r-3); background: var(--ink-2); border: 1px solid var(--line); }
+.og-gauge__n { font-family: var(--font-display); font-size: 38px; line-height: 1; color: var(--text); white-space: nowrap; }
+.og-gauge__n i { font-style: normal; font-size: 24px; color: var(--text-3); }
+.og-gauge__txt { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.og-gauge__txt b { font-size: var(--fs-b2); font-weight: 700; color: var(--text); }
+.og-bar { height: 6px; border-radius: var(--r-full); background: var(--ink-4, var(--ink-3)); overflow: hidden; display: block; }
+.og-bar i { display: block; height: 100%; background: var(--success); border-radius: var(--r-full); }
+
+.og-list { border-radius: var(--r-3); background: var(--ink-2); border: 1px solid var(--line); overflow: hidden; }
+.og-prow { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.og-prow:last-child { border-bottom: 0; }
+.og-av { flex: 0 0 36px; width: 36px; height: 36px; box-sizing: border-box; border-radius: var(--r-full); background: var(--ink-4, var(--ink-3)); border: 1.5px solid var(--line-strong);
+  display: grid; place-items: center; font-size: var(--fs-b2); font-weight: 600; color: var(--text); }
+.og-av--me { background: var(--primary); border-color: var(--primary); color: #fff; }
+.og-av--free { background: transparent; border-style: dashed; color: var(--text); }
+.og-prow__who { flex: 1 1 auto; min-width: 0; line-height: 1.25; }
+.og-prow__who b { font-size: var(--fs-b1); font-weight: 700; color: var(--text); }
+.og-prow__who i { font-style: normal; font-weight: 500; color: var(--text); font-size: var(--fs-b1); }
+.og-prow__me { font-size: var(--fs-micro); font-weight: 700; color: var(--primary-glow); }
+.og-prow__x { flex: 0 0 40px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: transparent; color: var(--text-2); cursor: pointer; border-radius: var(--r-full); }
+.og-prow__x .mb-ic { width: 18px; height: 18px; }
+/* Règle 25 (audit 26/10, P1-4) : « Absent » — une fois le match fini, à la place des actions de gestion (appeler, retirer). Aucune maquette : même gabarit que les autres boutons de ligne. */
+.og-prow__abs { flex: 0 0 auto; min-height: 36px; padding: 0 14px; border-radius: var(--r-full); border: 1px solid var(--line-strong); background: transparent; color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer; }
+.og-prow__abs:disabled { opacity: .6; cursor: default; }
+.og-prow__abs:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.og-prow__call { border: 1px solid var(--line-strong); color: var(--text); text-decoration: none; }
+.og-prow__call .mb-ic { width: 16px; height: 16px; }
+.og-prow__x:focus-visible, .og-act:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.og-act { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent;
+  color: var(--text); text-align: start; cursor: pointer; font-size: var(--fs-b1); }
+.og-act:last-child { border-bottom: 0; }
+.og-act .mb-ic { flex: 0 0 18px; width: 18px; height: 18px; }
+.og-act__t { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.og-act__t b { font-weight: 600; }
+.og-act__t small { font-size: var(--fs-b3); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; text-align: start; }
+.og-act__chev { color: var(--text-4); width: 14px !important; height: 14px !important; }
+:root[dir="rtl"] .og-act__chev { transform: scaleX(-1); }
+.og-act--danger { color: var(--danger); }
+.og-act--danger .mb-ic { color: var(--danger); }
+.og-find { gap: 10px; }
+.og-find .mb-ic { width: 19px; height: 19px; }
+
+/* Feuille « Groupe WhatsApp du match » */
+.og-input { width: 100%; box-sizing: border-box; height: 52px; padding: 0 14px; border-radius: var(--r-3); background: var(--ink-3); border: 1px solid var(--line-strong); color: var(--text); font-size: var(--fs-b1); }
+.og-warn { margin: 0; font-size: var(--fs-b3); line-height: 1.4; color: var(--text-2); text-align: center; }
+.og-err { margin: 0; font-size: var(--fs-b3); color: var(--danger); text-align: center; }
+
+/* « Ton mot aux joueurs » */
+.og-note__q { margin-top: 22px; text-align: start; }
+.og-note { margin-top: 10px; min-height: 170px; }
+.og-note__meta { margin: 8px 2px 0; display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-b3); color: var(--text-3); }

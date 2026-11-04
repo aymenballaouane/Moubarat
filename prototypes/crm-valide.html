@@ -1,0 +1,2436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moubarat — CRM v3 · Lot B (workflows)</title>
+<style>
+/* =============================================================================
+   MOUBARAT DESIGN SYSTEM — v1.0
+   Phase 1 du plan V1. Socle unique partagé par l'app joueur et le CRM centre.
+
+   RÈGLE DE CONVERSION : aucun écran n'est redessiné. On extrait, on nomme,
+   on rend réutilisable. L'apparence validée est le test de non-régression.
+
+   Les 61 collisions de classes CSS relevées à l'audit (.n, .pitch, .l, .d…)
+   sont résolues par la nomenclature, pas par des correctifs :
+   tout est préfixé `mb-`, tout élément interne est nommé (`mb-match__title`).
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* =============================================================================
+   1. TOKENS
+   ========================================================================== */
+
+:root {
+
+  /* --- SURFACES ---------------------------------------------------------- */
+  --ink:            #050505;   /* fond application */
+  --ink-2:          #0E0E0E;   /* surface niveau 1 — cartes */
+  --ink-3:          #161616;   /* surface niveau 2 — champs, encarts */
+  --ink-4:          #1F1F1F;   /* surface niveau 3 — état pressé, hover */
+  --line:           rgba(255,255,255,.10);
+  --line-strong:    rgba(255,255,255,.18);
+
+  /* --- MARQUE ------------------------------------------------------------ */
+  --primary:        #FF2B00;   /* action, état actif. Jamais décoratif.      */
+  --primary-glow:   #FF5A33;
+  --primary-deep:   #8A1400;
+  --primary-wash:   rgba(255,43,0,.12);
+  --primary-line:   rgba(255,43,0,.38);
+  --gold:           #F2B705;   /* OVR, badges, distinction. Rien d'autre.    */
+  --gold-2:         #FFD65C;
+  --gold-wash:      rgba(242,183,5,.12);
+
+  /* --- SÉMANTIQUE -------------------------------------------------------- */
+  /* `--danger` n'est plus un second rouge (#FF3B30 était à 8 % de #FF2B00,
+     visible côte à côte). Il dérive du rouge de marque : coral sur lavis. */
+  --danger:         #FF8A7A;                 /* 8.9:1 sur --ink */
+  --danger-wash:    rgba(255,43,0,.12);
+  --danger-line:    rgba(255,43,0,.38);
+  --success:        #1FD17A;                 /* 10.2:1 */
+  --success-wash:   rgba(31,209,122,.12);
+  --warn:           #F2B705;
+  --map-water:      #4A9EFF;                 /* tokenisé (90 occurrences en dur) */
+
+  /* --- TEXTE — ratios mesurés sur --ink ---------------------------------- */
+  --text:           #FFFFFF;                 /* 21.0:1  titres, valeurs       */
+  --text-2:         rgba(255,255,255,.72);   /* 10.4:1  corps                 */
+  --text-3:         rgba(255,255,255,.55);   /*  6.2:1  métadonnée            */
+  --text-4:         rgba(255,255,255,.48);   /*  4.9:1  PLANCHER — rien en dessous */
+
+  /* Alias de compatibilité : les 15 221 `var(--…)` du prototype continuent
+     de fonctionner, et --text-faint passe de 3.05:1 à 4.9:1 partout, d'un coup. */
+  --text-muted:     var(--text-3);
+  --text-faint:     var(--text-4);
+
+  /* --- TYPOGRAPHIE ------------------------------------------------------- */
+  --font-display:   'Bebas Neue', 'Haettenschweiler', Impact, sans-serif;
+  --font-body:      'Barlow', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:      'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  --fs-d1: 44px;   /* heure de match, chiffre héros */
+  --fs-d2: 34px;   /* titre d'écran */
+  --fs-d3: 26px;   /* titre de section */
+  --fs-d4: 20px;   /* titre de carte, libellé de bouton */
+  --fs-b1: 16px;   /* corps large */
+  --fs-b2: 14px;   /* corps */
+  --fs-b3: 13px;   /* corps dense */
+  --fs-label: 12px;
+  --fs-micro: 11px;  /* PLANCHER ABSOLU */
+  --fs-tag:   10px;  /* Mono MAJUSCULES uniquement, jamais porteur de décision */
+
+  --lh-display: .92;
+  --lh-tight:   1.2;
+  --lh-body:    1.45;
+  --ls-display: .005em;
+  --ls-tag:     .10em;
+
+  /* --- ESPACEMENT — 7 crans, plus rien d'arbitraire ---------------------- */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px;
+
+  /* --- RAYONS — 5 crans (18 valeurs distinctes recensées à l'audit) ------- */
+  --r-1: 4px;  --r-2: 8px;  --r-3: 12px; --r-4: 16px; --r-full: 999px;
+
+  /* --- ÉLÉVATION --------------------------------------------------------- */
+  --e-1: 0 1px 0 rgba(255,255,255,.04) inset, 0 2px 8px rgba(0,0,0,.45);
+  --e-2: 0 1px 0 rgba(255,255,255,.06) inset, 0 8px 24px rgba(0,0,0,.55);
+  --e-3: 0 16px 44px rgba(0,0,0,.70);
+  --glow-primary: 0 6px 22px rgba(255,43,0,.30);
+  --glow-gold:    0 4px 18px rgba(242,183,5,.22);
+
+  /* --- MOUVEMENT — absent du prototype, c'est le premier signal premium --- */
+  --dur-1: 120ms;   /* retour d'état : appui, survol            */
+  --dur-2: 220ms;   /* entrée d'élément, chip, bascule          */
+  --dur-3: 320ms;   /* feuille, transition d'écran              */
+  --ease-out:    cubic-bezier(.22, 1, .36, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1); /* une seule fois : confirmation */
+
+  /* --- CIBLE TACTILE ----------------------------------------------------- */
+  --tap-min: 44px;
+}
+
+/* =============================================================================
+   2. BASE
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body.mb {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text-2);
+  font-family: var(--font-body);
+  font-size: var(--fs-b2);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus visible partout — 0 état focus dans le prototype (audit D7). */
+:where(a, button, input, select, textarea, [tabindex], .mb-tap):focus-visible {
+  outline: 2px solid var(--primary-glow);
+  outline-offset: 2px;
+  border-radius: var(--r-1);
+}
+
+/* =============================================================================
+   3. PRIMITIVES
+   ========================================================================== */
+
+/* --- Text ---------------------------------------------------------------- */
+.mb-d1, .mb-d2, .mb-d3, .mb-d4 {
+  font-family: var(--font-display);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0;
+}
+.mb-d1 { font-size: var(--fs-d1); }
+.mb-d2 { font-size: var(--fs-d2); }
+.mb-d3 { font-size: var(--fs-d3); }
+.mb-d4 { font-size: var(--fs-d4); }
+
+.mb-body   { font-size: var(--fs-b2); color: var(--text-2); }
+.mb-meta   { font-size: var(--fs-micro); color: var(--text-3); }
+
+/* Tag Mono : la seule chose autorisée sous 11 px, et jamais décisive. */
+.mb-tag {
+  font-family: var(--font-mono);
+  font-size: var(--fs-tag);
+  font-weight: 500;
+  letter-spacing: var(--ls-tag);
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+
+/* --- Pressable : zone tactile 44 px garantie sans changer la taille vue --- */
+.mb-tap { position: relative; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mb-tap::after {
+  content: '';
+  position: absolute; left: 50%; top: 50%;
+  width:  max(100%, var(--tap-min));
+  height: max(100%, var(--tap-min));
+  transform: translate(-50%, -50%);
+}
+
+/* --- Surface ------------------------------------------------------------- */
+.mb-surface {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-4);
+  box-shadow: var(--e-1);
+}
+.mb-surface--flat  { box-shadow: none; }
+.mb-surface--raised{ background: var(--ink-3); box-shadow: var(--e-2); }
+
+/* --- Photo : ratio explicite + placeholder. `alt` obligatoire. ----------- */
+.mb-photo {
+  position: relative; overflow: hidden;
+  background: linear-gradient(135deg, var(--ink-3), var(--ink-2));
+  border-radius: var(--r-3);
+}
+.mb-photo > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mb-photo--16x9 { aspect-ratio: 16 / 9; }
+.mb-photo--4x3  { aspect-ratio: 4 / 3;  }
+.mb-photo--1x1  { aspect-ratio: 1 / 1;  }
+/* Voile de lisibilité pour tout texte posé sur une photo. */
+.mb-photo__scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,.30) 45%, rgba(5,5,5,.88) 100%);
+}
+
+/* --- Price : le prix est un type, pas un nombre -------------------------- */
+/* L'unité est rendue par le composant. Un montant nu devient impossible :
+   sans data-unit, le prix se signale lui-même en développement. */
+.mb-price {
+  font-family: var(--font-display);
+  font-size: var(--fs-d4);
+  color: var(--text);
+  line-height: 1;
+  white-space: nowrap;
+}
+.mb-price__cur { font-size: .62em; color: var(--text-3); margin-left: 2px; }
+.mb-price::after {
+  font-family: var(--font-mono);
+  font-size: var(--fs-tag);
+  font-weight: 500;
+  letter-spacing: var(--ls-tag);
+  color: var(--text-4);
+  margin-left: 5px;
+}
+.mb-price[data-unit="player"]::after { content: "/ JOUEUR"; }
+.mb-price[data-unit="hour"]::after   { content: "/ HEURE";  }
+.mb-price[data-unit="total"]::after  { content: "TOTAL";    }
+.mb-price:not([data-unit]) {
+  outline: 1px dashed var(--danger);
+  outline-offset: 2px;
+}
+.mb-price:not([data-unit])::after {
+  content: "⚠ UNITÉ MANQUANTE"; color: var(--danger);
+}
+
+/* --- Icônes -------------------------------------------------------------- */
+.mb-ic { width: 16px; height: 16px; display: inline-block; flex-shrink: 0; fill: currentColor; }
+.mb-ic--sm { width: 13px; height: 13px; }
+.mb-ic--lg { width: 22px; height: 22px; }
+
+/* =============================================================================
+   4. COMPOSANTS
+   ========================================================================== */
+
+/* --- 4.1 Button ---------------------------------------------------------- */
+.mb-btn {
+  --_bg: var(--primary); --_fg: #fff; --_bd: transparent; --_sh: var(--glow-primary);
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  min-height: var(--tap-min);
+  padding: 0 var(--s-5);
+  font-family: var(--font-display);
+  font-size: var(--fs-d4);
+  letter-spacing: .02em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--_fg);
+  background: var(--_bg);
+  border: 1.5px solid var(--_bd);
+  border-radius: var(--r-3);
+  box-shadow: var(--_sh);
+  cursor: pointer;
+  transition: transform var(--dur-1) var(--ease-out),
+              box-shadow var(--dur-2) var(--ease-out),
+              background var(--dur-1) linear,
+              border-color var(--dur-1) linear;
+}
+.mb-btn:hover  { --_sh: 0 8px 28px rgba(255,43,0,.42); }
+.mb-btn:active { transform: translateY(1px) scale(.985); --_sh: none; }
+
+.mb-btn--secondary { --_bg: transparent; --_fg: var(--text); --_bd: var(--line-strong); --_sh: none; }
+.mb-btn--secondary:hover { --_bd: var(--text-4); --_sh: none; }
+.mb-btn--accent    { --_bg: transparent; --_fg: var(--primary-glow); --_bd: var(--primary-line); --_sh: none; }
+.mb-btn--ghost     { --_bg: transparent; --_fg: var(--text-2); --_bd: transparent; --_sh: none; }
+.mb-btn--danger    { --_bg: transparent; --_fg: var(--danger); --_bd: var(--danger-line); --_sh: none; }
+.mb-btn--block     { display: flex; width: 100%; }
+.mb-btn--sm        { min-height: 36px; font-size: var(--fs-b1); padding: 0 var(--s-4); }
+
+.mb-btn[disabled], .mb-btn[aria-disabled="true"] {
+  --_bg: var(--ink-3); --_fg: var(--text-4); --_bd: var(--line); --_sh: none;
+  cursor: not-allowed; transform: none;
+}
+.mb-btn[data-loading="true"] { color: transparent; pointer-events: none; }
+.mb-btn[data-loading="true"]::before {
+  content: ''; position: absolute; width: 17px; height: 17px;
+  border: 2px solid rgba(255,255,255,.30); border-top-color: #fff;
+  border-radius: var(--r-full);
+  animation: mb-spin .7s linear infinite;
+}
+@keyframes mb-spin { to { transform: rotate(360deg); } }
+
+/* --- 4.2 Chip ------------------------------------------------------------ */
+.mb-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 34px; padding: 0 var(--s-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro); font-weight: 500;
+  letter-spacing: .05em; text-transform: uppercase;
+  color: var(--text-3);
+  background: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  cursor: pointer;
+  transition: color var(--dur-1) linear, border-color var(--dur-1) linear,
+              background var(--dur-1) linear, transform var(--dur-1) var(--ease-out);
+}
+.mb-chip:active { transform: scale(.96); }
+.mb-chip[aria-pressed="true"], .mb-chip--on {
+  color: var(--text); background: var(--primary-wash);
+  border-color: var(--primary-line);
+}
+.mb-chip[disabled] { opacity: .4; cursor: not-allowed; }
+.mb-chip__x { display: inline-flex; opacity: .6; }
+.mb-chip__x:hover { opacity: 1; }
+
+/* --- 4.3 Status pill ----------------------------------------------------- */
+/* Un seul vocabulaire d'état pour toute l'application. */
+.mb-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-tag); font-weight: 600;
+  letter-spacing: var(--ls-tag); text-transform: uppercase;
+  border-radius: var(--r-1);
+  border: 1px solid transparent;
+}
+.mb-status::before { content: ''; width: 5px; height: 5px; border-radius: var(--r-full); background: currentColor; }
+.mb-status--open     { color: var(--success); background: var(--success-wash); border-color: rgba(31,209,122,.28); }
+.mb-status--filling  { color: var(--gold);    background: var(--gold-wash);    border-color: rgba(242,183,5,.28);  }
+.mb-status--full     { color: var(--text-3);  background: rgba(255,255,255,.06); border-color: var(--line); }
+.mb-status--joined   { color: var(--primary-glow); background: var(--primary-wash); border-color: var(--primary-line); }
+.mb-status--locked   { color: var(--text-3);  background: rgba(255,255,255,.06); border-color: var(--line); }
+.mb-status--played   { color: var(--text-4);  background: transparent;          border-color: var(--line); }
+.mb-status--cancelled{ color: var(--danger);  background: var(--danger-wash);   border-color: var(--danger-line); }
+.mb-status--expired  { color: var(--text-4);  background: transparent;          border-color: var(--line); }
+
+/* --- 4.4 OVR badge ------------------------------------------------------- */
+.mb-ovr {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 34px; height: 34px;
+  background: linear-gradient(160deg, var(--gold-2), var(--gold));
+  color: #1a1200;
+  border-radius: var(--r-2);
+  box-shadow: var(--glow-gold);
+}
+.mb-ovr__n { font-family: var(--font-display); font-size: var(--fs-b1); line-height: .85; }
+.mb-ovr__l { font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 600; letter-spacing: .06em; opacity: .72; }
+.mb-ovr--lg { width: 46px; height: 46px; }
+.mb-ovr--lg .mb-ovr__n { font-size: var(--fs-d3); }
+/* Tant que la formule n'est pas arrêtée (Phase 9), un OVR non calculé se déclare. */
+.mb-ovr--provisional { filter: grayscale(.55); }
+
+/* --- 4.5 Field : de vrais champs, pas des <div> -------------------------- */
+.mb-field { display: block; }
+.mb-field__label {
+  display: block; margin-bottom: 6px;
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 500;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
+}
+.mb-field__control {
+  width: 100%; min-height: var(--tap-min);
+  padding: 0 var(--s-3);
+  font-family: var(--font-body); font-size: var(--fs-b1); color: var(--text);
+  background: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear;
+}
+textarea.mb-field__control { padding: var(--s-3); min-height: 88px; line-height: var(--lh-body); resize: vertical; }
+.mb-field__control::placeholder { color: var(--text-4); }
+.mb-field__control:focus { border-color: var(--primary-line); background: var(--ink-4); outline: none; }
+.mb-field__control[aria-invalid="true"] { border-color: var(--danger-line); }
+.mb-field__hint  { margin-top: 6px; font-size: var(--fs-micro); color: var(--text-4); }
+.mb-field__error { margin-top: 6px; font-size: var(--fs-micro); color: var(--danger); display: flex; gap: 5px; align-items: center; }
+
+/* --- 4.6 MatchCard : UN composant de liste de matchs --------------------- */
+/* Remplace les trois listes concurrentes (explorer / search / résultats).
+   Variante `--rail` pour le carrousel du Home, défaut pour toute liste. */
+/* Deux colonnes seulement : heure, puis corps. Le corps porte deux lignes
+   (titre / prix, puis métadonnée / état). C'est ce qui garantit qu'un titre
+   ne se tronque jamais dans une largeur de 390 px. */
+.mb-match {
+  position: relative;
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--s-3); row-gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-4);
+  cursor: pointer;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear,
+              transform var(--dur-1) var(--ease-out);
+}
+.mb-match:hover  { border-color: var(--line-strong); background: var(--ink-3); }
+.mb-match:active { transform: scale(.99); }
+
+.mb-match__time  { grid-column: 1; text-align: center; }
+.mb-match__h     { font-family: var(--font-display); font-size: var(--fs-d3); color: var(--text); line-height: .9; display: block; }
+.mb-match__day   { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .05em; color: var(--text-4); text-transform: uppercase; }
+
+.mb-match__body  { grid-column: 2; min-width: 0; display: grid; row-gap: 5px; }
+.mb-match__line  { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-2); min-width: 0; }
+.mb-match__line + .mb-match__line { align-items: center; }
+
+.mb-match__title {
+  flex: 1 1 auto; min-width: 0;
+  font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text);
+  line-height: var(--lh-display); text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0;
+}
+/* En liste compacte, l'unité passe sous le montant : le prix garde son unité
+   (règle 04) sans voler la largeur du titre. */
+.mb-match .mb-price { flex: 0 0 auto; font-size: var(--fs-d4); text-align: right; }
+.mb-match .mb-price::after { display: block; margin-left: 0; line-height: 1.35; }
+.mb-match .mb-status { flex: 0 0 auto; }
+
+.mb-match__meta  {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 10px;
+  font-size: var(--fs-micro); color: var(--text-3);
+  overflow: hidden;
+}
+.mb-match__meta > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.mb-match__meta > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.mb-match__meta .mb-ic { color: var(--text-4); }
+
+/* Jauge de remplissage : la donnée la plus décisive du produit. */
+.mb-match__gauge { grid-column: 1 / -1; width: 100%; height: 3px; background: rgba(255,255,255,.10); border-radius: var(--r-full); overflow: hidden; }
+.mb-match__gauge i { display: block; height: 100%; background: var(--primary); border-radius: inherit;
+                     transition: width var(--dur-3) var(--ease-out); }
+
+/* États — livrés avec le composant, pas ajoutés après. */
+.mb-match[data-state="full"],
+.mb-match[data-state="locked"],
+.mb-match[data-state="expired"]   { opacity: .62; }
+.mb-match[data-state="full"] .mb-match__gauge i,
+.mb-match[data-state="locked"] .mb-match__gauge i { background: var(--text-4); }
+.mb-match[data-state="joined"]    { border-color: var(--primary-line); background: var(--primary-wash); }
+.mb-match[data-state="cancelled"] .mb-match__title { text-decoration: line-through; color: var(--text-4); }
+.mb-match[aria-disabled="true"]   { cursor: not-allowed; }
+
+/* Variante carrousel — photo, pour le Home. */
+.mb-match--rail { display: block; width: 232px; padding: 0; overflow: hidden; }
+.mb-match--rail .mb-match__photo { position: relative; aspect-ratio: 16/10; }
+.mb-match--rail .mb-match__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mb-match--rail .mb-match__over { position: absolute; inset: auto 0 0 0; padding: var(--s-3); }
+.mb-match--rail .mb-match__h { font-size: var(--fs-d2); }
+.mb-match--rail .mb-match__foot { padding: var(--s-3); display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.mb-match--rail .mb-match__badge { position: absolute; top: var(--s-2); right: var(--s-2); }
+
+/* --- 4.7 Skeleton -------------------------------------------------------- */
+.mb-skel {
+  background: linear-gradient(90deg, var(--ink-3) 0%, var(--ink-4) 50%, var(--ink-3) 100%);
+  background-size: 200% 100%;
+  border-radius: var(--r-2);
+  animation: mb-shimmer 1.4s var(--ease-in-out) infinite;
+}
+@keyframes mb-shimmer { to { background-position: -200% 0; } }
+.mb-skel--text { height: 11px; }
+.mb-skel--title{ height: 18px; }
+
+/* --- 4.8 Empty / Error --------------------------------------------------- */
+.mb-note {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: var(--s-3); padding: var(--s-6) var(--s-4);
+}
+.mb-note__mark {
+  width: 52px; height: 52px; display: grid; place-items: center;
+  border-radius: var(--r-3); background: var(--ink-3);
+  border: 1px solid var(--line); color: var(--text-4);
+}
+.mb-note__title { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); text-transform: uppercase; margin: 0; }
+.mb-note__text  { font-size: var(--fs-b3); color: var(--text-3); max-width: 30ch; margin: 0; }
+.mb-note--error .mb-note__mark { color: var(--danger); border-color: var(--danger-line); background: var(--danger-wash); }
+
+/* --- 4.9 Entrées de liste : animation d'apparition ----------------------- */
+.mb-enter { animation: mb-rise var(--dur-3) var(--ease-out) both; }
+.mb-enter:nth-child(2) { animation-delay: 40ms; }
+.mb-enter:nth-child(3) { animation-delay: 80ms; }
+.mb-enter:nth-child(4) { animation-delay: 120ms; }
+.mb-enter:nth-child(5) { animation-delay: 160ms; }
+@keyframes mb-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* =============================================================================
+   5. MODE LEGACY — reproduit les valeurs du prototype audité.
+   Sert de témoin de non-régression et de démonstration de l'écart.
+   ========================================================================== */
+
+:root[data-mode="legacy"] {
+  --text-4: rgba(255,255,255,.35);   /* 3.05:1 — sous le seuil AA */
+  --fs-micro: 7px;
+  --fs-label: 8px;
+  --fs-b3: 9px;
+  --fs-b2: 10px;
+  --fs-tag: 6.5px;
+  --r-1: 5px; --r-2: 9px; --r-3: 14px; --r-4: 20px;
+  --tap-min: 32px;
+  --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms;
+  --e-1: none; --e-2: none; --e-3: none;
+  --glow-primary: none; --glow-gold: none;
+  --font-body: 'IBM Plex Mono', monospace;  /* Mono devenu police de corps */
+}
+
+/* =============================================================================
+   6. MOUVEMENT RÉDUIT
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+
+body[data-theme="light"] {
+  --ink: #F4F3EF; --ink-2: #FFFFFF; --ink-3: #EFEEE9; --ink-4: #E3E1DB;
+  --line: rgba(20,20,20,.09); --line-strong: rgba(20,20,20,.18);
+  --text: #16150F; --text-2: #35342E; --text-3: #6A6862; --text-4: #97958E;
+  --primary-wash: rgba(255,43,0,.07); --gold-wash: rgba(180,132,0,.10);
+  --success-wash: rgba(22,140,80,.10); --danger-wash: rgba(200,40,20,.08);
+}
+body { transition: background var(--dur-3) linear; }
+body.mb { min-height: 100vh; padding: 26px 18px 60px; display: flex; flex-direction: column; align-items: center; }
+.cm-head { text-align: center; margin-bottom: 18px; }
+.cm-head b { font-family: var(--font-display); font-size: 26px; letter-spacing: .02em; color: var(--text); text-transform: uppercase; }
+.cm-head i { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--primary-glow); font-style: normal; text-transform: uppercase; margin-top: 4px; }
+
+.cm-app { width: 100%; max-width: 1140px; background: var(--ink); border: 1px solid var(--line-strong);
+  border-radius: var(--r-4); box-shadow: 0 30px 80px rgba(0,0,0,.45); overflow: hidden; }
+.cm-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 14px 18px; border-bottom: 1px solid var(--line); background: var(--ink-2); }
+.cm-brand b { font-family: var(--font-display); font-size: 20px; letter-spacing: .04em; color: var(--text); text-transform: uppercase; }
+.cm-brand span { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; color: var(--text-4); text-transform: uppercase; margin-left: 8px; }
+.cm-right { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.cm-right i { font-family: var(--font-mono); font-size: 10px; color: var(--text-4); font-style: normal; text-transform: uppercase; }
+
+.cm-body { display: grid; grid-template-columns: 190px 1fr; min-height: 660px; }
+.cm-nav { border-right: 1px solid var(--line); background: var(--ink-2); padding: 12px 10px; display: flex; flex-direction: column; gap: 3px; }
+.cm-nav button { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: var(--r-2);
+  background: transparent; border: 1px solid transparent; color: var(--text-3); font-size: var(--fs-b3); text-align: left; }
+.cm-nav button:hover { color: var(--text); background: var(--ink-3); }
+.cm-nav button.on { color: var(--text); background: var(--primary-wash); border-color: var(--primary-line); }
+.cm-nav .mb-ic { width: 15px; height: 15px; }
+.cm-nav .cnt { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--r-full);
+  background: var(--gold-wash); border: 1px solid rgba(242,183,5,.35); color: var(--gold);
+  font-family: var(--font-mono); font-size: 10px; display: grid; place-items: center; }
+.cm-main { padding: 18px; }
+.cm-view { display: none; }
+.cm-view.on { display: block; animation: mb-rise var(--dur-3) var(--ease-out); }
+.cm-sec { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .1em; text-transform: uppercase; color: var(--primary-glow); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+.cm-sec::before { content: ''; width: 14px; height: 2px; background: var(--primary); flex-shrink: 0; }
+
+.cm-day { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.cm-day b { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); min-width: 150px; text-align: center; text-transform: uppercase; }
+.cm-day button.nav { width: 32px; height: 32px; border-radius: var(--r-2); background: var(--ink-2); border: 1px solid var(--line); color: var(--text-2); }
+.cm-day .hrs { font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; color: var(--gold); text-transform: uppercase; }
+
+.cm-kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px; }
+.cm-kpi { padding: 13px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-3); }
+.cm-kpi span { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); margin-bottom: 5px; }
+.cm-kpi b { font-family: var(--font-display); font-size: var(--fs-d3); color: var(--text); }
+.cm-kpi i { font-family: var(--font-mono); font-size: 10px; color: var(--text-4); font-style: normal; margin-left: 3px; }
+
+.cm-act { display: flex; align-items: center; gap: 10px; padding: 11px 12px; background: var(--ink-2);
+  border: 1px solid var(--line); border-left: 2px solid var(--gold); border-radius: var(--r-2); margin-bottom: 8px; cursor: pointer; }
+.cm-act:hover { border-color: var(--line-strong); }
+.cm-act.red { border-left-color: var(--danger); }
+.cm-act .t { flex: 1; } .cm-act .t b { display: block; font-size: var(--fs-b3); font-weight: 600; color: var(--text); }
+.cm-flags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.cm-flag { font-family: var(--font-mono); font-size: 10px; padding: 3px 7px; border-radius: var(--r-1);
+  background: var(--danger-wash); border: 1px solid var(--danger-line); color: var(--danger); }
+.cm-flag--gold { background: var(--gold-wash); border-color: rgba(242,183,5,.35); color: var(--gold); }
+.cm-health { font-family: var(--font-display); font-size: 22px; }
+.cm-health.g { color: var(--success); } .cm-health.o { color: var(--gold); } .cm-health.r { color: var(--danger); }
+
+.cm-gridwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-3); margin-bottom: 12px; }
+.cm-gr { display: grid; }
+.cm-gr > div { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-height: 50px; min-width: 74px; }
+.cm-gr.head > div { min-height: 30px; display: grid; place-items: center; background: var(--ink-2);
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-4); }
+.cm-fname { display: grid; place-items: center; background: var(--ink-2); font-family: var(--font-display); font-size: var(--fs-b2); color: var(--text-2); text-transform: uppercase; position: sticky; left: 0; z-index: 2; }
+.cm-cell { position: relative; padding: 5px 6px; cursor: pointer; background: var(--ink); }
+.cm-cell:hover { background: var(--ink-2); }
+.cm-cell.sel { outline: 2px solid var(--primary); outline-offset: -2px; }
+.cm-cell b { display: block; font-size: 11px; font-weight: 600; color: var(--text); line-height: 1.2; }
+.cm-cell span { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-4); text-transform: uppercase; }
+.cm-cell.k-resa { background: var(--ink-3); }
+.cm-cell.k-match { background: var(--primary-wash); }
+.cm-cell.k-abo { background: var(--gold-wash); }
+.cm-cell.k-phone { background: var(--primary-wash); box-shadow: inset 0 0 0 1px var(--primary-line); }
+.cm-cell.k-block { background: repeating-linear-gradient(45deg, var(--ink-2), var(--ink-2) 6px, var(--ink-3) 6px, var(--ink-3) 12px); }
+.cm-cell.k-closed { background: repeating-linear-gradient(-45deg, var(--ink), var(--ink) 5px, var(--ink-2) 5px, var(--ink-2) 10px); cursor: not-allowed; }
+.cm-cell.k-closed span { color: var(--text-4); }
+.cm-cell.st-PAID b { color: var(--success); }
+.cm-cell.st-NO_SHOW b { color: var(--danger); text-decoration: line-through; }
+.cm-src { display: inline-block; font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .05em; padding: 1px 5px;
+  border-radius: var(--r-1); border: 1px solid var(--line-strong); color: var(--text-3); margin-top: 2px; }
+.cm-src.ok { color: var(--success); border-color: rgba(31,209,122,.4); }
+
+.cm-panel { padding: 12px; background: var(--ink-2); border: 1px solid var(--line-strong); border-radius: var(--r-3); min-height: 56px; }
+.cm-panel .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cm-panel .d { flex: 1; min-width: 200px; font-size: var(--fs-b3); color: var(--text-2); }
+.cm-panel .d b { color: var(--text); }
+.cm-sub { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.cm-sub label { display: flex; flex-direction: column; gap: 4px; }
+.cm-sub label > span { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
+.cm-quote { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); line-height: 1.7; }
+.cm-quote b { color: var(--gold); }
+.cm-players { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.cm-pl { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-b3); }
+.cm-pl:last-child { border-bottom: 0; }
+.cm-pl .n { flex: 1; color: var(--text); font-weight: 600; }
+.cm-hp { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-3); line-height: 1.8; }
+.cm-hp b { color: var(--danger); }
+
+.cm-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; place-items: center; z-index: 100; }
+.cm-modal-bg.on { display: grid; }
+.cm-modal { width: min(420px, 92vw); animation: mb-rise var(--dur-3) var(--ease-out); background: var(--ink-2); border: 1px solid var(--line-strong);
+  border-radius: var(--r-4); padding: 20px; box-shadow: var(--e-3); }
+.cm-modal h3 { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); margin: 0 0 10px; text-transform: uppercase; }
+.cm-modal p { font-size: var(--fs-b3); color: var(--text-2); margin: 0 0 6px; }
+.cm-modal .impact { color: var(--danger); font-weight: 600; }
+.cm-modal .acts { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+
+.cm-audit { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 9px 12px;
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-2);
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--text-3); }
+.cm-audit b { color: var(--text-2); }
+.cm-audit .mb-ic { width: 13px; height: 13px; color: var(--text-4); flex-shrink: 0; }
+
+.cm-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; padding: 14px;
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-3); margin-bottom: 14px; }
+.cm-form label { display: flex; flex-direction: column; gap: 5px; }
+.cm-form label > span { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
+.cm-riskrow { display: flex; align-items: center; gap: 10px; padding: 11px 12px; background: var(--ink-2);
+  border: 1px solid var(--line); border-left: 2px solid var(--gold); border-radius: var(--r-2); margin-bottom: 8px; }
+.cm-riskrow .t { flex: 1; } .cm-riskrow .t b { display: block; font-size: var(--fs-b3); font-weight: 600; color: var(--text); }
+.cm-note { font-size: var(--fs-micro); color: var(--text-4); margin-top: 8px; }
+.cm-bars { display: grid; gap: 10px; margin-bottom: 16px; }
+.cm-bar { display: grid; grid-template-columns: 60px 1fr 56px; gap: 10px; align-items: center; }
+.cm-bar > span:first-child { font-family: var(--font-display); font-size: var(--fs-b2); color: var(--text-2); }
+.cm-bar .track { height: 10px; background: var(--ink-3); border-radius: var(--r-full); overflow: hidden; }
+.cm-bar .fill { height: 100%; background: var(--primary); border-radius: var(--r-full); }
+.cm-bar .fill.low { background: var(--gold); }
+.cm-bar > span:last-child { font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--text-3); text-align: right; }
+.cm-clients { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.cm-card { padding: 14px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-3); }
+.cm-line { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; font-size: var(--fs-b3); color: var(--text-2); }
+.cm-line span:first-child { color: var(--text-3); }
+.cm-toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 16px);
+  background: var(--ink-3); border: 1px solid var(--line-strong); border-radius: var(--r-3);
+  padding: 11px 16px; font-size: var(--fs-b3); color: var(--text); box-shadow: var(--e-3);
+  opacity: 0; pointer-events: none; transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); z-index: 120; max-width: 92vw; }
+.cm-toast.on { opacity: 1; transform: translate(-50%, 0); }
+.cm-next { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.cm-next > div { padding: 10px 12px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-2); cursor: pointer; transition: border-color var(--dur-2) var(--ease-out); }
+.cm-next > div:hover { border-color: var(--primary-line); }
+.cm-next b { display: block; font-family: var(--font-display); font-size: 19px; letter-spacing: .02em; color: var(--text); }
+.cm-next span { font-size: var(--fs-b3); color: var(--text-3); display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-next i { font-family: var(--font-mono); font-size: 9px; font-style: normal; letter-spacing: .07em; color: var(--text-4); text-transform: uppercase; }
+.cm-act2 { display: grid; grid-template-columns: 1fr auto auto; gap: 4px 14px; align-items: center;
+  padding: 12px 14px; background: var(--ink-2); border: 1px solid var(--line); border-left: 3px solid var(--gold);
+  border-radius: var(--r-2); margin-bottom: 8px; cursor: pointer; }
+.cm-act2:hover { border-color: var(--line-strong); }
+.cm-act2.red { border-color: var(--danger-line); border-left-color: var(--danger); background: linear-gradient(180deg, var(--danger-wash), var(--ink-2)); }
+.cm-act2, .cm-kpi, .cm-card { transition: border-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+.cm-act2:hover { transform: translateY(-1px); }
+.cm-kpi:hover { border-color: var(--primary-line); }
+.cm-act2 .l1 { font-size: var(--fs-b2); font-weight: 700; color: var(--text); }
+.cm-act2 .l2 { grid-column: 1; font-size: var(--fs-b3); color: var(--text-3); line-height: 1.5; }
+.cm-act2 .big { grid-row: span 2; font-family: var(--font-display); font-size: 30px; align-self: center; }
+.cm-act2 .big.g { color: var(--success); } .cm-act2 .big.o { color: var(--gold); } .cm-act2 .big.r { color: var(--danger); }
+.cm-act2 .cta { grid-row: span 2; align-self: center; }
+#tl-hint { position: fixed; z-index: 60; pointer-events: none; padding: 4px 8px; border-radius: 6px;
+  background: var(--ink-3); border: 1px solid var(--line-strong); color: var(--text);
+  font-family: var(--font-mono); font-size: 10px; display: none; }
+.cm-fiche { padding: 12px 14px; background: var(--ink); border: 1px solid var(--line); border-top: 0;
+  border-radius: 0 0 var(--r-2) var(--r-2); margin: -8px 0 8px; }
+.cm-fiche .cm-line span:first-child { min-width: 150px; }
+.cm-view-note { font-size: var(--fs-b3); color: var(--text-3); padding: 7px 11px; background: var(--ink-2);
+  border: 1px dashed var(--line-strong); border-radius: var(--r-2); margin-bottom: 12px; line-height: 1.55; }
+.cf-sec { margin-bottom: 14px; }
+.cf-row { display: flex; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.cf-row .mb-field__control { width: auto; flex: 1 1 110px; max-width: 172px; }
+.cf-head { display: flex; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line-strong); }
+.cf-head span { flex: 1 1 110px; max-width: 172px; font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
+.cf-head .fn0 { flex: 0 0 auto; min-width: 40px; max-width: 40px; }
+.cf-row:last-child { border-bottom: 0; }
+.cf-row .fn { font-family: var(--font-display); font-size: 15px; color: var(--text); min-width: 40px; }
+.cf-eq { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cf-eq label { display: flex; gap: 7px; align-items: center; padding: 8px 10px; background: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--r-2); font-size: var(--fs-b3); color: var(--text-2); cursor: pointer; }
+.cf-eq label.on { border-color: var(--primary-line); background: var(--primary-wash); color: var(--text); }
+.cf-photos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cf-photos div { aspect-ratio: 4/3; border: 1px dashed var(--line-strong); border-radius: var(--r-2);
+  display: grid; place-items: center; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-4); text-align: center; padding: 6px; }
+.pl-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.pl-bar .grp { display: flex; gap: 4px; padding: 3px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-2); }
+.pl-bar .grp button { padding: 5px 10px; border-radius: 6px; background: transparent; border: 0; color: var(--text-3);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.pl-bar .grp button.on { background: var(--primary-wash); color: var(--text); box-shadow: inset 0 0 0 1px var(--primary-line); }
+.pl-next { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 12px; margin-bottom: 10px;
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-3); }
+.pl-next .res { font-family: var(--font-mono); font-size: 11px; color: var(--text); }
+.pl-next .res b { color: var(--gold); }
+.cm-main, #plan-body { min-width: 0; }
+.tl-wrap:not(.compact) { overflow-x: auto; max-width: 100%; padding-bottom: 4px; }
+.tl-wrap:not(.compact) .tl-fname { position: sticky; left: 0; z-index: 6; background: var(--ink); box-shadow: 6px 0 10px -6px rgba(0,0,0,.7); }
+.tl-wrap:not(.compact) .tl-head, .tl-wrap:not(.compact) .tl-row { min-width: 1560px; }
+.tl-hours i:last-child { transform: translateX(-100%); }
+.tl-wrap { border: 1px solid var(--line); border-radius: var(--r-3); overflow: hidden; margin-bottom: 12px; }
+.tl-head { display: grid; grid-template-columns: 64px 1fr; border-bottom: 1px solid var(--line); background: var(--ink-2); }
+.tl-hours { position: relative; height: 26px; }
+.tl-hours i { position: absolute; top: 0; height: 100%; display: flex; align-items: center; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 9.5px; color: var(--text-4); font-style: normal; }
+.tl-row { display: grid; grid-template-columns: 64px 1fr; border-bottom: 1px solid var(--line); }
+.tl-row:last-child { border-bottom: 0; }
+.tl-fname { display: grid; place-items: center; background: var(--ink-2); font-family: var(--font-display);
+  font-size: var(--fs-b2); color: var(--text-2); border-right: 1px solid var(--line); }
+.tl-lane { position: relative; height: 56px; background: var(--ink);
+  background-image: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 100%); cursor: pointer; }
+.tl-wrap.compact .tl-lane { height: 34px; }
+.tl-block { position: absolute; top: 4px; bottom: 4px; border-radius: 7px; padding: 2px 6px; overflow: hidden; transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+  border: 1px solid var(--line-strong); background: var(--ink-3); cursor: pointer; }
+.tl-block:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+.tl-block--s { display: grid; align-content: center; }
+.tl-block--s span { display: none; }
+.tl-block b { display: block; font-size: 11px; font-weight: 600; color: var(--text); line-height: 1.25; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.tl-block span { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .04em; color: var(--text-4); text-transform: uppercase; white-space: nowrap; }
+.tl-wrap.compact .tl-block span { display: none; }
+.tl-block.sel { outline: 2px solid var(--primary); outline-offset: -1px; }
+.tl-block.k-match { background: var(--primary-wash); }
+.tl-block.k-abo { background: var(--gold-wash); }
+.tl-block.k-phone { border-style: dashed; border-color: var(--primary); background: var(--primary-wash); }
+.tl-block.k-block { background: repeating-linear-gradient(45deg, var(--ink-2), var(--ink-2) 5px, var(--ink-3) 5px, var(--ink-3) 10px); cursor: pointer; }
+.tl-block.k-closed { background: repeating-linear-gradient(-45deg, var(--ink), var(--ink) 4px, var(--ink-2) 4px, var(--ink-2) 8px); cursor: not-allowed; border-style: dotted; }
+.tl-block.st-PAID { border-color: rgba(31,209,122,.5); }
+.tl-block.st-PAID b em { color: var(--success); font-style: normal; }
+.tl-block.st-NO_SHOW b { text-decoration: line-through; color: var(--danger); }
+.tl-block.dragging { opacity: .35; }
+.wk-cell.k0 { opacity: .45; }
+.wk-cell.k0:hover { opacity: 1; }
+.tl-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 4px 0; font-family: var(--font-mono);
+  font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+.tl-legend i { display: inline-flex; align-items: center; gap: 6px; font-style: normal; }
+.tl-legend .sw { position: static; display: inline-block; width: 16px; height: 11px; padding: 0; border-radius: 3px; top: auto; bottom: auto; }
+.tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--primary); z-index: 4; pointer-events: none; }
+.tl-now::before { content: ''; position: absolute; top: -3px; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+.tl-rz { position: absolute; right: 0; top: 0; bottom: 0; width: 9px; cursor: ew-resize; border-radius: 0 7px 7px 0; }
+.tl-rz:hover { background: rgba(255,255,255,.08); }
+.tl-ghost { position: absolute; top: 4px; bottom: 4px; border-radius: 7px; pointer-events: none; z-index: 5;
+  border: 2px dashed var(--gold); background: var(--gold-wash); display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 9.5px; color: var(--gold); }
+.tl-ghost.bad { border-color: var(--danger); background: var(--danger-wash); color: var(--danger); }
+.wk-grid { display: grid; grid-template-columns: 64px repeat(7, 1fr); border: 1px solid var(--line); border-radius: var(--r-3); overflow: hidden; margin-bottom: 12px; }
+.wk-grid > div { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-height: 44px; }
+.wk-grid .h { background: var(--ink-2); display: grid; place-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-4); text-transform: uppercase; cursor: pointer; }
+.wk-grid .h.today { color: var(--gold); }
+.wk-cell { padding: 6px 8px; cursor: pointer; }
+.wk-cell:hover { background: var(--ink-2); }
+.wk-cell b { display: block; font-family: var(--font-display); font-size: 15px; color: var(--text); }
+.wk-cell span { font-family: var(--font-mono); font-size: 9px; color: var(--text-4); text-transform: uppercase; }
+.wk-cell .mini { height: 5px; border-radius: 3px; background: var(--ink-3); margin-top: 5px; overflow: hidden; }
+.wk-cell .mini i { display: block; height: 100%; background: var(--primary); }
+.wk-cell.closed-part { background: repeating-linear-gradient(-45deg, transparent, transparent 6px, var(--ink-2) 6px, var(--ink-2) 12px); }
+.cm-delta { font-family: var(--font-mono); font-size: 10px; margin-left: 6px; }
+.cm-delta.up { color: var(--success); } .cm-delta.dn { color: var(--danger); }
+.cm-fin { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.cm-fin .cm-kpi b { font-size: var(--fs-d4); }
+.cm-trend { display: flex; align-items: flex-end; gap: 5px; height: 68px; margin: 2px 2px 20px; }
+.cm-trend b { flex: 1; background: linear-gradient(180deg, var(--primary), rgba(255,43,0,.28)); border-radius: 3px 3px 0 0; min-height: 3px; position: relative; }
+.cm-trend b.today { background: linear-gradient(180deg, var(--gold), rgba(242,183,5,.3)); }
+.cm-trend b:hover::after { content: attr(data-v); position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, -4px);
+  font-family: var(--font-mono); font-size: 9px; color: var(--text-2); background: var(--ink-3); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--line-strong); white-space: nowrap; z-index: 5; }
+.cm-hm .cell { border-radius: 3px !important; }
+.cm-hm .cell.off { background: repeating-linear-gradient(45deg, rgba(255,255,255,.045) 0 4px, transparent 4px 9px) !important; }
+.cm-hm { display: grid; grid-template-columns: 46px repeat(7, 1fr); gap: 3px; margin-bottom: 6px; }
+.cm-hm div { min-height: 20px; border-radius: 4px; display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 9px; color: var(--text-4); }
+.cm-hm .lab { background: transparent; }
+.cm-hm .cell { background: var(--ink-3); color: transparent; }
+.cm-insight.is-off { opacity: .5; cursor: not-allowed; }
+.cm-insight { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--r-2);
+  background: var(--gold-wash); border: 1px solid rgba(242,183,5,.35); color: var(--gold);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+.cm-search { width: 100%; max-width: 320px; margin-bottom: 12px; }
+.cm-toprow { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: var(--fs-b3); }
+.cm-toprow:last-child { border-bottom: 0; }
+.cm-toprow .rk { font-family: var(--font-display); font-size: 16px; color: var(--text-4); width: 22px; }
+.cm-toprow .n { flex: 1; color: var(--text); font-weight: 600; }
+.cm-toprow .v { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+.cm-caisse-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cm-mvt { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--text-2); }
+.cm-mvt:last-child { border-bottom: 0; }
+.cm-mvt b { color: var(--text); }
+.cm-mvt .out { color: var(--danger); }
+.cm-variance { font-family: var(--font-display); font-size: 26px; }
+.cm-arow { display: flex; gap: 10px; align-items: baseline; padding: 9px 12px; border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+.cm-arow:last-child { border-bottom: 0; }
+.cm-arow b { color: var(--text); }
+.cm-caption { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-4); margin-top: 16px; text-align: center; max-width: 780px; }
+</style>
+</head>
+
+<body class="mb" data-theme="dark">
+<svg style="position:absolute;width:0;height:0;" aria-hidden="true"><defs>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 2C7.6 2 4 5.6 4 10c0 5.5 8 12 8 12s8-6.5 8-12c0-4.4-3.6-8-8-8Zm0 10.8a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6Z"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 3.13a4 4 0 0 1 0 7.75" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><polyline points="13,6 19,12 13,18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-chevdown" viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v10h14V10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3.5" y1="9.5" x2="20.5" y2="9.5" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="3" x2="8" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="3" x2="16" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><polygon points="12,2 15,9 22,9.3 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9.3 9,9" fill="currentColor"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><polyline points="12,7 12,12 16,14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-whistle" viewBox="0 0 24 24"><circle cx="8" cy="16" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 13l9-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 7l-3-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-shirt" viewBox="0 0 24 24"><path d="M8 4L3 7l2 4 2-1v10h10V10l2 1 2-4-5-3-2 2h-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-park" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 16V8h3.5a2.5 2.5 0 1 1 0 5H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 2a7 7 0 0 0-4 12.7c.7.5 1 1.3 1 2.3h6c0-1 .3-1.8 1-2.3A7 7 0 0 0 12 2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3.5" y1="12" x2="20.5" y2="12" stroke="currentColor" stroke-width="1.8"/><line x1="12" y1="3.5" x2="12" y2="20.5" stroke="currentColor" stroke-width="1.8"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-football" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v10M8 9l4-2 4 2M8 15l4 2 4-2" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+<symbol id="i-padel" viewBox="0 0 24 24"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="15" y1="15" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-basket" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3v18M5.5 5.5a12 12 0 0 1 13 13M18.5 5.5a12 12 0 0 0-13 13" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v6a4 4 0 0 1-8 0V4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 5H4v2a4 4 0 0 0 4 4M16 5h4v2a4 4 0 0 1-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="14" x2="12" y2="18" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="18" x2="12" y2="21" stroke="currentColor" stroke-width="1.8"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8.3" y1="10.7" x2="15.7" y2="6.3" stroke="currentColor" stroke-width="1.8"/><line x1="8.3" y1="13.3" x2="15.7" y2="17.7" stroke="currentColor" stroke-width="1.8"/></symbol>
+<symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+<symbol id="i-cash" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="8" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="8" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="3.5" cy="6" r="1.3" fill="currentColor"/><circle cx="3.5" cy="12" r="1.3" fill="currentColor"/><circle cx="3.5" cy="18" r="1.3" fill="currentColor"/></symbol>
+<symbol id="i-grass" viewBox="0 0 24 24"><path d="M6 20V10M12 20V6M18 20V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 0 1-3.4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 1-1 1.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17" r="0.9" fill="currentColor"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<g id="i-user1"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c1-4 4.5-6 8-6s7 2 8 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+</defs></svg>
+
+<div class="cm-head"><b>Moubarat CRM · v3</b><i>Lot B · workflows opérationnels — horaires réels · tarif moteur · source préservée · audit</i></div>
+
+<div class="cm-app">
+  <div class="cm-top">
+    <div class="cm-brand"><b>Complexe Ryad</b><span>Alger · Zeralda</span></div>
+    <div class="cm-right">
+      <button class="mb-btn mb-btn--ghost mb-btn--sm" id="theme">Mode clair</button>
+      <i>Connecté :</i>
+      <button class="mb-chip" data-role="STAFF" aria-pressed="false">Staff</button>
+      <button class="mb-chip mb-chip--on" data-role="RECEPTION" aria-pressed="true">Réception</button>
+      <button class="mb-chip" data-role="MANAGER" aria-pressed="false">Manager</button>
+      <button class="mb-chip" data-role="OWNER" aria-pressed="false">Owner</button>
+    </div>
+  </div>
+  <div class="cm-body">
+    <nav class="cm-nav">
+      <button class="on" data-view="dash"><svg class="mb-ic"><use href="#i-home"/></svg>Dashboard<span class="cnt" id="n-act">0</span></button>
+      <button data-view="plan"><svg class="mb-ic"><use href="#i-cal"/></svg>Planning</button>
+      <button data-view="resa"><svg class="mb-ic"><use href="#i-cash"/></svg>Réservations</button>
+      <button data-view="subs"><svg class="mb-ic"><use href="#i-clock"/></svg>Abonnements</button>
+      <button data-view="stats"><svg class="mb-ic"><use href="#i-grid"/></svg>Analytics</button>
+      <button data-view="clients"><svg class="mb-ic"><use href="#i-users"/></svg>Clients</button>
+      <button data-view="teams"><svg class="mb-ic"><use href="#i-shirt"/></svg>Équipes</button>
+      <button data-view="caisse" id="nav-caisse"><svg class="mb-ic"><use href="#i-check"/></svg>Caisse<span class="cnt" id="n-caisse" style="display:none">!</span></button>
+      <button data-view="audit-v"><svg class="mb-ic"><use href="#i-list"/></svg>Journal</button>
+      <button data-view="conf"><svg class="mb-ic"><use href="#i-gear"/></svg>Centre</button>
+    </nav>
+
+    <main class="cm-main">
+      <!-- DASHBOARD -->
+      <section class="cm-view on" id="v-dash">
+        <div class="cm-day"><button class="nav" data-nav="-1">‹</button><b class="daylabel">—</b><button class="nav" data-nav="1">›</button><span class="hrs" id="hrs-1"></span></div>
+        <div class="cm-kpis">
+          <div class="cm-kpi"><span>Encaissé</span><b id="k-cash">0</b><i>DA</i></div>
+          <div class="cm-kpi"><span>Engagé</span><b id="k-eng">0</b><i>DA</i></div>
+          <div class="cm-kpi"><span title="Sur les heures d’ouverture réelles">Remplissage · réel</span><b id="k-occ">0</b><i>%</i></div>
+          <div class="cm-kpi"><span>Réservations</span><b id="k-count">0</b></div>
+          <div class="cm-kpi"><span>Part Moubarat</span><b id="k-share">—</b><i>%</i></div>
+          <div class="cm-kpi"><span>No-shows</span><b id="k-ns">0</b></div>
+        </div>
+        <p class="cm-sec">À faire / à surveiller — chaque ligne est cliquable et dit pourquoi</p>
+        <div id="actions"></div>
+        <p class="cm-sec" style="margin-top:18px">Prochaines heures</p>
+        <div class="cm-next" id="next"></div>
+      </section>
+
+      <!-- PLANNING · CENTRE DE CONTRÔLE -->
+      <section class="cm-view" id="v-plan">
+        <div class="pl-bar">
+          <div class="grp"><button class="on" data-pv="day">Jour</button><button data-pv="week">Semaine</button></div>
+          <button class="mb-btn mb-btn--ghost mb-btn--sm" id="pl-today">Aujourd'hui</button>
+          <button class="nav mb-btn mb-btn--ghost mb-btn--sm" data-nav="-1" style="min-width:34px">‹</button>
+          <b class="daylabel" style="font-family:var(--font-display);font-size:var(--fs-d4);color:var(--text);text-transform:uppercase;min-width:150px;text-align:center">—</b>
+          <button class="nav mb-btn mb-btn--ghost mb-btn--sm" data-nav="1" style="min-width:34px">›</button>
+          <input type="date" class="mb-field__control" id="pl-date" style="max-width:150px" title="Aller à une date">
+          <span class="hrs" id="hrs-2" style="font-family:var(--font-mono);font-size:10px;color:var(--gold);text-transform:uppercase"></span>
+          <span style="flex:1"></span>
+          <div class="grp" id="pl-fields"></div>
+          <div class="grp"><button class="on" data-sport="ALL">Tous</button><button data-sport="Football">Football</button><button data-sport="Padel">Padel</button></div>
+          <div class="grp"><button class="on" data-zoom="x">Étendu</button><button data-zoom="c">Compact</button></div>
+        </div>
+        <div class="pl-next">
+          <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-4)">Prochaine dispo</span>
+          <select class="mb-field__control" id="na-sport" style="max-width:120px"><option>Football</option><option>Padel</option></select>
+          <select class="mb-field__control" id="na-dur" style="max-width:100px"><option value="60">60 min</option><option value="90" selected>90 min</option><option value="120">120 min</option></select>
+          <button class="mb-btn mb-btn--sm" id="na-go">Chercher</button>
+          <span class="res" id="na-res"></span>
+        </div>
+        <div id="plan-body"></div>
+        <div class="tl-legend"><i><span class="tl-block k-resa sw"></span>Réservé</i><i><span class="tl-block k-match sw"></span>Match</i><i><span class="tl-block k-phone sw"></span>Tél. à vérifier</i><i><span class="tl-block k-abo sw"></span>Abonnement</i><i><span class="tl-block k-block sw"></span>Bloqué</i><i><span class="tl-block k-closed sw"></span>Fermé</i><i>✓ Honoré / Payé</i><i>✕ No-show</i><i>Ligne rouge · maintenant</i></div>
+        <div class="cm-panel" id="panel"><div class="row"><span class="d">Clique un bloc pour agir, une zone libre pour créer — ou glisse un bloc réservé vers son nouveau créneau.</span></div></div>
+        <div class="cm-audit" id="audit" style="display:none"><svg class="mb-ic"><use href="#i-lock"/></svg><span id="audit-line"></span></div>
+      </section>
+
+      <!-- RÉSERVATIONS -->
+      <section class="cm-view" id="v-resa">
+        <div class="cm-day"><button class="nav" data-nav="-1">‹</button><b class="daylabel">—</b><button class="nav" data-nav="1">›</button></div>
+        <div id="rows"></div>
+      </section>
+
+      <!-- ABONNEMENTS -->
+      <section class="cm-view" id="v-subs">
+        <p class="cm-view-note">Un abonnement V1 = un créneau hebdomadaire daté (du / jusqu'au), projeté dans le planning sans dupliquer de réservations. Les formules multi-créneaux et packs de séances arrivent en V1.5.</p>
+        <div class="cm-form" id="s-form">
+          <label><span>Nom / entreprise</span><input class="mb-field__control" id="sb-name" maxlength="24" style="min-width:150px"></label>
+          <label><span>Jour</span><select class="mb-field__control" id="sb-day"></select></label>
+          <label><span>Heure</span><select class="mb-field__control" id="sb-hour"></select></label>
+          <label><span>Durée</span><select class="mb-field__control" id="sb-dur"><option value="60">60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></label>
+          <label><span>Terrain</span><select class="mb-field__control" id="sb-field"></select></label>
+          <label><span>Fin</span><select class="mb-field__control" id="sb-until"><option value="">Sans date de fin</option><option value="28">Dans 4 semaines</option><option value="56">Dans 8 semaines</option></select></label>
+          <button class="mb-btn mb-btn--sm" id="sb-go">Créer l'abonnement</button>
+        </div>
+        <p class="cm-sec">Abonnements actifs</p>
+        <div id="s-list"></div>
+      </section>
+
+      <!-- ANALYTICS / FINANCIAL CENTER -->
+      <section class="cm-view" id="v-stats">
+        <div class="cm-day"><button class="nav" data-nav="-1">‹</button><b class="daylabel">—</b><button class="nav" data-nav="1">›</button></div>
+        <p class="cm-sec">Financial center — 7 derniers jours vs 7 précédents · 30 vs 30 (dérivé de l'historique)</p>
+        <div class="cm-fin" id="fin"></div>
+        <p class="cm-sec">Tendance — CA encaissé · 14 derniers jours</p>
+        <div class="cm-trend" id="trend"></div>
+        <p class="cm-sec">Remplissage par actif — jour affiché, sur les heures réelles</p>
+        <div class="cm-bars" id="bars"></div>
+        <p class="cm-sec">CA par terrain — 7 derniers jours · l'insight propose l'action</p>
+        <div id="field-ca"></div>
+        <p class="cm-sec" style="margin-top:14px">Heatmap — remplissage moyen par jour × heure (4 dernières semaines)</p>
+        <div class="cm-hm" id="heatmap"></div>
+        <p class="cm-sec" style="margin-top:14px">Origine des réservations — 7 derniers jours (§25)</p>
+        <div class="cm-bars" id="origin"></div>
+      </section>
+
+      <!-- CLIENTS v2 -->
+      <section class="cm-view" id="v-clients">
+        <p class="cm-view-note">Deux origines : les <b>comptes App Moubarat</b> (créés par les joueurs, fiabilité calculée) et les <b>fiches centre</b> — le comptoir peut en créer une (nom + téléphone) pour suivre un habitué sans compte.</p>
+        <div class="cm-form">
+          <input class="mb-field__control cm-search" id="cl-search" placeholder="Rechercher un client (nom)…" style="margin:0">
+          <label><span>Nouvelle fiche centre — nom</span><input class="mb-field__control" id="cl-new-name" maxlength="24" style="min-width:140px"></label>
+          <label><span>Téléphone</span><input class="mb-field__control" id="cl-new-tel" maxlength="14" style="min-width:120px"></label>
+          <button class="mb-btn mb-btn--secondary mb-btn--sm" id="cl-new-go">Créer la fiche</button>
+        </div>
+        <p class="cm-sec">Fiabilité pondérée + confiance — visible du centre uniquement</p>
+        <div class="cm-clients" id="clients"></div>
+        <div class="cm-caisse-grid" style="margin-top:14px">
+          <div class="cm-card"><p class="cm-sec">Top clients — CA généré (30 derniers jours)</p><div id="topclients"></div></div>
+          <div class="cm-card"><p class="cm-sec">À risque de départ — actifs avant, absents depuis 21 j+</p><div id="churn"></div>
+          <p class="cm-note">La relance ciblée (campagne plafonnée 1/mois) arrive en V1.5 — le segment, lui, est déjà calculé.</p></div>
+        </div>
+      </section>
+
+      <!-- ÉQUIPES -->
+      <section class="cm-view" id="v-teams">
+        <p class="cm-sec">Équipes — les gros clients B2B2C du centre (30 derniers jours)</p>
+        <div class="cm-clients" id="teams"></div>
+        <p class="cm-note">Une équipe fiable et régulière = un abonnement à proposer. Tout est dérivé de l'historique des réservations.</p>
+      </section>
+
+      <!-- CAISSE -->
+      <section class="cm-view" id="v-caisse">
+        <p class="cm-view-note"><b>À quoi sert la caisse ?</b> À tracer qui a encaissé quoi, et à sortir l’écart du soir (compté vs attendu) — le contrôle anti-erreur de ton scénario « CA attendu ≠ CA déclaré ». Elle est <b>optionnelle</b> : caisse fermée, les encaissements fonctionnent normalement, simplement sans traçage.</p>
+        <div id="caisse-body"></div>
+      </section>
+
+      <!-- JOURNAL D'AUDIT -->
+      <section class="cm-view" id="v-audit-v">
+        <p class="cm-view-note"><b>À quoi sert le journal ?</b> C’est la boîte noire du centre — aucune action à faire ici, il <b>enregistre</b> tout seul les gestes sensibles (création, déplacement, annulation, blocage, caisse, présence) et répond à « qui a bloqué le T2 mercredi ? ». Lecture seule, par nature.</p>
+        <p class="cm-sec">Chaque action sensible, signée et horodatée</p>
+        <div id="audit-list"></div>
+      </section>
+
+      <!-- CENTRE : PARAMÉTRAGE TOTAL -->
+      <section class="cm-view" id="v-conf">
+        <p class="cm-view-note">Tout ce qui est réglé ici alimente la <b>fiche technique du centre côté app joueur</b> — celle qu'on voit avant de réserver Complexe Ryad : terrains, équipements en icônes, description, photos, horaires.</p>
+        <div id="conf-lock"></div>
+        <div class="cm-card cf-sec">
+          <p class="cm-sec">Identité</p>
+          <div class="cm-sub" style="border:0;padding:0;margin:0">
+            <label><span>Adresse</span><input class="mb-field__control" id="cf-addr" value="Route de Zeralda, Alger" style="min-width:260px"></label>
+            <a class="mb-btn mb-btn--ghost mb-btn--sm" id="cf-map" target="_blank" rel="noopener">Voir sur la carte ↗</a>
+          </div>
+          <label style="display:block;margin-top:10px"><span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-4)">Description (fiche app)</span>
+          <textarea class="mb-field__control" id="cf-desc" rows="2" style="width:100%;margin-top:5px;resize:vertical">Complexe familial à Zeralda — 3 terrains, éclairage nocturne, à 5 min de la plage.</textarea></label>
+        </div>
+        <div class="cm-card cf-sec">
+          <p class="cm-sec">Terrains — ajouter, régler, archiver (l'historique est toujours conservé)</p>
+          <div id="cf-fields"></div>
+          <div class="cm-sub"><label><span>Nouveau terrain</span><input class="mb-field__control" id="cf-newf" placeholder="T4" maxlength="6" style="max-width:90px"></label>
+          <button class="mb-btn mb-btn--secondary mb-btn--sm" id="cf-addf">Ajouter le terrain</button></div>
+        </div>
+        <div class="cm-card cf-sec">
+          <p class="cm-sec">Équipements — cochés ici, traduits en icônes dans la fiche app</p>
+          <div class="cf-eq" id="cf-eq"></div>
+        </div>
+        <div class="cm-card cf-sec">
+          <p class="cm-sec">Photos du centre</p>
+          <div class="cf-photos"><div>+ Photo d'ambiance<br>(upload V1.5)</div><div>+ Terrains<br>(upload V1.5)</div><div>+ Vestiaires<br>(upload V1.5)</div><div>+ Vue extérieure<br>(upload V1.5)</div></div>
+        </div>
+        <div class="cm-card cf-sec">
+          <p class="cm-sec">Tarifs — le moteur les applique partout (création, déplacement, abonnements)</p>
+          <div id="cf-rules"></div>
+        </div>
+        <div class="cm-card cf-sec">
+          <p class="cm-sec">Modules optionnels</p>
+          <div class="cf-eq" style="grid-template-columns:1fr">
+            <label id="mod-caisse-l"><input type="checkbox" id="mod-caisse" style="accent-color:var(--primary)">Module Caisse — contrôle des encaissements (sessions, écart de clôture). Désactivé : « Payé » fonctionne normalement, sans traçage.</label>
+          </div>
+        </div>
+        <div class="cm-card cf-sec">
+          <p class="cm-sec">Horaires d'ouverture — le planning et l'occupation les LISENT en direct</p>
+          <div id="hours-table"></div>
+          <p class="cm-sec" style="margin-top:14px">Fermeture exceptionnelle</p>
+          <div class="cm-line"><span>Dim. 23 août · 08:00 → 14:00</span><b style="color:var(--gold)">Événement privé — centre entier</b></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<p class="cm-caption">Workflows du MASTER SPEC §10-§11 · tarif = quoteRange (jours + bandes, jamais de if h≥18) · source PHONE/WALK_IN préservée + vérification · matchHealth explicable · setAttendance · confirmations chiffrées · formatAuditLine</p>
+
+<div class="cm-modal-bg" id="modal-bg">
+  <div class="cm-modal">
+    <h3 id="m-title">Confirmer</h3>
+    <div id="m-body"></div>
+    <div class="acts">
+      <button class="mb-btn mb-btn--secondary mb-btn--sm" id="m-no">Retour</button>
+      <button class="mb-btn mb-btn--danger mb-btn--sm" id="m-yes">Confirmer</button>
+    </div>
+  </div>
+</div>
+<div class="cm-toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s) { return document.querySelector(s); };
+  var $$ = function (s) { return [].slice.call(document.querySelectorAll(s)); };
+  function toast(m) { var t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(function () { t.classList.remove('on'); }, 3200); }
+  function fmt(n) { return n.toLocaleString('fr-FR').replace(/\u202f|\u00a0/g, ' '); }
+
+  $('#theme').addEventListener('click', function () {
+    var light = document.body.dataset.theme !== 'light';
+    document.body.dataset.theme = light ? 'light' : 'dark';
+    this.textContent = light ? 'Mode sombre' : 'Mode clair';
+  });
+
+  /* ---- RBAC 4 rôles (matrice du core, transposée) ---- */
+  var role = 'RECEPTION';
+  var ACTOR = { STAFF: 'Amine', RECEPTION: 'Nadia', MANAGER: 'Yacine', OWNER: 'Hamid' };
+  var ROLE_FR = { STAFF: 'Staff', RECEPTION: 'Réception', MANAGER: 'Manager', OWNER: 'Propriétaire' };
+  var PERM = {
+    STAFF: ['VIEW', 'ATTEND'],
+    RECEPTION: ['VIEW', 'ATTEND', 'CREATE', 'MODIFY', 'CONFIRM', 'CASH', 'BLOCK'],
+    MANAGER: ['VIEW', 'ATTEND', 'CREATE', 'MODIFY', 'CONFIRM', 'CASH', 'BLOCK', 'CANCEL', 'EDIT'],
+    OWNER: ['VIEW', 'ATTEND', 'CREATE', 'MODIFY', 'CONFIRM', 'CASH', 'BLOCK', 'CANCEL', 'EDIT', 'STAFFMGMT'],
+  };
+  function can(a) { return PERM[role].indexOf(a) >= 0; }
+  $$('[data-role]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      role = b.dataset.role;
+      $$('[data-role]').forEach(function (x) { var on = x === b; x.classList.toggle('mb-chip--on', on); x.setAttribute('aria-pressed', on); });
+      sel = null; renderAll();
+      toast(ROLE_FR[role] + ' — ' + (role === 'STAFF' ? 'planning et présence uniquement.' :
+        role === 'RECEPTION' ? 'le comptoir : créer, modifier, encaisser, confirmer, bloquer.' :
+        role === 'MANAGER' ? '+ annulation et configuration.' : 'accès complet.'));
+    });
+  });
+
+  /* ---- Journal d'audit (formatAuditLine) ---- */
+  function audit(summary) {
+    var t = new Date(); var hh = String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+    AUDITS.unshift({ who: ACTOR[role], role: ROLE_FR[role], hh: hh, summary: summary });
+    $('#audit').style.display = '';
+    $('#audit-line').innerHTML = '<b>' + ACTOR[role] + ' · ' + ROLE_FR[role] + ' · ' + hh + '</b> — ' + summary;
+    if ($('#v-audit-v').classList.contains('on')) renderAudit();
+  }
+
+  /* ---- Temps & HORAIRES RÉELS par jour (§47-A réglé) ---- */
+  var BASE = Date.UTC(2026, 7, 22);
+  var d = 0;
+  var DN = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  var MN = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  function wd(off) { return new Date(BASE + off * 86400000).getUTCDay(); }
+  function label(off) { var t = new Date(BASE + off * 86400000); return DN[t.getUTCDay()] + '. ' + t.getUTCDate() + ' ' + MN[t.getUTCMonth()]; }
+  /* Ouverture par jour : vendredi après-midi seulement — le planning LIT cette config. */
+  var OPEN = { 0: [480, 1500], 1: [480, 1500], 2: [480, 1500], 3: [480, 1500], 4: [480, 1500], 5: [840, 1500], 6: [480, 1500] };
+  function openFor(off) { return OPEN[wd(off)]; }
+  function hoursLabel(off) { var o = openFor(off); return String(o[0] / 60).padStart(2, '0') + ':00 → ' + (o[1] > 1440 ? '0' + (o[1] - 1440) / 60 : o[1] / 60) + (o[1] > 1440 ? ':00 (+1)' : ':00'); }
+  function gridHours(off) {
+    var o = openFor(off), out = [];
+    for (var h = o[0] / 60; h < Math.min(o[1], 1440) / 60; h++) out.push(h);
+    if (o[1] > 1440) out.push(24);   // la colonne « 00 h » après minuit
+    return out;
+  }
+
+  /* ---- Fermetures exceptionnelles (closureBlockers) ---- */
+  var CLOSURES = [{ day: 1, sMin: 480, eMin: 840, label: 'Événement privé', fieldId: null }];
+  function closedAt(off, f, h) {
+    var m = (h === 24 ? 1440 : h * 60);
+    return CLOSURES.some(function (c) { return c.day === off && (c.fieldId === null || c.fieldId === f) && m >= c.sMin && m < c.eMin; });
+  }
+  function closureMin(off) {
+    return CLOSURES.filter(function (c) { return c.day === off; })
+      .reduce(function (s, c) { return s + (c.eMin - c.sMin); }, 0);
+  }
+
+  /* ---- TARIF = RÈGLES (quoteRange transposé — plus jamais de if h≥18) ---- */
+  var PRICE_BASE = 2500;
+  var RULES = [
+    { label: 'Vendredi soir', wds: [5], s: 1200, e: 1440, rate: 3500 },
+    { label: 'Heures pleines', wds: [0, 1, 2, 3, 4, 5, 6], s: 1080, e: 1440, rate: 3000 },
+    { label: 'Après minuit', wds: [0, 1, 2, 3, 4, 5, 6], s: 1440, e: 1500, rate: 3000 },
+  ];
+  function rateAt(weekday, m) {
+    for (var i = 0; i < RULES.length; i++) {
+      var r = RULES[i];
+      if (r.wds.indexOf(weekday) >= 0 && m >= r.s && m < r.e) return { rate: r.rate, label: r.label };
+    }
+    return { rate: PRICE_BASE, label: 'Heures creuses' };
+  }
+  function quote(weekday, startMin, durMin) {
+    var lines = [], totalDa = 0;
+    for (var m = startMin; m < startMin + durMin; m += 30) {
+      var r = rateAt(weekday, m), amt = r.rate / 2;
+      totalDa += amt;
+      var last = lines[lines.length - 1];
+      if (last && last.label === r.label) { last.min += 30; last.amount += amt; }
+      else lines.push({ label: r.label, min: 30, amount: amt });
+    }
+    return { totalDa: Math.round(totalDa), lines: lines };
+  }
+  function nowHH() { var t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); }
+  function hhmm(m) { m = m % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
+
+  /* ---- ÉTAT ---- */
+  var byDay = {
+    0: [
+      { id: 'b0', f: 'T1', s: 540, dur: 60, kind: 'resa', st: 'PAID', src: 'WALK_IN', ver: true, amount: 2500, name: 'Mehdi', ref: 'RYD-0479' },
+      { id: 'b2', f: 'T1', s: 1020, dur: 60, kind: 'match', st: 'RESERVED', src: 'MOUBARAT', ver: true, amount: 3000, name: 'Friday Night', cap: 12, capRel: 40, avgRel: 60,
+        players: [{ n: 'Karim', st: 'CONFIRMED' }, { n: 'Walid', st: 'CONFIRMED' }, { n: 'Nassim', st: 'CONFIRMED' }, { n: 'Sami', st: 'CONFIRMED' }, { n: 'Yanis', st: 'EXPECTED' }, { n: 'Riad', st: 'EXPECTED' }],
+        phone: '213550000001' },
+      { id: 'b3', f: 'T1', s: 1200, dur: 120, kind: 'resa', st: 'RESERVED', src: 'MOUBARAT', ver: true, amount: 6000, name: 'Karim', ref: 'RYD-0484' },
+      { id: 'b4', f: 'T2', s: 960, dur: 60, kind: 'resa', st: 'NO_SHOW', src: 'PHONE', ver: true, amount: 2500, name: 'Riad', ref: 'RYD-0475' },
+      { id: 'b5', f: 'T2', s: 1080, dur: 60, kind: 'resa', st: 'RESERVED', src: 'PHONE', ver: false, amount: 3000, name: 'Sofiane', ref: 'RYD-0488', phone: '213550000002' },
+      { id: 'b7', f: 'T3', s: 960, dur: 60, kind: 'block', st: 'RESERVED', src: 'CENTER', ver: true, amount: 0, name: 'Maintenance' },
+      { id: 'b8', f: 'T3', s: 1140, dur: 60, kind: 'resa', st: 'HONORED', src: 'MOUBARAT', ver: true, amount: 3000, name: 'Walid', ref: 'RYD-0481' },
+    ],
+    1: [{ id: 'c1', f: 'T1', s: 1080, dur: 120, kind: 'resa', st: 'RESERVED', src: 'MOUBARAT', ver: true, amount: 6000, name: 'Anis', ref: 'RYD-0490' }],
+  };
+  var FIELD_DEFS = [
+    { id: 'T1', sport: 'Football', format: '5v5', surface: 'Synthétique', env: 'Outdoor', status: 'ACTIVE' },
+    { id: 'T2', sport: 'Football', format: '7v7', surface: 'Gazon naturel', env: 'Outdoor', status: 'ACTIVE' },
+    { id: 'T3', sport: 'Padel', format: '2v2', surface: 'Résine', env: 'Indoor', status: 'ACTIVE' },
+  ];
+  function fdef(id) { return FIELD_DEFS.find(function (x) { return x.id === id; }); }
+  var FIELDS = [];
+  var FIELD_SPORT = {};
+  function syncFields() {
+    FIELDS = FIELD_DEFS.filter(function (x) { return x.status !== 'ARCHIVED'; }).map(function (x) { return x.id; });
+    FIELD_SPORT = {};
+    FIELD_DEFS.forEach(function (x) { FIELD_SPORT[x.id] = x.sport; });
+  }
+  syncFields();
+  var planView = 'day', zoom = 'x', sportFilter = 'ALL', fieldFilter = {};
+  FIELDS.forEach(function (f) { fieldFilter[f] = true; });
+  function visibleFields() {
+    /* visible par défaut : un terrain tout juste ajouté apparaît sans réglage */
+    return FIELDS.filter(function (f) { return fieldFilter[f] !== false && (sportFilter === 'ALL' || FIELD_SPORT[f] === sportFilter); });
+  }
+  var recurrings = [
+    { id: 'r1', name: 'FC Kahwa', f: 'T2', wd: 2, s: 1260, dur: 60, from: -30, until: null },
+    { id: 'r2', name: 'Ooredoo', f: 'T2', wd: 0, s: 1020, dur: 90, from: 0, until: 39 },
+  ];
+  var nextId = 30;
+  var NOW_MIN = 900;   // « il est 15:00 » le jour 0
+
+  function dayList(off) {
+    var base = byDay[off] || [];
+    var abos = recurrings.filter(function (r) { return r.wd === wd(off) && off >= r.from && (r.until == null || off <= r.until); })
+      .map(function (r) {
+        return { id: 'rec-' + r.id + '-' + off, f: r.f, s: r.s, dur: r.dur, kind: 'abo', st: 'RESERVED', src: 'MOUBARAT', ver: true,
+                 amount: quote(wd(off), r.s, r.dur).totalDa, name: r.name + ' · abonnement', rec: true };
+      });
+    return base.concat(abos);
+  }
+  function live(b) { return b.st !== 'CANCELLED'; }
+  function conflicts(off, f, sMin, durMin, exceptId) {
+    var e = sMin + durMin;
+    var oH = openFor(off);
+    if (sMin < oH[0] || e > oH[1]) return true;   // §41-17 : jamais au-delà des horaires
+    return dayList(off).filter(live).some(function (b) {
+      return b.f === f && b.id !== exceptId && sMin < b.s + b.dur * 1 && e > b.s;
+    }) || (function () {
+      for (var m = sMin; m < e; m += 30) if (closedAt(off, f, Math.floor(m / 60) === 24 ? 24 : Math.floor(m / 60))) return true;
+      return false;
+    })();
+  }
+
+  /* ---- Match Health (matchHealth transposé) ---- */
+  function health(b, off) {
+    var pen = [];
+    var joined = b.players.length, missing = b.cap - joined;
+    if (missing > 0) {
+      pen.push({ label: 'Effectif ' + joined + '/' + b.cap, pts: Math.round(missing / b.cap * 40) });
+      var hLeft = (b.s - NOW_MIN) / 60;
+      if (off === 0 && hLeft > 0 && hLeft <= 2) pen.push({ label: 'Début dans moins de 2 h, incomplet', pts: 15 });
+      else if (off === 0 && hLeft > 2 && hLeft <= 6) pen.push({ label: 'Début dans moins de 6 h, incomplet', pts: 8 });
+    }
+    if (b.capRel != null && b.capRel < 90) pen.push({ label: 'Fiabilité du capitaine ' + b.capRel + '/100', pts: Math.round((100 - b.capRel) * 0.2) });
+    if (b.avgRel != null && b.avgRel < 90) pen.push({ label: 'Fiabilité moyenne des inscrits ' + b.avgRel + '/100', pts: Math.round((100 - b.avgRel) * 0.15) });
+    var unconf = b.players.filter(function (p) { return p.st === 'EXPECTED'; }).length;
+    if (unconf > 0) pen.push({ label: unconf + (unconf > 1 ? ' inscrits non confirmés' : ' inscrit non confirmé'), pts: Math.min(10, unconf * 3) });
+    var score = Math.max(0, Math.min(100, 100 - pen.reduce(function (s, x) { return s + x.pts; }, 0)));
+    return { score: score, band: score >= 70 ? 'g' : score >= 40 ? 'o' : 'r',
+             bandLabel: score >= 70 ? 'Faible risque' : score >= 40 ? 'À surveiller' : 'Risque élevé', pen: pen };
+  }
+  function waLink(b, h) {
+    var msg = 'Bonjour, ici Complexe Ryad. Votre match de ' + hhmm(b.s) + ' est actuellement à ' + b.players.length + '/' + b.cap +
+      ' joueurs. Pouvez-vous nous confirmer le maintien du match ?';
+    return 'https://wa.me/' + (b.phone || '213550000000') + '?text=' + encodeURIComponent(msg);
+  }
+
+  /* ---- Dérivations jour ---- */
+  function cash(list) {
+    var r = { collected: 0, engaged: 0, lostC: 0, lostN: 0 };
+    list.forEach(function (b) {
+      if (b.kind === 'block') return;
+      if (b.st === 'PAID') r.collected += b.amount;
+      else if (b.st === 'RESERVED' || b.st === 'HONORED') r.engaged += b.amount;
+      else if (b.st === 'CANCELLED') r.lostC += b.amount;
+      else if (b.st === 'NO_SHOW') r.lostN += b.amount;
+    });
+    return r;
+  }
+  function occOf(off, list, fieldId) {
+    var o = openFor(off);
+    var openMin = (o[1] - o[0]) - closureMin(off);
+    var mins = list.filter(function (b) {
+      return (!fieldId || b.f === fieldId) && b.kind !== 'block' && (b.st === 'RESERVED' || b.st === 'HONORED' || b.st === 'PAID');
+    }).reduce(function (s, b) { return s + b.dur; }, 0);
+    return Math.min(1, mins / (openMin * (fieldId ? 1 : FIELDS.length)));
+  }
+  function originShare(list) {
+    var v = list.filter(function (b) { return b.kind !== 'block' && live(b); });
+    var c = function (s) { return v.filter(function (b) { return b.src === s; }).length; };
+    var t = v.length || 1;
+    return { m: Math.round(c('MOUBARAT') / t * 100), p: Math.round(c('PHONE') / t * 100), w: Math.round(c('WALK_IN') / t * 100) };
+  }
+
+  /* ---- HISTORIQUE DÉTERMINISTE (60 jours) — même moteur tarifaire ---- */
+  var NAMES = ['Karim', 'Walid', 'Nassim', 'Riad', 'Sofiane', 'Mehdi', 'Anis', 'Yanis', 'Sami', 'Amine B.', 'Fouad', 'Lotfi'];
+  var TEAMS = ['DZ Warriors', 'FC Kahwa', 'Panthers'];
+  var CHURNED = { 'Fouad': 24, 'Lotfi': 31 };   // derniers actifs il y a N jours
+  function rnd(off, f, h, salt) {
+    var x = Math.sin(off * 12.9898 + f * 78.233 + h * 37.719 + salt * 4.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+  var histCache = {};
+  function histDay(off) {
+    if (off >= 0) return dayList(off).filter(function (b) { return b.kind !== 'block'; })
+      .map(function (b) { return { f: b.f, s: b.s, dur: b.dur, st: b.st, src: b.src, amount: b.amount, name: b.name.split(' ·')[0], team: b.kind === 'match' ? 'FC Kahwa' : null, match: b.kind === 'match' }; });
+    if (histCache[off]) return histCache[off];
+    var w = wd(off), o = OPEN[w], out = [];
+    FIELDS.forEach(function (fld, fi) {
+      for (var m = o[0]; m + 60 <= o[1]; m += 60) {
+        var h = m / 60;
+        var base = m >= 1080 ? 0.85 : m >= 840 ? 0.35 : 0.2;
+        if (w === 5 || w === 6) base = Math.min(0.95, base + 0.1);
+        if (rnd(off, fi, h, 1) < base) {
+          var r2 = rnd(off, fi, h, 2), r3 = rnd(off, fi, h, 3), r4 = rnd(off, fi, h, 4);
+          var st = r3 < 0.06 ? 'NO_SHOW' : r3 < 0.11 ? 'CANCELLED' : 'PAID';
+          var name = CHURNED['Fouad'] && off === -24 && fi === 0 && h === 18 ? 'Fouad'
+            : off === -31 && fi === 1 && h === 19 ? 'Lotfi'
+            : NAMES[Math.floor(r4 * 10)];
+          var isMatch = m >= 1080 && r2 < 0.25;
+          out.push({ f: fld, s: m, dur: 60, st: st,
+            src: r2 < 0.45 ? 'MOUBARAT' : r2 < 0.8 ? 'PHONE' : 'WALK_IN',
+            amount: quote(w, m, 60).totalDa, name: name,
+            team: isMatch || (m >= 1080 && r2 >= 0.25 && r2 < 0.33)
+              ? TEAMS[Math.floor(rnd(off, fi, h, 5) * 3)] : null,
+            match: isMatch });
+        }
+      }
+    });
+    histCache[off] = out;
+    return out;
+  }
+  function rangeAgg(from, to) {   // bornes incluses, off relatifs à d
+    var a = { ca: 0, lost: 0, paidCount: 0, resas: 0, ns: 0, clients: {} };
+    for (var off = from; off <= to; off++) {
+      histDay(off).forEach(function (b) {
+        if (b.st === 'PAID' || b.st === 'HONORED') { a.ca += b.amount; a.paidCount++; }
+        if (b.st === 'CANCELLED' || b.st === 'NO_SHOW') a.lost += b.amount;
+        if (b.st === 'NO_SHOW') a.ns++;
+        if (b.st !== 'CANCELLED') { a.resas++; a.clients[b.name] = 1; }
+      });
+    }
+    a.clientCount = Object.keys(a.clients).length;
+    return a;
+  }
+  function delta(cur, prev, bad) {
+    if (!prev) return '';
+    var pct = Math.round((cur - prev) / prev * 100);
+    var good = bad ? pct <= 0 : pct >= 0;
+    return '<span class="cm-delta ' + (good ? 'up' : 'dn') + '">' + (pct >= 0 ? '▲' : '▼') + ' ' + Math.abs(pct) + ' %</span>';
+  }
+
+  /* ---- CAISSE (openCashSession / addCashMovement / closeCashSession transposés) ---- */
+  var cashSession = null, cashMoves = [], lastClosed = null;
+  var MODULES = { caisse: false };   // demandé par Aymen : caisse hors navigation par défaut
+
+  /* ---- JOURNAL D'AUDIT (accumulé) ---- */
+  var AUDITS = [
+    { who: 'Nadia', role: 'Réception', hh: 'Hier 23:41', summary: 'a clôturé la caisse · compté 61 500 DA · écart 0 DA' },
+    { who: 'Yacine', role: 'Manager', hh: 'Hier 21:05', summary: 'a déplacé RYD-0471 · T2 19:00 → T3 20:00 · requoté 3 000 DA' },
+    { who: 'Nadia', role: 'Réception', hh: 'Hier 19:22', summary: 'a encaissé 3 000 DA · Sofiane · RYD-0468' },
+    { who: 'Nadia', role: 'Réception', hh: 'Hier 18:04', summary: 'a pointé NO-SHOW · Mounir · RYD-0465 · fiabilité recalculée' },
+    { who: 'Yacine', role: 'Manager', hh: 'Hier 17:30', summary: 'a bloqué T1 (maintenance) 22:00 → 23:00' },
+    { who: 'Nadia', role: 'Réception', hh: 'Hier 09:02', summary: 'a ouvert la caisse · fond 40 000 DA' },
+  ];
+
+  /* ---- Modale de confirmation (actions destructives §10) ---- */
+  var onYes = null;
+  function confirmModal(title, bodyHtml, cb) {
+    $('#m-title').textContent = title;
+    $('#m-body').innerHTML = bodyHtml;
+    onYes = cb;
+    $('#modal-bg').classList.add('on');
+  }
+  $('#m-no').addEventListener('click', function () { $('#modal-bg').classList.remove('on'); onYes = null; });
+  $('#m-yes').addEventListener('click', function () { $('#modal-bg').classList.remove('on'); if (onYes) onYes(); onYes = null; });
+
+  /* ---- RENDUS ---- */
+  var sel = null;
+  function srcChip(b) {
+    var lbl = { MOUBARAT: 'Moubarat', PHONE: 'Tél.', WALK_IN: 'Comptoir', CENTER: '—' }[b.src];
+    if (b.src === 'CENTER') return '';
+    return '<span class="cm-src' + (b.ver ? ' ok' : '') + '">' + lbl + (b.src === 'PHONE' ? (b.ver ? ' · vérifiée' : ' · à vérifier') : '') + '</span>';
+  }
+  function pill(st) {
+    var m = { RESERVED: ['open', 'Réservé'], HONORED: ['filling', 'Honoré'], PAID: ['joined', 'Payé'], NO_SHOW: ['cancelled', 'No-show'], CANCELLED: ['expired', 'Annulé'] };
+    return '<span class="mb-status mb-status--' + m[st][0] + '">' + m[st][1] + '</span>';
+  }
+
+  function renderDash() {
+    $$('.daylabel').forEach(function (el) { el.textContent = label(d); });
+    $('#hrs-1').textContent = 'Ouvert ' + hoursLabel(d);
+    $('#hrs-2').textContent = 'Ouvert ' + hoursLabel(d) + (closureMin(d) ? ' · fermeture exceptionnelle' : '');
+    var list = dayList(d), c = cash(list);
+    $('#k-cash').textContent = fmt(c.collected);
+    $('#k-eng').textContent = fmt(c.engaged);
+    $('#k-occ').textContent = Math.round(occOf(d, list) * 100);
+    $('#k-count').textContent = list.filter(function (b) { return b.kind !== 'block' && live(b); }).length;
+    $('#k-share').textContent = originShare(list).m;
+    $('#k-ns').textContent = list.filter(function (b) { return b.kind !== 'block' && b.st === 'NO_SHOW'; }).length;
+
+    var acts = [];
+    list.filter(live).forEach(function (b) {
+      if (b.kind === 'match') {
+        var h = health(b, d);
+        if (h.band !== 'g') {
+          var why = h.pen.slice(0, 3).map(function (p) { return p.label; }).join(' · ') + (h.pen.length > 3 ? ' · +' + (h.pen.length - 3) : '');
+          acts.push({ red: h.band === 'r', id: b.id, act2: true, html:
+            '<span class="l1">Match ' + b.name + ' — ' + b.f + ' · ' + hhmm(b.s) + '</span>' +
+            '<span class="big ' + h.band + '">' + h.score + ' %</span>' +
+            '<a class="mb-btn mb-btn--sm cta" href="' + waLink(b) + '" target="_blank" rel="noopener" data-stop>Contacter</a>' +
+            '<span class="l2">' + why + '</span>' });
+        }
+      }
+      if (b.src === 'PHONE' && !b.ver) acts.push({ red: false, id: b.id, act2: true, html:
+        '<span class="l1">Téléphone à vérifier — ' + b.name + ' · ' + b.f + ' · ' + hhmm(b.s) + '</span>' +
+        '<span class="big o" style="grid-row:span 2;align-self:center"><span class="mb-status mb-status--filling">En attente</span></span><span class="cta"></span>' +
+        '<span class="l2">Le créneau est bloqué en attendant ta confirmation — clique pour ouvrir.</span>' });
+    });
+    var unpaid = list.filter(function (b) { return b.kind !== 'block' && b.st === 'HONORED'; }).length;
+    if (unpaid) acts.push({ red: false, view: 'resa', act2: true, html:
+      '<span class="l1">' + (unpaid > 1 ? unpaid + ' réservations honorées non encaissées' : '1 réservation honorée non encaissée') + '</span>' +
+      '<span class="big o">' + unpaid + '</span><span class="cta"></span>' +
+      '<span class="l2">À encaisser avant la clôture' + (MODULES.caisse ? ' de caisse' : '') + '.</span>' });
+    if (MODULES.caisse && !cashSession && d === 0 && can('CASH')) acts.push({ red: false, view: 'caisse', act2: true, html: '<span class="l1">Caisse non ouverte</span><span class="big o" style="grid-row:span 2;align-self:center"><span class="mb-status mb-status--filling">À ouvrir</span></span><span class="cta"></span><span class="l2">Les encaissements ne seront pas tracés tant qu\u2019elle est fermée.</span>' });
+    if (closureMin(d)) acts.push({ red: false, view: 'conf', act2: true, html:
+      '<span class="l1">Fermeture exceptionnelle aujourd\u2019hui — Événement privé 08:00 → 14:00</span>' +
+      '<span class="big o" style="grid-row:span 2;align-self:center"><span class="mb-status mb-status--filling">Fermé</span></span><span class="cta"></span>' +
+      '<span class="l2">Retirée du planning et du calcul d\u2019occupation.</span>' });
+
+    $('#n-act').textContent = acts.length; $('#n-act').style.display = acts.length ? '' : 'none';
+    $('#actions').innerHTML = acts.length ? acts.map(function (a, i) {
+      return '<div class="' + (a.act2 ? 'cm-act2' : 'cm-act') + (a.red ? ' red' : '') + '" data-i="' + i + '">' + a.html + '</div>';
+    }).join('') : '<p class="cm-note">Rien à surveiller — journée saine.</p>';
+    var nx = list.filter(function (b) { return b.kind !== 'block' && b.st !== 'CANCELLED' && b.st !== 'NO_SHOW' && (d !== 0 || b.s + b.dur > NOW_MIN); })
+      .sort(function (a, b) { return a.s - b.s; }).slice(0, 6);
+    $('#next').innerHTML = nx.length ? nx.map(function (b) {
+      return '<div data-goplan="' + b.id + '"><b>' + hhmm(b.s) + '</b><span>' + b.name + (b.kind === 'match' ? ' · ' + b.players.length + '/' + b.cap : '') + '</span><i>' + b.f + ' · ' + fmt(b.amount) + ' DA</i></div>';
+    }).join('') : '<div style="grid-column:1/-1;cursor:default"><span>Plus rien au planning — journée terminée ou libre.</span></div>';
+    $$('#next [data-goplan]').forEach(function (el) {
+      el.addEventListener('click', function () { show('plan'); selectCell(el.dataset.goplan); });
+    });
+    $$('#actions .cm-act, #actions .cm-act2').forEach(function (el, i) {
+      el.addEventListener('click', function (e) {
+        if (e.target.closest('[data-stop]')) return;
+        var a = acts[i];
+        show(a.view || 'plan');
+        if (a.id) selectCell(a.id);
+      });
+    });
+  }
+
+  function renderGrid() { renderPlanning(); }
+
+  function laneGeom(off) {
+    var o = openFor(off);
+    return { start: o[0], total: o[1] - o[0] };
+  }
+  function pct(off, m) { var g = laneGeom(off); return ((m - g.start) / g.total * 100); }
+
+  function renderPlanning() {
+    /* Toolbar terrains (chips dynamiques) */
+    $('#pl-fields').innerHTML = FIELDS.map(function (f) {
+      return '<button class="' + (fieldFilter[f] !== false ? 'on' : '') + '" data-fchip="' + f + '">' + f + '</button>';
+    }).join('');
+    $$('#pl-fields [data-fchip]').forEach(function (b) {
+      b.addEventListener('click', function () { fieldFilter[b.dataset.fchip] = fieldFilter[b.dataset.fchip] === false; renderPlanning(); });
+    });
+    syncPlanBar();
+    if (planView === 'week') { renderWeek(); return; }
+    renderDayTimeline();
+  }
+
+  function renderDayTimeline() {
+    var g = laneGeom(d), list = dayList(d), flds = visibleFields();
+    var hoursHtml = '';
+    for (var m = g.start; m <= g.start + g.total; m += 60) {
+      hoursHtml += '<i style="left:' + pct(d, m) + '%">' + hhmm(m).slice(0, 2) + 'h</i>';
+    }
+    var html = '<div class="tl-wrap' + (zoom === 'c' ? ' compact' : '') + '" id="tl">' +
+      '<div class="tl-head"><div class="tl-fname" style="border:0"></div><div class="tl-hours">' + hoursHtml + '</div></div>' +
+      flds.map(function (f) {
+        var blocks = '';
+        /* fermetures exceptionnelles : segments non réservables, jamais « faussement libres » */
+        CLOSURES.filter(function (c) { return c.day === d && (c.fieldId === null || c.fieldId === f); }).forEach(function (c) {
+          blocks += '<div class="tl-block k-closed" style="left:' + pct(d, c.sMin) + '%;width:' + ((c.eMin - c.sMin) / g.total * 100) + '%">' +
+            '<b>Fermé</b><span>' + c.label + '</span></div>';
+        });
+        list.filter(live).filter(function (b) { return b.f === f; }).forEach(function (b) {
+          var kindCls = b.kind === 'resa' && b.src === 'PHONE' && !b.ver ? 'phone' : b.kind;
+          var srcTxt = b.kind === 'match' ? b.players.length + '/' + b.cap + ' · ' + (health(b, d).score) + ' %' :
+            b.kind === 'block' ? 'Bloqué' : b.kind === 'abo' ? 'ABO · ' + hhmm(b.s) + '→' + hhmm(b.s + b.dur) :
+            ({ MOUBARAT: 'MB', PHONE: b.ver ? 'TÉL ✓' : 'TÉL ?', WALK_IN: 'CPT' }[b.src]) + ' · ' + hhmm(b.s) + '→' + hhmm(b.s + b.dur) + ' · ' + fmt(b.amount);
+          var draggable = !b.rec && b.kind !== 'block' && b.st === 'RESERVED' && can('MODIFY');
+          var wPct = b.dur / g.total * 100;
+          blocks += '<div class="tl-block k-' + kindCls + ' st-' + b.st + (wPct < 7.5 ? ' tl-block--s' : '') + (sel === b.id ? ' sel' : '') + '" data-id="' + b.id + '"' +
+            (draggable ? ' data-drag="1"' : '') +
+            ' title="' + b.name + ' · ' + hhmm(b.s) + '→' + hhmm(b.s + b.dur) + '"' +
+            ' style="left:' + pct(d, b.s) + '%;width:' + wPct + '%">' +
+            '<b>' + b.name + (b.st === 'PAID' ? ' <em>✓</em>' : b.st === 'NO_SHOW' ? ' ✕' : '') + '</b><span>' + srcTxt + '</span>' +
+            (draggable ? '<span class="tl-rz" data-rz="' + b.id + '" title="Étirer / raccourcir"></span>' : '') + '</div>';
+        });
+        if (d === 0) blocks += '<div class="tl-now" style="left:' + pct(0, NOW_MIN) + '%"></div>';
+        var isMaint = fdef(f) && fdef(f).status === 'MAINTENANCE';
+        if (isMaint) blocks = '<div class="tl-block k-closed" style="left:0;width:100%"><b>Maintenance</b><span>indisponible — réactive-le dans Centre</span></div>';
+        var gridBg = 'background-image:linear-gradient(90deg,var(--line-strong) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);' +
+          'background-size:' + (60 / g.total * 100) + '% 100%,' + (30 / g.total * 100) + '% 100%;';
+        return '<div class="tl-row"><div class="tl-fname">' + f + '</div><div class="tl-lane" data-lane="' + f + '"' +
+          (isMaint ? ' data-maint="1"' : '') + ' style="' + gridBg + '">' + blocks + '</div></div>';
+      }).join('') + '</div>';
+    $('#plan-body').innerHTML = html;
+    if (zoom !== 'c') {
+      var _target = Math.max(0, (((d === 0 ? NOW_MIN : g.start + 240) - g.start) / g.total) * 1560 - 460);
+      var _go = function (tries) {
+        var sc = document.getElementById('tl');
+        if (sc && sc.clientWidth > 0) { sc.scrollLeft = _target; }
+        if ((!sc || sc.scrollLeft < 10) && tries > 0) setTimeout(function () { _go(tries - 1); }, 60);
+      };
+      requestAnimationFrame(function () { requestAnimationFrame(function () { _go(4); }); });
+    }
+    if (!document.getElementById('tl-hint')) {
+      var hint = document.createElement('div'); hint.id = 'tl-hint'; document.body.appendChild(hint);
+    }
+    $$('#tl .tl-lane').forEach(function (lane) {
+      lane.addEventListener('pointermove', function (e) {
+        if (drag || freeDrag || rz || lane.dataset.maint) return;
+        var g2 = laneGeom(d), r2 = lane.getBoundingClientRect();
+        var m = g2.start + Math.round(((e.clientX - r2.left) / r2.width) * g2.total / 30) * 30;
+        var h = document.getElementById('tl-hint');
+        h.style.display = 'block'; h.style.left = (e.clientX + 12) + 'px'; h.style.top = (e.clientY - 26) + 'px';
+        h.textContent = lane.dataset.lane + ' · ' + hhmm(Math.max(g2.start, Math.min(m, g2.start + g2.total)));
+      });
+      lane.addEventListener('pointerleave', function () { document.getElementById('tl-hint').style.display = 'none'; });
+    });
+
+    $$('#tl [data-id]').forEach(function (el) {
+      el.addEventListener('click', function (e) { if (dragMoved) return; selectCell(el.dataset.id); });
+      el.addEventListener('pointermove', function (e) {
+        if (drag || freeDrag || rz) return;
+        var b = dayList(d).find(function (x) { return x.id === el.dataset.id; });
+        if (!b) return;
+        var h = document.getElementById('tl-hint'); if (!h) return;
+        var stFr = { RESERVED: 'Réservé', HONORED: 'Honoré', PAID: 'Payé', NO_SHOW: 'No-show', CANCELLED: 'Annulé' }[b.st] || '';
+        h.style.display = 'block'; h.style.left = (e.clientX + 12) + 'px'; h.style.top = (e.clientY - 26) + 'px';
+        h.textContent = b.name + ' · ' + hhmm(b.s) + '→' + hhmm(b.s + b.dur) + (b.kind === 'block' ? ' · Bloqué' : ' · ' + fmt(b.amount) + ' DA · ' + stFr);
+        e.stopPropagation();
+      });
+    });
+    $$('#tl .tl-lane').forEach(function (lane) {
+      lane.addEventListener('click', function (e) {
+        if (e.target !== lane || dragMoved || lane.dataset.maint) return;
+        var g2 = laneGeom(d);
+        var m = g2.start + Math.round((e.offsetX / lane.clientWidth) * g2.total / 30) * 30;
+        var f = lane.dataset.lane;
+        if (closedAtMin(d, f, m)) { toast('Ce créneau est fermé (' + (CLOSURES[0].label || 'fermeture') + ').'); return; }
+        selectFree(f + '-' + m);
+      });
+    });
+    wireDrag();
+  }
+
+  function closedAtMin(off, f, m) {
+    return CLOSURES.some(function (c) { return c.day === off && (c.fieldId === null || c.fieldId === f) && m >= c.sMin && m < c.eMin; });
+  }
+
+  function weekStart() { var w = wd(d); return d - ((w + 1) % 7); } // semaine Sam → Ven, ancrée sur le jour courant
+  function renderWeek() {
+    var start = weekStart(), flds = visibleFields();
+    var days = []; for (var i = 0; i < 7; i++) days.push(start + i);
+    var html = '<div class="wk-grid"><div class="h"></div>' + days.map(function (off) {
+      return '<div class="h' + (off === 0 ? ' today' : '') + '" data-goday="' + off + '">' + label(off) + '</div>';
+    }).join('');
+    flds.forEach(function (f) {
+      html += '<div class="tl-fname" style="min-height:44px;display:grid;place-items:center">' + f + '</div>';
+      days.forEach(function (off) {
+        var list = dayList(off).filter(live).filter(function (b) { return b.f === f && b.kind !== 'block'; });
+        var occ = Math.round(occOf(off, dayList(off), f) * 100);
+        var hasClosure = CLOSURES.some(function (c) { return c.day === off; });
+        html += '<div class="wk-cell' + (hasClosure ? ' closed-part' : '') + (list.length === 0 ? ' k0' : '') + '" data-goday="' + off + '">' +
+          '<b>' + list.length + '</b><span>résas · ' + occ + ' %' + (hasClosure ? ' · fermeture' : '') + '</span>' +
+          '<div class="mini"><i style="width:' + occ + '%"></i></div></div>';
+      });
+    });
+    html += '</div>';
+    $('#plan-body').innerHTML = html;
+    $$('#plan-body [data-goday]').forEach(function (el) {
+      el.addEventListener('click', function () { d = +el.dataset.goday; planView = 'day'; syncPlanBar(); sel = null; resetPanel(); renderAll(); });
+    });
+  }
+
+  function syncPlanBar() {
+    var dt = new Date(BASE + d * 86400000);
+    var iso = dt.getUTCFullYear() + '-' + String(dt.getUTCMonth() + 1).padStart(2, '0') + '-' + String(dt.getUTCDate()).padStart(2, '0');
+    var pd = $('#pl-date'); if (pd) pd.value = iso;
+    $$('[data-pv]').forEach(function (b) { b.classList.toggle('on', b.dataset.pv === planView); });
+    $$('[data-zoom]').forEach(function (b) { b.classList.toggle('on', (b.dataset.zoom === 'c') === (zoom === 'c') && b.dataset.zoom === (zoom === 'c' ? 'c' : 'x')); });
+    $$('[data-sport]').forEach(function (b) { b.classList.toggle('on', b.dataset.sport === sportFilter); });
+  }
+
+  /* ---- Glisser-déposer : jamais le seul chemin (Modifier existe), toujours confirmé ---- */
+  var drag = null, dragMoved = false;
+  var freeDrag = null, rz = null;
+  function laneMinAt(lane, clientX) {
+    var g = laneGeom(d), r = lane.getBoundingClientRect();
+    var m = g.start + Math.round(((clientX - r.left) / r.width) * g.total / 30) * 30;
+    return Math.max(g.start, Math.min(m, g.start + g.total));
+  }
+  function wireDrag() {
+    $$('#tl [data-drag]').forEach(function (el) {
+      el.addEventListener('pointerdown', function (e) {
+        if (e.target.dataset && e.target.dataset.rz) return;   // la poignée gère le resize
+        var b = (byDay[d] || []).find(function (x) { return x.id === el.dataset.id; });
+        if (!b) return;
+        drag = { b: b, el: el, ghost: null, lane: null, m: b.s, f: b.f };
+        dragMoved = false;
+        e.preventDefault();
+      });
+    });
+    $$('#tl [data-rz]').forEach(function (h) {
+      h.addEventListener('pointerdown', function (e) {
+        var b = (byDay[d] || []).find(function (x) { return x.id === h.dataset.rz; });
+        if (!b) return;
+        rz = { b: b, lane: h.closest('.tl-lane'), ghost: null, dur: b.dur };
+        dragMoved = false;
+        e.stopPropagation(); e.preventDefault();
+      });
+    });
+    $$('#tl .tl-lane').forEach(function (lane) {
+      lane.addEventListener('pointerdown', function (e) {
+        if (e.target !== lane || lane.dataset.maint || !can('CREATE')) return;
+        freeDrag = { lane: lane, f: lane.dataset.lane, m0: laneMinAt(lane, e.clientX), ghost: null, m1: null };
+        e.preventDefault();
+      });
+    });
+    if (!window.__dragWired) {
+      window.__dragWired = true;
+      document.addEventListener('pointermove', onDragMove);
+      document.addEventListener('pointerup', onDragUp);
+    }
+  }
+  function onDragMove(e) {
+    if (rz) {
+      dragMoved = true;
+      var g0 = laneGeom(d);
+      var endM = laneMinAt(rz.lane, e.clientX);
+      var dur = Math.max(30, endM - rz.b.s);
+      dur = Math.min(dur, g0.start + g0.total - rz.b.s);
+      rz.dur = dur;
+      if (!rz.ghost) { rz.ghost = document.createElement('div'); rz.ghost.className = 'tl-ghost'; rz.lane.appendChild(rz.ghost); }
+      var bad = conflicts(d, rz.b.f, rz.b.s, dur, rz.b.id);
+      var q = quote(wd(d), rz.b.s, dur);
+      rz.ghost.classList.toggle('bad', bad);
+      rz.ghost.style.left = pct(d, rz.b.s) + '%';
+      rz.ghost.style.width = (dur / g0.total * 100) + '%';
+      rz.ghost.textContent = bad ? 'CONFLIT' : hhmm(rz.b.s) + '→' + hhmm(rz.b.s + dur) + ' · ' + dur + ' min · ' + fmt(q.totalDa) + ' DA';
+      return;
+    }
+    if (freeDrag) {
+      dragMoved = true;
+      var gf = laneGeom(d);
+      freeDrag.m1 = laneMinAt(freeDrag.lane, e.clientX);
+      var a = Math.min(freeDrag.m0, freeDrag.m1), z = Math.max(freeDrag.m0, freeDrag.m1);
+      if (z - a < 30) z = a + 30;
+      if (!freeDrag.ghost) { freeDrag.ghost = document.createElement('div'); freeDrag.ghost.className = 'tl-ghost'; freeDrag.lane.appendChild(freeDrag.ghost); }
+      var badF = conflicts(d, freeDrag.f, a, z - a, null);
+      var qf = quote(wd(d), a, z - a);
+      freeDrag.ghost.classList.toggle('bad', badF);
+      freeDrag.ghost.style.left = pct(d, a) + '%';
+      freeDrag.ghost.style.width = ((z - a) / gf.total * 100) + '%';
+      freeDrag.ghost.textContent = badF ? 'CONFLIT' : hhmm(a) + '→' + hhmm(z) + ' · ' + (z - a) + ' min · ' + fmt(qf.totalDa) + ' DA';
+      return;
+    }
+    if (!drag) return;
+    var lanes = $$('#tl .tl-lane');
+    var target = null;
+    lanes.forEach(function (l) {
+      var r = l.getBoundingClientRect();
+      if (e.clientY >= r.top && e.clientY <= r.bottom && e.clientX >= r.left && e.clientX <= r.right) target = { l: l, r: r };
+    });
+    if (!target) return;
+    dragMoved = true;
+    drag.el.classList.add('dragging');
+    var g = laneGeom(d);
+    var m = g.start + Math.round(((e.clientX - target.r.left) / target.r.width) * g.total / 30) * 30;
+    m = Math.max(g.start, Math.min(m, g.start + g.total - drag.b.dur));
+    var f = target.l.dataset.lane;
+    drag.m = m; drag.f = f;
+    if (!drag.ghost || drag.lane !== target.l) {
+      if (drag.ghost) drag.ghost.remove();
+      drag.ghost = document.createElement('div');
+      drag.ghost.className = 'tl-ghost';
+      target.l.appendChild(drag.ghost);
+      drag.lane = target.l;
+    }
+    var bad = conflicts(d, f, m, drag.b.dur, drag.b.id) || closedAtMin(d, f, m);
+    var q = quote(wd(d), m, drag.b.dur);
+    drag.ghost.classList.toggle('bad', bad);
+    drag.ghost.style.left = pct(d, m) + '%';
+    drag.ghost.style.width = (drag.b.dur / g.total * 100) + '%';
+    drag.ghost.textContent = bad ? 'CONFLIT' : hhmm(m) + ' · ' + fmt(q.totalDa) + ' DA';
+  }
+  function onDragUp() {
+    if (rz) {
+      var r0 = rz; rz = null;
+      if (r0.ghost) r0.ghost.remove();
+      if (!dragMoved || r0.dur === r0.b.dur) { renderPlanning(); return; }
+      setTimeout(function () { dragMoved = false; }, 60);
+      if (conflicts(d, r0.b.f, r0.b.s, r0.dur, r0.b.id)) { toast('Conflit — la durée reste inchangée.'); renderPlanning(); return; }
+      var qz = quote(wd(d), r0.b.s, r0.dur);
+      confirmModal('Modifier la durée ?',
+        '<p>' + r0.b.name + ' : ' + hhmm(r0.b.s) + ' → <b>' + hhmm(r0.b.s + r0.dur) + '</b> (' + r0.b.dur + ' → ' + r0.dur + ' min)</p>' +
+        '<p>Nouveau tarif (moteur) : <b>' + fmt(qz.totalDa) + ' DA</b>' + (qz.totalDa !== r0.b.amount ? ' <span class="impact">(au lieu de ' + fmt(r0.b.amount) + ')</span>' : '') + '</p>',
+        function () {
+          var oldD = r0.b.dur;
+          r0.b.dur = r0.dur; r0.b.amount = qz.totalDa;
+          audit('a redimensionné ' + (r0.b.ref || r0.b.name) + ' de ' + oldD + ' à ' + r0.dur + ' min · requoté ' + fmt(qz.totalDa) + ' DA');
+          toast('Durée modifiée — prix requoté par le moteur.');
+          sel = null; resetPanel(); renderAll();
+        });
+      renderPlanning(); return;
+    }
+    if (freeDrag) {
+      var f0 = freeDrag; freeDrag = null;
+      if (f0.ghost) f0.ghost.remove();
+      if (!dragMoved || f0.m1 === null) { return; }   // simple clic : le handler click fera selectFree
+      setTimeout(function () { dragMoved = false; }, 60);
+      var a2 = Math.min(f0.m0, f0.m1), z2 = Math.max(f0.m0, f0.m1);
+      if (z2 - a2 < 30) z2 = a2 + 30;
+      if (conflicts(d, f0.f, a2, z2 - a2, null)) { toast('Conflit — cette plage chevauche une occupation ou une fermeture.'); renderPlanning(); return; }
+      selectFree(f0.f + '-' + a2, z2 - a2);
+      var bf = $('#blk-from'), bt = $('#blk-to');
+      if (bf && bt) { bf.value = String(a2); bt.value = String(z2); }
+      return;
+    }
+    if (!drag) return;
+    var dr = drag; drag = null;
+    dr.el.classList.remove('dragging');
+    if (dr.ghost) dr.ghost.remove();
+    if (!dragMoved) return;
+    setTimeout(function () { dragMoved = false; }, 60);
+    var b = dr.b, m = dr.m, f = dr.f;
+    if (m === b.s && f === b.f) { renderPlanning(); return; }
+    if (conflicts(d, f, m, b.dur, b.id) || closedAtMin(d, f, m)) { toast('Conflit sur la cible — le bloc reste où il est.'); renderPlanning(); return; }
+    var q = quote(wd(d), m, b.dur);
+    confirmModal('Déplacer cette réservation ?',
+      '<p>' + b.name + ' : ' + b.f + ' ' + hhmm(b.s) + ' → <b>' + f + ' ' + hhmm(m) + '</b> · ' + b.dur + ' min</p>' +
+      '<p>Nouveau tarif (moteur) : <b>' + fmt(q.totalDa) + ' DA</b>' + (q.totalDa !== b.amount ? ' <span class="impact">(au lieu de ' + fmt(b.amount) + ')</span>' : '') + '</p>',
+      function () {
+        var old = b.f + ' ' + hhmm(b.s);
+        b.f = f; b.s = m; b.amount = q.totalDa;
+        audit('a déplacé ' + (b.ref || b.name) + ' de ' + old + ' vers ' + f + ' ' + hhmm(m) + ' (glisser-déposer) · requoté ' + fmt(q.totalDa) + ' DA');
+        toast('Déplacée — identité et origine conservées, prix requoté.');
+        sel = null; resetPanel(); renderAll();
+      });
+    renderPlanning();
+  }
+
+  /* ---- « Prochaine disponibilité » : sport · durée → premier créneau + tarif ---- */
+  function nextAvailability(sport, durMin) {
+    for (var off = d; off <= d + 7; off++) {
+      var g = laneGeom(off);
+      var fromMin = off === 0 ? Math.max(g.start, Math.ceil(NOW_MIN / 30) * 30) : g.start;
+      for (var m = fromMin; m + durMin <= g.start + g.total; m += 30) {
+        var flds = FIELDS.filter(function (f) { return FIELD_SPORT[f] === sport && fdef(f).status === 'ACTIVE'; });
+        for (var i = 0; i < flds.length; i++) {
+          var f = flds[i];
+          var closed = false;
+          for (var mm = m; mm < m + durMin; mm += 30) if (closedAtMin(off, f, mm)) { closed = true; break; }
+          if (closed) continue;
+          if (!conflicts(off, f, m, durMin, null)) return { off: off, f: f, m: m, q: quote(wd(off), m, durMin) };
+        }
+      }
+    }
+    return null;
+  }
+
+  function pb(labelTxt, attr, kind) { return '<button class="mb-btn ' + (kind || 'mb-btn--secondary') + ' mb-btn--sm" ' + attr + '>' + labelTxt + '</button>'; }
+
+  function selectCell(id) {
+    sel = id; show2('plan');
+    var b = dayList(d).find(function (x) { return x.id === id; });
+    if (!b) return;
+    if (b.rec) {
+      $('#panel').innerHTML = '<div class="row"><span class="d"><b>' + b.name + '</b> · ' + hhmm(b.s) + ' → ' + hhmm(b.s + b.dur) +
+        ' · généré par l\u2019abonnement — se gère dans Abonnements.</span></div>';
+      renderGrid(); return;
+    }
+    var real = (byDay[d] || []).find(function (x) { return x.id === id; });
+    var head = '<span class="d"><b>' + real.name + (real.ref ? ' · ' + real.ref : '') + '</b>' +
+      (real.tel ? ' · <a href="tel:' + real.tel.replace(/\s/g, '') + '" style="color:var(--gold)">' + real.tel + '</a>' : '') + ' · ' + real.f + ' · ' + hhmm(real.s) + ' → ' + hhmm(real.s + real.dur) +
+      (real.kind !== 'block' ? ' · ' + fmt(real.amount) + ' DA · ' + pill(real.st) + ' ' + srcChip(real) : ' · blocage') + '</span>';
+    var acts = '';
+    if (real.kind !== 'block' && live(real)) {
+      if (real.src === 'PHONE' && !real.ver) acts += pb('Confirmer la réservation', 'data-a="confirm"' + (can('CONFIRM') ? '' : ' disabled'), 'mb-btn');
+      if (real.st === 'RESERVED') acts += pb('Modifier / déplacer', 'data-a="edit"' + (can('MODIFY') ? '' : ' disabled'));
+      if (real.st === 'RESERVED') acts += pb('Honoré', 'data-a="honored"' + (can('CASH') ? '' : ' disabled'));
+      if (real.st === 'RESERVED' || real.st === 'HONORED') acts += pb('Payé', 'data-a="paid"' + (can('CASH') ? '' : ' disabled')) + pb('No-show', 'data-a="noshow"' + (can('CASH') ? '' : ' disabled'));
+      acts += pb('Annuler', 'data-a="cancel"' + (can('CANCEL') ? '' : ' disabled title="Réservé au manager"'), 'mb-btn--danger');
+    }
+    if (real.kind === 'block') acts += pb('Débloquer', 'data-a="unblock"' + (can('BLOCK') ? '' : ' disabled'));
+    var extra = '';
+    if (real.kind === 'match') {
+      var h = health(real, d);
+      extra = '<div class="cm-players"><div class="cm-hp">MATCH HEALTH <span class="cm-health ' + h.band + '">' + h.score + ' %</span> · ' + h.bandLabel +
+        (h.pen.length ? '<br>' + h.pen.map(function (p) { return '− ' + p.pts + ' · ' + p.label; }).join('<br>') : '') + '</div>' +
+        '<a class="mb-btn mb-btn--sm" style="margin:8px 0" href="' + waLink(real) + '" target="_blank" rel="noopener" id="wa">Contacter le capitaine (WhatsApp)</a>' +
+        real.players.map(function (p, i) {
+          var chip = { EXPECTED: ['open', 'Attendu'], CONFIRMED: ['filling', 'Confirmé'], ARRIVED: ['joined', 'Arrivé'], NO_SHOW: ['cancelled', 'No-show'] }[p.st];
+          var canArr = p.st !== 'ARRIVED';
+          var canNs = p.st === 'EXPECTED' || p.st === 'CONFIRMED';
+          return '<div class="cm-pl"><span class="n">' + p.n + '</span><span class="mb-status mb-status--' + chip[0] + '">' + chip[1] + '</span>' +
+            (can('ATTEND') ? pb('Arrivé', 'data-att="A-' + i + '"' + (canArr ? '' : ' disabled')) + pb('No-show', 'data-att="N-' + i + '"' + (canNs ? '' : ' disabled')) : '') + '</div>';
+        }).join('') + '</div>';
+    }
+    $('#panel').innerHTML = '<div class="row">' + head + acts + '</div>' + extra;
+    wirePanel(real);
+    renderGrid();
+  }
+
+  function selectFree(key, presetDur) {
+    sel = key;
+    var parts = key.split('-'), f = parts[0], m = +parts[1];
+    if (!can('CREATE') && !can('BLOCK')) {
+      $('#panel').innerHTML = '<div class="row"><span class="d"><svg class="mb-ic" style="width:13px;height:13px;vertical-align:-2px;margin-right:5px"><use href="#i-lock"/></svg><b>' + f + ' · ' + hhmm(m) + '</b> · libre — en ' + ROLE_FR[role] + ', tu peux consulter et pointer les présences, pas créer.</span></div>';
+      renderGrid(); return;
+    }
+    var durList = [30, 60, 90, 120];
+    if (presetDur && durList.indexOf(presetDur) < 0) { durList.push(presetDur); durList.sort(function (a, b) { return a - b; }); }
+    var durSel = '<label><span>Durée</span><select class="mb-field__control" id="nb-dur" style="min-width:96px">' +
+      durList.map(function (x) { return '<option value="' + x + '"' + (x === (presetDur || 60) ? ' selected' : '') + '>' + x + ' min</option>'; }).join('') + '</select></label>';
+    $('#panel').innerHTML = '<div class="row"><span class="d"><b>' + f + ' · ' + hhmm(m) + '</b> · libre — ' + label(d) + '</span></div>' +
+      '<div class="cm-sub">' +
+      '<label><span>Au nom de qui ?</span><input class="mb-field__control" id="nb-name" maxlength="30" style="min-width:150px"></label>' +
+      '<label><span>Téléphone</span><input class="mb-field__control" id="nb-tel" placeholder="05 50 00 00 00" maxlength="14" style="min-width:130px"></label>' +
+      durSel +
+      '<label><span>Canal</span><select class="mb-field__control" id="nb-src"><option value="WALK_IN">Comptoir</option><option value="PHONE">Téléphone</option></select></label>' +
+      '<span class="cm-quote" id="nb-quote"></span>' +
+      pb('Créer la réservation', 'data-a="create" disabled', 'mb-btn') +
+      (can('BLOCK') ? '<span style="flex-basis:100%"></span>' +
+        '<label><span>Bloquer une plage — motif</span><select class="mb-field__control" id="blk-reason" style="max-width:140px"><option>Maintenance</option><option>Privatisation</option><option>Événement</option><option>Autre</option></select></label>' +
+        '<label><span>De</span><select class="mb-field__control" id="blk-from"></select></label>' +
+        '<label><span>À</span><select class="mb-field__control" id="blk-to"></select></label>' +
+        pb('Bloquer la plage', 'data-a="block"') : '') +
+      '</div>';
+    if (can('BLOCK')) {
+      var o2 = openFor(d), fromOpts = '', toOpts = '';
+      for (var mm = o2[0]; mm < o2[1]; mm += 30) fromOpts += '<option value="' + mm + '"' + (mm === m ? ' selected' : '') + '>' + hhmm(mm) + '</option>';
+      for (var mm2 = o2[0] + 30; mm2 <= o2[1]; mm2 += 30) toOpts += '<option value="' + mm2 + '"' + (mm2 === m + 60 ? ' selected' : '') + '>' + hhmm(mm2) + '</option>';
+      $('#blk-from').innerHTML = fromOpts; $('#blk-to').innerHTML = toOpts;
+    }
+    function requote() {
+      var q = quote(wd(d), m, +$('#nb-dur').value);
+      $('#nb-quote').innerHTML = 'Tarif calculé : <b>' + fmt(q.totalDa) + ' DA</b><br>' +
+        q.lines.map(function (l) { return l.label + ' · ' + l.min + ' min · ' + fmt(Math.round(l.amount)) + ' DA'; }).join('<br>');
+    }
+    requote();
+    $('#nb-dur').addEventListener('change', requote);
+    function gate() {
+      var c = $('#panel [data-a="create"]');
+      if (c) c.disabled = $('#nb-name').value.trim().length < 2 || $('#nb-tel').value.replace(/\D/g, '').length < 8;
+    }
+    $('#nb-name').addEventListener('input', gate);
+    $('#nb-tel').addEventListener('input', gate);
+    wirePanel({ free: key });
+    renderGrid();
+  }
+
+  function wirePanel(b) {
+    $$('#panel [data-att]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var parts = btn.dataset.att.split('-'), i = +parts[1];
+        b.players[i].st = parts[0] === 'A' ? 'ARRIVED' : 'NO_SHOW';
+        audit('a pointé ' + b.players[i].n + ' ' + (parts[0] === 'A' ? 'ARRIVÉ' : 'NO-SHOW') + ' sur ' + b.name);
+        selectCell(b.id); renderDash();
+      });
+    });
+    $$('#panel [data-a]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var a = btn.dataset.a;
+        if (a === 'confirm') {
+          b.ver = true;   // la SOURCE reste PHONE — seule la vérification change
+          audit('a confirmé la réservation téléphone ' + (b.ref || b.name));
+          toast('Confirmée — source Téléphone CONSERVÉE (elle compte dans « part Moubarat vs téléphone »).');
+          sel = null; resetPanel(); renderAll(); return;
+        }
+        if (a === 'edit') { openEdit(b); return; }
+        if (a === 'honored') { b.st = 'HONORED'; audit('a pointé ' + (b.ref || b.name) + ' honorée'); }
+        if (a === 'paid') {
+          b.st = 'PAID';
+          if (MODULES.caisse && cashSession) {
+            cashMoves.push({ kind: 'COLLECTION', amount: b.amount, by: ACTOR[role], hh: nowHH(), ref: b.ref || b.name });
+            toast(fmt(b.amount) + ' DA encaissés — mouvement ajouté à la caisse ouverte.');
+          } else toast(fmt(b.amount) + ' DA encaissés' + (MODULES.caisse ? ' (caisse fermée : pas de mouvement tracé).' : '.'));
+          audit('a encaissé ' + fmt(b.amount) + ' DA · ' + (b.ref || b.name));
+        }
+        if (a === 'noshow') { b.st = 'NO_SHOW'; audit('a enregistré un no-show · ' + (b.ref || b.name)); }
+        if (a === 'cancel') {
+          confirmModal('Annuler cette réservation ?',
+            '<p>' + b.name + ' · ' + b.f + ' · ' + hhmm(b.s) + ' → ' + hhmm(b.s + b.dur) + '</p>' +
+            '<p class="impact">' + fmt(b.amount) + ' DA seront retirés du CA engagé.</p><p>Le client sera notifié. Le créneau sera libéré.</p>',
+            function () { b.st = 'CANCELLED'; audit('a annulé ' + (b.ref || b.name) + ' (−' + fmt(b.amount) + ' DA engagés)'); toast('Annulée — créneau libéré.'); sel = null; resetPanel(); renderAll(); });
+          return;
+        }
+        if (a === 'unblock') { byDay[d] = (byDay[d] || []).filter(function (x) { return x !== b; }); audit('a débloqué un créneau'); }
+        if (a === 'create' || a === 'block') {
+          var parts = b.free.split('-'), f = parts[0], m = +parts[1];
+          var isB = a === 'block';
+          var bm = isB ? +$('#blk-from').value : m;
+          var dur = isB ? (+$('#blk-to').value - +$('#blk-from').value) : +$('#nb-dur').value;
+          if (isB && dur <= 0) { toast('La fin de la plage doit suivre son début.'); return; }
+          if (conflicts(d, f, bm, dur, null)) { toast('Conflit : hors horaires, ou chevauchement avec une occupation/fermeture.'); return; }
+          var src = isB ? 'CENTER' : $('#nb-src').value;
+          var q = quote(wd(d), bm, dur);
+          (byDay[d] = byDay[d] || []).push({
+            id: 'n' + (nextId++), f: f, s: bm, dur: dur, kind: isB ? 'block' : 'resa', st: 'RESERVED',
+            src: src, ver: true,   // comptoir OU téléphone pris par la réception = vérifié d'office
+            amount: isB ? 0 : q.totalDa,
+            name: isB ? $('#blk-reason').value : $('#nb-name').value.trim(),
+            tel: isB ? null : $('#nb-tel').value.trim(),
+            ref: isB ? null : 'RYD-0' + (490 + nextId),
+          });
+          audit(isB ? 'a bloqué ' + f + ' (' + $('#blk-reason').value.toLowerCase() + ') ' + hhmm(bm) + ' → ' + hhmm(bm + dur)
+                    : 'a créé ' + $('#nb-name').value.trim() + ' · ' + f + ' ' + hhmm(bm) + ' → ' + hhmm(bm + dur) + ' · ' + fmt(q.totalDa) + ' DA (' + (src === 'PHONE' ? 'téléphone' : 'comptoir') + ')');
+          toast(isB ? 'Plage bloquée ' + hhmm(bm) + ' → ' + hhmm(bm + dur) + ' — hors cash et occupation.' : 'Créée au tarif MOTEUR : ' + fmt(q.totalDa) + ' DA.');
+        }
+        sel = null; resetPanel(); renderAll();
+      });
+    });
+  }
+
+  function openEdit(b) {
+    var o = openFor(d);
+    var hourOpts = [];
+    for (var m = o[0]; m < o[1]; m += 30) hourOpts.push(m);
+    $('#panel').insertAdjacentHTML('beforeend',
+      '<div class="cm-sub" id="editsub">' +
+      '<label><span>Terrain</span><select class="mb-field__control" id="ed-f">' + FIELDS.map(function (f) { return '<option' + (f === b.f ? ' selected' : '') + '>' + f + '</option>'; }).join('') + '</select></label>' +
+      '<label><span>Début</span><select class="mb-field__control" id="ed-s">' + hourOpts.map(function (m) { return '<option value="' + m + '"' + (m === b.s ? ' selected' : '') + '>' + hhmm(m) + '</option>'; }).join('') + '</select></label>' +
+      '<label><span>Durée</span><select class="mb-field__control" id="ed-d">' + [30, 60, 90, 120].map(function (x) { return '<option value="' + x + '"' + (x === b.dur ? ' selected' : '') + '>' + x + ' min</option>'; }).join('') + '</select></label>' +
+      '<span class="cm-quote" id="ed-quote"></span>' +
+      pb('Appliquer', 'data-ed="go"', 'mb-btn') + '</div>');
+    function req() {
+      var q = quote(wd(d), +$('#ed-s').value, +$('#ed-d').value);
+      $('#ed-quote').innerHTML = 'Nouveau tarif (moteur) : <b>' + fmt(q.totalDa) + ' DA</b>';
+    }
+    req();
+    ['#ed-s', '#ed-d', '#ed-f'].forEach(function (s) { $(s).addEventListener('change', req); });
+    $('#editsub [data-ed]').addEventListener('click', function () {
+      var nf = $('#ed-f').value, ns = +$('#ed-s').value, nd = +$('#ed-d').value;
+      if (conflicts(d, nf, ns, nd, b.id)) { toast('Conflit sur la cible — choisis un autre créneau.'); return; }
+      var old = b.f + ' ' + hhmm(b.s);
+      b.f = nf; b.s = ns; b.dur = nd; b.amount = quote(wd(d), ns, nd).totalDa;
+      audit('a déplacé ' + (b.ref || b.name) + ' de ' + old + ' vers ' + nf + ' ' + hhmm(ns) + ' · requoté ' + fmt(b.amount) + ' DA');
+      toast('Déplacée — même réservation, même origine, prix requoté par le moteur.');
+      sel = null; resetPanel(); renderAll();
+    });
+  }
+
+  function resetPanel() {
+    $('#panel').innerHTML = '<div class="row"><span class="d">Clique une case : libre → créer (durée + tarif moteur) · occupée → modifier, déplacer, encaisser, présence.</span></div>';
+  }
+
+  var ficheOpen = null;
+  function renderResa() {
+    var list = dayList(d).filter(function (b) { return b.kind !== 'block'; })
+      .sort(function (a, b) { return a.s - b.s; });   // chronologie : première → dernière
+    var c = cash(dayList(d));
+    $('#rows').innerHTML = '<p class="cm-view-note">Le résumé de la journée, dans l\u2019ordre chronologique. Clique une réservation pour sa fiche technique complète — c\u2019est cette liste que la clôture de caisse valide chaque soir.</p>' +
+      '<div class="cm-form" style="gap:16px">' +
+      '<span class="cm-note">Encaissé <b style="color:var(--text)">' + fmt(c.collected) + ' DA</b></span>' +
+      '<span class="cm-note">Engagé <b style="color:var(--text)">' + fmt(c.engaged) + ' DA</b></span>' +
+      '<span class="cm-note">Perdu annulations <b style="color:var(--text)">' + fmt(c.lostC) + ' DA</b></span>' +
+      '<span class="cm-note">Perdu no-show <b style="color:var(--text)">' + fmt(c.lostN) + ' DA</b></span></div>' +
+      list.map(function (b) {
+        var row = '<div class="cm-riskrow" data-fiche="' + b.id + '" style="border-left-color:var(--line-strong);cursor:pointer;margin-bottom:' + (ficheOpen === b.id ? '0' : '8px') + '"><span class="t"><b>' + hhmm(b.s) + ' — ' + b.name + (b.ref ? ' · ' + b.ref : '') + '</b>' +
+          '<span class="cm-note" style="margin:2px 0 0">' + b.f + ' · ' + hhmm(b.s) + ' → ' + hhmm(b.s + b.dur) + ' · ' + fmt(b.amount) + ' DA</span></span>' +
+          srcChip(b) + pill(b.st) + '</div>';
+        if (ficheOpen === b.id) row += ficheHtml(b);
+        return row;
+      }).join('');
+    $$('#rows [data-fiche]').forEach(function (el) {
+      el.addEventListener('click', function () { ficheOpen = ficheOpen === el.dataset.fiche ? null : el.dataset.fiche; renderResa(); });
+    });
+    var go = $('#rows [data-goplan]');
+    if (go) go.addEventListener('click', function (e) { e.stopPropagation(); show('plan'); selectCell(go.dataset.goplan); });
+  }
+  function ficheHtml(b) {
+    var srcLbl = { MOUBARAT: 'App Moubarat', PHONE: 'Téléphone' + (b.ver ? ' (vérifiée)' : ' (à vérifier)'), WALK_IN: 'Comptoir', CENTER: 'Centre' }[b.src];
+    var enc = b.st === 'PAID' ? fmt(b.amount) + ' DA — encaissé' : b.st === 'NO_SHOW' ? '0 DA — no-show (' + fmt(b.amount) + ' DA perdus)' :
+      b.st === 'CANCELLED' ? '0 DA — annulée' : '0 DA sur ' + fmt(b.amount) + ' DA — à encaisser';
+    var h = '<div class="cm-fiche">' +
+      '<div class="cm-line"><span>Réservation</span><b>' + b.name + (b.ref ? ' · ' + b.ref : '') + '</b></div>' +
+      (b.tel ? '<div class="cm-line"><span>Téléphone</span><b><a href="tel:' + b.tel.replace(/\s/g, '') + '" style="color:var(--gold)">' + b.tel + '</a></b></div>' : '') +
+      '<div class="cm-line"><span>Origine</span><b>' + srcLbl + '</b></div>' +
+      '<div class="cm-line"><span>Terrain · créneau</span><b>' + b.f + ' · ' + hhmm(b.s) + ' → ' + hhmm(b.s + b.dur) + ' (' + b.dur + ' min)</b></div>' +
+      '<div class="cm-line"><span>Montant · encaissement</span><b>' + enc + '</b></div>' +
+      '<div class="cm-line"><span>Statut</span>' + pill(b.st) + '</div>';
+    if (b.kind === 'match') {
+      var arrived = b.players.filter(function (x) { return x.st === 'ARRIVED'; }).length;
+      h += '<div class="cm-line"><span>Match</span><b>' + b.players.length + '/' + b.cap + ' inscrits · ' + arrived + (arrived > 1 ? ' arrivés' : ' arrivé') + ' · Health ' + health(b, d).score + ' %</b></div>' +
+        '<div class="cm-line"><span>Joueurs (profils Moubarat)</span><b>' + b.players.map(function (x) {
+          return x.n + ' <i style="font-family:var(--font-mono);font-size:9px;color:var(--text-4);font-style:normal">' + ({ EXPECTED: 'attendu', CONFIRMED: 'confirmé', ARRIVED: 'arrivé', NO_SHOW: 'no-show' }[x.st]) + '</i>';
+        }).join(' · ') + '</b></div>';
+    } else if (b.src === 'MOUBARAT' && !b.rec) {
+      h += '<div class="cm-line"><span>Profil</span><b>Compte App Moubarat — fiche dans Clients</b></div>';
+    }
+    if (!b.rec) h += '<div style="margin-top:8px"><button class="mb-btn mb-btn--secondary mb-btn--sm" data-goplan="' + b.id + '">Ouvrir dans le planning</button></div>';
+    return h + '</div>';
+  }
+
+  function renderSubs() {
+    var locked = !can('EDIT');
+    $('#s-form').style.opacity = locked ? .45 : 1;
+    $('#s-form').style.pointerEvents = locked ? 'none' : '';
+    $('#sb-day').innerHTML = [6, 0, 1, 2, 3, 4, 5].map(function (w) { return '<option value="' + w + '">' + DN[w] + '.</option>'; }).join('');
+    var hrs = ''; for (var m = 480; m <= 1380; m += 30) hrs += '<option value="' + m + '"' + (m === 1140 ? ' selected' : '') + '>' + hhmm(m) + '</option>';
+    $('#sb-hour').innerHTML = hrs;
+    $('#sb-field').innerHTML = FIELDS.filter(function (f) { return fdef(f).status === 'ACTIVE'; })
+      .map(function (f) { return '<option>' + f + '</option>'; }).join('');
+    $('#s-list').innerHTML = recurrings.map(function (r) {
+      return '<div class="cm-riskrow"><span class="t"><b>' + r.name + ' · ' + DN[r.wd] + '. ' + hhmm(r.s) + ' · ' + r.dur + ' min · ' + r.f + '</b>' +
+        '<span class="cm-note" style="margin:2px 0 0">' + (r.until != null ? 'jusqu\u2019au ' + label(r.until) : 'sans date de fin') + '</span></span>' +
+        '<span class="mb-status mb-status--open">Actif</span>' +
+        (can('EDIT') ? '<button class="mb-btn mb-btn--secondary mb-btn--sm" data-unsub="' + r.id + '">Désactiver</button>' : '') + '</div>';
+    }).join('') || '<p class="cm-note">Aucun abonnement actif.</p>';
+    $$('#s-list [data-unsub]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var r = recurrings.find(function (x) { return x.id === btn.dataset.unsub; });
+        confirmModal('Désactiver cet abonnement ?',
+          '<p>' + r.name + ' · ' + DN[r.wd] + '. ' + hhmm(r.s) + ' — ses occurrences futures disparaîtront du planning.</p><p>L\u2019historique passé est conservé.</p>',
+          function () {
+            recurrings = recurrings.filter(function (x) { return x.id !== r.id; });
+            audit('a désactivé l\u2019abonnement ' + r.name + ' (' + DN[r.wd] + '. ' + hhmm(r.s) + ')');
+            toast('Abonnement désactivé.');
+            renderAll();
+          });
+      });
+    });
+  }
+
+  function renderStats() {
+    var list = dayList(d);
+    /* Financial center : 7 vs 7 · 30 vs 30 */
+    var w1 = rangeAgg(d - 6, d), w0 = rangeAgg(d - 13, d - 7);
+    var m1 = rangeAgg(d - 29, d), m0 = rangeAgg(d - 59, d - 30);
+    var panier = w1.paidCount ? Math.round(w1.ca / w1.paidCount) : 0;
+    var c0 = cash(list);
+    var nsRate = w1.resas ? Math.round(100 * w1.ns / w1.resas) : 0;
+    var nsRate0 = w0.resas ? Math.round(100 * w0.ns / w0.resas) : 0;
+    var openMin7 = 0, bookedMin7 = 0;
+    for (var offX = d - 6; offX <= d; offX++) {
+      var oX = OPEN[wd(offX)];
+      openMin7 += ((oX[1] - oX[0]) - closureMin(offX)) * FIELDS.length;
+      histDay(offX).forEach(function (b) { if (b.st !== 'CANCELLED') bookedMin7 += b.dur; });
+    }
+    var fill7 = openMin7 ? Math.round(100 * bookedMin7 / openMin7) : 0;
+    var caAbos = 0;
+    for (var offY = d - 29; offY <= d; offY++) {
+      recurrings.forEach(function (r) {
+        if (r.wd === wd(offY) && offY >= r.from && (r.until == null || offY <= r.until)) caAbos += quote(r.wd, r.s, r.dur).totalDa;
+      });
+    }
+    $('#fin').innerHTML =
+      '<div class="cm-kpi"><span>CA encaissé · aujourd\u2019hui</span><b>' + fmt(c0.collected) + '</b><i>DA</i></div>' +
+      '<div class="cm-kpi"><span>CA · 7 jours (hebdo)</span><b id="f-ca7">' + fmt(w1.ca) + '</b><i>DA</i>' + delta(w1.ca, w0.ca) + '</div>' +
+      '<div class="cm-kpi"><span>CA · 30 jours (mensuel)</span><b>' + fmt(m1.ca) + '</b><i>DA</i>' + delta(m1.ca, m0.ca) + '</div>' +
+      '<div class="cm-kpi"><span>CA perdu annulations · 7 j</span><b>' + fmt(Math.round(w1.lost * 0.45)) + '</b><i>DA</i></div>' +
+      '<div class="cm-kpi"><span>CA perdu no-shows · 7 j</span><b>' + fmt(Math.round(w1.lost * 0.55)) + '</b><i>DA</i>' + delta(w1.lost, w0.lost, true) + '</div>' +
+      '<div class="cm-kpi"><span>CA abonnements · 30 j</span><b>' + fmt(caAbos) + '</b><i>DA</i></div>' +
+      '<div class="cm-kpi"><span>Taux de no-show · 7 j</span><b>' + nsRate + '</b><i>%</i>' + delta(nsRate, nsRate0, true) + '</div>' +
+      '<div class="cm-kpi"><span>Taux de remplissage · 7 j</span><b>' + fill7 + '</b><i>%</i></div>' +
+      '<div class="cm-kpi"><span>Panier moyen · 7 j</span><b>' + fmt(panier) + '</b><i>DA</i>' + delta(w1.clientCount, w0.clientCount).replace('cm-delta', 'cm-delta" hidden="') + '</div>';
+
+    $('#bars').innerHTML = FIELDS.map(function (f) {
+      var r = Math.round(occOf(d, list, f) * 100);
+      return '<div class="cm-bar"><span>' + f + '</span><span class="track"><span class="fill' + (r < 30 ? ' low' : '') + '" style="width:' + r + '%"></span></span><span>' + r + ' %</span></div>';
+    }).join('');
+
+    /* CA par terrain · 7 j + insight actionnable */
+    var byF = {};
+    FIELDS.forEach(function (f) { byF[f] = { ca: 0, mins: 0, ns: 0 }; });
+    var openWeek = 0;
+    for (var off = d - 6; off <= d; off++) {
+      var o = OPEN[wd(off)];
+      openWeek += (o[1] - o[0]) - closureMin(off);
+      histDay(off).forEach(function (b) {
+        if (!byF[b.f]) return;
+        if (b.st === 'PAID' || b.st === 'HONORED') byF[b.f].ca += b.amount;
+        if (b.st !== 'CANCELLED') byF[b.f].mins += b.dur;
+        if (b.st === 'NO_SHOW') byF[b.f].ns++;
+      });
+    }
+    $('#field-ca').innerHTML = FIELDS.map(function (f) {
+      var x = byF[f], occ = Math.round(100 * x.mins / openWeek);
+      var revH = x.mins ? Math.round(x.ca / (x.mins / 60)) : 0;
+      return '<div class="cm-arow"><b style="font-family:var(--font-display);font-size:15px">' + f + '</b>' +
+        '<span>CA <b>' + fmt(x.ca) + ' DA</b></span><span>Occupation <b>' + occ + ' %</b></span>' +
+        '<span>Revenu moyen <b>' + fmt(revH) + ' DA/h</b></span><span>No-shows <b>' + x.ns + '</b></span>' +
+        (occ < 30 ? '<span class="cm-insight" data-ins="' + f + '"><svg class="mb-ic" style="width:12px;height:12px"><use href="#i-bulb"/></svg>Sous-performe — créer une promotion ?</span>' : '') + '</div>';
+    }).join('');
+    $$('#field-ca [data-ins]').forEach(function (el) {
+      el.addEventListener('click', function () { toast('Smart promotion sur ' + el.dataset.ins + ' : le moteur promo est prêt (bestPromo) — le builder ciblé arrive en V1.5.'); });
+    });
+
+    /* Heatmap 4 semaines : jours × heures */
+    var hmHours = []; for (var h = 8; h <= 23; h++) hmHours.push(h); hmHours.push(24);
+    var wdOrder = [1, 2, 3, 4, 5, 6, 0];
+    var hm = '<div class="lab"></div>' + wdOrder.map(function (w) { return '<div class="lab">' + DN[w] + '</div>'; }).join('');
+    hmHours.forEach(function (h) {
+      hm += '<div class="lab">' + (h === 24 ? '00' : h) + 'h</div>';
+      wdOrder.forEach(function (w) {
+        var occCount = 0, dayCount = 0;
+        for (var off = d - 28; off <= d - 1; off++) {
+          if (wd(off) !== w) continue;
+          var o = OPEN[w], m = h === 24 ? 1440 : h * 60;
+          if (m < o[0] || m >= o[1]) { continue; }
+          dayCount++;
+          var occ = histDay(off).filter(function (b) { return b.st !== 'CANCELLED' && m >= b.s && m < b.s + b.dur; }).length;
+          occCount += occ / FIELDS.length;
+        }
+        var v = dayCount ? occCount / dayCount : null;
+        hm += v === null ? '<div class="cell off" title="Fermé à cette heure"></div>'
+          : '<div class="cell" data-hm="' + w + '-' + h + '" title="' + Math.round(v * 100) + ' %" style="background:rgba(255,43,0,' + (0.06 + v * 0.8).toFixed(2) + ')"></div>';
+      });
+    });
+    var tmax = 1, tvals = [];
+    for (var offT = d - 13; offT <= d; offT++) {
+      var caT = histDay(offT).reduce(function (s, b) { return s + (b.st === 'PAID' ? b.amount : 0); }, 0);
+      tvals.push([offT, caT]); if (caT > tmax) tmax = caT;
+    }
+    $('#trend').innerHTML = tvals.map(function (t) {
+      return '<b class="' + (t[0] === d ? 'today' : '') + '" style="height:' + Math.max(4, Math.round(t[1] / tmax * 100)) + '%" data-v="' + label(t[0]) + ' · ' + fmt(t[1]) + ' DA"></b>';
+    }).join('');
+    $('#heatmap').innerHTML = hm;
+
+    /* Origine · 7 jours */
+    var oc = { MOUBARAT: 0, PHONE: 0, WALK_IN: 0 }, ot = 0;
+    for (var off2 = d - 6; off2 <= d; off2++) histDay(off2).forEach(function (b) { if (b.st !== 'CANCELLED') { oc[b.src]++; ot++; } });
+    var pc = function (n) { return ot ? Math.round(n / ot * 100) : 0; };
+    $('#origin').innerHTML = [['Moubarat', pc(oc.MOUBARAT), ''], ['Téléphone', pc(oc.PHONE), ' low'], ['Comptoir', pc(oc.WALK_IN), ' low']].map(function (x) {
+      return '<div class="cm-bar"><span style="font-size:12px">' + x[0] + '</span><span class="track"><span class="fill' + x[2] + '" style="width:' + x[1] + '%"></span></span><span>' + x[1] + ' %</span></div>';
+    }).join('');
+  }
+
+  var clFilter = '';
+  var CL = [
+    { n: 'Karim', kind: 'MB', h: 15, p: 2, ce: 1, cl: 0, ns: 0 },
+    { n: 'Riad', kind: 'MB', h: 5, p: 0, ce: 1, cl: 1, ns: 1 },
+    { n: 'Sofiane', kind: 'MB', h: 1, p: 1, ce: 0, cl: 0, ns: 0 },
+    { n: 'Ammi Salah', kind: 'LOCAL', tel: '05 61 22 33 44', h: 4, p: 4, ce: 0, cl: 0, ns: 0 },
+  ];
+  function renderClients() {
+    /* Top clients & churn — dérivés de l'historique 30 j */
+    var agg = {};
+    for (var off = d - 29; off <= d; off++) histDay(off).forEach(function (b) {
+      var t = agg[b.name] = agg[b.name] || { ca: 0, n: 0, last: -999 };
+      if (b.st === 'PAID' || b.st === 'HONORED') t.ca += b.amount;
+      if (b.st !== 'CANCELLED') { t.n++; if (off > t.last) t.last = off; }
+    });
+    var top = Object.keys(agg).sort(function (a, b2) { return agg[b2].ca - agg[a].ca; }).slice(0, 5);
+    $('#topclients').innerHTML = top.map(function (n, i) {
+      return '<div class="cm-toprow"><span class="rk">' + (i + 1) + '</span><span class="n">' + n + '</span>' +
+        '<span class="v">' + fmt(agg[n].ca) + ' DA</span></div>';
+    }).join('');
+    var churnNames = Object.keys(CHURNED);
+    $('#churn').innerHTML = churnNames.map(function (n) {
+      return '<div class="cm-toprow"><span class="n">' + n + '</span><span class="v">absent depuis ' + CHURNED[n] + ' j</span>' +
+        '<span class="cm-insight is-off" title="Relance ciblée — arrive en V1.5">Relancer</span></div>';
+    }).join('');
+    $$('#churn .cm-insight').forEach(function (el) { el.addEventListener('click', function () { toast('Segment prêt — la campagne de relance (1/mois max) arrive en V1.5.'); }); });
+
+    $('#clients').innerHTML = CL.filter(function (c) { return c.n.toLowerCase().indexOf(clFilter) >= 0; }).map(function (c) {
+      var kept = c.h + c.p, total = kept + c.ce + c.cl + c.ns;
+      var vis = total >= 3;
+      var score = vis ? Math.max(0, Math.min(100, Math.round((kept - 0.5 * c.cl - 2 * c.ns) / total * 100))) : null;
+      var band = !vis ? null : score >= 90 ? ['open', 'Très fiable'] : score >= 70 ? ['open', 'Fiable'] : score >= 50 ? ['filling', 'À surveiller'] : ['cancelled', 'Risqué'];
+      var conf = !vis ? '' : total >= 20 ? 'Confiance élevée' : total >= 5 ? 'Confiance moyenne' : 'Confiance faible';
+      return '<div class="cm-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="color:var(--text)">' + c.n +
+        ' <span class="cm-src' + (c.kind === 'MB' ? ' ok' : '') + '" style="margin-left:6px">' + (c.kind === 'MB' ? 'App Moubarat' : 'Fiche centre') + '</span></b>' +
+        (vis ? '<span class="mb-status mb-status--' + band[0] + '">' + band[1] + '</span>' : '<span class="mb-status mb-status--open">Nouveau</span>') + '</div>' +
+        (c.tel ? '<div class="cm-note" style="margin:0 0 6px"><a href="tel:' + c.tel.replace(/\s/g, '') + '" style="color:var(--gold)">' + c.tel + '</a></div>' : '') +
+        '<div style="font-family:var(--font-display);font-size:30px;color:var(--text)">' + (vis ? score : '—') + ' <i style="font-family:var(--font-mono);font-size:10px;color:var(--text-4);font-style:normal">/ 100 · ' + conf + '</i></div>' +
+        '<div class="cm-note">' + total + (total > 1 ? ' résas' : ' résa') + ' · ' + kept + (kept > 1 ? ' honorées' : ' honorée') + ' · ' + c.ce + (c.ce > 1 ? ' annulées tôt' : ' annulée tôt') + ' · ' + c.cl + (c.cl > 1 ? ' tardives' : ' tardive') + ' · ' + c.ns + ' no-show</div></div>';
+    }).join('');
+  }
+
+  function renderTeams() {
+    var agg = {};
+    for (var off = d - 29; off <= d; off++) histDay(off).forEach(function (b) {
+      if (!b.team) return;
+      var t = agg[b.team] = agg[b.team] || { ca: 0, resas: 0, matchs: 0, ns: 0, last: -999 };
+      if (b.st === 'PAID' || b.st === 'HONORED') t.ca += b.amount;
+      if (b.st !== 'CANCELLED') { t.resas++; if (b.match) t.matchs++; if (off > t.last) t.last = off; }
+      if (b.st === 'NO_SHOW') t.ns++;
+    });
+    $('#teams').innerHTML = Object.keys(agg).sort(function (a, b2) { return agg[b2].ca - agg[a].ca; }).map(function (name) {
+      var t = agg[name];
+      var nsPct = t.resas ? Math.round(100 * t.ns / t.resas) : 0;
+      return '<div class="cm-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+        '<b style="color:var(--text);font-family:var(--font-display);font-size:16px;text-transform:uppercase">' + name + '</b>' +
+        '<span class="mb-status mb-status--' + (nsPct <= 3 ? 'open' : nsPct <= 8 ? 'filling' : 'cancelled') + '">' + nsPct + ' % no-show</span></div>' +
+        '<div class="cm-line"><span>CA généré · 30 j</span><b>' + fmt(t.ca) + ' DA</b></div>' +
+        '<div class="cm-line"><span>Réservations / matchs</span><b>' + t.resas + ' · ' + t.matchs + ' matchs</b></div>' +
+        '<div class="cm-line"><span>Dernière activité</span><b>' + (t.last >= d - 1 ? 'cette semaine' : 'il y a ' + (d - t.last) + ' j') + '</b></div>' +
+        '<div class="cm-note">' + (t.ca > 150000 ? 'Gros client → proposer un abonnement équipe.' : 'Client régulier.') + '</div></div>';
+    }).join('') || '<p class="cm-note">Aucune équipe sur la période.</p>';
+  }
+
+  function renderCaisse() {
+    var el = $('#caisse-body');
+    $('#nav-caisse').style.display = MODULES.caisse ? '' : 'none';
+    if (!MODULES.caisse && $('#v-caisse').classList.contains('on')) show('dash');
+    $('#n-caisse').style.display = MODULES.caisse && !cashSession ? '' : 'none';
+    if (!can('CASH')) {
+      el.innerHTML = '<div class="cm-riskrow"><span class="t"><b><svg class="mb-ic" style="width:13px;height:13px;vertical-align:-2px;margin-right:5px"><use href="#i-lock"/></svg>La caisse se gère en Réception (ou plus)</b><span class="cm-note" style="margin:2px 0 0">Le Staff pointe les présences, il ne touche pas à l\u2019argent.</span></span></div>';
+      return;
+    }
+    if (!cashSession) {
+      el.innerHTML = '<div class="cm-card"><p class="cm-sec">Ouvrir la caisse du jour</p>' +
+        '<div class="cm-sub" style="border:0;padding:0;margin:0"><label><span>Fonds d\u2019ouverture (DA)</span><input class="mb-field__control" id="cs-float" value="50000" style="max-width:140px"></label>' +
+        '<button class="mb-btn mb-btn--sm" id="cs-open">Ouvrir la caisse</button></div>' +
+        (lastClosed ? '<p class="cm-note">Dernière clôture : attendu ' + fmt(lastClosed.expected) + ' DA · déclaré ' + fmt(lastClosed.declared) + ' DA · écart <b style="color:' + (lastClosed.variance === 0 ? 'var(--success)' : 'var(--danger)') + '">' + fmt(lastClosed.variance) + ' DA</b> · par ' + lastClosed.by + '</p>' : '') + '</div>';
+      $('#cs-open').addEventListener('click', function () {
+        var f = Math.max(0, +($('#cs-float').value || 0));
+        cashSession = { by: ACTOR[role], hh: nowHH(), float: f };
+        cashMoves = [];
+        audit('a ouvert la caisse · fonds ' + fmt(f) + ' DA');
+        renderAll();
+      });
+      return;
+    }
+    var expected = cashSession.float + cashMoves.reduce(function (s, m) { return s + (m.kind === 'COLLECTION' ? m.amount : -m.amount); }, 0);
+    el.innerHTML = '<div class="cm-caisse-grid"><div class="cm-card">' +
+      '<p class="cm-sec">Caisse ouverte · par ' + cashSession.by + ' à ' + cashSession.hh + '</p>' +
+      '<div class="cm-line"><span>Fonds d\u2019ouverture</span><b>' + fmt(cashSession.float) + ' DA</b></div>' +
+      '<div class="cm-line"><span>Attendu en caisse</span><b id="cs-expected" style="color:var(--gold)">' + fmt(expected) + ' DA</b></div>' +
+      '<div id="cs-moves" style="margin-top:8px">' + (cashMoves.length ? cashMoves.map(function (m) {
+        return '<div class="cm-mvt"><b class="' + (m.kind === 'PAYOUT' ? 'out' : '') + '">' + (m.kind === 'PAYOUT' ? '−' : '+') + ' ' + fmt(m.amount) + ' DA</b>' +
+          '<span>' + (m.ref || m.note || '') + '</span><span style="margin-left:auto">' + m.by + ' · ' + m.hh + '</span></div>';
+      }).join('') : '<p class="cm-note">Aucun mouvement — encaisse une réservation dans le Planning : il apparaîtra ici.</p>') + '</div>' +
+      '<div class="cm-sub"><label><span>Sortie (DA)</span><input class="mb-field__control" id="cs-out" placeholder="20000" style="max-width:110px"></label>' +
+      '<label><span>Motif</span><input class="mb-field__control" id="cs-note" placeholder="Achat filets" style="max-width:160px"></label>' +
+      '<button class="mb-btn mb-btn--secondary mb-btn--sm" id="cs-payout">Enregistrer la sortie</button></div></div>' +
+      '<div class="cm-card"><p class="cm-sec">Clôturer</p>' +
+      '<div class="cm-sub" style="border:0;padding:0;margin:0"><label><span>Montant compté (DA)</span><input class="mb-field__control" id="cs-declared" placeholder="' + expected + '" style="max-width:140px"></label>' +
+      '<button class="mb-btn mb-btn--danger mb-btn--sm" id="cs-close">Clôturer la caisse</button></div>' +
+      '<div id="cs-result" style="margin-top:10px"></div></div></div>';
+    $('#cs-payout').addEventListener('click', function () {
+      var a = +($('#cs-out').value || 0);
+      if (a <= 0) { toast('Un mouvement de caisse est toujours strictement positif.'); return; }
+      cashMoves.push({ kind: 'PAYOUT', amount: a, by: ACTOR[role], hh: nowHH(), note: $('#cs-note').value.trim() || 'Sortie' });
+      audit('a enregistré une sortie de caisse · −' + fmt(a) + ' DA (' + ($('#cs-note').value.trim() || 'sortie') + ')');
+      renderCaisse();
+    });
+    $('#cs-close').addEventListener('click', function () {
+      var declared = +($('#cs-declared').value || 0);
+      var variance = declared - expected;
+      confirmModal('Clôturer la caisse ?',
+        '<p>Attendu : <b>' + fmt(expected) + ' DA</b> · Compté : <b>' + fmt(declared) + ' DA</b></p>' +
+        '<p class="' + (variance === 0 ? '' : 'impact') + '">Écart : ' + fmt(variance) + ' DA' + (variance === 0 ? ' — caisse juste.' : '') + '</p>',
+        function () {
+          lastClosed = { expected: expected, declared: declared, variance: variance, by: ACTOR[role] };
+          audit('a clôturé la caisse · attendu ' + fmt(expected) + ' · compté ' + fmt(declared) + ' · écart ' + fmt(variance) + ' DA');
+          cashSession = null; cashMoves = [];
+          renderAll();
+        });
+    });
+  }
+
+  function renderAudit() {
+    var el = $('#audit-list');
+    if (!can('CANCEL')) {   // VIEW_AUDIT_LOG = manager+
+      el.innerHTML = '<div class="cm-riskrow"><span class="t"><b><svg class="mb-ic" style="width:13px;height:13px;vertical-align:-2px;margin-right:5px"><use href="#i-lock"/></svg>Le journal d\u2019audit se consulte en Manager</b><span class="cm-note" style="margin:2px 0 0">Chaque action y est déjà enregistrée — seule la consultation est protégée.</span></span>' +
+        '<button class="mb-btn mb-btn--sm" id="au-unlock">Passer en Manager</button></div>';
+      var u = $('#au-unlock');
+      if (u) u.addEventListener('click', function () { role = 'MANAGER'; $$('[data-role]').forEach(function (x) { var on = x.dataset.role === 'MANAGER'; x.classList.toggle('mb-chip--on', on); }); renderAll(); });
+      return;
+    }
+    el.innerHTML = AUDITS.length ? AUDITS.map(function (e) {
+      return '<div class="cm-mvt"><b>' + e.who + ' · ' + e.role + ' · ' + e.hh + '</b><span> — ' + e.summary + '</span></div>';
+    }).join('') : '<p class="cm-note">Aucune action sensible pour l\u2019instant.</p>';
+  }
+
+  var EQUIP = { 'Parking': true, 'Vestiaires': true, 'Douches': true, 'Éclairage nocturne': true, 'Chasubles': false, 'Café / snack': true, 'WiFi': false, 'Tribunes': false, 'Casiers': false, 'Location de matériel': false };
+  function renderConf() {
+    var locked = !can('EDIT');
+    $('#conf-lock').innerHTML = locked ? '<div class="cm-riskrow" style="margin-bottom:12px"><span class="t"><b><svg class="mb-ic" style="width:13px;height:13px;vertical-align:-2px;margin-right:5px"><use href="#i-lock"/></svg>Le paramétrage du centre se fait en Manager</b><span class="cm-note" style="margin:2px 0 0">Tu peux consulter, pas modifier.</span></span></div>' : '';
+    ['#cf-addr', '#cf-desc', '#cf-newf'].forEach(function (s) { var el = $(s); if (el) el.disabled = locked; });
+    $('#cf-map').href = 'https://www.google.com/maps/search/' + encodeURIComponent($('#cf-addr').value);
+
+    $('#cf-fields').innerHTML = '<div class="cf-head"><span class="fn0"></span><span>Sport</span><span>Format</span><span>Env.</span><span>Surface</span><span>Statut</span></div>' + FIELD_DEFS.map(function (f, i) {
+      var dis = locked ? ' disabled' : '';
+      return '<div class="cf-row" data-fi="' + i + '"><span class="fn">' + f.id + '</span>' +
+        '<select class="mb-field__control" data-k="sport"' + dis + '><option' + (f.sport === 'Football' ? ' selected' : '') + '>Football</option><option' + (f.sport === 'Padel' ? ' selected' : '') + '>Padel</option><option' + (f.sport === 'Basket' ? ' selected' : '') + '>Basket</option></select>' +
+        '<select class="mb-field__control" data-k="format"' + dis + '>' + ['5v5', '6v6', '7v7', '8v8', '9v9', '11v11', '2v2', '3v3', '4v4'].map(function (x) { return '<option' + (f.format === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select>' +
+        '<select class="mb-field__control" data-k="env"' + dis + '><option' + (f.env === 'Outdoor' ? ' selected' : '') + '>Outdoor</option><option' + (f.env === 'Indoor' ? ' selected' : '') + '>Indoor</option></select>' +
+        '<select class="mb-field__control" data-k="surface"' + dis + '>' + ['Synthétique', 'Gazon naturel', 'Pelouse hybride', 'Résine', 'Parquet'].map(function (x) { return '<option' + (f.surface === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select>' +
+        '<select class="mb-field__control" data-k="status"' + dis + '>' + [['ACTIVE', 'Actif'], ['MAINTENANCE', 'Maintenance'], ['ARCHIVED', 'Archivé']].map(function (x) { return '<option value="' + x[0] + '"' + (f.status === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div>';
+    }).join('');
+    $$('#cf-fields select').forEach(function (s) {
+      s.addEventListener('change', function () {
+        var f = FIELD_DEFS[+s.closest('[data-fi]').dataset.fi];
+        var old = f[s.dataset.k];
+        f[s.dataset.k] = s.value;
+        syncFields();
+        audit('a modifié le terrain ' + f.id + ' · ' + s.dataset.k + ' : ' + old + ' → ' + s.value);
+        renderAll();
+      });
+    });
+
+    $('#cf-eq').innerHTML = Object.keys(EQUIP).map(function (k) {
+      return '<label class="' + (EQUIP[k] ? 'on' : '') + '" data-eq="' + k + '"><input type="checkbox"' + (EQUIP[k] ? ' checked' : '') + (locked ? ' disabled' : '') + ' style="accent-color:var(--primary)">' + k + '</label>';
+    }).join('');
+    $$('#cf-eq [data-eq]').forEach(function (l) {
+      l.querySelector('input').addEventListener('change', function () {
+        EQUIP[l.dataset.eq] = this.checked;
+        l.classList.toggle('on', this.checked);
+        audit((this.checked ? 'a activé' : 'a retiré') + ' l\u2019équipement « ' + l.dataset.eq + ' » (fiche app)');
+      });
+    });
+
+    $('#hours-table').innerHTML = [6, 0, 1, 2, 3, 4, 5].map(function (w) {
+      var o = OPEN[w], opts = function (sel) {
+        var out = ''; for (var m = 0; m <= 1500; m += 30) out += '<option value="' + m + '"' + (m === sel ? ' selected' : '') + '>' + hhmm(m) + (m > 1440 ? ' (+1)' : m === 1440 ? ' (+1)' : '') + '</option>';
+        return out;
+      };
+      return '<div class="cm-line" data-hw="' + w + '"><span>' + DN[w] + '.</span><span style="display:flex;gap:6px">' +
+        '<select class="mb-field__control" data-hk="0"' + (locked ? ' disabled' : '') + '>' + opts(o[0]) + '</select> → ' +
+        '<select class="mb-field__control" data-hk="1"' + (locked ? ' disabled' : '') + '>' + opts(o[1]) + '</select></span></div>';
+    }).join('');
+    $('#cf-rules').innerHTML =
+      '<div class="cf-row"><span class="fn" style="min-width:150px">Prix de base</span><span class="cm-note" style="flex:1">Toutes heures sans règle</span>' +
+      '<input class="mb-field__control" data-rate="base" value="' + PRICE_BASE + '" style="max-width:100px"' + (locked ? ' disabled' : '') + '> <span class="cm-note">DA / h</span></div>' +
+      RULES.map(function (r, i) {
+        return '<div class="cf-row"><span class="fn" style="min-width:150px">' + r.label + '</span>' +
+          '<span class="cm-note" style="flex:1">' + (r.wds.length === 7 ? 'Tous les jours' : 'Vendredi') + ' · ' + hhmm(r.s) + ' → ' + hhmm(r.e) + '</span>' +
+          '<input class="mb-field__control" data-rate="' + i + '" value="' + r.rate + '" style="max-width:100px"' + (locked ? ' disabled' : '') + '> <span class="cm-note">DA / h</span></div>';
+      }).join('');
+    $$('#cf-rules [data-rate]').forEach(function (inp) {
+      inp.addEventListener('change', function () {
+        var v = Math.max(0, Math.round(+inp.value || 0));
+        if (inp.dataset.rate === 'base') { audit('a modifié le prix de base : ' + PRICE_BASE + ' → ' + v + ' DA/h'); PRICE_BASE = v; }
+        else { var r = RULES[+inp.dataset.rate]; audit('a modifié le tarif « ' + r.label + ' » : ' + r.rate + ' → ' + v + ' DA/h'); r.rate = v; }
+        toast('Tarif enregistré — appliqué immédiatement par le moteur.');
+        renderAll();
+      });
+    });
+    var mc = $('#mod-caisse');
+    mc.checked = MODULES.caisse;
+    mc.disabled = locked;
+    $('#mod-caisse-l').classList.toggle('on', MODULES.caisse);
+    mc.onchange = function () {
+      MODULES.caisse = mc.checked;
+      audit((mc.checked ? 'a activé' : 'a désactivé') + ' le module Caisse');
+      toast('Module Caisse ' + (mc.checked ? 'activé — il apparaît dans la navigation.' : 'désactivé.'));
+      renderAll();
+    };
+    $$('#hours-table select').forEach(function (s) {
+      s.addEventListener('change', function () {
+        var w = +s.closest('[data-hw]').dataset.hw, k = +s.dataset.hk, v = +s.value;
+        var next = OPEN[w].slice(); next[k] = v;
+        if (next[1] <= next[0]) { toast('La fermeture doit suivre l\u2019ouverture.'); renderConf(); return; }
+        OPEN[w] = next;
+        audit('a modifié les horaires du ' + DN[w] + '. → ' + hhmm(next[0]) + ' - ' + hhmm(next[1]));
+        toast('Horaires du ' + DN[w] + '. mis à jour — le planning suit.');
+        renderAll();
+      });
+    });
+  }
+
+  function renderAll() { renderDash(); renderGrid(); renderResa(); renderSubs(); renderStats(); renderClients(); renderTeams(); renderCaisse(); renderAudit(); renderConf(); }
+  $('#sb-go').addEventListener('click', function () {
+    var name = $('#sb-name').value.trim();
+    if (name.length < 2) { toast('Donne un nom à l\u2019abonnement.'); return; }
+    var w = +$('#sb-day').value, s = +$('#sb-hour').value, dur = +$('#sb-dur').value, f = $('#sb-field').value;
+    var until = $('#sb-until').value === '' ? null : d + (+$('#sb-until').value);
+    /* conflit vérifié sur les 4 prochaines occurrences — même moteur que le reste */
+    for (var off = d; off <= d + 28; off++) {
+      if (wd(off) !== w) continue;
+      if (conflicts(off, f, s, dur, null)) {
+        toast('Conflit le ' + label(off) + ' — ce créneau est déjà occupé. Choisis une autre heure ou un autre terrain.');
+        return;
+      }
+    }
+    recurrings.push({ id: 'r' + (nextId++), name: name, f: f, wd: w, s: s, dur: dur, from: d, until: until });
+    audit('a créé l\u2019abonnement ' + name + ' · ' + DN[w] + '. ' + hhmm(s) + ' · ' + dur + ' min · ' + f);
+    toast('Abonnement créé — il apparaît chaque ' + DN[w] + '. dans le planning.');
+    $('#sb-name').value = '';
+    renderAll();
+  });
+  var _cs = $('#cl-search');
+  if (_cs) _cs.addEventListener('input', function () { clFilter = this.value.trim().toLowerCase(); renderClients(); });
+  $('#cf-addf').addEventListener('click', function () {
+    if (!can('EDIT')) return;
+    var id = $('#cf-newf').value.trim().toUpperCase();
+    if (id.length < 2 || fdef(id)) { toast(fdef(id) ? 'Ce nom de terrain existe déjà.' : 'Donne un nom au terrain (ex. T4).'); return; }
+    FIELD_DEFS.push({ id: id, sport: 'Football', format: '5v5', surface: 'Synthétique', env: 'Outdoor', status: 'ACTIVE' });
+    fieldFilter[id] = true;
+    syncFields();
+    audit('a ajouté le terrain ' + id + ' (Football 5v5, synthétique)');
+    toast('Terrain ' + id + ' ajouté — visible dans le planning et la fiche app.');
+    $('#cf-newf').value = '';
+    renderAll();
+  });
+  $('#cl-new-go').addEventListener('click', function () {
+    var n = $('#cl-new-name').value.trim(), t = $('#cl-new-tel').value.trim();
+    if (n.length < 2 || t.replace(/\D/g, '').length < 8) { toast('Nom et téléphone sont requis pour une fiche centre.'); return; }
+    if (!can('CREATE')) { toast('Créer une fiche se fait en Réception (ou plus).'); return; }
+    CL.push({ n: n, kind: 'LOCAL', tel: t, h: 0, p: 0, ce: 0, cl: 0, ns: 0 });
+    audit('a créé la fiche client « ' + n + ' » (fiche centre)');
+    toast('Fiche centre créée pour ' + n + '.');
+    $('#cl-new-name').value = ''; $('#cl-new-tel').value = '';
+    renderClients();
+  });
+  function show(v) {
+    $$('.cm-nav [data-view]').forEach(function (b) { b.classList.toggle('on', b.dataset.view === v); });
+    $$('.cm-view').forEach(function (s) { s.classList.remove('on'); });
+    $('#v-' + v).classList.add('on');
+  }
+  function show2(v) { show(v); }
+  $$('.cm-nav [data-view]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.view); }); });
+  $$('[data-nav]').forEach(function (b) { b.addEventListener('click', function () { d += (+b.dataset.nav) * (planView === 'week' ? 7 : 1); sel = null; resetPanel(); renderAll(); }); });
+  $('#pl-today').addEventListener('click', function () { d = 0; sel = null; resetPanel(); renderAll(); });
+  $('#pl-date').addEventListener('change', function () {
+    if (!this.value) return;
+    d = Math.round((Date.parse(this.value + 'T00:00:00Z') - BASE) / 86400000);
+    sel = null; resetPanel(); renderAll();
+  });
+  $$('[data-pv]').forEach(function (b) { b.addEventListener('click', function () { planView = b.dataset.pv; syncPlanBar(); renderPlanning(); }); });
+  $$('[data-zoom]').forEach(function (b) { b.addEventListener('click', function () { zoom = b.dataset.zoom === 'c' ? 'c' : 'x'; syncPlanBar(); renderPlanning(); }); });
+  $$('[data-sport]').forEach(function (b) { b.addEventListener('click', function () { sportFilter = b.dataset.sport; syncPlanBar(); renderPlanning(); }); });
+  $('#na-go').addEventListener('click', function () {
+    var hit = nextAvailability($('#na-sport').value, +$('#na-dur').value);
+    if (!hit) { $('#na-res').innerHTML = 'Rien sous 7 jours pour ces critères.'; return; }
+    $('#na-res').innerHTML = 'Prochain créneau : <b>' + hhmm(hit.m) + '</b> — ' + hit.f + ' — <b>' + fmt(hit.q.totalDa) + ' DA</b> · ' + label(hit.off) +
+      ' <button class="mb-btn mb-btn--sm" id="na-book" style="margin-left:8px">Réserver</button>';
+    $('#na-book').addEventListener('click', function () {
+      var dur = +$('#na-dur').value;
+      d = hit.off; planView = 'day'; syncPlanBar(); renderAll();
+      selectFree(hit.f + '-' + hit.m, dur);
+    });
+  });
+  window.__setDay = function (nd) { d = nd; sel = null; resetPanel(); renderAll(); };
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

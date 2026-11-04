@@ -1,0 +1,13 @@
+<!-- @dsCard group="Formulaires" height=200 subtitle="activé / désactivé" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><style>body{margin:0;padding:16px;background:var(--ink);color:var(--text-2);font-family:var(--font-body)}
+.row{display:flex;align-items:center;gap:14px;padding:16px 14px;border-bottom:1px solid var(--line)}
+.sw{position:relative;flex:0 0 52px;width:52px;height:30px;padding:0;border:0;border-radius:999px;cursor:pointer;background:var(--line-strong);transition:background var(--dur-2)}
+.sw i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:999px;background:var(--text);transition:left var(--dur-2)}
+.sw[aria-checked="true"]{background:var(--text)} .sw[aria-checked="true"] i{left:25px;background:var(--ink)}</style></head>
+<body class="mb">
+<div style="max-width:390px;border-radius:var(--r-4);background:var(--ink-2);border:1px solid var(--line);overflow:hidden">
+<div class="row"><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:700;color:var(--text)">Une place se libère près de chez toi</span><span style="font-size:13px">Premier arrivé, premier servi.</span></span><button class="sw" role="switch" aria-checked="true" aria-label="Une place se libère près de chez toi" onclick="this.setAttribute('aria-checked',this.getAttribute('aria-checked')!=='true')"><i></i></button></div>
+<div class="row" style="border-bottom:0"><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:700;color:var(--text)">Les bons plans des centres</span><span style="font-size:13px">Promos et créneaux à prix doux.</span></span><button class="sw" role="switch" aria-checked="false" aria-label="Les bons plans des centres" onclick="this.setAttribute('aria-checked',this.getAttribute('aria-checked')!=='true')"><i></i></button></div>
+</div>
+</body></html>

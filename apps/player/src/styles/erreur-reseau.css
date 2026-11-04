@@ -1,0 +1,13 @@
+/* Écran partagé "Pas de réseau" (refonte-app-joueur/maquettes/ErreurReseau(Ar).dc.html).
+   Prefixe rs-. Tokens du socle gelé (design/moubarat-ds.css) uniquement — pas de couleur
+   ni de taille en dur. */
+.rs-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; gap: var(--s-4);
+  padding: max(26px, env(safe-area-inset-top)) 24px max(26px, env(safe-area-inset-bottom)); }
+.rs-mark { width: 76px; height: 76px; border-radius: var(--r-full); display: grid; place-items: center;
+  background: var(--ink-2); border: 1px solid var(--line); color: var(--text); flex-shrink: 0; }
+.rs-mark .mb-ic--lg { width: 32px; height: 32px; }
+.rs-title { font-family: var(--font-body); font-weight: 700; font-size: var(--fs-d3); line-height: 1.2;
+  color: var(--text); margin: 0; }
+.rs-text { font-size: var(--fs-b2); line-height: 1.5; color: var(--text); max-width: 30ch; margin: 0; }
+.rs-btn { margin-top: var(--s-2); }

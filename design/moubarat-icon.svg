@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- MOUBARAT — signe « Rivalité » (identité de marque v1, août 2026).
+       Deux camps qui se font face ; le vide entre eux, le losange, c'est le jeu.
+       Primaire : blanc / rouge marque sur encre (#050505). Repris à l'identique
+       de la page d'identité validée par Aymen (moubarat-brand.html). -->
+  <polygon points="30,40 118,40 82,128 118,216 30,216 66,128" fill="#FFFFFF"/>
+  <polygon points="226,40 138,40 174,128 138,216 226,216 190,128" fill="#FF2B00"/>
+</svg>

@@ -1,0 +1,161 @@
+/* Polices : embarquées (styles/fonts.css, importé par main.tsx avant ce fichier) — plus aucun chargement depuis Google Fonts (décision d'Aymen, 27/10/2026). */
+
+/* =============================================================================
+   THÈME APP JOUEUR — version finale du 23/10/2026 (refonte-app-joueur/design-
+   system/themes-app-joueur.json, refonte-app-joueur/docs/direction-artistique.md).
+
+   Redéfinit les MÊMES variables que design/moubarat-ds.css (jamais touché : gelé,
+   partagé avec le CRM) — importé APRÈS lui dans main.tsx, donc ces valeurs
+   l'emportent pour l'app joueur SEULEMENT (le CRM garde les siennes). Seules les
+   couleurs et les familles de police changent ici : les rayons (--r-*) et les
+   espacements (--s-*) de themes-app-joueur.json tombent déjà exactement sur les
+   valeurs existantes (carte 16px = --r-4, bouton/champ/photo 12px = --r-3, puce
+   999px = --r-full) — rien à redéfinir. L'échelle de taille de texte
+   (« echelle-inter »/« echelle-bebas » du fichier de jetons) N'EST PAS reprise
+   ici : elle sera posée écran par écran, à la reconstruction de chaque maquette
+   (--fs-* générique aurait fallu deviner un mappage, risqué à l'échelle du
+   projet entier — jamais une valeur supposée).
+
+   Trois états, règle 42 (Profil → Apparence) :
+   - choix explicite "Sombre"  → body[data-theme="sombre"] (ou aucun attribut :
+     c'est le thème PAR DÉFAUT de :root, donc l'absence d'attribut EST sombre) ;
+   - choix explicite "Clair"   → body[data-theme="clair"] ;
+   - "Auto" (choix explicite ; le DÉFAUT est Sombre depuis le 26/10/2026, décision d'Aymen) → suit prefers-color-scheme, donc la media
+     query ci-dessous, mais SEULEMENT si aucun choix explicite n'est posé
+     (body n'a alors aucun attribut data-theme — voir lib/theme.ts). */
+
+:root {
+  /* --- Surfaces (sombre, "Lumière de stade") ------------------------------ */
+  --ink:            #0A0A0F;   /* page */
+  --ink-2:          #131A24;   /* carte */
+  --ink-3:          #1C2533;   /* surface-2 : champs, encarts */
+  --ink-4:          #262F3F;   /* état pressé/survolé — pas dans les jetons, un cran au-dessus de --ink-3 */
+  --line:           rgba(138,148,166,.16);
+  --line-strong:    rgba(138,148,166,.30);
+
+  /* --- Marque -------------------------------------------------------------- */
+  --primary:        #FF2B00;
+  --primary-glow:   #FF6A4D;   /* rouge-texte (sombre) */
+  --primary-wash:   rgba(255,43,0,.14);   /* communs.choisi.background */
+  --primary-line:   rgba(255,43,0,.45);   /* communs.choisi.border */
+  --gold:           #F2B705;   /* or-element-cle : étiquette "STADE PARTENAIRE" (OVR plus tard, règle 35) */
+
+  /* --- Sémantique ------------------------------------------------------------ */
+  --danger:         #FF8A7A;   /* rouge-definitif-texte (sombre) — déjà cette valeur, inchangé */
+  --danger-line:    rgba(255,138,122,.55);   /* communs.rouge-definitif-contour */
+  --success:        #00C896;   /* vert : disponible */
+  --success-wash:   rgba(0,200,150,.14);     /* communs.disponible.pastille.background */
+
+  /* --- Texte ------------------------------------------------------------------ */
+  --text:           #F5F7FA;
+  --text-2:         #C5CCD6;   /* texte-doux */
+  --text-3:         #8A94A6;   /* texte-secondaire */
+  --text-4:         #5B6475;   /* texte-desactive */
+  --text-muted:     var(--text-3);
+  --text-faint:     var(--text-4);
+
+  /* --- Typographie -------------------------------------------------------- */
+  /* Inter partout (texte ET les anciens usages de la Mono, retirée de cette
+     refonte — direction-artistique.md ne mentionne plus IBM Plex Mono du tout,
+     seulement Inter pour le texte et les étiquettes). Changa en secours sur
+     Bebas pour l'arabe (lettres), jamais pour les chiffres/le latin. */
+  --font-body:      'Inter', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
+  --font-display:   'Bebas Neue', 'Changa', 'Haettenschweiler', Impact, sans-serif;
+  --font-mono:      var(--font-body);
+
+  /* --- Barre de navigation flottante (communs.barre-navigation, sombre) --- */
+  --nav-bg:         rgba(19,26,36,.88);
+  --nav-border:     rgba(138,148,166,.22);
+  --nav-shadow:     0 14px 34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
+
+  /* --- Voile derrière un panneau du bas (themes.sombre.voile-panneau) --- */
+  --sheet-overlay:  rgba(0,0,0,.66);
+
+  /* --- Ombre de carte (themes.sombre.carte.boxShadow) : « en sombre, aucune
+     ombre : les cartes se détachent par leur couleur et un filet » (§2). --- */
+  --card-shadow:    none;
+}
+
+/* Voile de la barre d'état iOS (PWA installée, status-bar-style
+   "black-translucent", index.html) : ses icônes sont TOUJOURS blanches,
+   jamais ajustables en JS — un voile sombre FIXE (pas de jeton par thème)
+   garde la lisibilité en clair comme en sombre. Hauteur nulle hors zone de
+   sécurité du haut : invisible sur Android/bureau/iPhone non installé. */
+.status-bar-scrim {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: env(safe-area-inset-top);
+  background: rgba(10, 10, 15, .55);
+  pointer-events: none;
+}
+
+/* --- Thème clair, choix explicite ----------------------------------------- */
+body[data-theme="clair"] {
+  --ink:            #F5F7FA;
+  --ink-2:          #FFFFFF;
+  --ink-3:          #EEF1F5;
+  --ink-4:          #E3E7ED;
+  --line:           rgba(10,10,15,.08);
+  --line-strong:    rgba(10,10,15,.16);
+
+  --primary-glow:   #D42000;   /* rouge-texte (clair) */
+  --danger:         #C2410C;   /* rouge-definitif-texte (clair) */
+  --success:        #00875F;   /* vert-texte (clair) */
+
+  --text:           #0A0A0F;
+  --text-2:         #374151;   /* texte-doux */
+  --text-3:         #5B6475;   /* texte-secondaire */
+  --text-4:         #9AA3B2;   /* texte-desactive */
+
+  --nav-bg:         rgba(255,255,255,.92);
+  --nav-border:     rgba(10,10,15,.08);
+  --nav-shadow:     0 14px 34px rgba(10,10,15,.14), 0 2px 8px rgba(10,10,15,.06);
+
+  --sheet-overlay:  rgba(10,10,15,.45);
+
+  /* themes.clair.carte.boxShadow (design-system/themes-app-joueur.json) */
+  --card-shadow:    0 1px 2px rgba(10,10,15,.06), 0 6px 18px rgba(10,10,15,.06);
+}
+
+/* --- "Auto" : suit le réglage du téléphone, seulement si AUCUN choix explicite
+   n'est posé (ni "sombre" ni "clair" sur <body> — voir lib/theme.ts). Mêmes
+   valeurs que [data-theme="clair"] ci-dessus, jamais réécrites séparément en
+   dur : un futur ajustement de palette se fait à un seul endroit. */
+@media (prefers-color-scheme: light) {
+  body:not([data-theme="sombre"]):not([data-theme="clair"]) {
+    --ink:            #F5F7FA;
+    --ink-2:          #FFFFFF;
+    --ink-3:          #EEF1F5;
+    --ink-4:          #E3E7ED;
+    --line:           rgba(10,10,15,.08);
+    --line-strong:    rgba(10,10,15,.16);
+
+    --primary-glow:   #D42000;
+    --danger:         #C2410C;
+    --success:        #00875F;
+
+    --text:           #0A0A0F;
+    --text-2:         #374151;
+    --text-3:         #5B6475;
+    --text-4:         #9AA3B2;
+
+    --nav-bg:         rgba(255,255,255,.92);
+    --nav-border:     rgba(10,10,15,.08);
+    --nav-shadow:     0 14px 34px rgba(10,10,15,.14), 0 2px 8px rgba(10,10,15,.06);
+
+    --sheet-overlay:  rgba(10,10,15,.45);
+    --card-shadow:    0 1px 2px rgba(10,10,15,.06), 0 6px 18px rgba(10,10,15,.06);
+  }
+}
+
+/* --- Boutons : la direction artistique de l'app joueur (DA §5, §6) — audit final du 26/10/2026, P1-15, décision d'Aymen 27/10/2026 -----------------------
+   Le design system gelé (design/moubarat-ds.css, partagé avec le CRM) définit `.mb-btn` en Bebas Neue CAPITALES 20 px avec halo rouge : c'était la direction
+   d'avant. L'app joueur veut du texte en casse normale, Inter (arabe : IBM Plex Sans Arabic) demi-gras, 16 px (secondaire 15 px), 12 px d'arrondi, sans halo.
+   Surcharge ICI (chargé après le design system, seulement pour l'app joueur) : le fichier gelé et le CRM ne bougent pas. */
+.mb-btn {
+  font-family: var(--font-body); font-weight: 600; font-size: 16px; letter-spacing: 0; text-transform: none;
+  min-height: 52px; border-width: 1px; border-radius: var(--r-3);
+  --_sh: none;
+}
+.mb-btn:hover { --_sh: none; }
+.mb-btn--secondary, .mb-btn--accent, .mb-btn--ghost, .mb-btn--danger { font-size: 15px; }
+.mb-btn--sm { min-height: 40px; font-size: 14px; padding: 0 var(--s-4); }

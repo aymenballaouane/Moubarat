@@ -1,0 +1,149 @@
+/* Lot 5 — Réserver (patron refonte-app-joueur/maquettes/Reserver*.dc.html). Propriétés logiques
+   (inset-inline-*, margin-inline-*) partout : le miroir RTL (lib/lang.ts, dir="rtl" sur <html>)
+   reste automatique, jamais une règle [dir="rtl"] séparée à entretenir (même choix que
+   styles/home.css, lot 4b). */
+
+/* --- R1 · Trouve ton terrain -------------------------------------------- */
+
+.rsv-h1 { margin: 18px 0 14px; }
+
+.rsv-sportfilter { display: flex; gap: 8px; margin-bottom: 16px; }
+
+.rsv-chip {
+  height: 40px; padding: 0 16px; border-radius: var(--r-3); cursor: pointer;
+  font-family: var(--font-body); font-size: var(--fs-b2); font-weight: 600;
+  background: transparent; color: var(--text-3); border: 1px solid var(--line);
+}
+.rsv-chip[aria-pressed="true"] {
+  color: var(--primary-glow); background: var(--primary-wash); border-color: var(--primary-line);
+}
+
+.rsv-vlist { display: flex; flex-direction: column; gap: 10px; padding-bottom: 24px; }
+
+.rsv-vrow {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px;
+  border-radius: var(--r-3); border: 1px solid var(--line); background: var(--ink-2);
+  text-align: start; cursor: pointer; appearance: none;
+}
+.rsv-vrow:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.rsv-vrow--opening { opacity: .6; pointer-events: none; }
+
+.rsv-vrow__thumb { position: relative; flex: 0 0 72px; width: 72px; height: 72px; border-radius: var(--r-2); }
+/* Même geste que .ex-vcard__mark (explorer.css) : .mb-pitch > img étire toute image en
+   couverture (vignettes AVEC photo) — ici, sans photo de centre (décision du 23/09), le signe
+   garde ses proportions, centré par-dessus. */
+.rsv-vrow__thumb > img.rsv-vrow__mark {
+  position: absolute; inset: 50% auto auto 50%; width: 32px; height: 32px;
+  transform: translate(-50%, -50%); object-fit: contain; opacity: .9; z-index: 3;
+}
+/* Couleur FIXE (jamais var(--text)) : .mb-pitch (le signe de marque, sans photo de centre) garde un
+   fond sombre quel que soit le thème (player.css, `.mb-pitch { background: #0a0202 }`) — un texte
+   qui suivrait le thème clair deviendrait sombre sur sombre. Même #F5F7FA que le badge du maquette
+   (Reserver.dc.html, fonction `badge`). */
+.rsv-vrow__badge {
+  inset-inline-start: 5px; top: 5px; display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 6px; border-radius: var(--r-1); font-family: var(--font-mono); font-size: var(--fs-tag);
+  font-weight: 600; letter-spacing: .08em; color: #F5F7FA; background: rgba(10,10,15,.78); z-index: 4;
+}
+.rsv-vrow__badge .mb-ic { color: #F5F7FA; }
+/* .mb-pitch > *:not(img) force `position: relative` (player.css) — même contournement que
+   .ex-vcard__dist (explorer.css) : une règle plus spécifique pour repasser en absolu. */
+.rsv-vrow__thumb.mb-pitch > .rsv-vrow__badge { position: absolute; }
+
+.rsv-vrow__body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.rsv-vrow__name {
+  font-family: var(--font-body); font-size: var(--fs-b1); font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rsv-vrow__price { font-size: var(--fs-b3); color: var(--text-3); }
+.rsv-vrow__price b { font-weight: 600; color: var(--text-2); }
+
+.rsv-vrow__avail { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-b3); font-weight: 600; color: var(--text-2); }
+.rsv-vrow__dot { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--success); }
+.rsv-vrow__dot--off { background: var(--text-4); }
+.rsv-vrow__avail--none { color: var(--text-3); }
+
+.rsv-vrow__chev { flex: 0 0 auto; width: 16px; height: 16px; color: var(--text-4); }
+
+/* --- R3 · Ta réservation (Reserver.dc.html, étape creneau, heures « périodes ») ------------------
+   Jour → format → durée → heure → nom, pied collant récap + CTA. Propriétés logiques partout (RTL). */
+
+/* #s-slots remet padding:0 (player.css, écrans à hero) : id + classe pour reprendre le cadre standard. */
+#s-slots.rsv-r3 { padding: max(26px, env(safe-area-inset-top)) 22px 0; }
+.rsv-r3__head { display: flex; align-items: center; gap: 12px; }
+.rsv-r3__back { flex: 0 0 44px; width: 44px; height: 44px; border-radius: var(--r-full); display: grid; place-items: center;
+  border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; padding: 0; }
+.rsv-r3__back:focus-visible, .rsv-r3__day:focus-visible, .rsv-r3__format:focus-visible,
+.rsv-r3__seg-b:focus-visible, .rsv-r3__hour:focus-visible, .rsv-r3__name:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.rsv-r3__crumb { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.rsv-r3__crumb > span { font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em; color: var(--text-3); }
+.rsv-r3__crumb > b { font-size: var(--fs-b2); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rsv-r3__h1 { margin: 20px 0 0; font-family: var(--font-body); font-weight: 700; font-size: 28px; line-height: 1.2;
+  letter-spacing: -.015em; color: var(--text); }
+.rsv-r3__q { margin: 22px 0 10px; font-family: var(--font-body); font-size: 17px; font-weight: 700; line-height: 1.3;
+  text-align: center; color: var(--text); }
+.rsv-r3__q--label { display: block; }
+.rsv-r3__meta { margin: 0 0 4px; text-align: center; }
+
+.rsv-r3__days { display: flex; gap: 6px; }
+.rsv-r3__day { flex: 1 1 0; min-width: 0; height: 66px; padding: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 2px; border-radius: var(--r-3); cursor: pointer;
+  background: var(--ink-2); color: var(--text-2); border: 1px solid var(--line); }
+.rsv-r3__day-abbr { font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em; }
+.rsv-r3__day-n { font-size: var(--fs-b1); font-weight: 600; line-height: 1.2; }
+.rsv-r3__day[aria-pressed="true"] { background: var(--ink-3); color: var(--text); border-color: var(--primary-line);
+  box-shadow: inset 0 -2px 0 var(--primary); }
+
+.rsv-r3__formats { display: grid; gap: 8px; }
+.rsv-r3__format { height: 66px; padding: 0 4px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; border: 0; border-radius: var(--r-3); cursor: pointer; background: var(--ink-2); color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line-strong); }
+.rsv-r3__format-l { font-family: var(--font-display); font-size: 26px; line-height: 1; }
+.rsv-r3__format-p { font-size: var(--fs-micro); font-weight: 700; opacity: .7; white-space: nowrap; }
+.rsv-r3__format[aria-pressed="true"] { background: var(--primary-wash); color: var(--primary-glow);
+  box-shadow: inset 0 0 0 1px var(--primary-line); }
+
+.rsv-r3__seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 4px; border-radius: var(--r-3);
+  background: var(--ink-2); border: 1px solid var(--line); }
+.rsv-r3__seg-b { height: 42px; border: 0; border-radius: var(--r-2); cursor: pointer; background: transparent;
+  color: var(--text-2); font-size: var(--fs-b2); font-weight: 700; }
+.rsv-r3__seg-b[aria-pressed="true"] { background: var(--primary-wash); color: var(--primary-glow); box-shadow: inset 0 0 0 1px var(--primary-line); }
+
+.rsv-r3__hours { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.rsv-r3__hour { height: 56px; border-radius: var(--r-2); cursor: pointer; background: var(--ink-2); color: var(--text);
+  border: 1px solid var(--line); font-family: var(--font-display); font-size: 22px; line-height: 1; }
+.rsv-r3__hour[aria-pressed="true"] { background: var(--primary-wash); color: var(--primary-glow); border-color: var(--primary-line); }
+
+.rsv-r3__name { width: 100%; height: 52px; box-sizing: border-box; padding: 0 14px; border-radius: var(--r-3);
+  background: var(--ink-2); border: 1px solid var(--line); color: var(--text); font-size: 17px; font-weight: 600; }
+
+/* Pied collant : récap + prix + CTA (maquette `footer`). */
+.rsv-r3__foot { position: sticky; bottom: 0; margin: 22px -22px 0; padding: 12px 22px max(22px, env(safe-area-inset-bottom));
+  background: var(--ink); border-top: 1px solid var(--line); }
+.rsv-r3__recap { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 10px; }
+.rsv-r3__recap-l { font-size: var(--fs-b3); font-weight: 600; color: var(--text); min-width: 0; }
+.rsv-r3__total { display: flex; flex-direction: column; align-items: flex-end; white-space: nowrap; color: var(--text); }
+.rsv-r3__total b { font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 1; }
+.rsv-r3__total i { font-style: normal; font-size: var(--fs-micro); font-weight: 600; }
+.rsv-r3__total small { font-size: var(--fs-micro); font-weight: 600; }
+
+/* --- Créneau pris entre-temps : feuille « Oups, il vient d'être pris » (ErreurCreneauPris.dc.html) ----------- */
+
+.rsv-taken { display: flex; flex-direction: column; gap: 14px; border-radius: 20px 20px 0 0; }
+.rsv-taken__grab { align-self: center; width: 40px; height: 5px; border-radius: var(--r-full); background: var(--line-strong); }
+.mb-sheet .rsv-taken__title { margin: 0; font-family: var(--font-body); font-size: 22px; line-height: 1.2; font-weight: 700;
+  letter-spacing: -.01em; text-align: center; color: var(--text); text-transform: none; }
+.mb-sheet .rsv-taken__body { margin: 0; font-size: var(--fs-b1); line-height: 1.5; text-align: center; color: var(--text); }
+.rsv-taken__chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+.rsv-taken__chip { display: inline-flex; align-items: center; gap: 4px; height: 44px; padding: 0 14px; border-radius: var(--r-2); cursor: pointer;
+  background: transparent; color: var(--text); border: 1px solid var(--line-strong); font-size: var(--fs-b2); font-weight: 700; }
+.rsv-taken__chip[aria-pressed="true"] { background: var(--primary-wash); color: var(--primary-glow); border-color: var(--primary-line); }
+.rsv-taken__chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.rsv-taken__actions { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+.mb-sheet .rsv-taken__actions .mb-btn + .mb-btn { margin-top: 0; }
+
+/* --- R1 en mode « Créer un match » (Reserver.dc.html mode=match, Lot 6) : fil d'Ariane à côté de la flèche + bandeau --------- */
+.rsv-r1__crumb { flex: 1 1 auto; margin-inline-start: 12px; font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em; color: var(--text-3); }
+.rsv-r1__banner { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 12px 14px; border-radius: var(--r-3);
+  background: var(--ink-2); border: 1px solid var(--primary-line); color: var(--text); font-size: var(--fs-b2); font-weight: 600; }
+.rsv-r1__banner i { flex: 0 0 7px; width: 7px; height: 7px; border-radius: var(--r-full); background: var(--primary); }

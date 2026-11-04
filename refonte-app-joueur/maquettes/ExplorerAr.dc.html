@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Moubarat · استكشف</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;family=Changa:wght@600&amp;family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background: #0A0A0F}
+a{color:#F5F7FA;text-decoration:none}a:hover{color:#FF2B00}
+button[role="tab"]{transition: box-shadow .25s ease, border-color .25s ease, color .25s ease, background .25s ease}
+button[role="tab"][aria-selected="false"]:hover{border-color: rgba(255,43,0,0.45) !important; color: #F5F7FA !important}
+a[href^="DetailMatch"], a[href="ReserverCentreAr.dc.html"]{transition: transform .2s ease, box-shadow .25s ease, border-color .25s ease}
+a[href^="DetailMatch"]:hover, a[href^="DetailMatch"]:active, a[href="ReserverCentreAr.dc.html"]:hover, a[href="ReserverCentreAr.dc.html"]:active{transform: translateY(-1px); border-color: rgba(255,43,0,0.45) !important; box-shadow: none !important}
+
+</style>
+</helmet>
+<div dir="rtl" lang="ar" style="{{ racine }}">
+
+  <header style="display: flex; justify-content: space-between; align-items: center; padding: 28px 16px 0 16px;">
+    <h1 style="margin: 0; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 1.2; color: #F5F7FA; ">استكشف</h1>
+    <div style="display: flex; gap: 8px;">
+      <a href="RechercheAr.dc.html" aria-label="بحث" style="width: 44px; height: 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); background: transparent; color: #F5F7FA; display: grid; place-items: center; cursor: pointer; padding: 0; text-decoration: none; box-sizing: border-box;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </a>
+      <a href="FiltresExplorerAr.dc.html" aria-label="الفلاتر" style="position: relative; width: 44px; height: 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,0.16); background: transparent; color: #F5F7FA; display: grid; place-items: center; cursor: pointer; padding: 0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="10" y1="18" x2="14" y2="18"></line></svg>
+      </a>
+    </div>
+  </header>
+
+  <div role="tablist" aria-label="عمّ تبحث؟" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 20px 16px 0 16px;">
+    <button role="tab" aria-selected="{{ tabMatchsSel }}" onClick="{{ voirMatchs }}" style="{{ styleTabMatchs }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      المباريات
+    </button>
+    <button role="tab" aria-selected="{{ tabTerrainsSel }}" onClick="{{ voirTerrains }}" style="{{ styleTabTerrains }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><circle cx="12" cy="12" r="2.5"></circle></svg>
+      الملاعب
+    </button>
+  </div>
+
+  <sc-if value="{{ surMatchs }}" hint-placeholder-val="{{ true }}">
+    <div style="display: flex; flex-direction: column;">
+      <div style="display: flex; gap: 6px; padding: 20px 16px 0 16px;">
+        <sc-for list="{{ jours }}" as="j" hint-placeholder-count="6">
+          <button onClick="{{ j.pick }}" aria-pressed="{{ j.sel }}" style="{{ j.style }}">
+            <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 600; ">{{ j.court }}</span>
+            <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px; line-height: 1.2; font-weight: 600;">{{ j.num }}</span>
+            
+          </button>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 8px; padding: 24px 16px 0 0; overflow: hidden;">
+        <sc-for list="{{ sports }}" as="s" hint-placeholder-count="3">
+          <button onClick="{{ s.pick }}" aria-pressed="{{ s.sel }}" style="{{ s.style }}">
+            <sc-if value="{{ s.foot }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.6l3.6 2.6-1.4 4.2H9.8l-1.4-4.2Z"></path><path d="M12 3v4.6M15.6 10.2l4.6-1.4M14.2 14.4l2.8 3.9M9.8 14.4l-2.8 3.9M8.4 10.2L3.8 8.8"></path></svg></sc-if>
+            <sc-if value="{{ s.padel }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="13" rx="6"></rect><line x1="12" y1="15.5" x2="12" y2="21.5" stroke-width="3"></line><circle cx="9" cy="7" r="0.9" fill="currentColor"></circle><circle cx="13" cy="7" r="0.9" fill="currentColor"></circle><circle cx="11" cy="10.5" r="0.9" fill="currentColor"></circle></svg></sc-if>
+            {{ s.nom }}
+          </button>
+        </sc-for>
+      </div>
+      <div style="height: 22px;"></div>
+      <sc-if value="{{ aucunMatch }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 36px 24px 0 24px; text-align: center;">
+          <span style="width: 68px; height: 68px; border-radius: 999px; background: #131A24; border: 1px solid rgba(138,148,166,0.16); display: grid; place-items: center;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2"></rect><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line></svg></span>
+          <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 22px; line-height: 1.2; color: #F5F7FA; font-weight: 700; ">لا توجد مباراة بعد<br>في هذا اليوم</span>
+          <span style="font-size: 15px; line-height: 1.5; color: #F5F7FA;">ماذا لو كنت أنت من يطلق المباراة الأولى؟</span>
+          <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; padding-top: 6px;"><a href="CreerAr.dc.html" style="display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 12px; background: #FF2B00; box-shadow: none; color: #FFFFFF; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px;  font-weight: 600;">أنشئ مباراة</a><button onClick="{{ alerter }}" style="{{ alerteStyle }}">{{ alerteLabel }}</button></div>
+        </div>
+      </sc-if>
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 0 16px;">
+        <sc-for list="{{ matchsVisibles }}" as="m" hint-placeholder-count="6">
+          <a href="{{ m.href }}" style="{{ m.carte }}">
+            <span style="position: relative; flex: 0 0 96px; display: block;">
+              <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="{{ m.lieu }}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: {{ m.cadrage }};">
+              <span style="{{ m.voile }}"></span>
+              <span style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+                <span style="{{ m.badge }}">
+                  <sc-if value="{{ m.estFoot }}" hint-placeholder-val="{{ true }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.6l3.6 2.6-1.4 4.2H9.8l-1.4-4.2Z"></path><path d="M12 3v4.6M15.6 10.2l4.6-1.4M14.2 14.4l2.8 3.9M9.8 14.4l-2.8 3.9M8.4 10.2L3.8 8.8"></path></svg></sc-if>
+                  <sc-if value="{{ m.estPadel }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="13" rx="6"></rect><line x1="12" y1="15.5" x2="12" y2="21.5" stroke-width="3"></line></svg></sc-if>
+                  {{ m.sportMaj }}
+                </span>
+                <span style="height: 4px;"></span>
+                <span style="font-family: 'Bebas Neue', 'Changa', sans-serif; font-size: 38px; line-height: 1.2; color: #F5F7FA;">{{ m.heure }}</span>
+              </span>
+            </span>
+            <span style="position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 14px 14px 14px 16px;">
+              <span style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+                <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px; line-height: 1.25; color: #F5F7FA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">{{ m.lieu }}</span>
+              </span>
+              <span style="display: flex; padding-top: 4px;"><span style="padding: 4px 8px; border-radius: 6px; background: #1C2533; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; line-height: 1.2; font-weight: 600;  color: #F5F7FA;">{{ m.format }}</span></span>
+              <span style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 8px;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <span style="{{ m.etatStyle }}"><span style="{{ m.point }}"></span>{{ m.etat }}</span>
+                </span>
+                <span style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1;">
+                  <span style="white-space: nowrap; color: #F5F7FA;"><span style="font-family: 'Bebas Neue', 'Changa', sans-serif; font-size: 28px;">{{ m.prix }}</span><span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 600; "> دج</span></span>
+                  <span style="font-size: 11px; color: #F5F7FA;">للاعب</span>
+                </span>
+              </span>
+            </span>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ surTerrains }}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-direction: column;">
+      <div style="display: flex; gap: 8px; padding: 16px 16px 0 0; overflow: hidden;">
+        <sc-for list="{{ filtresTerrains }}" as="s" hint-placeholder-count="4">
+          <button onClick="{{ s.pick }}" aria-pressed="{{ s.sel }}" style="{{ s.style }}">
+            <sc-if value="{{ s.foot }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.6l3.6 2.6-1.4 4.2H9.8l-1.4-4.2Z"></path><path d="M12 3v4.6M15.6 10.2l4.6-1.4M14.2 14.4l2.8 3.9M9.8 14.4l-2.8 3.9M8.4 10.2L3.8 8.8"></path></svg></sc-if>
+            <sc-if value="{{ s.padel }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="13" rx="6"></rect><line x1="12" y1="15.5" x2="12" y2="21.5" stroke-width="3"></line><circle cx="9" cy="7" r="0.9" fill="currentColor"></circle><circle cx="13" cy="7" r="0.9" fill="currentColor"></circle><circle cx="11" cy="10.5" r="0.9" fill="currentColor"></circle></svg></sc-if>
+            {{ s.nom }}
+          </button>
+        </sc-for>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 24px 16px 12px 16px;">
+        <h2 style="margin: 0; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-weight: 600; font-size: 16px; line-height: 1.2; color: #F5F7FA;">4 مراكز شريكة</h2>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 16px;">
+        <sc-for list="{{ terrains }}" as="t" hint-placeholder-count="3">
+          <a href="ReserverCentreAr.dc.html" style="display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; border: 1px solid rgba(138,148,166,0.16); background: #131A24; color: #F5F7FA;">
+            <span style="position: relative; display: block; height: 168px;">
+              <img src="/_blob/48d1249db3144784b9242c623c5a6392" alt="{{ t.nom }}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: {{ t.cadrage }};">
+              <span style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,0.05) 40%, rgba(10,10,15,0.80) 100%);"></span>
+              <span style="position: absolute; top: 10px; left: 10px; padding: 5px 8px; border-radius: 6px; background: rgba(10,10,15,0.78); font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 600; ">{{ t.sport }}</span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 6px; padding: 14px;">
+              <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+                <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 16px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">{{ t.nom }}</span>
+                <span style="white-space: nowrap; font-size: 13px; color: #F5F7FA;">ابتداءً من <span style="font-family: 'Bebas Neue', 'Changa', sans-serif; font-size: 22px; color: #F5F7FA;">{{ t.prix }}</span><span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; color: #F5F7FA; font-weight: 600; "> دج</span> / سا</span>
+              </span>
+              <span style="display: flex; flex-wrap: wrap; gap: 6px;"><sc-for list="{{ t.formats }}" as="f" hint-placeholder-count="2"><span style="padding: 4px 8px; border-radius: 6px; background: #1C2533; font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; line-height: 1.2; font-weight: 600;  color: #F5F7FA;">{{ f }}</span></sc-for></span>
+              <span style="display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px solid rgba(138,148,166,0.16); margin-top: 4px;">
+                <span style="display: flex; align-items: center; gap: 6px; padding-top: 8px; font-size: 13px; font-weight: 600; color: #00C896;"><span style="width: 6px; height: 6px; border-radius: 999px; background: #00C896;"></span>{{ t.libres }}</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: scaleX(-1); margin-top: 8px;"><polyline points="9,6 15,12 9,18"></polyline></svg>
+              </span>
+            </span>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <nav aria-label="التنقّل الرئيسي" style="position: absolute; right: 16px; left: 16px; bottom: 20px; height: 64px; box-sizing: border-box; padding: 0 6px; border-radius: 999px; background: rgba(19,26,36,0.88); -webkit-backdrop-filter: saturate(1.4) blur(18px); backdrop-filter: saturate(1.4) blur(18px); border: 1px solid rgba(138,148,166,0.22); box-shadow: 0 14px 34px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center;">
+    <a href="MainAr.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #8A94A6;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>
+      <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 500; white-space: nowrap;">الرئيسية</span>
+    </a>
+    <a href="ExplorerAr.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #FF2B00;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 500; white-space: nowrap;">استكشف</span>
+    </a>
+    <a href="CreerOuReserverAr.dc.html" aria-label="أنشئ أو احجز" style="justify-self: center; display: grid; place-items: center; width: 54px; height: 54px; margin-top: -26px; border-radius: 999px; background: #FF2B00; border: 4px solid #0A0A0F; box-shadow: 0 8px 22px rgba(255,43,0,0.40); color: #FFFFFF;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    </a>
+    <a href="MesMatchsAr.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #8A94A6;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2"></rect><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line></svg>
+      <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 500; white-space: nowrap;">مبارياتي</span>
+    </a>
+    <a href="ProfilAr.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #8A94A6;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c1-4 4.5-6 8-6s7 2 8 6"></path></svg>
+      <span style="font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif; font-size: 11px; font-weight: 500; white-space: nowrap;">حسابي</span>
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"onglet":{"editor":"enum","options":["matchs","terrains"],"default":"matchs","section":"Écran"},"vide":{"editor":"boolean","default":false,"section":"Écran"},"$preview":{"width":390,"height":1340}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { onglet: null, jour: null, sport: 'الكل', filtreT: 'الكل', alerte: false };
+  }
+  renderVals() {
+    const onglet = this.state.onglet ?? this.props.onglet ?? 'matchs';
+    const tab = (on) => 'display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 12px; cursor: pointer; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 14px; font-weight: 700;  ' + (on ? 'color: #FFFFFF; background: linear-gradient(180deg, #1C2533 0%, #131A24 100%); border: 1px solid rgba(255,43,0,0.40); box-shadow: 0 0 0 1px rgba(255,43,0,0.10), 0 8px 24px rgba(255,43,0,0.24), inset 0 -2px 0 #FF2B00;' : 'color: #8A94A6; background: transparent; border: 1px solid rgba(138,148,166,0.16);');
+    const chip = (on) => 'flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border-radius: 10px; cursor: pointer; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 14px; font-weight: 600; ' + (on ? 'color: #FF6A4D; background: rgba(255,43,0,0.14); border: 1px solid rgba(255,43,0,0.45);' : 'color: #8A94A6; background: transparent; border: 1px solid rgba(138,148,166,0.16);');
+    const dayStyle = (on, vide) => (vide && !on ? 'opacity: 0.4; ' : '') + 'flex: 1 1 0; min-width: 0; height: 62px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 12px; cursor: pointer; padding: 0; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; ' + (on ? 'background: linear-gradient(180deg, #1C2533 0%, #131A24 100%); color: #FFFFFF; border: 1px solid rgba(255,43,0,0.40); box-shadow: 0 0 0 1px rgba(255,43,0,0.10), 0 8px 24px rgba(255,43,0,0.24), inset 0 -2px 0 #FF2B00;' : 'background: #131A24; color: #8A94A6; border: 1px solid rgba(138,148,166,0.16);');
+    const joursData = [['اليوم', '20', 7], ['الأربعاء', '21', 4], ['الخميس', '22', 9], ['الجمعة', '23', 14], ['السبت', '24', 11], ['الأحد', '25', 7], ['الإثنين', '26', 0]];
+    const jours = joursData.map(([court, num, n], i) => ({ court, num, n, mot: n > 1 ? 'مباريات' : 'مباراة', sel: i === (this.state.jour ?? (this.props.vide ? 6 : 0)), style: dayStyle(i === (this.state.jour ?? (this.props.vide ? 6 : 0)), n === 0), pick: () => this.setState({ jour: i }) }));
+    const sports = ['الكل', 'كرة القدم', 'بادل'].map(nom => ({ nom, foot: nom === 'كرة القدم', padel: nom === 'بادل', sel: nom === this.state.sport, style: chip(nom === this.state.sport), pick: () => this.setState({ sport: nom }) }));
+    const filtresTerrains = ['الكل', 'كرة القدم', 'بادل', 'شاغرة الليلة'].map(nom => ({ nom, foot: nom === 'كرة القدم', padel: nom === 'بادل', sel: nom === this.state.filtreT, style: chip(nom === this.state.filtreT), pick: () => this.setState({ filtreT: nom }) }));
+    const pill = (kind) => 'display: inline-flex; align-items: center; padding: 3px 7px; border-radius: 6px; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 10px; font-weight: 600;  white-space: nowrap; ' + (kind === 'inscrit' ? 'color: #FF6A4D; background: rgba(255,43,0,0.14); border: 1px solid rgba(255,43,0,0.45);' : kind === 'complet' ? 'color: #8A94A6; background: #131A24; border: 1px solid rgba(138,148,166,0.16);' : 'color: #F5F7FA; background: #131A24; border: 1px solid rgba(138,148,166,0.16);');
+    const base = [
+      { heure: '21:30', duree: '90 د', lieu: 'ملعب بئر خادم', distance: '3,4 كم', format: '5v5', inscrits: 7, places: 10, niveau: 'متوسط', prix: '600', sport: 'كرة القدم', cadrage: '20% 50%', href: 'DetailMatchAr.dc.html' },
+      { heure: '22:00', duree: '60 د', lieu: 'أرينا الشراقة', distance: '3,1 كم', format: '5v5', inscrits: 7, places: 10, niveau: 'تنافسي', prix: '500', sport: 'كرة القدم', cadrage: '75% 40%', href: 'DetailMatchAnciensAr.dc.html' },
+      { heure: '22:00', duree: '90 د', lieu: 'مركب الأبيار', distance: '2,1 كم', format: '2v2', inscrits: 3, places: 4, niveau: 'متوسط', prix: '900', sport: 'بادل', cadrage: '70% 45%', href: 'DetailMatchPadelAr.dc.html' },
+      { heure: '22:00', duree: '90 د', lieu: 'مركب رياض', distance: '1,2 كم', format: '5v5', inscrits: 9, places: 10, niveau: 'هواة', prix: '500', sport: 'كرة القدم', cadrage: '40% 55%', href: 'DetailMatchHydraAr.dc.html' },
+      { heure: '22:30', duree: '60 د', lieu: 'مركب الأبيار', distance: '2,1 كم', format: '2v2', inscrits: 3, places: 4, niveau: 'هواة', prix: '600', sport: 'بادل', cadrage: '90% 60%', href: 'DetailMatchPadelMardiAr.dc.html' },
+      { heure: '22:30', duree: '90 د', lieu: 'مركب رياض', distance: '1,2 كم', format: '5v5', inscrits: 10, places: 10, niveau: 'هواة', prix: '500', sport: 'كرة القدم', cadrage: '60% 50%', href: 'DetailMatchCompletAr.dc.html' },
+      { heure: '23:00', duree: '90 د', lieu: 'مركب رياض', distance: '1,2 كم', format: '6v6', inscrits: 5, places: 12, niveau: 'متوسط', prix: '500', sport: 'كرة القدم', cadrage: '50% 50%', href: 'DetailMatchDernierAr.dc.html' }
+    ];
+    const j = joursData[this.state.jour ?? (this.props.vide ? 6 : 0)];
+    const jourLabel = (this.state.jour ?? 0) === 0 ? 'الليلة' : j[0] + ' ' + j[1];
+    const visibles = j[2] === 0 ? [] : base.filter(m => this.state.sport === 'الكل' || m.sport === this.state.sport).map(m => {
+      const reste = m.places - m.inscrits;
+      const kind = m.etat === 'inscrit' ? 'inscrit' : (reste === 0 ? 'complet' : 'أماكن');
+      const etat = kind === 'inscrit' ? 'أنت مسجّل' : kind === 'complet' ? 'مكتمل' : (reste === 1 ? 'مكان واحد متاح' : reste + ' أماكن متاحة');
+      const on = kind === 'inscrit';
+      const carte = 'position: relative; display: flex; min-height: 126px; border-radius: 12px; overflow: hidden; color: #F5F7FA; ' + (on ? 'border: 1px solid rgba(255,43,0,0.45); background: rgba(255,43,0,0.14); box-shadow: none;' : 'border: 1px solid rgba(138,148,166,0.16); background: #131A24;') + '';
+      const onglet = 'position: absolute; top: 0; left: 14px; padding: 5px 10px 4px 10px; border-radius: 0 0 6px 6px; font-family: \'Bebas Neue\', \'Changa\', sans-serif; font-size: 14px; line-height: 1.2;  color: #F5F7FA; background: ' + (on ? '#FF2B00; color: #F5F7FA;' : '#1C2533;');
+      const padel = m.sport === 'بادل';
+      const voile = 'position: absolute; inset: 0; background: ' + (on ? 'linear-gradient(180deg, rgba(10,10,15,0.20), rgba(10,10,15,0.62));' : padel ? 'linear-gradient(180deg, rgba(10,10,15,0.20), rgba(10,10,15,0.62));' : 'linear-gradient(180deg, rgba(10,10,15,0.20), rgba(10,10,15,0.62));');
+      const badge = 'display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px; border-radius: 6px; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 11px; font-weight: 600;  ' + 'color: #F5F7FA; background: rgba(10,10,15,0.78);';
+      const point = 'flex: 0 0 7px; width: 7px; height: 7px; border-radius: 999px; background: ' + (on ? '#FF2B00;' : kind === 'complet' ? '#8A94A6;' : '#00C896;');
+      const etatStyle = 'display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; ' + (on ? 'color: #FF6A4D;' : (kind === 'complet' ? 'color: #8A94A6;' : 'color: #F5F7FA;'));
+      return { ...m, etat, point, carte, onglet, voile, etatStyle, badge, jour: jourLabel, niveauMaj: m.niveau.toUpperCase(), meta: m.format + ' · ' + m.niveau + ' · ' + m.distance,
+        estFoot: !padel, estPadel: padel, sportMaj: padel ? 'بادل' : 'كرة قدم', formatMaj: m.format.toUpperCase() };
+    });
+    const titreListe = visibles.length + (visibles.length > 1 ? ' مباريات · ' : ' مباراة · ') + j[0].replace('.', '') + ' ' + j[1];
+    const terrains = [
+      { nom: 'مركب رياض', horaire: 'مفتوح حتى 2:00', sport: 'كرة قدم', prix: '3 000', lieu: 'حيدرة', formats: ['5v5', '6v6'], libres: 'بقيت 3 مواعيد', cadrage: '50% 50%' },
+      { nom: 'مركب الأبيار', horaire: 'مفتوح حتى 0:00', sport: 'بادل', prix: '2 400', lieu: 'الأبيار', formats: ['2v2'], libres: 'بقيت 3 مواعيد', cadrage: '90% 60%' },
+      { nom: 'أرينا الشراقة', horaire: 'مفتوح حتى 1:00', sport: 'كرة قدم', prix: '5 000', lieu: 'الشراقة', formats: ['5v5', '6v6', '7v7', '8v8', '11v11'], libres: 'بقيت 4 مواعيد', cadrage: '80% 45%' },
+      { nom: 'ملعب بئر خادم', horaire: 'مفتوح حتى 1:00', sport: 'كرة قدم', prix: '3 500', lieu: 'بئر خادم', formats: ['5v5'], libres: 'بقيت 3 مواعيد فقط', cadrage: '15% 40%' }
+    ];
+    return {
+      racine: 'position: relative; width: 390px; height: ' + (onglet === 'terrains' ? 1610 : 1420) + 'px; overflow: hidden; background: #0A0A0F; color: #8A94A6; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 14px; line-height: 1.45;',
+      alerter: () => this.setState({ alerte: !this.state.alerte }),
+      alerteLabel: this.state.alerte ? '✓ سننبهك فور إنشاء مباراة' : 'نبّهني عند إنشاء مباراة',
+      alerteStyle: 'display: flex; align-items: center; justify-content: center; width: 100%; height: 52px; border-radius: 12px; border: 1px solid rgba(138,148,166,0.30); background: transparent; color: #F5F7FA; font-family: \'Inter\', \'IBM Plex Sans Arabic\', system-ui, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer;' + (this.state.alerte ? ' border-color: rgba(255,255,255,0.55);' : ''),
+      surMatchs: onglet === 'matchs', surTerrains: onglet === 'terrains',
+      tabMatchsSel: onglet === 'matchs' ? 'true' : 'false', tabTerrainsSel: onglet === 'terrains' ? 'true' : 'false',
+      styleTabMatchs: tab(onglet === 'matchs'), styleTabTerrains: tab(onglet === 'terrains'),
+      voirMatchs: () => this.setState({ onglet: 'matchs' }), voirTerrains: () => this.setState({ onglet: 'terrains' }),
+      jours, sports, filtresTerrains, matchsVisibles: visibles, titreListe: visibles.length ? titreListe : 'لا مباراة · ' + j[0].replace('.', '') + ' ' + j[1], aucunMatch: visibles.length === 0, triStyle: visibles.length ? 'font-size: 13px; color: #C5CCD6;' : 'display: none;', terrains
+    };
+  }
+}
+</script>
+</body>
+</html>

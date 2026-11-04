@@ -1,0 +1,534 @@
+/* =============================================================================
+   MOUBARAT DESIGN SYSTEM — v1.0
+   Phase 1 du plan V1. Socle unique partagé par l'app joueur et le CRM centre.
+
+   RÈGLE DE CONVERSION : aucun écran n'est redessiné. On extrait, on nomme,
+   on rend réutilisable. L'apparence validée est le test de non-régression.
+
+   Les 61 collisions de classes CSS relevées à l'audit (.n, .pitch, .l, .d…)
+   sont résolues par la nomenclature, pas par des correctifs :
+   tout est préfixé `mb-`, tout élément interne est nommé (`mb-match__title`).
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* =============================================================================
+   1. TOKENS
+   ========================================================================== */
+
+:root {
+
+  /* --- SURFACES ---------------------------------------------------------- */
+  --ink:            #050505;   /* fond application */
+  --ink-2:          #0E0E0E;   /* surface niveau 1 — cartes */
+  --ink-3:          #161616;   /* surface niveau 2 — champs, encarts */
+  --ink-4:          #1F1F1F;   /* surface niveau 3 — état pressé, hover */
+  --line:           rgba(255,255,255,.10);
+  --line-strong:    rgba(255,255,255,.18);
+
+  /* --- MARQUE ------------------------------------------------------------ */
+  --primary:        #FF2B00;   /* action, état actif. Jamais décoratif.      */
+  --primary-glow:   #FF5A33;
+  --primary-deep:   #8A1400;
+  --primary-wash:   rgba(255,43,0,.12);
+  --primary-line:   rgba(255,43,0,.38);
+  --gold:           #F2B705;   /* OVR, badges, distinction. Rien d'autre.    */
+  --gold-2:         #FFD65C;
+  --gold-wash:      rgba(242,183,5,.12);
+
+  /* --- SÉMANTIQUE -------------------------------------------------------- */
+  /* `--danger` n'est plus un second rouge (#FF3B30 était à 8 % de #FF2B00,
+     visible côte à côte). Il dérive du rouge de marque : coral sur lavis. */
+  --danger:         #FF8A7A;                 /* 8.9:1 sur --ink */
+  --danger-wash:    rgba(255,43,0,.12);
+  --danger-line:    rgba(255,43,0,.38);
+  --success:        #1FD17A;                 /* 10.2:1 */
+  --success-wash:   rgba(31,209,122,.12);
+  --warn:           #F2B705;
+  --map-water:      #4A9EFF;                 /* tokenisé (90 occurrences en dur) */
+
+  /* --- TEXTE — ratios mesurés sur --ink ---------------------------------- */
+  --text:           #FFFFFF;                 /* 21.0:1  titres, valeurs       */
+  --text-2:         rgba(255,255,255,.72);   /* 10.4:1  corps                 */
+  --text-3:         rgba(255,255,255,.55);   /*  6.2:1  métadonnée            */
+  --text-4:         rgba(255,255,255,.48);   /*  4.9:1  PLANCHER — rien en dessous */
+
+  /* Alias de compatibilité : les 15 221 `var(--…)` du prototype continuent
+     de fonctionner, et --text-faint passe de 3.05:1 à 4.9:1 partout, d'un coup. */
+  --text-muted:     var(--text-3);
+  --text-faint:     var(--text-4);
+
+  /* --- TYPOGRAPHIE ------------------------------------------------------- */
+  --font-display:   'Bebas Neue', 'Haettenschweiler', Impact, sans-serif;
+  --font-body:      'Barlow', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:      'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  --fs-d1: 44px;   /* heure de match, chiffre héros */
+  --fs-d2: 34px;   /* titre d'écran */
+  --fs-d3: 26px;   /* titre de section */
+  --fs-d4: 20px;   /* titre de carte, libellé de bouton */
+  --fs-b1: 16px;   /* corps large */
+  --fs-b2: 14px;   /* corps */
+  --fs-b3: 13px;   /* corps dense */
+  --fs-label: 12px;
+  --fs-micro: 11px;  /* PLANCHER ABSOLU */
+  --fs-tag:   10px;  /* Mono MAJUSCULES uniquement, jamais porteur de décision */
+
+  --lh-display: .92;
+  --lh-tight:   1.2;
+  --lh-body:    1.45;
+  --ls-display: .005em;
+  --ls-tag:     .10em;
+
+  /* --- ESPACEMENT — 7 crans, plus rien d'arbitraire ---------------------- */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px;
+
+  /* --- RAYONS — 5 crans (18 valeurs distinctes recensées à l'audit) ------- */
+  --r-1: 4px;  --r-2: 8px;  --r-3: 12px; --r-4: 16px; --r-full: 999px;
+
+  /* --- ÉLÉVATION --------------------------------------------------------- */
+  --e-1: 0 1px 0 rgba(255,255,255,.04) inset, 0 2px 8px rgba(0,0,0,.45);
+  --e-2: 0 1px 0 rgba(255,255,255,.06) inset, 0 8px 24px rgba(0,0,0,.55);
+  --e-3: 0 16px 44px rgba(0,0,0,.70);
+  --glow-primary: 0 6px 22px rgba(255,43,0,.30);
+  --glow-gold:    0 4px 18px rgba(242,183,5,.22);
+
+  /* --- MOUVEMENT — absent du prototype, c'est le premier signal premium --- */
+  --dur-1: 120ms;   /* retour d'état : appui, survol            */
+  --dur-2: 220ms;   /* entrée d'élément, chip, bascule          */
+  --dur-3: 320ms;   /* feuille, transition d'écran              */
+  --ease-out:    cubic-bezier(.22, 1, .36, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1); /* une seule fois : confirmation */
+
+  /* --- CIBLE TACTILE ----------------------------------------------------- */
+  --tap-min: 44px;
+}
+
+/* =============================================================================
+   1.5 THÈME CLAIR — amendement au gel approuvé (CRM, tranche apps/crm,
+   25/08/2026). Porté depuis le toggle « Mode clair » de
+   prototypes/crm-valide.html, jamais redessiné : mêmes valeurs exactes.
+   ========================================================================== */
+
+body[data-theme="light"] {
+  --ink:            #F4F3EF;
+  --ink-2:          #FFFFFF;
+  --ink-3:          #EFEEE9;
+  --ink-4:          #E3E1DB;
+  --line:           rgba(20,20,20,.09);
+  --line-strong:    rgba(20,20,20,.18);
+  --text:           #16150F;
+  --text-2:         #35342E;
+  --text-3:         #6A6862;
+  --text-4:         #97958E;
+  --primary-wash:   rgba(255,43,0,.07);
+  --gold-wash:      rgba(180,132,0,.10);
+  --success-wash:   rgba(22,140,80,.10);
+  --danger-wash:    rgba(200,40,20,.08);
+}
+
+/* =============================================================================
+   2. BASE
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body.mb {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text-2);
+  font-family: var(--font-body);
+  font-size: var(--fs-b2);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--dur-3) linear;
+}
+
+/* Focus visible partout — 0 état focus dans le prototype (audit D7). */
+:where(a, button, input, select, textarea, [tabindex], .mb-tap):focus-visible {
+  outline: 2px solid var(--primary-glow);
+  outline-offset: 2px;
+  border-radius: var(--r-1);
+}
+
+/* =============================================================================
+   3. PRIMITIVES
+   ========================================================================== */
+
+/* --- Text ---------------------------------------------------------------- */
+.mb-d1, .mb-d2, .mb-d3, .mb-d4 {
+  font-family: var(--font-display);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0;
+}
+.mb-d1 { font-size: var(--fs-d1); }
+.mb-d2 { font-size: var(--fs-d2); }
+.mb-d3 { font-size: var(--fs-d3); }
+.mb-d4 { font-size: var(--fs-d4); }
+
+.mb-body   { font-size: var(--fs-b2); color: var(--text-2); }
+.mb-meta   { font-size: var(--fs-micro); color: var(--text-3); }
+
+/* Tag Mono : la seule chose autorisée sous 11 px, et jamais décisive. */
+.mb-tag {
+  font-family: var(--font-mono);
+  font-size: var(--fs-tag);
+  font-weight: 500;
+  letter-spacing: var(--ls-tag);
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+
+/* --- Pressable : zone tactile 44 px garantie sans changer la taille vue --- */
+.mb-tap { position: relative; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mb-tap::after {
+  content: '';
+  position: absolute; left: 50%; top: 50%;
+  width:  max(100%, var(--tap-min));
+  height: max(100%, var(--tap-min));
+  transform: translate(-50%, -50%);
+}
+
+/* --- Surface ------------------------------------------------------------- */
+.mb-surface {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-4);
+  box-shadow: var(--e-1);
+}
+.mb-surface--flat  { box-shadow: none; }
+.mb-surface--raised{ background: var(--ink-3); box-shadow: var(--e-2); }
+
+/* --- Photo : ratio explicite + placeholder. `alt` obligatoire. ----------- */
+.mb-photo {
+  position: relative; overflow: hidden;
+  background: linear-gradient(135deg, var(--ink-3), var(--ink-2));
+  border-radius: var(--r-3);
+}
+.mb-photo > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mb-photo--16x9 { aspect-ratio: 16 / 9; }
+.mb-photo--4x3  { aspect-ratio: 4 / 3;  }
+.mb-photo--1x1  { aspect-ratio: 1 / 1;  }
+/* Voile de lisibilité pour tout texte posé sur une photo. */
+.mb-photo__scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,.30) 45%, rgba(5,5,5,.88) 100%);
+}
+
+/* --- Price : le prix est un type, pas un nombre -------------------------- */
+/* L'unité est rendue par le composant. Un montant nu devient impossible :
+   sans data-unit, le prix se signale lui-même en développement. */
+.mb-price {
+  font-family: var(--font-display);
+  font-size: var(--fs-d4);
+  color: var(--text);
+  line-height: 1;
+  white-space: nowrap;
+}
+.mb-price__cur { font-size: .62em; color: var(--text-3); margin-left: 2px; }
+.mb-price::after {
+  font-family: var(--font-mono);
+  font-size: var(--fs-tag);
+  font-weight: 500;
+  letter-spacing: var(--ls-tag);
+  color: var(--text-4);
+  margin-left: 5px;
+}
+.mb-price[data-unit="player"]::after { content: "/ JOUEUR"; }
+.mb-price[data-unit="hour"]::after   { content: "/ HEURE";  }
+.mb-price[data-unit="total"]::after  { content: "TOTAL";    }
+.mb-price:not([data-unit]) {
+  outline: 1px dashed var(--danger);
+  outline-offset: 2px;
+}
+.mb-price:not([data-unit])::after {
+  content: "⚠ UNITÉ MANQUANTE"; color: var(--danger);
+}
+
+/* --- Icônes -------------------------------------------------------------- */
+.mb-ic { width: 16px; height: 16px; display: inline-block; flex-shrink: 0; fill: currentColor; }
+.mb-ic--sm { width: 13px; height: 13px; }
+.mb-ic--lg { width: 22px; height: 22px; }
+
+/* =============================================================================
+   4. COMPOSANTS
+   ========================================================================== */
+
+/* --- 4.1 Button ---------------------------------------------------------- */
+.mb-btn {
+  --_bg: var(--primary); --_fg: #fff; --_bd: transparent; --_sh: var(--glow-primary);
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  min-height: var(--tap-min);
+  padding: 0 var(--s-5);
+  font-family: var(--font-display);
+  font-size: var(--fs-d4);
+  letter-spacing: .02em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--_fg);
+  background: var(--_bg);
+  border: 1.5px solid var(--_bd);
+  border-radius: var(--r-3);
+  box-shadow: var(--_sh);
+  cursor: pointer;
+  transition: transform var(--dur-1) var(--ease-out),
+              box-shadow var(--dur-2) var(--ease-out),
+              background var(--dur-1) linear,
+              border-color var(--dur-1) linear;
+}
+.mb-btn:hover  { --_sh: 0 8px 28px rgba(255,43,0,.42); }
+.mb-btn:active { transform: translateY(1px) scale(.985); --_sh: none; }
+
+.mb-btn--secondary { --_bg: transparent; --_fg: var(--text); --_bd: var(--line-strong); --_sh: none; }
+.mb-btn--secondary:hover { --_bd: var(--text-4); --_sh: none; }
+.mb-btn--accent    { --_bg: transparent; --_fg: var(--primary-glow); --_bd: var(--primary-line); --_sh: none; }
+.mb-btn--ghost     { --_bg: transparent; --_fg: var(--text-2); --_bd: transparent; --_sh: none; }
+.mb-btn--danger    { --_bg: transparent; --_fg: var(--danger); --_bd: var(--danger-line); --_sh: none; }
+.mb-btn--block     { display: flex; width: 100%; }
+.mb-btn--sm        { min-height: 36px; font-size: var(--fs-b1); padding: 0 var(--s-4); }
+
+.mb-btn[disabled], .mb-btn[aria-disabled="true"] {
+  --_bg: var(--ink-3); --_fg: var(--text-4); --_bd: var(--line); --_sh: none;
+  cursor: not-allowed; transform: none;
+}
+.mb-btn[data-loading="true"] { color: transparent; pointer-events: none; }
+.mb-btn[data-loading="true"]::before {
+  content: ''; position: absolute; width: 17px; height: 17px;
+  border: 2px solid rgba(255,255,255,.30); border-top-color: #fff;
+  border-radius: var(--r-full);
+  animation: mb-spin .7s linear infinite;
+}
+@keyframes mb-spin { to { transform: rotate(360deg); } }
+
+/* --- 4.2 Chip ------------------------------------------------------------ */
+.mb-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: var(--tap-min); padding: 0 var(--s-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro); font-weight: 500;
+  letter-spacing: .05em; text-transform: uppercase;
+  color: var(--text-3);
+  background: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  cursor: pointer;
+  transition: color var(--dur-1) linear, border-color var(--dur-1) linear,
+              background var(--dur-1) linear, transform var(--dur-1) var(--ease-out);
+}
+.mb-chip:active { transform: scale(.96); }
+.mb-chip[aria-pressed="true"], .mb-chip--on {
+  color: var(--text); background: var(--primary-wash);
+  border-color: var(--primary-line);
+}
+.mb-chip[disabled] { opacity: .4; cursor: not-allowed; }
+.mb-chip__x { display: inline-flex; opacity: .6; }
+.mb-chip__x:hover { opacity: 1; }
+
+/* --- 4.3 Status pill ----------------------------------------------------- */
+/* Un seul vocabulaire d'état pour toute l'application. */
+.mb-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-tag); font-weight: 600;
+  letter-spacing: var(--ls-tag); text-transform: uppercase;
+  border-radius: var(--r-1);
+  border: 1px solid transparent;
+}
+.mb-status::before { content: ''; width: 5px; height: 5px; border-radius: var(--r-full); background: currentColor; }
+.mb-status--open     { color: var(--success); background: var(--success-wash); border-color: rgba(31,209,122,.28); }
+.mb-status--filling  { color: var(--gold);    background: var(--gold-wash);    border-color: rgba(242,183,5,.28);  }
+.mb-status--full     { color: var(--text-3);  background: rgba(255,255,255,.06); border-color: var(--line); }
+.mb-status--joined   { color: var(--primary-glow); background: var(--primary-wash); border-color: var(--primary-line); }
+.mb-status--locked   { color: var(--text-3);  background: rgba(255,255,255,.06); border-color: var(--line); }
+.mb-status--played   { color: var(--text-4);  background: transparent;          border-color: var(--line); }
+.mb-status--cancelled{ color: var(--danger);  background: var(--danger-wash);   border-color: var(--danger-line); }
+.mb-status--expired  { color: var(--text-4);  background: transparent;          border-color: var(--line); }
+
+/* --- 4.4 OVR badge ------------------------------------------------------- */
+.mb-ovr {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 34px; height: 34px;
+  background: linear-gradient(160deg, var(--gold-2), var(--gold));
+  color: #1a1200;
+  border-radius: var(--r-2);
+  box-shadow: var(--glow-gold);
+}
+.mb-ovr__n { font-family: var(--font-display); font-size: var(--fs-b1); line-height: .85; }
+.mb-ovr__l { font-family: var(--font-mono); font-size: var(--fs-tag); font-weight: 600; letter-spacing: .06em; opacity: .72; }
+.mb-ovr--lg { width: 46px; height: 46px; }
+.mb-ovr--lg .mb-ovr__n { font-size: var(--fs-d3); }
+/* Tant que la formule n'est pas arrêtée (Phase 9), un OVR non calculé se déclare. */
+.mb-ovr--provisional { filter: grayscale(.55); }
+
+/* --- 4.5 Field : de vrais champs, pas des <div> -------------------------- */
+.mb-field { display: block; }
+.mb-field__label {
+  display: block; margin-bottom: 6px;
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 500;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
+}
+.mb-field__control {
+  width: 100%; min-height: var(--tap-min);
+  padding: 0 var(--s-3);
+  font-family: var(--font-body); font-size: var(--fs-b1); color: var(--text);
+  background: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear;
+}
+textarea.mb-field__control { padding: var(--s-3); min-height: 88px; line-height: var(--lh-body); resize: vertical; }
+.mb-field__control::placeholder { color: var(--text-4); }
+.mb-field__control:focus { border-color: var(--primary-line); background: var(--ink-4); outline: none; }
+.mb-field__control[aria-invalid="true"] { border-color: var(--danger-line); }
+.mb-field__hint  { margin-top: 6px; font-size: var(--fs-micro); color: var(--text-4); }
+.mb-field__error { margin-top: 6px; font-size: var(--fs-micro); color: var(--danger); display: flex; gap: 5px; align-items: center; }
+
+/* --- 4.6 MatchCard : UN composant de liste de matchs --------------------- */
+/* Remplace les trois listes concurrentes (explorer / search / résultats).
+   Variante `--rail` pour le carrousel du Home, défaut pour toute liste. */
+/* Deux colonnes seulement : heure, puis corps. Le corps porte deux lignes
+   (titre / prix, puis métadonnée / état). C'est ce qui garantit qu'un titre
+   ne se tronque jamais dans une largeur de 390 px. */
+.mb-match {
+  position: relative;
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--s-3); row-gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-4);
+  cursor: pointer;
+  transition: border-color var(--dur-1) linear, background var(--dur-1) linear,
+              transform var(--dur-1) var(--ease-out);
+}
+.mb-match:hover  { border-color: var(--line-strong); background: var(--ink-3); }
+.mb-match:active { transform: scale(.99); }
+
+.mb-match__time  { grid-column: 1; text-align: center; }
+.mb-match__h     { font-family: var(--font-display); font-size: var(--fs-d3); color: var(--text); line-height: .9; display: block; }
+.mb-match__day   { font-family: var(--font-mono); font-size: var(--fs-tag); letter-spacing: .05em; color: var(--text-4); text-transform: uppercase; }
+
+.mb-match__body  { grid-column: 2; min-width: 0; display: grid; row-gap: 5px; }
+.mb-match__line  { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-2); min-width: 0; }
+.mb-match__line + .mb-match__line { align-items: center; }
+
+.mb-match__title {
+  flex: 1 1 auto; min-width: 0;
+  font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text);
+  line-height: var(--lh-display); text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0;
+}
+/* En liste compacte, l'unité passe sous le montant : le prix garde son unité
+   (règle 04) sans voler la largeur du titre. */
+.mb-match .mb-price { flex: 0 0 auto; font-size: var(--fs-d4); text-align: right; }
+.mb-match .mb-price::after { display: block; margin-left: 0; line-height: 1.35; }
+.mb-match .mb-status { flex: 0 0 auto; }
+
+.mb-match__meta  {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 10px;
+  font-size: var(--fs-micro); color: var(--text-3);
+  overflow: hidden;
+}
+.mb-match__meta > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.mb-match__meta > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.mb-match__meta .mb-ic { color: var(--text-4); }
+
+/* Jauge de remplissage : la donnée la plus décisive du produit. */
+.mb-match__gauge { grid-column: 1 / -1; width: 100%; height: 3px; background: rgba(255,255,255,.10); border-radius: var(--r-full); overflow: hidden; }
+.mb-match__gauge i { display: block; height: 100%; background: var(--primary); border-radius: inherit;
+                     transition: width var(--dur-3) var(--ease-out); }
+
+/* États — livrés avec le composant, pas ajoutés après. */
+.mb-match[data-state="full"],
+.mb-match[data-state="locked"],
+.mb-match[data-state="expired"]   { opacity: .62; }
+.mb-match[data-state="full"] .mb-match__gauge i,
+.mb-match[data-state="locked"] .mb-match__gauge i { background: var(--text-4); }
+.mb-match[data-state="joined"]    { border-color: var(--primary-line); background: var(--primary-wash); }
+.mb-match[data-state="cancelled"] .mb-match__title { text-decoration: line-through; color: var(--text-4); }
+.mb-match[aria-disabled="true"]   { cursor: not-allowed; }
+
+/* Variante carrousel — photo, pour le Home. */
+.mb-match--rail { display: block; width: 232px; padding: 0; overflow: hidden; }
+.mb-match--rail .mb-match__photo { position: relative; aspect-ratio: 16/10; }
+.mb-match--rail .mb-match__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mb-match--rail .mb-match__over { position: absolute; inset: auto 0 0 0; padding: var(--s-3); }
+.mb-match--rail .mb-match__h { font-size: var(--fs-d2); }
+.mb-match--rail .mb-match__foot { padding: var(--s-3); display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.mb-match--rail .mb-match__badge { position: absolute; top: var(--s-2); right: var(--s-2); }
+
+/* --- 4.7 Skeleton -------------------------------------------------------- */
+.mb-skel {
+  background: linear-gradient(90deg, var(--ink-3) 0%, var(--ink-4) 50%, var(--ink-3) 100%);
+  background-size: 200% 100%;
+  border-radius: var(--r-2);
+  animation: mb-shimmer 1.4s var(--ease-in-out) infinite;
+}
+@keyframes mb-shimmer { to { background-position: -200% 0; } }
+.mb-skel--text { height: 11px; }
+.mb-skel--title{ height: 18px; }
+
+/* --- 4.8 Empty / Error --------------------------------------------------- */
+.mb-note {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: var(--s-3); padding: var(--s-6) var(--s-4);
+}
+.mb-note__mark {
+  width: 52px; height: 52px; display: grid; place-items: center;
+  border-radius: var(--r-3); background: var(--ink-3);
+  border: 1px solid var(--line); color: var(--text-4);
+}
+.mb-note__title { font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); text-transform: uppercase; margin: 0; }
+.mb-note__text  { font-size: var(--fs-b3); color: var(--text-3); max-width: 30ch; margin: 0; }
+.mb-note--error .mb-note__mark { color: var(--danger); border-color: var(--danger-line); background: var(--danger-wash); }
+
+/* --- 4.9 Entrées de liste : animation d'apparition ----------------------- */
+.mb-enter { animation: mb-rise var(--dur-3) var(--ease-out) both; }
+.mb-enter:nth-child(2) { animation-delay: 40ms; }
+.mb-enter:nth-child(3) { animation-delay: 80ms; }
+.mb-enter:nth-child(4) { animation-delay: 120ms; }
+.mb-enter:nth-child(5) { animation-delay: 160ms; }
+@keyframes mb-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* =============================================================================
+   5. MODE LEGACY — reproduit les valeurs du prototype audité.
+   Sert de témoin de non-régression et de démonstration de l'écart.
+   ========================================================================== */
+
+:root[data-mode="legacy"] {
+  --text-4: rgba(255,255,255,.35);   /* 3.05:1 — sous le seuil AA */
+  --fs-micro: 7px;
+  --fs-label: 8px;
+  --fs-b3: 9px;
+  --fs-b2: 10px;
+  --fs-tag: 6.5px;
+  --r-1: 5px; --r-2: 9px; --r-3: 14px; --r-4: 20px;
+  --tap-min: 32px;
+  --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms;
+  --e-1: none; --e-2: none; --e-3: none;
+  --glow-primary: none; --glow-gold: none;
+  --font-body: 'IBM Plex Mono', monospace;  /* Mono devenu police de corps */
+}
+
+/* =============================================================================
+   6. MOUVEMENT RÉDUIT
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}

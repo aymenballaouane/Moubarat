@@ -1,0 +1,1049 @@
+{
+  "dbName": "moubarat_sim_2days",
+  "venues": {
+    "v1": "c6ea7aa3-ee9e-41f4-b81f-31decbfa733b",
+    "v2": "bbfcdeaa-c3d9-4e72-b253-4fb8efed175e",
+    "v3": "08bd802d-94e0-409d-a885-47cc339039dd"
+  },
+  "ledger": {
+    "c6ea7aa3-ee9e-41f4-b81f-31decbfa733b": {
+      "collectedDa": 3600,
+      "engagedDa": 18600,
+      "lostCancelledDa": 3000,
+      "lostNoShowDa": 0,
+      "bookings": [
+        "0aefa822-f288-4903-9cef-47908ae71055",
+        "f8bc95db-f77e-4d81-82e3-6bcd53bdb6ad",
+        "dc9f3273-55f1-468f-9d19-63b781775ef6",
+        "17e586f5-0cb7-4325-8725-fe33ec95a5d8",
+        "1d979a20-df31-484b-88be-cff5537a7326",
+        "11cc8f94-d0d4-4898-af05-9dc9a07f0ba8",
+        "09e9a058-a06f-4272-8617-3db36d663b5c",
+        "cac57cb7-221a-4952-bfad-2253f9546270"
+      ]
+    },
+    "bbfcdeaa-c3d9-4e72-b253-4fb8efed175e": {
+      "collectedDa": 0,
+      "engagedDa": 9900,
+      "lostCancelledDa": 0,
+      "lostNoShowDa": 2700,
+      "bookings": [
+        "5687633f-23c7-41a5-a1eb-ef32677a8e02",
+        "a6b86b0e-e1a2-4819-be18-84ee541d9d17",
+        "e97700c6-906a-45ba-9ac6-56e5677f1fd9",
+        "8537e4a0-cbf5-4fea-9d81-da6f586a8711",
+        "6241a736-afec-4896-8fef-ea9e0d865690"
+      ]
+    },
+    "08bd802d-94e0-409d-a885-47cc339039dd": {
+      "collectedDa": 0,
+      "engagedDa": 2200,
+      "lostCancelledDa": 0,
+      "lostNoShowDa": 0,
+      "bookings": [
+        "f3a19bb5-1ded-40ea-9d57-54778f73332e"
+      ]
+    }
+  },
+  "trace": [
+    {
+      "step": "setup:players",
+      "ok": true,
+      "detail": {
+        "count": 23
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "concurrence:même-créneau-trois-joueurs-un-seul-gagne",
+      "ok": true,
+      "detail": {
+        "statusCodes": [
+          201,
+          409,
+          409
+        ]
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-3-v1",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-4-v1",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-5-v1",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-6-v1",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-7-v1",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-8-v1",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-9-v2",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-10-v2",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-11-v2",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-12-v2",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-parallèle-joueur-13-v2",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T07:00:00.000Z"
+    },
+    {
+      "step": "samedi:création-match-A",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:match-A-rejoint-par-joueur-14",
+      "ok": true,
+      "detail": {
+        "status": 200
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:match-A-rejoint-par-joueur-15",
+      "ok": true,
+      "detail": {
+        "status": 200
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:match-A-rejoint-par-joueur-16",
+      "ok": true,
+      "detail": {
+        "status": 200
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:match-A-rejoint-par-joueur-17",
+      "ok": true,
+      "detail": {
+        "status": 200
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:création-match-B",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:match-B-rejoint-par-joueur-18",
+      "ok": true,
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:création-match-C-padel",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:match-C-rejoint-par-joueur-19",
+      "ok": true,
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:match-C-rejoint-par-joueur-20",
+      "ok": true,
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:match-C-rejoint-par-joueur-21",
+      "ok": true,
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "samedi:match-C-devient-FULL",
+      "ok": true,
+      "detail": {
+        "status": "FULL"
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "P0-5:roster-visiteur-anonyme-masqué-mais-compte-réel-servi",
+      "ok": true,
+      "detail": {
+        "rosterHidden": true,
+        "joinedCount": 5,
+        "players": []
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "P0-5:roster-compte-connecté-liste-nominative-réelle",
+      "ok": true,
+      "detail": {
+        "players": 5
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "BUG-4:réservation-téléphonique-déclarée",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "BUG-4a:match-sur-résa-téléphonique-NON-vérifiée-refusé",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "error": "BOOKING_NOT_VERIFIED"
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "BUG-4a:centre-vérifie-la-résa-téléphonique",
+      "ok": true,
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "BUG-4a:match-sur-résa-téléphonique-VÉRIFIÉE-accepté",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "BUG-4b:match-sur-créneau-déjà-passé-refusé",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "error": "SLOT_IN_PAST"
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "BUG-4c:match-dans-fenêtre-H-2-refusé",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "error": "MATCH_LOCKED"
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "P0-4a:prévisualisation-déplacement-vers-terrain-autre-centre-refusée",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "body": {
+          "error": "NOT_FOUND",
+          "message": "Terrain introuvable."
+        }
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "P0-4a:déplacement-effectif-vers-terrain-autre-centre-refusé",
+      "ok": true,
+      "detail": {
+        "status": 404
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "P0-6:création-équipe",
+      "ok": true,
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "P0-6:invitation-nom-inconnu-refusée",
+      "ok": true,
+      "detail": {
+        "status": 404
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "P0-6:invitation-nom-réel-acceptée",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "P0-6:invitation-en-double-refusée",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "error": "ALREADY_MEMBER"
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "P0-6:invité-accepte",
+      "ok": true,
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "P0-6:aucune-fuite-de-numéro-dans-tout-le-flux-invitation",
+      "ok": true,
+      "detail": {
+        "checked": 4
+      },
+      "narrativeAt": "2026-10-03T08:30:00.000Z"
+    },
+    {
+      "step": "CRM-4:réception-annule-résa-avec-match-rempli-cascade",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "status": "CANCELLED",
+          "matchCancelled": true,
+          "matchTitle": "Match rapide Riadh",
+          "notifiedPlayers": 5
+        }
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "CRM-4:match-réellement-annulé-en-base",
+      "ok": true,
+      "detail": {
+        "status": "CANCELLED"
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "CRM-4:créneau-libéré-re-réservable-immédiatement",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "CRM-4:tous-les-inscrits-notifiés-de-la-cascade",
+      "ok": true,
+      "detail": {
+        "attendus": 5,
+        "notifiés": 5
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "organisateur:annule-match-seul-résa-intacte",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "status": "CANCELLED",
+          "bookingCancelled": false,
+          "bookingIds": [
+            "dc9f3273-55f1-468f-9d19-63b781775ef6"
+          ]
+        }
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "organisateur:résa-redevient-modifiable-par-le-centre-après-annulation-du-seul-match",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "old": {
+            "fieldId": "1fa7abb0-0c86-46bc-8929-b4d49c062544",
+            "fieldName": "T1",
+            "start": 1791631800000,
+            "end": 1791637200000,
+            "totalDa": 3600
+          },
+          "new": {
+            "fieldId": "aa2a1602-9fd5-4769-8b1b-8f62df91f131",
+            "fieldName": "T2",
+            "start": 1792083600000,
+            "end": 1792089000000,
+            "totalDa": 3000,
+            "discountDa": 0
+          },
+          "promoDropped": false,
+          "quote": {
+            "totalDa": 3000,
+            "bands": [
+              {
+                "fromMin": 1080,
+                "toMin": 1170,
+                "rateDaPerHour": 2000,
+                "amountDa": 3000
+              }
+            ]
+          }
+        }
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "setup:bkFar-réservation-créée",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "body": {
+          "booking": {
+            "id": "7a1a922e-d798-4acb-b82c-f510d1af327d",
+            "reference": "RIA-000010",
+            "fieldId": "1fa7abb0-0c86-46bc-8929-b4d49c062544",
+            "start": 1792177200000,
+            "end": 1792180800000,
+            "status": "RESERVED",
+            "source": "MOUBARAT",
+            "verifiedByCenter": true,
+            "reservationName": "Nabil Ferhat",
+            "customerPhone": null,
+            "totalDa": 2400,
+            "promoCodeId": null,
+            "discountDa": 0,
+            "createdAt": 1790543700583,
+            "matchId": null,
+            "format": "5v5"
+          },
+          "quote": {
+            "totalDa": 2400,
+            "bands": [
+              {
+                "fromMin": 1200,
+                "toMin": 1260,
+                "rateDaPerHour": 2400,
+                "amountDa": 2400
+              }
+            ]
+          },
+          "centerNotified": false
+        }
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "setup:mFar-match-créé",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "body": {
+          "match": {
+            "id": "d01a1fea-ef44-4f43-a53b-5ba1b8bb4107",
+            "sport": "FOOTBALL",
+            "format": "5v5",
+            "level": "LOISIR",
+            "title": "Match+résa ensemble, hors H-2",
+            "venueId": "c6ea7aa3-ee9e-41f4-b81f-31decbfa733b",
+            "fieldId": "1fa7abb0-0c86-46bc-8929-b4d49c062544",
+            "start": 1792177200000,
+            "end": 1792180800000,
+            "capacity": 10,
+            "pricePerPlayerDa": 240,
+            "visibility": "OPEN",
+            "status": "OPEN",
+            "organizerId": "5c9d97c1-96be-4c51-861c-a95bbb4db6d3",
+            "coordination": "WHATSAPP",
+            "whatsappUrl": null,
+            "createdAt": 1790543700589
+          }
+        }
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "organisateur:annule-match+résa-ensemble-hors-H2-accepté",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "status": "CANCELLED",
+          "bookingCancelled": true,
+          "bookingIds": [
+            "7a1a922e-d798-4acb-b82c-f510d1af327d"
+          ]
+        }
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "setup:bkNear-réservation-créée",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "body": {
+          "booking": {
+            "id": "33a2fb29-0cb5-4b0b-b826-f36861a13376",
+            "reference": "BWP-000006",
+            "fieldId": "426e5f85-e1a5-49a3-987c-7d58751157b1",
+            "start": 1792227600000,
+            "end": 1792233000000,
+            "status": "RESERVED",
+            "source": "MOUBARAT",
+            "verifiedByCenter": true,
+            "reservationName": "Omar Saidi",
+            "customerPhone": null,
+            "totalDa": 2400,
+            "promoCodeId": null,
+            "discountDa": 0,
+            "createdAt": 1790543700616,
+            "matchId": null,
+            "format": "DOUBLE"
+          },
+          "quote": {
+            "totalDa": 2400,
+            "bands": [
+              {
+                "fromMin": 600,
+                "toMin": 690,
+                "rateDaPerHour": 1600,
+                "amountDa": 2400
+              }
+            ]
+          },
+          "centerNotified": false
+        }
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "setup:mNear-match-créé",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "body": {
+          "match": {
+            "id": "39db94b3-fef8-4393-a25b-3d00d5d73ac0",
+            "sport": "PADEL",
+            "format": "DOUBLE",
+            "level": "LOISIR",
+            "title": "Match qui entrera dans H-2",
+            "venueId": "bbfcdeaa-c3d9-4e72-b253-4fb8efed175e",
+            "fieldId": "426e5f85-e1a5-49a3-987c-7d58751157b1",
+            "start": 1792227600000,
+            "end": 1792233000000,
+            "capacity": 4,
+            "pricePerPlayerDa": 600,
+            "visibility": "OPEN",
+            "status": "OPEN",
+            "organizerId": "4d71cf29-216a-4e81-9213-493960dacc76",
+            "coordination": "WHATSAPP",
+            "whatsappUrl": null,
+            "createdAt": 1790543700623
+          }
+        }
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "organisateur:annule-match+résa-DANS-H2-refus-TOTAL-attendu",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "body": {
+          "error": "CANCEL_WINDOW_PASSED",
+          "message": "L’annulation gratuite est possible jusqu’à 2 h avant le créneau."
+        }
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "organisateur:refus-total-donc-NI-le-match-NI-la-résa-ne-sont-touchés",
+      "ok": true,
+      "detail": {
+        "matchStatus": "OPEN",
+        "bookingStatus": "RESERVED"
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "organisateur:auto-annulation-résa-seule-DANS-H2-refusée",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "error": "CANCEL_WINDOW_PASSED"
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "organisateur:dans-H2-annuler-LE-MATCH-SEUL-reste-possible",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "status": "CANCELLED",
+          "bookingCancelled": false,
+          "bookingIds": [
+            "33a2fb29-0cb5-4b0b-b826-f36861a13376"
+          ]
+        }
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "joueur:auto-annulation-mes-réservations-hors-H2-réussie",
+      "ok": true,
+      "detail": {
+        "status": 200
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-honorée-puis-payée",
+      "ok": true,
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "samedi:réservation-no-show-enregistrée",
+      "ok": true,
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "caisse:ouverture-session-centre1",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "caisse:mouvement-encaissement",
+      "ok": true,
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "caisse:mouvement-sortie",
+      "ok": true,
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "caisse:clôture-avec-écart-réel-négatif",
+      "ok": true,
+      "detail": {
+        "expectedDa": 6600,
+        "declared": 6250,
+        "variance": -350
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "observation:centre2-cash_module_enabled-en-base",
+      "ok": true,
+      "detail": {
+        "cashModuleEnabled": false
+      },
+      "narrativeAt": "2026-10-03T12:00:00.000Z"
+    },
+    {
+      "step": "P1-A:second-joueur-rejoint-le-match-du-rappel",
+      "ok": true,
+      "narrativeAt": "2026-10-03T19:00:00.000Z"
+    },
+    {
+      "step": "P1-A:aucun-rappel-avant-le-balayage-personne-n’a-rien-ouvert",
+      "ok": true,
+      "narrativeAt": "2026-10-03T19:00:00.000Z"
+    },
+    {
+      "step": "P1-A:balayage-réel-écrit-le-rappel-pour-TOUS-les-inscrits",
+      "ok": true,
+      "detail": {
+        "locked": true,
+        "reminders": 2,
+        "challengesExpired": 0,
+        "resultsConfirmed": 0
+      },
+      "narrativeAt": "2026-10-03T19:00:00.000Z"
+    },
+    {
+      "step": "P1-A:les-DEUX-inscrits-ont-leur-notification-en-base-sans-avoir-rien-ouvert",
+      "ok": true,
+      "detail": {
+        "rows": 2
+      },
+      "narrativeAt": "2026-10-03T19:00:00.000Z"
+    },
+    {
+      "step": "P1-A:la-VRAIE-minuterie-(pas-seulement-la-fonction)-a-écrit-le-rappel-en-quelques-secondes",
+      "ok": true,
+      "detail": {
+        "rows": 1
+      },
+      "narrativeAt": "2026-10-03T19:00:00.000Z"
+    },
+    {
+      "step": "dimanche:demande-inscription-3e-centre-soumise",
+      "ok": true,
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:demande-visible-côté-superadmin",
+      "ok": true,
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:conversion-demande-en-centre",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:demande-marquée-CONVERTED",
+      "ok": true,
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:3e-centre-validé-devient-ACTIVE-et-prêt",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "venue": {
+            "id": "08bd802d-94e0-409d-a885-47cc339039dd",
+            "status": "ACTIVE"
+          }
+        }
+      },
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:3e-centre-réellement-réservable-immédiatement",
+      "ok": true,
+      "detail": {
+        "status": 201
+      },
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:résultat-soumis",
+      "ok": true,
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:auto-confirmation-résultat-24h-par-balayage-réel",
+      "ok": true,
+      "detail": {
+        "locked": true,
+        "reminders": 0,
+        "challengesExpired": 0,
+        "resultsConfirmed": 1
+      },
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:résultat-réellement-CONFIRMED-en-base",
+      "ok": true,
+      "detail": {
+        "status": "CONFIRMED"
+      },
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:défi-envoyé",
+      "ok": true,
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:défi-expiré-par-le-balayage-réel",
+      "ok": true,
+      "detail": {
+        "locked": true,
+        "reminders": 0,
+        "challengesExpired": 1,
+        "resultsConfirmed": 0
+      },
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:émetteur-du-défi-prévenu-de-l’expiration",
+      "ok": true,
+      "narrativeAt": "2026-10-04T09:00:00.000Z"
+    },
+    {
+      "step": "dimanche:joueur-18-session-valide-avant-suspension",
+      "ok": true,
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "dimanche:superadmin-suspend-le-joueur-18",
+      "ok": true,
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "dimanche:même-jeton-refusé-immédiatement-après-suspension",
+      "ok": true,
+      "detail": {
+        "status": 401,
+        "error": "ACCOUNT_SUSPENDED"
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "dimanche:superadmin-réactive-le-joueur-18",
+      "ok": true,
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "dimanche:même-jeton-de-nouveau-valide-sans-reconnexion",
+      "ok": true,
+      "detail": {
+        "status": 200
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "dimanche:suppression-compte-sans-engagement-réussit",
+      "ok": true,
+      "detail": {
+        "status": 204
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "dimanche:compte-réellement-anonymisé-en-base",
+      "ok": true,
+      "detail": {
+        "name": "Joueur supprimé",
+        "phone": "deleted:0e198aa5-a9a"
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "dimanche:joueur-20-réservation-à-venir-pour-le-test-de-suppression",
+      "ok": true,
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "dimanche:suppression-refusée-avec-engagement-en-cours",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "body": {
+          "error": "HAS_UPCOMING_COMMITMENTS",
+          "message": "Avant de supprimer ton compte, règle d’abord : 1 réservation à venir (à annuler) · 1 match à venir rejoint (à quitter)."
+        }
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "dimanche:compte-non-anonymisé-après-refus",
+      "ok": true,
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:journal-lisible-Riadh Foot Alger",
+      "ok": true,
+      "detail": {
+        "entries": 8
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:analytics-CA-serveur=SQL-indépendant-Riadh Foot Alger",
+      "ok": true,
+      "detail": {
+        "serveur": {
+          "collected": 3600,
+          "engaged": 27800,
+          "lostCancelled": 5400,
+          "lostNoShow": 0
+        },
+        "sqlIndépendant": {
+          "collected": 3600,
+          "engaged": 27800,
+          "lost_cancelled": 5400,
+          "lost_no_show": 0
+        }
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:journal-lisible-Blue Wave Padel",
+      "ok": true,
+      "detail": {
+        "entries": 1
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:analytics-CA-serveur=SQL-indépendant-Blue Wave Padel",
+      "ok": true,
+      "detail": {
+        "serveur": {
+          "collected": 0,
+          "engaged": 12600,
+          "lostCancelled": 2700,
+          "lostNoShow": 2700
+        },
+        "sqlIndépendant": {
+          "collected": 0,
+          "engaged": 12600,
+          "lost_cancelled": 2700,
+          "lost_no_show": 2700
+        }
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:journal-lisible-Sahara Multisport",
+      "ok": true,
+      "detail": {
+        "entries": 0
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:analytics-CA-serveur=SQL-indépendant-Sahara Multisport",
+      "ok": true,
+      "detail": {
+        "serveur": {
+          "collected": 0,
+          "engaged": 2200,
+          "lostCancelled": 0,
+          "lostNoShow": 0
+        },
+        "sqlIndépendant": {
+          "collected": 0,
+          "engaged": 2200,
+          "lost_cancelled": 0,
+          "lost_no_show": 0
+        }
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:aucune-réservation-annulée-sans-motif",
+      "ok": true,
+      "detail": {
+        "count": 0
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:aucune-notification-orpheline",
+      "ok": true,
+      "detail": {
+        "count": 0
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:console-superadmin-liste-les-3-centres",
+      "ok": true,
+      "detail": {
+        "names": [
+          "Sahara Multisport",
+          "Blue Wave Padel",
+          "Riadh Foot Alger"
+        ]
+      },
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:console-recherche-utilisateurs-fonctionne",
+      "ok": true,
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    },
+    {
+      "step": "lendemain:journal-plateforme-trace-la-création-du-3e-centre",
+      "ok": true,
+      "narrativeAt": "2026-10-04T15:00:00.000Z"
+    }
+  ],
+  "nextDay": {
+    "Riadh Foot Alger": {
+      "journalEntries": 8,
+      "revenueMatch": true
+    },
+    "Blue Wave Padel": {
+      "journalEntries": 1,
+      "revenueMatch": true
+    },
+    "Sahara Multisport": {
+      "journalEntries": 0,
+      "revenueMatch": true
+    }
+  }
+}

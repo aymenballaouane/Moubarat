@@ -1,0 +1,18 @@
+{
+  "name": "@moubarat/ui-board",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Audit visuel automatisé (app joueur + CRM) : captures Playwright, PDF, board Figma-like, comparaison avant/après.",
+  "scripts": {
+    "capture": "node src/capture.mjs",
+    "build": "node src/build-outputs.mjs",
+    "board": "node src/capture.mjs && node src/build-outputs.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0",
+    "pixelmatch": "^5.3.0",
+    "pngjs": "^7.0.0",
+    "archiver": "^7.0.1"
+  }
+}

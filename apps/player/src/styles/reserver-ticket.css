@@ -1,0 +1,46 @@
+/* R4 · ticket « C'est réservé » / « Ta réservation » (Reserver.dc.html, étape confirme) — Lot 5.
+   Propriétés logiques partout (miroir RTL automatique). */
+
+#s-proof.rsv-tk { padding: max(26px, env(safe-area-inset-top)) 22px max(26px, env(safe-area-inset-bottom)); }
+.rsv-tk__back { position: absolute; top: max(20px, env(safe-area-inset-top)); inset-inline-start: 16px; z-index: 2; width: 44px; height: 44px;
+  border-radius: var(--r-full); border: 1px solid var(--line); background: transparent; color: var(--text); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.rsv-tk__back:focus-visible, .rsv-tk__link:focus-visible, .rsv-tk__cta:focus-visible,
+.rsv-tk__share:focus-visible, .rsv-tk__more:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.rsv-tk__head { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding-top: 22px; }
+.rsv-tk__check { width: 64px; height: 64px; border-radius: var(--r-full); background: var(--success-wash); color: var(--success); display: grid; place-items: center; }
+.rsv-tk__h1 { margin: 6px 0 0; font-family: var(--font-body); font-weight: 700; font-size: 28px; line-height: 1.2; letter-spacing: -.015em; color: var(--text); }
+.rsv-tk__sub { margin: 0; max-width: 34ch; }
+
+.rsv-tk__ticket { position: relative; margin-top: 22px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--ink-2); }
+.rsv-tk__ticket[data-cancelled="true"] { opacity: .55; }
+.rsv-tk__photo { position: relative; height: 150px; }
+.rsv-tk__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 80% 45%; }
+.rsv-tk__scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,.15) 0%, rgba(10,10,15,.90) 100%); }
+/* Texte posé sur la photo nocturne : couleurs FIXES (jamais var(--text), sombre en thème clair). */
+.rsv-tk__title { position: absolute; inset-inline: 16px; bottom: 12px; display: flex; flex-direction: column; gap: 2px; }
+.rsv-tk__date { font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em; color: #C5CCD6; }
+.rsv-tk__venue { font-family: var(--font-display); font-size: 30px; line-height: .95; color: #F5F7FA; text-transform: uppercase; }
+.rsv-tk__tear { height: 0; border-top: 2px dashed var(--line); margin: 0 14px; }
+.rsv-tk__notch { position: absolute; top: 141px; width: 18px; height: 18px; border-radius: var(--r-full); background: var(--ink); border: 1px solid var(--line); }
+.rsv-tk__notch--s { inset-inline-start: -9px; }
+.rsv-tk__notch--e { inset-inline-end: -9px; }
+/* Le nom du terrain est réel (« Court 1 · DOUBLE », plus long que la maquette « T2 · 5V5 ») : première colonne
+   plus large, retour à la ligne autorisé, le prix ne se coupe jamais. */
+.rsv-tk__facts { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; padding: 14px 16px 16px; }
+.rsv-tk__facts > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rsv-tk__facts i { font-style: normal; font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em; color: var(--text-3); }
+.rsv-tk__facts b { font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1; color: var(--text); overflow-wrap: anywhere; }
+.rsv-tk__facts > span:nth-child(2) b { white-space: nowrap; }
+.rsv-tk__facts b.rsv-tk__code { white-space: nowrap; font-family: var(--font-body); font-weight: 600; font-size: var(--fs-b1); line-height: 1.2; }
+
+.rsv-tk__note { margin: 12px 0 0; font-size: var(--fs-b2); line-height: 1.45; text-align: center; color: var(--text); }
+.rsv-tk__link { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--text); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; }
+
+.rsv-tk__actions { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.rsv-tk__cta { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: var(--r-3); border: 0; cursor: pointer;
+  background: var(--primary); color: #fff; font-size: var(--fs-b1); font-weight: 600; text-align: start; }
+.rsv-tk__cta > span { flex: 1 1 auto; }
+.rsv-tk__share { height: 52px; border-radius: var(--r-3); border: 1px solid var(--line-strong); display: flex; align-items: center;
+  justify-content: center; gap: 10px; font-size: var(--fs-b2); font-weight: 600; color: var(--text); }
+.rsv-tk__more { background: none; border: 0; padding: 8px 0 0; text-align: center; font-size: var(--fs-b2); font-weight: 600; color: var(--text); cursor: pointer; }

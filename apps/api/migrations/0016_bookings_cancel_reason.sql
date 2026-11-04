@@ -1,0 +1,11 @@
+-- Motif d'annulation (15/09/2026, demande d'Aymen — prérequis avant le
+-- premier centre réel) : distingue une annulation CLIENT (le client a
+-- annulé, ou a demandé au centre d'annuler pour lui) d'une annulation
+-- STAFF_ERROR (le centre s'est trompé en saisissant — ne doit compter ni
+-- dans le CA perdu, ni dans la fiabilité pondérée du client, voir
+-- modules/analytics/service.ts, modules/promos/service.ts,
+-- modules/clients/service.ts). NULL pour toute réservation non annulée et
+-- pour l'historique annulé avant cette migration — jamais traité comme
+-- STAFF_ERROR par défaut, seule la valeur explicite exclut. Additive,
+-- schéma gelé intact.
+ALTER TABLE bookings ADD COLUMN cancel_reason text CHECK (cancel_reason IN ('STAFF_ERROR', 'CLIENT'));
