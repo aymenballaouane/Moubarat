@@ -244,7 +244,7 @@ export function CreerPublie(p: {
   summary: MatchSummary;
   level: SkillLevel;
   visibility: 'OPEN' | 'PRIVATE';
-  /** Le lien du match sans protocole (« app.moubaratsport.com/m/7KQ2XM »), `null` tant que le serveur ne l'a pas servi. */
+  /** Le lien du match sans protocole (« app.moubarat.app/m/7KQ2XM »), `null` tant que le serveur ne l'a pas servi. */
   linkLabel: string | null;
   copied: boolean;
   onCopy: () => void;

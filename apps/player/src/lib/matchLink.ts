@@ -1,16 +1,16 @@
-/* Le lien d'un match (Lot 7, LienMatch.dc.html) — « app.moubaratsport.com/m/CODE » : le code court est celui du serveur (migration 0036). Fonctions pures, sauf le stockage
+/* Le lien d'un match (Lot 7, LienMatch.dc.html) — « app.moubarat.app/m/CODE » : le code court est celui du serveur (migration 0036). Fonctions pures, sauf le stockage
    de l'invitation en attente (sessionStorage, enveloppé : jamais bloquant). */
 
-/** Base publique des liens. Réglable au déploiement (`VITE_PUBLIC_BASE_URL`) ; par défaut `https://app.moubaratsport.com` (décision d'Aymen, 26/10/2026 — les maquettes disent « moubaratsport.com », le domaine de l'app est le sous-domaine `app.`). */
+/** Base publique des liens. Réglable au déploiement (`VITE_PUBLIC_BASE_URL`) ; par défaut `https://app.moubarat.app` (décision d'Aymen : le domaine est `moubarat.app` depuis le 04/11/2026 — les maquettes, antérieures, disent « moubaratsport.com » ; l'app est sur le sous-domaine `app.`). */
 export const PUBLIC_BASE_URL: string =
-  ((import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_PUBLIC_BASE_URL ?? 'https://app.moubaratsport.com').replace(/\/+$/, '');
+  ((import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_PUBLIC_BASE_URL ?? 'https://app.moubarat.app').replace(/\/+$/, '');
 
-/** `https://app.moubaratsport.com/m/7KQ2XM` — ce que l'organisateur copie et partage. */
+/** `https://app.moubarat.app/m/7KQ2XM` — ce que l'organisateur copie et partage. */
 export function matchLink(code: string): string {
   return `${PUBLIC_BASE_URL}/m/${code}`;
 }
 
-/** `app.moubaratsport.com/m/7KQ2XM` — sans le protocole, comme dans les maquettes (ligne « copier le lien »). */
+/** `app.moubarat.app/m/7KQ2XM` — sans le protocole, comme dans les maquettes (ligne « copier le lien »). */
 export function matchLinkLabel(code: string): string {
   return matchLink(code).replace(/^https?:\/\//, '');
 }
@@ -23,7 +23,7 @@ export function codeFromPath(pathname: string): string | null {
   return /^[A-HJ-NP-Z2-9]+$/.test(code) ? code : null;
 }
 
-/** Le message d'invitation de la maquette (« On joue ? Rejoins le match : app.moubaratsport.com/m/7KQ2 »), toujours en français comme les liens wa.me des maquettes arabes. */
+/** Le message d'invitation de la maquette (« On joue ? Rejoins le match : app.moubarat.app/m/7KQ2 »), toujours en français comme les liens wa.me des maquettes arabes. */
 export function inviteText(code: string): string {
   return `On joue ? Rejoins le match : ${matchLinkLabel(code)}`;
 }

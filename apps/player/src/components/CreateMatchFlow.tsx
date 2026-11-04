@@ -21,7 +21,7 @@ import type { AppStore } from '../state/useAppStore.js';
    - C1 « Configure ton match » : l'aperçu, le niveau, « Qui peut venir ? » (ouvert à tous / sur invitation — seulement par le lien, règle 6 ; retiré au lot 10 de
      l'audit tant qu'aucun lien n'ouvrait le match, rétabli avec les liens de match du lot 7), un mot aux joueurs (facultatif). PLUS DE NOM LIBRE (règle 41) :
      le match porte le nom de son centre.
-   - C2 « Ton match est en ligne » : partage WhatsApp, ligne du lien à copier (app.moubaratsport.com/m/CODE), « Voir le match ».
+   - C2 « Ton match est en ligne » : partage WhatsApp, ligne du lien à copier (app.moubarat.app/m/CODE), « Voir le match ».
    Un créneau choisi en R3 n'est PAS réservé avant « Publier le match » (BUG-3) : la réservation et le match partent ensemble ;
    le prix, la capacité et l'éligibilité viennent du core, jamais recalculés ici (seul l'arrondi d'affichage, règle 13). */
 

@@ -179,7 +179,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
      l'organisateur et aux inscrits — faille trouvée en revue sécurité : la
      visibilité déclarée par le core (`Match.visibility`) n'était vérifiée
      nulle part à la lecture directe, seul le listing /matches la respectait. */
-  /* Le lien d'un match (LienMatch.dc.html, « app.moubaratsport.com/m/CODE ») : la fiche publique d'un match À PARTIR DE SON CODE — l'invitation elle-même. Valable aussi pour
+  /* Le lien d'un match (LienMatch.dc.html, « app.moubarat.app/m/CODE ») : la fiche publique d'un match À PARTIR DE SON CODE — l'invitation elle-même. Valable aussi pour
      un match « sur invitation » (règle 6 : il n'est accessible que par son lien) ; un visiteur sans compte reçoit la fiche sans un nom d'inscrit (P0-5), plus le prénom de
      l'organisateur (« Yanis t'invite à jouer »). */
   app.get<{ Params: { code: string } }>('/matches/by-code/:code',

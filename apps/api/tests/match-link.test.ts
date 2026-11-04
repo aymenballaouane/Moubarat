@@ -3,7 +3,7 @@ import { setupTestStack, loginAs, bearer, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { makeSafeDayPicker, SEED_SUBSCRIPTION_WEEKDAY } from './helpers/dates.js';
 
-/* Lot 7 (LienMatch.dc.html, migration 0036) — le code court d'un match et son lien « moubaratsport.com/m/CODE » : généré par la base, servi à tous pour un match ouvert, secret pour un
+/* Lot 7 (LienMatch.dc.html, migration 0036) — le code court d'un match et son lien « app.moubarat.app/m/CODE » : généré par la base, servi à tous pour un match ouvert, secret pour un
    match sur invitation (règle 6 : « accessible que par son lien »), et la fiche publique d'un match À PARTIR DE SON CODE — sans compte, sans un nom d'inscrit. Vrai Postgres. */
 
 let stack: TestStack;

@@ -37,7 +37,7 @@ import { NOTIFICATIONS_SEED } from '../data/notificationsDemo.js';
 export interface MatchRecord {
   match: Match;
   players: MatchPlayer[];
-  /** Le code du lien du match (« app.moubaratsport.com/m/CODE », migration 0036) — absent tant que le serveur ne l'a pas servi (un match sur invitation ne le montre qu'à qui le connaît). */
+  /** Le code du lien du match (« app.moubarat.app/m/CODE », migration 0036) — absent tant que le serveur ne l'a pas servi (un match sur invitation ne le montre qu'à qui le connaît). */
   code?: string | undefined;
 }
 

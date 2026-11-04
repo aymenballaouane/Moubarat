@@ -863,7 +863,7 @@ export function useAppStore() {
         return { ok: true };
       } catch (e) { return actionResultFromError(e); }
     },
-    /** Ouvre le match d'un LIEN reçu (« app.moubaratsport.com/m/CODE ») : lit la fiche par son code, l'installe dans l'état partagé (roster nominatif compris — le joueur est
+    /** Ouvre le match d'un LIEN reçu (« app.moubarat.app/m/CODE ») : lit la fiche par son code, l'installe dans l'état partagé (roster nominatif compris — le joueur est
         connecté) et rend l'identifiant du match. Un match sur invitation s'ouvre ainsi (règle 6) sans passer par GET /matches/:id, qui le refuse à un tiers. */
     openMatchByCode: async (code: string): Promise<ActionResult & { matchId?: string; mine?: boolean }> => {
       const res = await fetchMatchPreview(code, token);

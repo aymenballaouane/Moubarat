@@ -724,9 +724,9 @@ même mécanique, aucun code à toucher au-delà de `content.ts`.
 
 ### 4.16 Mise en ligne sur les stores (lot 13, 26/10/2026) : ce que l'hébergement doit fournir
 
-Décisions d'Aymen (26/10/2026) : nom affiché **Moubarat**, identifiant Android et iOS **`com.moubarat.app`**, domaine **`app.moubaratsport.com`**, première version Android **sans notification push**, comptes développeur Google Play et Apple **au nom d'Aymen**. Étapes Android : `apps/android/README.md` ; iOS : `docs/IOS_HANDOVER.md` ; brief complet : `refonte-app-joueur/docs/lot-13-brief.md`.
+Décisions d'Aymen (26/10/2026) : nom affiché **Moubarat**, identifiant Android et iOS **`com.moubarat.app`**, domaine **`app.moubarat.app`**, première version Android **sans notification push**, comptes développeur Google Play et Apple **au nom d'Aymen**. Étapes Android : `apps/android/README.md` ; iOS : `docs/IOS_HANDOVER.md` ; brief complet : `refonte-app-joueur/docs/lot-13-brief.md`.
 
-1. **Repli sur `index.html` pour tout chemin inconnu, en `200`** (jamais `404`) : l'app web est une application d'une seule page, ses adresses publiques sont des chemins — `/m/CODE` (lien de match), **`/confidentialite`** et **`/conditions`** (les textes de l'avocat, lisibles sans compte ; **l'adresse de la politique de confidentialité à donner à Google Play et à l'App Store est `https://app.moubaratsport.com/confidentialite`**). Ces pages lisent `GET /legal/:doc` sur l'API : l'origine `https://app.moubaratsport.com` doit figurer dans `CORS_ORIGINS`.
+1. **Repli sur `index.html` pour tout chemin inconnu, en `200`** (jamais `404`) : l'app web est une application d'une seule page, ses adresses publiques sont des chemins — `/m/CODE` (lien de match), **`/confidentialite`** et **`/conditions`** (les textes de l'avocat, lisibles sans compte ; **l'adresse de la politique de confidentialité à donner à Google Play et à l'App Store est `https://app.moubarat.app/confidentialite`**). Ces pages lisent `GET /legal/:doc` sur l'API : l'origine `https://app.moubarat.app` doit figurer dans `CORS_ORIGINS`.
 2. **`/.well-known/` servi comme fichiers statiques AVANT le repli**, sans redirection, en `Content-Type: application/json` : `assetlinks.json` (Android — modèle `apps/android/assetlinks.template.json`, empreinte SHA-256 de la clé de signature Google Play) et `apple-app-site-association` (iOS, **sans extension** — modèle `apps/ios/apple-app-site-association.template.json`, Team ID Apple). Les deux se déposent dans `apps/player/public/.well-known/` puis le player est rebuildé : jamais de valeur inventée, ils ne se créent qu'une fois l'empreinte / le Team ID connus.
 3. **Compte de démonstration des vérificateurs** (Google et Apple exigent des identifiants de test ; un vérificateur n'a pas de numéro algérien — aucune connexion par SMS) : `REVIEWER_PHONE=… REVIEWER_PSEUDO=… REVIEWER_PASSWORD=… pnpm reviewer:create`. C'est un vrai compte joueur, complet (CGU/confidentialité et « 18 ans » acceptés, profil rempli), qui se connecte par **pseudo + mot de passe** et n'a **rien à accepter**. `REVIEWER_PHONE` = un numéro que l'entreprise contrôle (obligatoire en base, **aucun SMS n'y part jamais**). Idempotent : relancer remet le mot de passe (rotation) ; refuse d'écraser le compte d'un vrai joueur. Les identifiants se saisissent dans les consoles des stores (champs « accès à l'application » / « informations de révision »), jamais dans le dépôt. **Données de démo** : le vérificateur doit voir des centres et des matchs. Sur la base de PRODUCTION il verra les vrais centres publiés ; sur un environnement de vérification DÉDIÉ (jamais la production), charger `DEMO_SEED_FORCE_REMOTE=true pnpm demo:seed && DEMO_SEED_FORCE_REMOTE=true pnpm demo:catalogue` — **ces deux scripts EFFACENT du contenu** (voir `local-database-guard.ts`).
 4. `OTP_DEV_MODE=false` partout hors développement (§2.4) ; SMS réel configuré pour les vrais joueurs.
@@ -742,18 +742,41 @@ pendant ce mois. Rien de technique n'en dépend.
 - `apps/api/Dockerfile` (+ `.dockerignore` à la racine) — image standard Node 22, construite depuis la racine
   (`docker build -f apps/api/Dockerfile .`), démarrage en forme exec `node --import tsx src/index.ts` : `SIGTERM`
   atteint directement le processus Node (piège de l'encadré en tête). La même image sert chez l'hébergeur suivant.
-- `render.yaml` (« Blueprint ») — l'API (`moubarat-api`), les trois fronts statiques (`moubarat-player`, `moubarat-crm`,
-  `moubarat-admin`) et la base (`moubarat-db`, PostgreSQL 16, aucune connexion depuis Internet). Migrations par
+- `render.yaml` (« Blueprint ») — l'API (`moubarat-api`) et la base (`moubarat-db`, PostgreSQL 16, aucune connexion depuis
+  Internet). **Les trois fronts n'y figurent plus : ils sont sur Vercel (voir « Fronts sur Vercel » ci-dessous).** Migrations par
   `preDeployCommand` : une seule exécution par déploiement, avant le nouveau code (§4.2). Les secrets n'y figurent pas
   (`sync: false`).
+- `apps/player/vercel.json`, `apps/crm/vercel.json`, `apps/superadmin/vercel.json` — repli SPA (toute route inconnue →
+  `index.html`, les fichiers existants sont servis d'abord), en-tête `Content-Type: application/json` sur `/.well-known/*`
+  (player), pas de cache sur `/sw.js` (player).
 - `.github/workflows/ci.yml` — typecheck + toutes les suites (dont l'API sur un vrai PostgreSQL 16) à chaque push sur
   `master` ; Render ne déploie que si elle est verte (`autoDeployTrigger: checksPass`). Un déploiement manuel depuis le
   tableau de bord Render reste possible en cas d'urgence.
 
-**Adresses** : `https://app.moubaratsport.com` (décidé, §4.16), `https://crm.moubaratsport.com`,
-`https://admin.moubaratsport.com`, `https://api.moubaratsport.com`. Les fronts ont l'URL de l'API figée au build
-(`VITE_API_BASE_URL`, §3) : **garder `api.moubaratsport.com` chez le prochain hébergeur évite de reconstruire les fronts
-et ne casse aucune app installée**. Le DNS de `moubaratsport.com` reste chez son registrar, jamais transféré à Render.
+**Adresses** : `https://app.moubarat.app` (décidé, §4.16), `https://crm.moubarat.app`,
+`https://admin.moubarat.app`, `https://api.moubarat.app`. Les fronts ont l'URL de l'API figée au build
+(`VITE_API_BASE_URL`, §3) : **garder `api.moubarat.app` chez le prochain hébergeur évite de reconstruire les fronts
+et ne casse aucune app installée**. Le DNS de `moubarat.app` reste chez Namecheap (compte d'Aymen), jamais transféré à
+Render ni à Vercel. **Le domaine est `moubarat.app` depuis le 04/11/2026** (acheté par Aymen ; `moubaratsport.com` reste
+au contrôle d'un tiers et n'est plus utilisé pour l'hébergement — seule l'adresse `contact@moubaratsport.com`, citée par les
+textes de l'avocat, y reste : voir plus bas).
+
+**Fronts sur Vercel (04/11/2026, équipe « Moubarat Tech », offre Hobby)** — trois projets, tous reliés au dépôt
+`aymenballaouane/Moubarat`, branche `master`, déployés à chaque push :
+
+| Projet Vercel | Dossier racine | Adresse | Variable `VITE_API_BASE_URL` |
+|---|---|---|---|
+| `moubarat-player` | `apps/player` | `www.moubarat.app` puis `app.moubarat.app` | `https://api.moubarat.app` |
+| `moubarat-crm` | `apps/crm` | `crm.moubarat.app` | `https://api.moubarat.app` |
+| `moubarat-admin` | `apps/superadmin` | `admin.moubarat.app` | `https://api.moubarat.app` |
+
+Variables de chaque projet : `ENABLE_EXPERIMENTAL_COREPACK=1` (sans elle, Vercel risque d'utiliser un pnpm plus ancien que le
+pnpm 11 du dépôt) et `VITE_API_BASE_URL` (figée **au build** : la modifier exige de redéployer le projet). Enregistrements
+DNS posés chez Namecheap (Advanced DNS de `moubarat.app`) : `A @ 216.198.79.1`, `CNAME www`, `CNAME crm`, `CNAME admin` vers
+les cibles `…vercel-dns-017.com.` affichées par Vercel (Settings → Domains de chaque projet). **À poser plus tard** : `CNAME app`
+(app joueur) et `CNAME api` (cible affichée par Render). **Deux réserves** : (1) l'offre Hobby de Vercel est réservée à un usage
+personnel et non commercial — décision d'Aymen de la garder pour l'essai, à rouvrir avant un lancement public ; (2) Vercel
+déploie dès le push, **sans attendre** la vérification GitHub (`ci.yml`), contrairement à l'API chez Render.
 
 **Ce que Render fait lors d'un déploiement** (documentation Render « Deploys », relue le 03/11/2026) : la nouvelle instance
 démarre, `healthCheckPath` (`/health`) doit répondre, le trafic bascule vers elle, puis **60 s plus tard** l'ancienne
@@ -764,7 +787,7 @@ Le trafic étant retiré avant le signal, `/ready` (DRAINING) n'a pas de rôle i
 **Mise en place, dans l'ordre** (« A » = Aymen, qui seul crée des comptes et saisit des secrets ; « D » = le développeur
 ou la session qui l'accompagne) :
 
-1. **A** — Créer le compte Render, le relier au dépôt GitHub `aymenballaouane/Moubarat-Sport`. L'API et la base sont des
+1. **A** — Créer le compte Render, le relier au dépôt GitHub `aymenballaouane/Moubarat`. L'API et la base sont des
    offres payantes (le `preDeployCommand` n'existe que sur les services payants).
 2. **D** — Vérifier que la vérification GitHub de `master` est verte (onglet « Actions » du dépôt).
 3. **A** — Tableau de bord Render → New → Blueprint → choisir le dépôt. Render lit `render.yaml` et demande les valeurs
@@ -775,10 +798,9 @@ ou la session qui l'accompagne) :
    un refus de `CREATE EXTENSION btree_gist` la ferait échouer ici —, puis la ligne `startup_config` (§4.8, point 1) :
    `otpDevMode:false`, `smsProvider:"smssak"`, aucune ligne « repli sur NullSmsProvider », `corsOrigins` = les trois
    adresses ci-dessus.
-5. **A** — Chez le registrar, un enregistrement `CNAME` par sous-domaine (`api`, `app`, `crm`, `admin`) vers la cible
-   que Render affiche pour chaque service (Settings → Custom Domains) ; attendre que Render marque chaque domaine vérifié
-   et son certificat émis. Tant que ce n'est pas fait, les fronts (qui appellent `api.moubaratsport.com`) ne
-   fonctionnent pas : c'est attendu.
+5. **A** — Chez Namecheap, un enregistrement `CNAME api` vers la cible que Render affiche pour `moubarat-api`
+   (Settings → Custom Domains) ; attendre que Render marque le domaine vérifié et son certificat émis. Les trois fronts
+   (déjà sur Vercel) ne peuvent rien faire tant que `api.moubarat.app` n'existe pas : c'est attendu.
 6. **D** — **`TRUST_PROXY_CIDRS`, avant toute ouverture au public** : procédure du §4.8, point 3 (lire `req.remoteAddress`
    d'une requête publique dans le journal Render, poser la plage la plus étroite, redémarrer, test de triche avec
    `X-Forwarded-For: 6.6.6.6`). Volontairement absent du premier déploiement : la plage ne se devine pas (Render ne la
@@ -793,10 +815,11 @@ ou la session qui l'accompagne) :
    `cd /app/apps/api && SUPERADMIN_EMAIL=… SUPERADMIN_PASSWORD=… pnpm superadmin:create` (§4.5) — Aymen tape lui-même le
    mot de passe ; il ne reste pas dans l'environnement du service.
 9. **A + D** — Contrôle SMS réel (deuxième encadré en tête) : un vrai téléphone algérien reçoit le code depuis
-   `https://app.moubaratsport.com`. Puis la vérification de §4.6 dans un vrai navigateur.
+   `https://app.moubarat.app`. Puis la vérification de §4.6 dans un vrai navigateur.
 
-**Ensuite** : chaque push sur `master` qui passe la vérification est mis en ligne automatiquement (API puis fronts).
-Une variable modifiée dans le tableau de bord redémarre le service ; une variable d'un front exige une reconstruction.
+**Ensuite** : chaque push sur `master` qui passe la vérification est mis en ligne automatiquement chez Render (API) ; les
+fronts sont redéployés par Vercel à chaque push. Une variable modifiée dans le tableau de bord Render redémarre l'API ; une
+variable d'un front exige de redéployer le projet Vercel concerné.
 
 ### 4.18 Départ de Render vers l'hébergeur suivant (prévu environ un mois après le lancement)
 
@@ -807,7 +830,7 @@ Une variable modifiée dans le tableau de bord redémarre le service ; une varia
 
 1. **Répétition à blanc, sans rien basculer** : sur le nouvel hébergeur, créer la base, y restaurer une copie (étapes
    4-5 ci-dessous), démarrer l'API avec les mêmes variables (sauf `DATABASE_URL`, `INSTANCE_NAME`, `TRUST_PROXY_CIDRS` à
-   retrouver par §4.8 point 3), construire les fronts avec `VITE_API_BASE_URL=https://api.moubaratsport.com`, et vérifier
+   retrouver par §4.8 point 3), construire les fronts avec `VITE_API_BASE_URL=https://api.moubarat.app`, et vérifier
    par une adresse provisoire. Mesurer la durée de la copie : c'est celle de la coupure du jour J.
 2. **Quelques jours avant** : baisser à 300 s la durée de vie (TTL) des enregistrements DNS `api`, `app`, `crm`, `admin`.
 3. **Jour J, à une heure creuse annoncée aux centres** : couper les écritures — mode maintenance du service

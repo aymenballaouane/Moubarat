@@ -10,7 +10,7 @@ Plateforme pour les centres de foot et de padel en Algérie : un **CRM** pour le
 | `refonte-app-joueur` | Branche de travail de la refonte, désormais identique à `master`. Rien à y déployer. |
 | `fix/corrections-affichage-20261020` | Ancienne correction d'octobre sur l'ancienne app. Ne pas utiliser. |
 
-Pour reconnaître la bonne version une fois publiée : le service worker de l'app joueur s'appelle **`moubarat-player-v5`** (`https://app.moubaratsport.com/sw.js`), et l'écran d'accueil propose « Créer mon compte » / « J'ai déjà un compte ».
+Pour reconnaître la bonne version une fois publiée : le service worker de l'app joueur s'appelle **`moubarat-player-v5`** (`https://app.moubarat.app/sw.js`), et l'écran d'accueil propose « Créer mon compte » / « J'ai déjà un compte ».
 
 ## Contenu du dépôt
 
@@ -42,23 +42,23 @@ Variables d'environnement : `docs/PASSATION.md` §3. À ne pas oublier :
 
 **Ne jamais lancer `pnpm db:seed` en production.**
 
-Contrôle : `GET https://api.moubaratsport.com/ready` doit répondre `{"ready":true,…}` et `GET /legal/confidentialite` doit répondre 200.
+Contrôle : `GET https://api.moubarat.app/ready` doit répondre `{"ready":true,…}` et `GET /legal/confidentialite` doit répondre 200.
 
 ### 2. Les trois sites (app joueur, CRM, console)
 
 Construire chaque site **avec l'adresse de l'API de production**, puis publier le contenu de son dossier `dist` :
 
 ```bash
-VITE_API_BASE_URL=https://api.moubaratsport.com pnpm --filter @moubarat/player build       # -> apps/player/dist
-VITE_API_BASE_URL=https://api.moubaratsport.com pnpm --filter @moubarat/crm build          # -> apps/crm/dist
-VITE_API_BASE_URL=https://api.moubaratsport.com pnpm --filter @moubarat/superadmin build   # -> apps/superadmin/dist
+VITE_API_BASE_URL=https://api.moubarat.app pnpm --filter @moubarat/player build       # -> apps/player/dist
+VITE_API_BASE_URL=https://api.moubarat.app pnpm --filter @moubarat/crm build          # -> apps/crm/dist
+VITE_API_BASE_URL=https://api.moubarat.app pnpm --filter @moubarat/superadmin build   # -> apps/superadmin/dist
 ```
 
 Pour chaque site : **vider entièrement l'ancien dossier du serveur**, puis copier le contenu du `dist`. Réglages du serveur web :
 - toute adresse inconnue renvoie `index.html` avec le code **200** (jamais 404) — `/confidentialite`, `/conditions` et `/m/CODE` de l'app joueur en dépendent ;
 - `index.html` et `sw.js` ne doivent **pas** être mis en cache (`Cache-Control: no-cache`).
 
-Contrôle : `curl https://app.moubaratsport.com/sw.js | grep CACHE_NAME` doit afficher `moubarat-player-v5`.
+Contrôle : `curl https://app.moubarat.app/sw.js | grep CACHE_NAME` doit afficher `moubarat-player-v5`.
 
 ## Travailler en local
 

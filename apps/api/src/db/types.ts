@@ -369,7 +369,7 @@ export interface MatchesTable {
   whatsapp_url: string | null;
   /** Migration 0033 (puis 0035) — « un petit mot pour les joueurs » de l'organisateur (280 signes au plus). */
   note: string | null;
-  /** Migration 0036 — le code court du lien du match (« app.moubaratsport.com/m/CODE »), généré par la base. */
+  /** Migration 0036 — le code court du lien du match (« app.moubarat.app/m/CODE »), généré par la base. */
   code: Generated<string>;
   /** Migration 0039 (règle 38) — l'instant où « Ton match se remplit » est parti (une seule fois). */
   filling_notified_at: Date | null;

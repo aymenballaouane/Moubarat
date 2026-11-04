@@ -53,7 +53,7 @@ export type ExplorerTabName = 'matchs' | 'terrains';
 
 export type Route =
   | { name: 'auth' }
-  /** La page d'un lien de match reçu (« app.moubaratsport.com/m/CODE »), avant d'avoir un compte (LienMatch.dc.html). */
+  /** La page d'un lien de match reçu (« app.moubarat.app/m/CODE »), avant d'avoir un compte (LienMatch.dc.html). */
   | { name: 'link'; code: string }
   /** Lot 13 : page publique d'un texte juridique (« /confidentialite », « /conditions »), lisible sans compte — hors de la pile de navigation. */
   | { name: 'public-legal'; doc: 'CONFIDENTIALITE' | 'CGU' }
