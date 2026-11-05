@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { setupTestStack, loginAs, bearer, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
-import { makeSafeDayPicker } from './helpers/dates.js';
+import { makeSafeDayPicker, SEED_SUBSCRIPTION_WEEKDAY } from './helpers/dates.js';
 
 /* Lot 7 — l'organisateur gère son match : « Ton mot aux joueurs » (MotAuxJoueurs, 280 signes, migration 0035) et le groupe
    WhatsApp (règle 10, NOUVELLE). Le lien du groupe n'est visible que de l'organisateur et des inscrits : jamais dans une liste,
@@ -11,7 +11,9 @@ let stack: TestStack;
 let seed: SeedResult;
 let sofiane = '', karim = '', walid = '';
 let matchId = '';
-const nextDay = makeSafeDayPicker();
+/* La réservation ci-dessous vise T1 à 20:00 : le seed y place l'abonnement du mardi (FC Kahwa, 20:00-21:30) — jour à éviter,
+   sinon le test échoue (409 SLOT_TAKEN) les jours où « aujourd'hui + 5 » tombe un mardi (constaté le 05/11/2026). */
+const nextDay = makeSafeDayPicker([SEED_SUBSCRIPTION_WEEKDAY.T1]);
 const GROUP = 'https://chat.whatsapp.com/Kx7Q2Rr9AbCdEf';
 
 beforeAll(async () => {
