@@ -807,6 +807,13 @@ ou la session qui l'accompagne) :
    publie pas ; d'après son forum, son proxy **ajoute** à `X-Forwarded-For` au lieu de le remplacer — `TRUST_PROXY=true`
    serait donc falsifiable, ne pas l'utiliser). Sans ce réglage, tous les joueurs partagent l'adresse du proxy : 10
    demandes de code SMS par heure pour TOUT le monde (`OTP_IP_MAX_PER_HOUR`).
+   **Mesuré et posé le 05/11/2026** : l'adresse de pair vue par l'API est celle d'un nœud **Cloudflare** (`162.158.x.x`), pas
+   celle du proxy de Render (`10.x`) — le réseau privé de Render (`10.24`–`10.29`, plus `10.200.x` pour ses sondes de santé) est
+   derrière Cloudflare. Il faut donc faire confiance aux DEUX : la valeur posée (`render.yaml`) est `10.0.0.0/8` + les plages
+   IPv4 publiées par Cloudflare. Vérifié après redéploiement : `remoteAddress` du journal = l'adresse publique du testeur, et un
+   `X-Forwarded-For: 6.6.6.6` forgé est ignoré. **À entretenir** : relire https://www.cloudflare.com/ips-v4 de temps en temps (une
+   plage ajoutée par Cloudflare qui manquerait ici ferait retomber les limites par IP sur une adresse Cloudflare partagée). Cette
+   mesure vaut pour Render ; elle est à refaire entièrement chez le prochain hébergeur (§4.18).
 7. **D** — **Arrêt propre avec un vrai `SIGTERM`** (encadré en tête) : déclencher un déploiement manuel et lire, dans le
    journal de l'ANCIENNE instance, `shutdown_start` puis `shutdown_complete` environ 5 s plus tard, sans trace de
    `SIGKILL`. Le constat (b) de l'encadré (boucle sur `/ready`) ne s'applique pas tel quel chez Render : le trafic a

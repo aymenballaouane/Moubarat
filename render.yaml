@@ -58,9 +58,12 @@ services:
         value: "5000"
       - key: SHUTDOWN_TIMEOUT_MS
         value: "20000"
-      # TRUST_PROXY_CIDRS volontairement ABSENT au premier déploiement : il se pose après avoir lu l'adresse du
-      # répartiteur de Render dans le journal (§4.17, étape 6). Tant qu'il manque, tous les joueurs partagent une
-      # seule adresse pour les limites par IP : ne rien ouvrir au public avant.
+      # Adresse du client (limites par IP) : mesurée le 05/11/2026 sur le journal de l'API. Render place l'API derrière
+      # Cloudflare (adresse de pair vue : 162.158.x.x) puis son réseau privé (10.x). Liste = réseau privé 10.0.0.0/8 +
+      # plages IPv4 publiées par Cloudflare (https://www.cloudflare.com/ips-v4, relues le 05/11/2026 — à relire de
+      # temps en temps). Vérifié : l'adresse retenue est celle du vrai client, un X-Forwarded-For forgé est ignoré.
+      - key: TRUST_PROXY_CIDRS
+        value: "10.0.0.0/8,173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22"
 
 databases:
   - name: moubarat-db
