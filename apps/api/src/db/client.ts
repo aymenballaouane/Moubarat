@@ -58,6 +58,13 @@ export function createPool(connectionString: string, opts: {
     ...(opts.statementTimeoutMs !== undefined ? { statement_timeout: opts.statementTimeoutMs } : {}),
     ...(opts.applicationName ? { application_name: opts.applicationName } : {}),
   });
+  /* Sans écouteur, une erreur sur une connexion INACTIVE du pool (Postgres la coupe : redémarrage, maintenance, bascule,
+     `DROP DATABASE … WITH (FORCE)` des tests — code 57P01) est une exception non attrapée qui fait tomber tout le processus.
+     Le pool retire lui-même la connexion fautive et en rouvre une à la demande suivante : on journalise, on ne plante pas.
+     (Constaté le 07/11/2026 : c'est ce qui rendait la vérification GitHub rouge alors que tous les tests passaient.) */
+  pool.on('error', (err: Error & { code?: string }) => {
+    console.error(JSON.stringify({ level: 50, event: 'pg_pool_idle_error', code: err.code ?? null, msg: err.message }));
+  });
   enumArrayOidsByPool.set(pool, enumArrayOids);
   return pool;
 }
