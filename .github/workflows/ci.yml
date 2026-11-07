@@ -36,4 +36,15 @@ jobs:
       - run: npm install -g pnpm@11.23.0
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-      - run: pnpm test
+      # Les journaux d'une exécution ne se lisent qu'une fois connecté à GitHub : en cas d'échec, les lignes utiles sont
+      # recopiées en annotations (visibles sur la page de l'exécution, sans connexion). Le résultat reste celui de `pnpm test`.
+      - name: pnpm test
+        shell: bash
+        run: |
+          set +e
+          pnpm test 2>&1 | tee test.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            sed 's/\x1b\[[0-9;]*m//g' test.log | grep -E "FAIL|AssertionError|Error:|ERR_|Test Files|Tests  " | head -10 | while IFS= read -r l; do echo "::error::${l//%/%25}"; done
+          fi
+          exit $code
