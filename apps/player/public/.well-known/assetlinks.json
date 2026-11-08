@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.moubarat.app",
+      "sha256_cert_fingerprints": ["7C:91:4A:9D:FB:96:CA:65:77:A0:DC:A1:EA:79:01:A2:EB:EA:8A:A1:65:6E:81:32:78:4D:95:3A:50:76:0F:EC"]
+    }
+  }
+]
