@@ -4,27 +4,45 @@
   "name": "Moubarat",
   "launcherName": "Moubarat",
   "display": "standalone",
-  "orientation": "portrait",
   "themeColor": "#050505",
   "themeColorDark": "#050505",
   "navigationColor": "#050505",
   "navigationColorDark": "#050505",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
   "backgroundColor": "#050505",
+  "splashScreenFadeOutDuration": 300,
+  "enableNotifications": false,
   "startUrl": "/",
-  "scope": "/",
-  "fullScopeUrl": "https://app.moubarat.app/",
   "iconUrl": "https://app.moubarat.app/icons/icon-512.png",
   "maskableIconUrl": "https://app.moubarat.app/icons/icon-512-maskable.png",
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "moubarat"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 2,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://app.moubarat.app/manifest.json",
-  "appVersion": "1.0.0",
-  "appVersionCode": 1,
-  "enableNotifications": false,
-  "features": { "locationDelegation": { "enabled": true } },
-  "enableSiteSettingsShortcut": false,
   "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": true
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": false,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
-  "signingKey": { "path": "./android.keystore", "alias": "moubarat" },
-  "generatorApp": "bubblewrap-cli",
-  "shortcuts": []
+  "fullScopeUrl": "https://app.moubarat.app/",
+  "minSdkVersion": 24,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": [],
+  "appVersion": "1.0.0"
 }
