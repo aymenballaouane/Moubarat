@@ -22,3 +22,15 @@ Ce dossier ne contient que ce qui se versionne : `twa-manifest.json` (la configu
 7. À vérifier sur un vrai téléphone : plein écran sans barre d'adresse ; un lien `https://app.moubarat.app/m/CODE` ouvre l'app ; **la demande de position s'affiche** (Explorer › Terrains, « Active ta position ») ; la touche « retour » du téléphone revient à l'écran précédent (et quitte l'app depuis un onglet racine) ; connexion par le compte de démonstration (`pnpm reviewer:create`, voir `docs/PASSATION.md`).
 
 La fiche du Play Store (textes, captures, formulaire « Sécurité des données », URL de confidentialité **https://app.moubarat.app/confidentialite**) est détaillée dans `refonte-app-joueur/docs/lot-13-brief.md` §2.4.
+
+## Réglages faits à la main sur le projet généré (09/11/2026) — à refaire après chaque `bubblewrap init`/`update`
+
+Le projet Android (`app/`, généré, **non versionné**) a été corrigé à la main. `build-android.ps1` écrit le `manifest-checksum.txt` pour que Bubblewrap ne le régénère pas ; si on le régénère un jour (`bubblewrap update`), **ces points sont à refaire** :
+
+1. **Plantage au lancement (cause trouvée sur un Galaxy S20 Ultra, Android 15)** : `java.lang.IllegalArgumentException: Component class com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity does not exist in com.moubarat.app`. androidbrowserhelper 2.7.4 active toujours cette activité (raccourci « Paramètres du site ») dans `LauncherActivity.launchTwa()`. Bubblewrap ne la déclare que si `enableSiteSettingsShortcut` vaut `true` : `twa-manifest.json` le porte désormais (versionné). Après régénération, vérifier que `app/src/main/AndroidManifest.xml` contient `<activity android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity" android:exported="true" android:theme="@android:style/Theme.Translucent.NoTitleBar">` avec la méta-donnée `android.support.customtabs.trusted.MANAGE_SPACE_URL` = `@string/launchUrl`.
+2. **Mémoire de Gradle** : le JDK de Bubblewrap est en 32 bits → `org.gradle.jvmargs=-Xmx1024m` dans `gradle.properties` (1536 m est impossible).
+3. **Android 7 minimum** (`minSdkVersion 24`, exigé par androidbrowserhelper) et **`splashScreenFadeOutDuration` 300** (vide, la compilation échoue).
+4. `app/build.gradle` : `minifyEnabled false` (testé pendant le diagnostic ; R8 n'était pas en cause — à remettre `true` seulement après essai sur un vrai téléphone).
+5. **Diagnostic temporaire** (versions 4 et 5 envoyées au test interne) : `Application.java` + `CrashActivity.java` affichent la trace d'une erreur au lieu de fermer l'app. **À retirer avant la production** : le gestionnaire tue le processus sans le laisser à Android, donc Android vitals ne verrait aucun plantage.
+
+Méthode pour obtenir une trace sans câble USB : un écran d'erreur dans l'app elle-même (capture d'écran du testeur) — ni Android vitals ni le rapport de pré-lancement ne répondent sur une piste de test interne avec un seul testeur.
