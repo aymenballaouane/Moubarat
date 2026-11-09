@@ -1,8 +1,8 @@
 {
   "packageId": "com.moubarat.app",
   "host": "app.moubarat.app",
-  "name": "Moubarat",
-  "launcherName": "Moubarat",
+  "name": "Moubarat Sport",
+  "launcherName": "Moubarat Sport",
   "display": "standalone",
   "themeColor": "#050505",
   "themeColorDark": "#050505",
@@ -20,8 +20,8 @@
     "path": "./android.keystore",
     "alias": "moubarat"
   },
-  "appVersionName": "1.0.3",
-  "appVersionCode": 5,
+  "appVersionName": "1.0.4",
+  "appVersionCode": 6,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://app.moubarat.app/manifest.json",
@@ -44,5 +44,5 @@
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
   "displayOverride": [],
-  "appVersion": "1.0.3"
+  "appVersion": "1.0.4"
 }

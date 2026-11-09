@@ -31,6 +31,7 @@ Le projet Android (`app/`, généré, **non versionné**) a été corrigé à la
 2. **Mémoire de Gradle** : le JDK de Bubblewrap est en 32 bits → `org.gradle.jvmargs=-Xmx1024m` dans `gradle.properties` (1536 m est impossible).
 3. **Android 7 minimum** (`minSdkVersion 24`, exigé par androidbrowserhelper) et **`splashScreenFadeOutDuration` 300** (vide, la compilation échoue).
 4. `app/build.gradle` : `minifyEnabled false` (testé pendant le diagnostic ; R8 n'était pas en cause — à remettre `true` seulement après essai sur un vrai téléphone).
-5. **Diagnostic temporaire** (versions 4 et 5 envoyées au test interne) : `Application.java` + `CrashActivity.java` affichent la trace d'une erreur au lieu de fermer l'app. **À retirer avant la production** : le gestionnaire tue le processus sans le laisser à Android, donc Android vitals ne verrait aucun plantage.
+5. **Diagnostic temporaire — RETIRÉ (10/11/2026, version 6)** : l’écran d’erreur des versions 4 et 5 (`CrashActivity`, gestionnaire dans `Application.java`) a été supprimé ; il tuait le processus sans le laisser à Android, donc Android vitals ne verrait aucun plantage. `Application.java` est revenu au modèle vide de Bubblewrap.
+6. **Nom affiché « Moubarat Sport »** (`name` et `launcherName` de `twa-manifest.json`, `app/build.gradle`) : sous l’icône du lanceur Android le nom peut être tronqué (> 12 signes) — à vérifier sur un téléphone ; sinon remettre `launcherName` à « Moubarat » (le nom de la fiche Play n’en dépend pas).
 
 Méthode pour obtenir une trace sans câble USB : un écran d'erreur dans l'app elle-même (capture d'écran du testeur) — ni Android vitals ni le rapport de pré-lancement ne répondent sur une piste de test interne avec un seul testeur.

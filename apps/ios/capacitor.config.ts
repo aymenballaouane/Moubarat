@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
   /* Identifiant de bundle — DÉCIDÉ par Aymen le 26/10/2026 : `com.moubarat.app`, le même que le nom de paquet Android. Définitif une fois l'app
      créée dans App Store Connect ; doit correspondre à l'App ID créé sur developer.apple.com. */
   appId: 'com.moubarat.app',
-  appName: 'Moubarat',
+  appName: 'Moubarat Sport',
   webDir: '../player/dist',
   ios: {
     /* Le web occupe toute la zone que lui laisse la barre d'onglets native ;
