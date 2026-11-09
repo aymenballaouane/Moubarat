@@ -66,10 +66,20 @@ Branche de travail : **`prep-lancement`** (rien n'est poussé, rien n'est déplo
 - **Pas rempli dans les consoles** (Play/Apple) : par prudence, voir ci-dessus.
 
 ### Résultats des tests automatisés (10/11/2026, ~00h30, branche `prep-lancement`)
-RESULTATS_TESTS
+| Paquet | Résultat |
+|---|---|
+| core | **181/181** verts |
+| player | **313/313** verts |
+| API | **1019/1020** : 1 échec, `bookings-crm-create.test.ts` (« créneau déjà commencé »), **le test horaire déjà documenté** (il échoue entre 23 h 50 et 8 h ; lancé vers 00 h 30) — pas une régression ; à relancer en journée |
+| CRM | **73/73** verts |
+| console (superadmin) | **25/25** verts |
+
+Le typecheck complet (`pnpm typecheck`) n'a pas été relancé : les seuls fichiers TypeScript touchés sont des chaînes de nom (`index.html`, `manifest.json`, `capacitor.config.ts`) ; les tests ci-dessus passent.
 
 ## 5. Commits faits sur `prep-lancement`
-COMMITS
+`570d97a` Google Play : Sécurité des données + fiche · `da64682` Android v6 propre + nom « Moubarat Sport » · `492d2c9` iOS : corrections Swift, apple-app-site-association, workflow de compilation · `ba801b2` fiche/labels Apple, message avocat, portabilité, checklist e2e, MATIN.md · + un dernier commit (résultats des tests). Branche locale : **pas poussée** (`git push -u origin prep-lancement` quand tu veux).
+
+Hors branche (déjà sur `master`, poussé avant la mission) : `825ccdd` cause du plantage Android.
 
 ## 6. Après le lancement (liste recopiée, rien n'est fait)
 - **Grandes polices** (décision d'Aymen du 09/11 : après le lancement) ;

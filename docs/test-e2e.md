@@ -49,12 +49,10 @@
 - [ ] Mode avion après une première visite : coquille de l'app visible + message clair (« Impossible de contacter le serveur »).
 
 ## Résultats des tests automatisés (10/11/2026, branche `prep-lancement`)
-_Remplis par la mission de nuit — voir le tableau ci-dessous._
-
 | Paquet | Résultat |
 |---|---|
 | core | 181/181 verts |
 | player | 313/313 verts |
-| API | (voir MATIN.md) |
-| CRM | (voir MATIN.md) |
-| console (superadmin) | (voir MATIN.md) |
+| API | 1019/1020 (l'échec = test horaire connu, 23 h 50-8 h) |
+| CRM | 73/73 verts |
+| console (superadmin) | 25/25 verts |
