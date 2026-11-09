@@ -1,0 +1,53 @@
+# Compilation iOS SANS signature (10/11/2026) — le code Swift de apps/ios n'a jamais été compilé (docs/IOS_HANDOVER.md §0).
+# Ne se déclenche JAMAIS tout seul : uniquement à la main (GitHub › Actions › « Compilation iOS » › Run workflow).
+# Coût : le dépôt est public, les minutes de runner macOS sont gratuites pour un dépôt public ; si le dépôt devenait privé,
+# elles seraient facturées (x10 par rapport à Linux) — à ne lancer qu'en connaissance de cause.
+# Aucun secret, aucune signature, aucun envoi à Apple : le but est seulement de savoir si ça COMPILE et de lire les erreurs.
+name: Compilation iOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  compiler:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g pnpm@11.23.0
+      - run: pnpm install --frozen-lockfile
+      # Le contenu web embarqué (apps/ios/ios/App/App/public) vient du build de production du joueur.
+      - name: Build de l'app web
+        run: pnpm --filter @moubarat/player build
+        env:
+          VITE_API_BASE_URL: https://api.moubarat.app
+      - name: Copier le web dans le projet iOS
+        working-directory: apps/ios
+        run: npx cap copy ios
+      - name: Version d'Xcode
+        run: xcodebuild -version
+      - name: Compiler (sans signature)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project apps/ios/ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee xcodebuild.log
+      - name: Recopier les erreurs en annotations
+        if: failure()
+        run: |
+          grep -E "error:" xcodebuild.log | head -20 | while read -r l; do echo "::error::${l}"; done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log

@@ -49,7 +49,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
 
     private var rootBridge: NativeBridge? {
-        (window?.rootViewController as? RootTabBarController)?.webVC.bridge
+        (window?.rootViewController as? RootTabBarController)?.webVC.nativeBridge
     }
 
     // MARK: - APNs (jeton d'appareil → PUT /me/push-devices, voir native.ts)

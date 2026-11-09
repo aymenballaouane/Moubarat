@@ -87,13 +87,12 @@ final class RootTabBarController: UITabBarController, UITabBarControllerDelegate
     }
 
     /// Item non-sélectionnable (bouton d'action, pas de contenu) — même rôle
-    /// que `.nav-fab` (BottomNav.tsx). `isEnabled = false` empêche
-    /// `UITabBarController` de le sélectionner lui-même ; `shouldSelect`
-    /// ci-dessous intercepte quand même le tap pour déclencher l'action.
+    /// que `.nav-fab` (BottomNav.tsx). Il n'est PAS désactivé (`isEnabled = false` ferait ignorer
+    /// le toucher par UIKit : `shouldSelect` ne serait jamais appelé et le bouton ne ferait rien — retiré le 10/11/2026) ;
+    /// `shouldSelect` ci-dessous intercepte le tap, renvoie `false` et déclenche l'action.
     private func makeCreateItemController() -> UIViewController {
         let vc = UIViewController()
         vc.tabBarItem = UITabBarItem(title: nil, image: UIImage(systemName: "plus.circle.fill"), tag: -1)
-        vc.tabBarItem.isEnabled = false
         return vc
     }
 
@@ -128,7 +127,7 @@ final class RootTabBarController: UITabBarController, UITabBarControllerDelegate
     func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
         if viewController.tabBarItem.tag == -1 {
             // Item « créer » : jamais une sélection réelle, juste un signal au web.
-            webVC.bridge.sendCreateTapped()
+            webVC.nativeBridge.sendCreateTapped()
             return false
         }
         return true
@@ -137,6 +136,6 @@ final class RootTabBarController: UITabBarController, UITabBarControllerDelegate
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
         guard let tab = Tab.allCases.first(where: { slots[$0] === viewController }) else { return }
         attachWebView(to: tab)
-        webVC.bridge.sendTabSelected(tab.rawValue)
+        webVC.nativeBridge.sendTabSelected(tab.rawValue)
     }
 }

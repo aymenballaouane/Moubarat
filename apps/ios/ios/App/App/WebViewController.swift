@@ -19,10 +19,11 @@ final class MoubaratBridgeViewController: CAPBridgeViewController {
     /// avant état par-onglet, voir docs/IOS_SCOPING.md §6). RootTabBarController
     /// ne fait que reparenter la VUE de ce contrôleur d'un onglet à l'autre,
     /// jamais recréer la WKWebView.
-    let bridge = NativeBridge()
+    /// Renommé `nativeBridge` (10/11/2026) : `CAPBridgeViewController.bridge` existe déjà dans Capacitor 7 et est `final` — `let bridge` ne compilait pas.
+    let nativeBridge = NativeBridge()
 
     override func webView(with frame: CGRect, configuration: WKWebViewConfiguration) -> WKWebView {
-        configuration.userContentController.add(bridge, name: NativeBridge.handlerName)
+        configuration.userContentController.add(nativeBridge, name: NativeBridge.handlerName)
 
         // Marqueur posé AVANT tout script de la page (`.atDocumentStart`,
         // `forMainFrameOnly: false` par prudence si jamais une iframe existait —
@@ -36,7 +37,7 @@ final class MoubaratBridgeViewController: CAPBridgeViewController {
         configuration.userContentController.addUserScript(marker)
 
         let webView = super.webView(with: frame, configuration: configuration)
-        bridge.webView = webView
+        nativeBridge.webView = webView
         return webView
     }
 }
