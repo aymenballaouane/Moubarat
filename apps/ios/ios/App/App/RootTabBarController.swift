@@ -85,7 +85,7 @@ final class RootTabBarController: UITabBarController, UITabBarControllerDelegate
             item.selected.titleTextAttributes = [.foregroundColor: brand]
         }
         tabBar.standardAppearance = appearance
-        tabBar.scrollEdgeAppearance = appearance
+        if #available(iOS 15.0, *) { tabBar.scrollEdgeAppearance = appearance }   // absent avant iOS 15 (cible minimale : 14)
 
         NotificationCenter.default.addObserver(self, selector: #selector(handleRoute(_:)), name: .moubaratRoute, object: nil)
 
