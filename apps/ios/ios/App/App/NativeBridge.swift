@@ -57,12 +57,12 @@ final class NativeBridge: NSObject, WKScriptMessageHandler {
 
         case "route":
             if let tab = json["tab"] as? String { currentTab = tab }
-            // `tabBarVisible` (bool) : à câbler si un flux plein-écran doit un
-            // jour masquer la barre native aussi (aujourd'hui, seul le CSS web
-            // masque son équivalent HTML — la barre NATIVE reste visible en
-            // permanence en V1, décision à confirmer avec Aymen si un flux
-            // plein-écran doit vraiment la masquer aussi côté natif).
-            break
+            // 10/11/2026 (retour d'essai TestFlight) : la barre d'onglets NATIVE n'est visible que sur les écrans d'onglets — jamais sur la
+            // connexion, l'inscription ni un flux plein écran. Le web envoie `tabBarVisible` à chaque changement d'écran (App.tsx).
+            NotificationCenter.default.post(
+                name: .moubaratRoute, object: nil,
+                userInfo: ["tab": (json["tab"] as? String) ?? "", "visible": (json["tabBarVisible"] as? Bool) ?? true]
+            )
 
         case "requestPushPermission":
             NotificationCenter.default.post(name: .moubaratRequestPushPermission, object: nil)
@@ -133,4 +133,5 @@ final class NativeBridge: NSObject, WKScriptMessageHandler {
 extension Notification.Name {
     static let moubaratRequestPushPermission = Notification.Name("MoubaratRequestPushPermission")
     static let moubaratOpenExternal = Notification.Name("MoubaratOpenExternal")
+    static let moubaratRoute = Notification.Name("MoubaratRoute")
 }

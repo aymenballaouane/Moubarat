@@ -129,7 +129,10 @@ export function App() {
   useEffect(() => {
     installNativeBridge(APP_VERSION);
     const offTab = on('tabSelected', (m) => setRoute({ name: 'tab', tab: m.tab }));
-    const offCreate = on('createTapped', () => setRoute({ name: 'match', mode: 'create' }));
+    /* Le « + » natif ouvre le MÊME menu que le « + » du web (Créer un match / Réserver un terrain) — jamais directement la création
+       d'un match (retour d'essai TestFlight, 10/11/2026). La barre native n'est visible que sur les écrans d'onglets (effet `route` plus bas) : ce
+       message n'arrive donc que lorsque le menu peut s'afficher. */
+    const offCreate = on('createTapped', () => setPlusOpen(true));
     // Une notification touchée (app en arrière-plan/fermée) : pas assez
     // d'information ici pour reproduire le routage précis de
     // NotificationsScreen::routeFor (qui a besoin de store.findMatch et du
@@ -141,6 +144,14 @@ export function App() {
     return () => { offTab(); offCreate(); offNotif(); offPushToken(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* Dit au natif ce qui est affiché (contrat `route`, lib/native.ts) : la barre d'onglets NATIVE n'existe que sur les quatre écrans d'onglets,
+     comme le `BottomNav` du web. Sans ce message elle restait visible partout — écran de connexion, inscription, réservation, flux plein écran
+     (retour d'essai TestFlight, 10/11/2026). No-op hors habillage natif. */
+  useEffect(() => {
+    const onTab = route.name === 'tab' && !store.bootstrapping;
+    post({ type: 'route', tab: route.name === 'tab' ? route.tab : null, tabBarVisible: onTab });
+  }, [route, store.bootstrapping]);
 
   /* Demande la permission push une seule fois par session, après la
      PREMIÈRE confirmation réelle que le compte est connecté (jamais avant

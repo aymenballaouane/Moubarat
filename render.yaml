@@ -35,7 +35,7 @@ services:
       - key: INSTANCE_NAME
         value: moubarat-api-1
       - key: CORS_ORIGINS
-        value: https://app.moubarat.app,https://crm.moubarat.app,https://admin.moubarat.app
+        value: https://app.moubarat.app,https://crm.moubarat.app,https://admin.moubarat.app,capacitor://localhost
       # Production : jamais le mode dev (sinon aucun SMS ne part, §2.4).
       - key: OTP_DEV_MODE
         value: "false"

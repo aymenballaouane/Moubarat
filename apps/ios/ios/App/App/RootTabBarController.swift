@@ -70,6 +70,25 @@ final class RootTabBarController: UITabBarController, UITabBarControllerDelegate
         tabBar.tintColor = UIColor(red: 255/255, green: 43/255, blue: 0/255, alpha: 1) // --primary-glow (approx.)
         tabBar.isTranslucent = true
 
+        // Apparence aux couleurs de la marque (retour d'essai TestFlight, 10/11/2026) : fond sombre uni, onglet actif en rouge marque, onglets
+        // inactifs en gris — au lieu du style « verre » par défaut d'iOS, qui détonnait avec le reste de l'app.
+        let brand = UIColor(red: 255/255, green: 43/255, blue: 0/255, alpha: 1)
+        let muted = UIColor(white: 0.62, alpha: 1)
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(red: 14/255, green: 14/255, blue: 14/255, alpha: 0.98)
+        appearance.shadowColor = UIColor(white: 1, alpha: 0.08)
+        for item in [appearance.stackedLayoutAppearance, appearance.inlineLayoutAppearance, appearance.compactInlineLayoutAppearance] {
+            item.normal.iconColor = muted
+            item.normal.titleTextAttributes = [.foregroundColor: muted]
+            item.selected.iconColor = brand
+            item.selected.titleTextAttributes = [.foregroundColor: brand]
+        }
+        tabBar.standardAppearance = appearance
+        tabBar.scrollEdgeAppearance = appearance
+
+        NotificationCenter.default.addObserver(self, selector: #selector(handleRoute(_:)), name: .moubaratRoute, object: nil)
+
         var controllers: [UIViewController] = []
         for (i, tab) in Tab.allCases.enumerated() {
             if i == createItemIndex { controllers.append(makeCreateItemController()) }
@@ -92,8 +111,30 @@ final class RootTabBarController: UITabBarController, UITabBarControllerDelegate
     /// `shouldSelect` ci-dessous intercepte le tap, renvoie `false` et déclenche l'action.
     private func makeCreateItemController() -> UIViewController {
         let vc = UIViewController()
-        vc.tabBarItem = UITabBarItem(title: nil, image: UIImage(systemName: "plus.circle.fill"), tag: -1)
+        // Bouton « + » en rouge marque (comme le `.nav-fab` du web), jamais en blanc : image « originale », donc non recolorée par la barre.
+        let brand = UIColor(red: 255/255, green: 43/255, blue: 0/255, alpha: 1)
+        let config = UIImage.SymbolConfiguration(pointSize: 34, weight: .regular)
+        let plus = UIImage(systemName: "plus.circle.fill", withConfiguration: config)?.withTintColor(brand, renderingMode: .alwaysOriginal)
+        vc.tabBarItem = UITabBarItem(title: nil, image: plus, selectedImage: plus)
+        vc.tabBarItem.tag = -1
         return vc
+    }
+
+    /// Le web dit quel écran est affiché (message `route`) : on sélectionne l'onglet correspondant et on montre/masque la barre.
+    /// Affichée seulement sur les écrans d'onglets ; masquée ailleurs (connexion, inscription, réservation, flux plein écran).
+    @objc private func handleRoute(_ note: Notification) {
+        guard let info = note.userInfo else { return }
+        let visible = (info["visible"] as? Bool) ?? true
+        if let name = info["tab"] as? String, !name.isEmpty, let tab = Tab(rawValue: name),
+           let slot = slots[tab], let index = viewControllers?.firstIndex(of: slot), selectedIndex != index {
+            attachWebView(to: tab)
+            selectedIndex = index   // programmatique : n'appelle pas `didSelect`, donc pas de boucle de messages
+        }
+        if #available(iOS 18.0, *) {
+            setTabBarHidden(!visible, animated: false)
+        } else {
+            tabBar.isHidden = !visible
+        }
     }
 
     /// Déplace la vue de `webVC` dans le slot du `tab` demandé. Ordre
