@@ -25,7 +25,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)
-        window.rootViewController = RootTabBarController()
+        // Décision d'Aymen du 23/10/2026, appliquée le 10/11/2026 après l'essai TestFlight (double barre) : la barre d'onglets NATIVE est retirée — la pilule du site
+        // (BottomNav, fidèle au prototype) est la SEULE barre. La web view occupe tout l'écran. RootTabBarController.swift reste dans le projet mais n'est plus instancié.
+        window.rootViewController = MoubaratBridgeViewController()
         window.makeKeyAndVisible()
         self.window = window
 
@@ -49,7 +51,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
 
     private var rootBridge: NativeBridge? {
-        (window?.rootViewController as? RootTabBarController)?.webVC.nativeBridge
+        (window?.rootViewController as? MoubaratBridgeViewController)?.nativeBridge
     }
 
     // MARK: - APNs (jeton d'appareil → PUT /me/push-devices, voir native.ts)

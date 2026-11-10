@@ -501,12 +501,7 @@ body.mb {
    (RootTabBarController) sera retirée — cette pilule web deviendra la SEULE
    barre de navigation, y compris dans l'habillage natif (jamais deux barres
    à l'écran). Côté web, ce changement est fait : `.native-shell` ne masque
-   plus `.bottom-nav` ci-dessous. Côté Swift, PAS ENCORE fait — Aymen a
-   explicitement reporté le retrait de RootTabBarController.swift jusqu'à ce
-   que son développeur réussisse une première compilation sur Mac (aucune
-   compilation à ce jour). Tant que ce retrait Swift n'est pas fait, l'app
-   iOS compilée montrerait deux barres ; sans impact aujourd'hui puisque
-   rien ne compile encore. Tâche en attente, à reprendre après ce jalon. */
+   plus `.bottom-nav` ci-dessous. Côté Swift, FAIT le 10/11/2026 (essai TestFlight : double barre) : AppDelegate.swift n'instancie plus RootTabBarController, la web view est la racine. */
 
 .bottom-nav {
   position: fixed; left: 16px; right: 16px; bottom: var(--nav-pos-bottom); z-index: 40;
