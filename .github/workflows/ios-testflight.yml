@@ -57,6 +57,14 @@ jobs:
           printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8"
           chmod 600 "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8"
 
+      # Le Mac GitHub est jetable : le certificat de développement créé à l'exécution précédente a perdu sa clé privée. On supprime ces
+      # certificats « Created via API » (jamais ceux de distribution ni ceux des développeurs) pour que Xcode en crée un neuf.
+      - name: Nettoyer les anciens certificats de développement créés par l'API
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: node .github/scripts/asc-clean-dev-certs.mjs "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8"
+
       - name: Archiver (signature automatique)
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
