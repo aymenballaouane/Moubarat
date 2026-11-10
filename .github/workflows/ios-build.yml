@@ -7,6 +7,13 @@ name: Compilation iOS
 
 on:
   workflow_dispatch:
+  # Déclenché aussi par un push sur la branche de préparation SEULEMENT (une branche jamais fusionnée ne peut pas être lancée à la main
+  # tant que ce fichier n'existe pas sur master). Aucun autre déclencheur : jamais sur master, jamais sur une demande de fusion.
+  push:
+    branches: [prep-lancement]
+    paths:
+      - ".github/workflows/ios-build.yml"
+      - "apps/ios/**"
 
 jobs:
   compiler:
