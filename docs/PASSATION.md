@@ -311,6 +311,18 @@ changement de sa logique ; les assets Vite sont fingerprintés, rien d'autre à 
    (un compte de centre par exemple) — jamais un effet de bord silencieux. Voir
    `apps/api/src/scripts/create-superadmin.ts` / `apps/api/src/platform/auth/superadmin.ts`
    (4 tests automatisés).
+   **Mot de passe superadmin oublié** (11/11/2026) — `superadmin:create` ne change JAMAIS le mot de passe d'un compte existant, et
+   le changement par la console exige l'ancien. Recours, sur le serveur de production (console du service API chez Render,
+   `DATABASE_URL` déjà dans l'environnement) :
+   ```bash
+   cd /app/apps/api
+   pnpm superadmin:reset-password                            # liste les adresses des superadmins, ne modifie rien
+   SUPERADMIN_EMAIL=<adresse> pnpm superadmin:reset-password  # demande le nouveau mot de passe, saisie masquée, deux fois
+   ```
+   Le mot de passe n'est jamais un argument ni une variable (il resterait dans l'historique du terminal) ; hors terminal
+   interactif le script refuse. Réservé aux comptes déjà superadmin (un compte de centre se réinitialise par la console) ;
+   lève le verrou d'échecs, ferme TOUTES les sessions du compte, journalise (`STAFF_PASSWORD_RESET`, sans mot de passe).
+   Code : `apps/api/src/platform/auth/superadmin.ts` (`resetSuperadminPassword`, 4 tests dans `create-superadmin.test.ts`).
 2. Compte CRM d'un centre (gérant, réception…) : **un propriétaire (OWNER) crée des comptes NEUFS pour son centre ; il
    ne rattache PAS un compte existant** (audit du 25/09/2026, P0-4b : rattacher puis réinitialiser le mot de passe donnait
    les identifiants d'un compte qui ouvre aussi d'AUTRES centres). Une adresse déjà utilisée renvoie `409

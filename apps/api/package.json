@@ -13,6 +13,7 @@
     "reviewer:create": "tsx --env-file-if-exists=.env src/scripts/create-reviewer-account.ts",
     "crm:create-account": "tsx --env-file-if-exists=.env src/scripts/create-crm-account.ts",
     "superadmin:create": "tsx --env-file-if-exists=.env src/scripts/create-superadmin.ts",
+    "superadmin:reset-password": "tsx --env-file-if-exists=.env src/scripts/reset-superadmin-password.ts",
     "demo:seed": "tsx --env-file-if-exists=.env src/scripts/seed-demo-venue.ts",
     "demo:catalogue": "tsx --env-file-if-exists=.env src/scripts/seed-demo-catalogue.ts"
   },

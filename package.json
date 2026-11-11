@@ -10,6 +10,7 @@
     "db:seed": "pnpm --filter @moubarat/api db:seed",
     "dev:api": "pnpm --filter @moubarat/api dev",
     "superadmin:create": "pnpm --filter @moubarat/api superadmin:create",
+    "superadmin:reset-password": "pnpm --filter @moubarat/api superadmin:reset-password",
     "reviewer:create": "pnpm --filter @moubarat/api reviewer:create",
     "crm:create-account": "pnpm --filter @moubarat/api crm:create-account",
     "demo:seed": "pnpm --filter @moubarat/api demo:seed",
