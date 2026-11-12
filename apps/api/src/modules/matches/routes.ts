@@ -18,6 +18,8 @@ import { algiersDateOf, dayStartMs } from '../../lib/algiers.js';
 import { feedConditions, feedDayCounts, parseFeedFilters, type FeedQuery } from './feed.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
 import { rowToBooking } from '../bookings/service.js';
+import { playerCancelSummary } from '../bookings/cascade.js';
+import { writeAudit } from '../../audit/log.js';
 import {
   friendsUpcomingMatches, loadMatchForUpdate, markEndedMatchesPlayed, loadMatch, loadPlayers, publicMatch, rowToMatch, rowToMatchPlayer,
   syncMatchLifecycle, userCommitments, withRosterCounts, describeConflict, assertPhoneVisible,
@@ -638,9 +640,16 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
           /* Audit final, MS-021 (12/11/2026) : même conséquence que POST /bookings/:id/cancel — une annulation à moins de 2 h
              du créneau est une demi-absence du réservant (règle 25). Avant, ce chemin-ci n'en comptait aucune. */
           for (const b of live) {
-            if (cancellationKind(fromPgRange(b.time_range).start, now) === 'LATE') {
+            const late = cancellationKind(fromPgRange(b.time_range).start, now) === 'LATE';
+            if (late) {
               await recordAbsence(trx, { userId: req.auth!.userId, kind: 'HALF', source: 'LATE_CANCEL', bookingId: b.id, matchId: row.id, now });
             }
+            // MS-020 : la même ligne de Journal que POST /bookings/:id/cancel.
+            await writeAudit(trx, {
+              venueId: row.venue_id, actorId: req.auth!.userId, actorRole: 'PLAYER',
+              action: 'BOOKING_CANCELLED', objectType: 'booking', objectId: b.id,
+              summary: playerCancelSummary(b, late, row.title), before: b.status, after: 'CANCELLED',
+            });
           }
         }
         return { bookingCancelled: cancelBooking, bookingIds: live.map((b) => b.id) };

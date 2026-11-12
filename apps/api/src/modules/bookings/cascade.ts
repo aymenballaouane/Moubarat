@@ -3,6 +3,8 @@ import type { Db } from '../../db/client.js';
 import { writeNotifications } from '../../notifications/write.js';
 import { loadPlayers, rowToMatchPlayer } from '../matches/service.js';
 import type { BookingRow } from './service.js';
+import { fromPgRange } from '../../lib/pgrange.js';
+import { algiersDateOf, algiersHHMM } from '../../lib/algiers.js';
 
 /* Cascade réservation → match (26/09/2026, BUG-1 de l'audit pré-lancement, GO d'Aymen).
 
@@ -71,4 +73,15 @@ export async function notifyBookerOfCenterCancel(trx: Db, booking: BookingRow, n
 export function notifiedLabel(n: number): string {
   if (n === 0) return 'aucun autre inscrit';
   return n === 1 ? '1 inscrit prévenu' : `${n} inscrits prévenus`;
+}
+
+/** Audit final, MS-020 (12/11/2026) : ligne du Journal du centre quand un JOUEUR annule sa propre réservation — par
+    POST /bookings/:id/cancel ou en annulant son match avec la réservation. Même forme partout. */
+export function playerCancelSummary(row: BookingRow, late: boolean, cancelledMatchTitle: string | null): string {
+  const range = fromPgRange(row.time_range);
+  const day = algiersDateOf(range.start);
+  return `a annulé sa réservation ${row.reference ?? row.id} du ${day.slice(8, 10)}/${day.slice(5, 7)} `
+    + `${algiersHHMM(range.start)}→${algiersHHMM(range.end)} (${row.price_total_da} DA retirés du CA engagé)`
+    + (late ? ' — moins de 2 h avant : demi-absence' : '')
+    + (cancelledMatchTitle !== null ? ` — match « ${cancelledMatchTitle} » annulé avec elle` : '');
 }

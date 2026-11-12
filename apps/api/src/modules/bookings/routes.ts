@@ -16,7 +16,7 @@ import { containsLike, phoneSearchPatterns } from '../../lib/phone-search.js';
 import { ApiError, badRequest, must, notFound, unauthorized } from '../../lib/http.js';
 import { createBooking, getBookingWithVenue, rowToBooking, type BookingRow } from './service.js';
 import { computeReschedule, parseRescheduleQuery } from './reschedule.js';
-import { cancelLinkedMatch, notifiedLabel, notifyBookerOfCenterCancel, type LinkedMatchCancelled } from './cascade.js';
+import { cancelLinkedMatch, notifiedLabel, notifyBookerOfCenterCancel, playerCancelSummary, type LinkedMatchCancelled } from './cascade.js';
 import { withCommittedPush } from '../../notifications/push.js';
 import { writeNotifications } from '../../notifications/write.js';
 import { assertNotRestricted, recordAbsence } from '../absences/service.js';
@@ -274,7 +274,7 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       // BUG-1 (26/09/2026) : la cascade vers le match écrit des notifications — push différé après le commit réel
       // (withCommittedPush), comme toute route qui notifie.
       const { cascade, late } = await withCommittedPush(() => db.transaction().execute(async (trx) => {
-        const { row } = await getBookingWithVenue(trx, req.params.id, { forUpdate: true });
+        const { row, venue } = await getBookingWithVenue(trx, req.params.id, { forUpdate: true });
         if (row.by_user_id !== req.auth!.userId) {
           throw new ApiError(403, 'FORBIDDEN', 'Cette réservation n’est pas la vôtre.');
         }
@@ -296,6 +296,13 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
         const isLate = cancellationKind(booking.range.start, now) === 'LATE';
         // Règles 18, 19, 25 : une annulation tardive est une DEMI-absence (deux valent une absence pour la restriction).
         if (isLate) await recordAbsence(trx, { userId: req.auth!.userId, kind: 'HALF', source: 'LATE_CANCEL', bookingId: row.id, matchId: row.match_id, now });
+        // Audit final, MS-020 (12/11/2026) : le personnel voit dans son Journal qui a libéré le créneau, et quand.
+        await writeAudit(trx, {
+          venueId: venue.id, actorId: req.auth!.userId, actorRole: 'PLAYER',
+          action: 'BOOKING_CANCELLED', objectType: 'booking', objectId: row.id,
+          summary: playerCancelSummary(row, isLate, cascadeResult?.title ?? null),
+          before: row.status, after: 'CANCELLED',
+        });
         return { cascade: cascadeResult, late: isLate };
       }));
       const base = late

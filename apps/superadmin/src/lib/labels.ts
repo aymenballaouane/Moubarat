@@ -38,4 +38,5 @@ export const ACTION_LABELS: Record<string, string> = {
 
 export const ROLE_LABELS: Record<string, string> = {
   SUPERADMIN: 'Superadmin', OWNER: 'Propriétaire', MANAGER: 'Manager', RECEPTION: 'Réception', STAFF: 'Staff',
+  PLAYER: 'Joueur', // audit final, MS-020 : annulation d'une réservation par le joueur lui-même
 };

@@ -50,7 +50,8 @@ export type ApiAuditAction = AuditAction | 'EXTERNAL_CONFIRMED'
   | 'BOOKING_CLAIM_CONFIRMED' | 'BOOKING_CLAIM_DECLINED'
   // Audit final 26/10/2026 (P1-3) : un manager corrige un « no-show » posé par erreur (efface l'absence du titulaire).
   | 'BOOKING_NO_SHOW_REVERTED';
-export type ApiActorRole = CenterRole | 'SUPERADMIN';
+// PLAYER (audit final, MS-020, migration 0043) : un joueur qui annule sa propre réservation — acteur = son identifiant joueur.
+export type ApiActorRole = CenterRole | 'SUPERADMIN' | 'PLAYER';
 
 export interface AuditWrite {
   /** Absent pour une action plateforme qui ne cible pas un centre précis. */

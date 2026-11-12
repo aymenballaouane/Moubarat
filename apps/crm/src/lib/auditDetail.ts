@@ -37,5 +37,7 @@ export function auditTimeLabel(atIso: string): string {
     filet de sécurité, jamais un crash sur un rôle inconnu. */
 export function roleLabel(actorRole: string): string {
   if (actorRole === 'SUPERADMIN') return 'Plateforme';
+  // Audit final, MS-020 : un joueur qui annule sa propre réservation apparaît au Journal.
+  if (actorRole === 'PLAYER') return 'Joueur';
   return ROLE_LABELS[actorRole as CenterRole] ?? actorRole;
 }

@@ -31,7 +31,7 @@ export type VenueStatusDb = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED';
 export type UserStatusDb = 'ACTIVE' | 'SUSPENDED';
 /** actor_role élargi (SUPERADMIN V1, migration 0006) — CenterRoleDb pour les
     actions CRM historiques, SUPERADMIN pour les actions plateforme. */
-export type ActorRoleDb = CenterRoleDb | 'SUPERADMIN';
+export type ActorRoleDb = CenterRoleDb | 'SUPERADMIN' | 'PLAYER'; // PLAYER : migration 0043 (MS-020)
 
 export interface UsersTable {
   id: Generated<string>;

@@ -648,3 +648,33 @@ describe('MS-014 — « Ce week-end » = vendredi et samedi', () => {
     expect(titles).toEqual(['Weekend Lot Un Samedi', 'Weekend Lot Un Vendredi']);
   });
 });
+
+describe('MS-020 — l’annulation par le joueur apparaît au Journal du centre', () => {
+  it('par la réservation, ou en annulant son match avec elle : une ligne « Joueur » avec son nom (CRM-27, TRANS-10)', async () => {
+    const token = await loginAs(stack, '+213661520001', 'lot1_annule');
+    const staff = await loginAsPlatform(stack, seed.alwaysOpen.staffEmail, seed.crmStaffPassword);
+    const date = algiersDateOf(Date.now() + 11 * 86_400_000);
+    const book = async (startMin: number) => {
+      const r = await call('POST', '/bookings', token, { fieldId: seed.alwaysOpen.fieldId, date, startMin, durationMin: 60 });
+      expect(r.statusCode, r.body).toBe(201);
+      return (r.json() as { booking: { id: string; reference: string } }).booking;
+    };
+    const a = await book(540);
+    expect((await call('POST', `/bookings/${a.id}/cancel`, token)).statusCode).toBe(200);
+    const b = await book(720);
+    const m = await call('POST', '/matches', token, { bookingId: b.id, title: 'Match Journal' });
+    expect(m.statusCode, m.body).toBe(201);
+    const cancel = await call('POST', `/matches/${(m.json() as { match: { id: string } }).match.id}/cancel`, token, { cancelBooking: true });
+    expect(cancel.statusCode, cancel.body).toBe(200);
+
+    const log = await call('GET', `/venues/${seed.alwaysOpen.venueId}/audit-log?limit=50`, staff);
+    expect(log.statusCode, log.body).toBe(200);
+    const entries = (log.json() as { entries: { actorName: string; actorRole: string; summary: string }[] }).entries;
+    for (const ref of [a.reference, b.reference]) {
+      const e = entries.find((x) => x.summary.includes(ref));
+      expect(e, `ligne absente pour ${ref}`).toMatchObject({ actorName: 'lot1_annule', actorRole: 'PLAYER' });
+      expect(e!.summary).toContain('a annulé sa réservation');
+    }
+    expect(entries.find((x) => x.summary.includes(b.reference))!.summary).toContain('Match Journal');
+  });
+});
