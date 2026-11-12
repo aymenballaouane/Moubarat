@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { canCenterAct, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
 import { auditTimeLabel } from '../lib/auditDetail.js';
+import { parseDaAmount } from '../lib/amount.js';
 import { apiFetch, ApiError } from '../lib/api.js';
 import { fmt } from '../lib/format.js';
 import { Icon } from './Icon.js';
@@ -99,7 +100,12 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
 
   async function handleOpen() {
     setOpenError(null);
-    const f = Math.max(0, Number(floatInput) || 0);
+    // MS-039 (audit final) : « 50 000 » se lit 50 000 ; une saisie vide ou illisible est refusée, jamais ouverte à 0 en silence.
+    const f = parseDaAmount(floatInput);
+    if (f === null) {
+      setOpenError('Saisis le fond de caisse en dinars (0 s’il n’y en a pas).');
+      return;
+    }
     try {
       await apiFetch(`/venues/${venueId}/cash/sessions`, { method: 'POST', token, body: { openingFloatDa: f } });
       onToast('Caisse ouverte.');
@@ -116,8 +122,8 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
   }
 
   async function handleMovement(kind: 'COLLECTION' | 'PAYOUT', amountStr: string, extra: { ref?: string; note?: string }, reset: () => void) {
-    const a = Number(amountStr);
-    if (!Number.isInteger(a) || a <= 0) {
+    const a = parseDaAmount(amountStr); // MS-039 : espaces de milliers acceptés
+    if (a === null || a <= 0) {
       onToast('Un mouvement de caisse est toujours un montant entier strictement positif.');
       return;
     }
@@ -132,7 +138,14 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
 
   function askClose() {
     if (!session) return;
-    setCloseModal({ expected, declared: Number(declared) || 0 });
+    // MS-039 (audit final) : le montant attendu n'est qu'une indication dans le champ — sans saisie réelle, pas de clôture
+    // (avant : clôturée à 0, écart fictif enregistré).
+    const counted = parseDaAmount(declared);
+    if (counted === null) {
+      onToast('Saisis le montant compté dans la caisse avant de clôturer.');
+      return;
+    }
+    setCloseModal({ expected, declared: counted });
   }
 
   async function confirmClose() {
