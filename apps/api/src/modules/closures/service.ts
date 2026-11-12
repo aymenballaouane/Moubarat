@@ -1,12 +1,13 @@
 import { sql } from 'kysely';
 import {
-  MIN, recurringConflict, validateClosure, weekdayOfDayStart,
+  MIN, validateClosure, weekdayOfDayStart,
   type ClosureReason, type RecurringBooking,
 } from '@moubarat/core';
 import type { Db } from '../../db/client.js';
 import { ApiError, badRequest, notFound } from '../../lib/http.js';
 import { dayStartMs } from '../../lib/algiers.js';
 import { fromPgRange, toPgRange } from '../../lib/pgrange.js';
+import { recurringClash } from '../recurring-bookings/occupancy.js';
 
 /* Audit général (07-09/09/2026), §5.6 : la table `closures` (schéma gelé) et
    sa lecture par le moteur de disponibilité (bookings/service.ts,
@@ -79,10 +80,10 @@ export interface ClosureConflict {
     réservations RESERVED/HONORED/PAID ou une occurrence d'abonnement actif
     sur les terrains concernés — jamais annuler/déplacer en silence, on
     renvoie la liste pour que le gérant tranche d'abord. Réutilise
-    `recurringConflict` (core, déjà gelé) plutôt que réimplémenter le
+    `recurringOccurrence` (core, gelé) via `recurringClash` plutôt que réimplémenter le
     chevauchement occurrence × plage. */
 async function findConflicts(
-  db: Db, fieldIds: readonly string[], range: { start: number; end: number }, dayStart: number,
+  db: Db, fieldIds: readonly string[], range: { start: number; end: number },
 ): Promise<ClosureConflict[]> {
   if (fieldIds.length === 0) return [];
   const windowRange = toPgRange(range);
@@ -113,17 +114,15 @@ async function findConflicts(
   }));
 
   for (const r of recurringRows) {
-    const activeFromOk = r.active_from.getTime() <= range.start;
-    const activeUntilOk = r.active_until === null || r.active_until.getTime() >= range.start;
-    if (!activeFromOk || !activeUntilOk) continue;
     const rec: RecurringBooking = {
       id: r.id, fieldId: r.field_id, weekday: r.weekday, startMin: r.start_min,
       durationMin: r.duration_min, holderName: r.holder_name, activeFrom: r.active_from.getTime(),
       status: 'ACTIVE',
       ...(r.active_until !== null ? { activeUntil: r.active_until.getTime() } : {}),
     };
-    const hit = recurringConflict(rec, dayStart, [{ fieldId: r.field_id, range }]);
-    if (hit.conflict) {
+    // MS-002 (audit final, 12/11/2026) : occurrences comparées par instants absolus, veille et lendemain compris
+    // (une fermeture 23:00 → 01:00 recouvre l'abonnement du lendemain 00:30) ; bornes d'activité appliquées par le core.
+    if (recurringClash([rec], range)) {
       conflicts.push({ kind: 'SUBSCRIPTION', fieldId: r.field_id, fieldName: r.field_name, label: r.holder_name });
     }
   }
@@ -167,7 +166,7 @@ export async function createClosure(db: Db, p: CreateClosureInput): Promise<Clos
   const fieldIds = p.fieldId !== null ? [p.fieldId]
     : (await db.selectFrom('fields').select('id').where('venue_id', '=', p.venueId)
         .where((eb) => eb.or([eb('status', 'is', null), eb('status', '!=', 'ARCHIVED')])).execute()).map((f) => f.id);
-  const conflicts = await findConflicts(db, fieldIds, range, dayStart);
+  const conflicts = await findConflicts(db, fieldIds, range);
   if (conflicts.length > 0) {
     throw new ApiError(409, 'SLOT_TAKEN',
       `${conflicts.length} réservation(s) ou abonnement(s) occupent déjà ce créneau — à déplacer ou annuler avant de fermer.`,

@@ -1,10 +1,10 @@
 import { sql, type Selectable } from 'kysely';
-import { validateDisplayName, weekdayOfDayStart, type RecurringBooking } from '@moubarat/core';
+import { validateDisplayName, type RecurringBooking } from '@moubarat/core';
 import type { Db } from '../../db/client.js';
 import type { RecurringBookingsTable } from '../../db/types.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
-import { algiersDateOf, dayStartMs } from '../../lib/algiers.js';
 import { fromPgRange } from '../../lib/pgrange.js';
+import { lockFieldSchedule, recurringClash, weeklyOverlap } from './occupancy.js';
 
 export type RecurringRow = Selectable<RecurringBookingsTable>;
 
@@ -52,58 +52,44 @@ export interface CreateRecurringInput {
   holderName: string; activeFromMs: number; activeUntilMs?: number;
 }
 
-/** Chevauchement d'intervalles [a,a+da) et [b,b+db). */
-function overlapsMinutes(aStart: number, aDur: number, bStart: number, bDur: number): boolean {
-  return aStart < bStart + bDur && bStart < aStart + aDur;
-}
-
 /** Un abonnement ne doit jamais entrer en conflit avec un autre abonnement actif
-    (même terrain/jour, intervalle qui se chevauche), ni avec une réservation
+    (même terrain, motifs hebdomadaires qui se chevauchent), ni avec une réservation
     ponctuelle réelle déjà existante sur une occurrence future du motif proposé
     — décision d'Aymen (06/09) : refus explicite dans les deux cas, jamais de
-    résolution automatique (ce serait déjà de la gestion de conflit V1.5). */
+    résolution automatique (ce serait déjà de la gestion de conflit V1.5).
+    MS-002 (audit final, 12/11/2026) : comparaisons par instants absolus, minuit compris (23:00 × 2 h le mardi
+    recouvre le mercredi 00:00) — avant, seul le même jour civil était comparé. À appeler sous `lockFieldSchedule`. */
 async function assertNoConflict(db: Db, p: CreateRecurringInput): Promise<void> {
   const otherRecurring = await db.selectFrom('recurring_bookings')
-    .select(['id', 'start_min', 'duration_min', 'holder_name'])
-    .where('field_id', '=', p.fieldId).where('weekday', '=', p.weekday).where('status', '=', 'ACTIVE')
+    .select(['id', 'weekday', 'start_min', 'duration_min', 'holder_name'])
+    .where('field_id', '=', p.fieldId).where('status', '=', 'ACTIVE')
     .execute();
-  const clash = otherRecurring.find((r) => overlapsMinutes(p.startMin, p.durationMin, r.start_min, r.duration_min));
+  const clash = otherRecurring.find((r) => weeklyOverlap(p, { weekday: r.weekday, startMin: r.start_min, durationMin: r.duration_min }));
   if (clash) {
     throw new ApiError(409, 'SLOT_TAKEN',
-      `Ce créneau chevauche l'abonnement déjà actif de ${clash.holder_name} (même jour, ${clash.start_min}–${clash.start_min + clash.duration_min} min).`);
+      `Ce créneau chevauche l'abonnement déjà actif de ${clash.holder_name}.`);
   }
 
-  // Résas ponctuelles réelles à partir d'aujourd'hui (ou activeFrom si plus
-  // tard), jusqu'à activeUntil si borné — même fenêtre que l'abonnement
-  // lui-même. Comparaison directe sur `lower(time_range)` (raw SQL, comme
-  // ailleurs dans ce module — jamais les opérateurs range `&>`/`<<`, trop
-  // faciles à inverser par erreur et impossibles à relire sans la doc Postgres
-  // sous les yeux).
+  // Résas ponctuelles réelles encore à venir (ou en cours), jusqu'au lendemain de activeUntil si borné (une
+  // occurrence du dernier jour peut déborder après minuit). Chaque résa est comparée aux occurrences du motif
+  // proposé par instants absolus (`recurringClash`, qui applique les bornes activeFrom/activeUntil du core).
+  // Audit 07/09/2026 (T5) : la durée comparée reste celle de la résa EXISTANTE, lue sur sa propre plage.
   const from = new Date(Math.max(p.activeFromMs, Date.now()));
   let query = db.selectFrom('bookings')
     .select(['time_range'])
     .where('field_id', '=', p.fieldId)
     .where('status', 'in', ['RESERVED', 'HONORED', 'PAID'])
-    .where(sql<boolean>`lower(time_range) >= ${from}`);
+    .where(sql<boolean>`upper(time_range) > ${from}`);
   if (p.activeUntilMs !== undefined) {
-    query = query.where(sql<boolean>`lower(time_range) <= ${new Date(p.activeUntilMs)}`);
+    query = query.where(sql<boolean>`lower(time_range) < ${new Date(p.activeUntilMs + 2 * 86_400_000)}`);
   }
-  const rows = await query.execute();
-  for (const r of rows) {
-    // Audit 07/09/2026 (T5) : la durée comparée doit être celle de la résa
-    // EXISTANTE, lue sur sa propre plage — jamais celle du motif proposé
-    // (l'ancien code passait p.durationMin deux fois : un abonnement de 60 min
-    // posé au milieu d'une résa de 120 min passait sans conflit, et un motif
-    // long déclenchait de faux refus).
-    const existing = fromPgRange(r.time_range);
-    const startEpoch = existing.start;
-    const existingDurationMin = Math.round((existing.end - existing.start) / 60_000);
-    const dateIso = algiersDateOf(startEpoch);
-    const dayStart = dayStartMs(dateIso);
-    const weekday = weekdayOfDayStart(dayStart);
-    if (weekday !== p.weekday) continue;
-    const startMinOfDay = Math.round((startEpoch - dayStart) / 60_000);
-    if (overlapsMinutes(p.startMin, p.durationMin, startMinOfDay, existingDurationMin)) {
+  const proposed: RecurringBooking = {
+    id: '', fieldId: p.fieldId, weekday: p.weekday, startMin: p.startMin, durationMin: p.durationMin,
+    holderName: p.holderName, activeFrom: p.activeFromMs, status: 'ACTIVE',
+    ...(p.activeUntilMs !== undefined ? { activeUntil: p.activeUntilMs } : {}),
+  };
+  for (const r of await query.execute()) {
+    if (recurringClash([proposed], fromPgRange(r.time_range))) {
       throw new ApiError(409, 'SLOT_TAKEN',
         'Ce motif chevauche une réservation déjà existante sur une occurrence future — impossible de créer l’abonnement.');
     }
@@ -124,13 +110,17 @@ export async function createRecurringBooking(db: Db, venueId: string, p: CreateR
     throw badRequest('La date de fin doit être postérieure à la date de début.');
   }
 
-  await assertNoConflict(db, { ...p, holderName });
-
-  const row = await db.insertInto('recurring_bookings').values({
-    field_id: p.fieldId, weekday: p.weekday, start_min: p.startMin, duration_min: p.durationMin,
-    holder_name: holderName, active_from: new Date(p.activeFromMs),
-    active_until: p.activeUntilMs !== undefined ? new Date(p.activeUntilMs) : null,
-  }).returningAll().executeTakeFirstOrThrow();
+  // MS-002 (audit final, 12/11/2026) : contrôle et écriture dans la même transaction, sous le verrou du terrain
+  // partagé avec la création et le déplacement de réservation — deux postes ne posent plus deux fois le même motif.
+  const row = await db.transaction().execute(async (trx) => {
+    await lockFieldSchedule(trx, p.fieldId);
+    await assertNoConflict(trx, { ...p, holderName });
+    return trx.insertInto('recurring_bookings').values({
+      field_id: p.fieldId, weekday: p.weekday, start_min: p.startMin, duration_min: p.durationMin,
+      holder_name: holderName, active_from: new Date(p.activeFromMs),
+      active_until: p.activeUntilMs !== undefined ? new Date(p.activeUntilMs) : null,
+    }).returningAll().executeTakeFirstOrThrow();
+  });
   return publicRecurring(row, field.name);
 }
 

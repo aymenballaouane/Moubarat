@@ -10,6 +10,7 @@ import type { BookingsTable, PromoCodesTable, VenueStatusDb } from '../../db/typ
 import type { Selectable } from 'kysely';
 import { fromPgRange, toPgRange } from '../../lib/pgrange.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
+import { loadActiveRecurring, lockFieldSchedule, recurringClash, recurringForDay } from '../recurring-bookings/occupancy.js';
 
 export type BookingRow = Selectable<BookingsTable>;
 
@@ -175,7 +176,9 @@ export async function loadFieldContextsBatch(
 /** Assemble un `DayContext` pour UN jour précis à partir d'un `FieldBatchContext` déjà chargé —
     aucun aller-retour base (voir `loadFieldContextsBatch`). */
 export function dayContextFor(batch: FieldBatchContext, dayStart: number): DayContext {
-  return { ...batch, dayStartMs: dayStart, weekday: weekdayOfDayStart(dayStart) };
+  /* MS-002 (audit final, 12/11/2026) : `recurring` porte aussi les occurrences de la veille et du lendemain
+     exprimées sur ce jour — sans elles, un abonnement du lendemain 00:00 ne bloquait pas « ce jour, 24:00 ». */
+  return { ...batch, recurring: recurringForDay(batch.recurring, dayStart), dayStartMs: dayStart, weekday: weekdayOfDayStart(dayStart) };
 }
 
 /** Terrain × jour — le chemin historique, désormais un cas particulier du chargeur en lot
@@ -410,6 +413,13 @@ export async function createBooking(db: Db, p: CreateBookingInput): Promise<Crea
      créneau (course multi-postes) → la contrainte d'exclusion
      no_double_booking tranche en dernier ressort, comme avant. */
   const insertWithReference = async (tx: Db): Promise<BookingRow> => {
+    /* MS-002 (audit final, 12/11/2026) : sous le verrou du terrain, les abonnements sont relus et comparés par
+       instants absolus — le contexte chargé plus haut l'a été hors transaction, et un abonnement créé entre-temps
+       (autre poste) ne passe par aucune contrainte de la base. */
+    await lockFieldSchedule(tx, booking.fieldId);
+    if (recurringClash(await loadActiveRecurring(tx, booking.fieldId), booking.range)) {
+      throw new ApiError(409, 'SLOT_TAKEN', 'Ce créneau vient d’être pris sur ce terrain. Choisissez un autre horaire.');
+    }
     for (let attempt = 0; attempt < 5; attempt++) {
       const { booking_seq } = await tx.updateTable('venues')
         .set((eb) => ({ booking_seq: eb('booking_seq', '+', 1) }))

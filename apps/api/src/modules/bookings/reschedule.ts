@@ -4,6 +4,7 @@ import {
 } from '@moubarat/core';
 import type { Db } from '../../db/client.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
+import { lockFieldSchedule } from '../recurring-bookings/occupancy.js';
 import { closureRangesFor, loadDayContext, loadPromoById, resolveFormat, rowToBooking, type BookingRow } from './service.js';
 
 /* Modifier une réservation (16/09/2026, demande d'Aymen) — règle finale,
@@ -54,6 +55,9 @@ export async function computeReschedule(
     throw badRequest('Un blocage se débloque et se recrée — il ne se déplace pas.', 'INVALID_TARGET');
   }
 
+  /* MS-002 (audit final, 12/11/2026) : au commit (transaction), le verrou du terrain cible est pris AVANT de lire
+     ses abonnements — même verrou que la création d'abonnement, jamais une occupation posée entre lecture et écriture. */
+  if (db.isTransaction) await lockFieldSchedule(db, target.fieldId);
   const ctx = await loadDayContext(db, target.fieldId, target.dayStart);
   /* Cloisonnement entre centres (audit juridique et technique du 25/09/2026, P0-4a) : le terrain CIBLE doit
      appartenir au MÊME centre que la réservation. La garde d'accès des routes (`requireCenterAction`) ne porte
