@@ -39,6 +39,8 @@ export type ApiAuditAction = AuditAction | 'EXTERNAL_CONFIRMED'
   // par centre rattaché, comme la suspension d'un compte) ; ONB-2 — le gérant signale à Moubarat que son centre est prêt
   // à être publié (ligne du centre : visible dans son Journal ET dans celui de la console).
   | 'PLATFORM_PASSWORD_CHANGED' | 'VENUE_READY_SIGNALED'
+  // Suite de MS-036 (audit final, 13/11/2026) : un Manager corrige une « Honorée » / « Payée » posée par erreur.
+  | 'BOOKING_STATUS_CORRECTED'
   // SA-1(a), audit pré-lancement, lot 8 (27/09/2026) : le superadmin corrige le téléphone d'un joueur (carte SIM
   // perdue, faute de frappe à l'inscription). Sans venueId (un joueur n'a jamais de centre) — avant/après en clair :
   // hors du périmètre de P0-6 (« aucun joueur ne voit le numéro d'un autre »), qui ne restreint que ce qu'un JOUEUR

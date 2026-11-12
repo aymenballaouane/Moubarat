@@ -491,6 +491,32 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       return reply.send({ ok: true, status: 'RESERVED', absenceRemoved: out.absenceRemoved });
     });
 
+  /* Suite de MS-036 (audit final, décision déléguée par Aymen le 13/11/2026) — corriger « Honorée » ou « Payée » posée par erreur (le client n'est
+     pas venu, ou n'a pas payé). Manager et propriétaire seulement : MÊME permission que la correction d'un no-show (REVERT_NO_SHOW, core inchangé).
+     Un pas en arrière à la fois : Payée → Honorée, Honorée → Réservée (le centre pose ensuite le bon statut). « Payée » n'écrit rien dans la Caisse
+     (saisie à part) : seuls les rapports (CA encaissé) suivent. Tracé au Journal avec le vrai rôle. */
+  app.post<{ Params: { id: string } }>('/bookings/:id/revert-cash-status',
+    { preHandler: (req) => platformGuards.requirePlatformAuth(req) }, async (req, reply) => {
+      const pre = await getBookingWithVenue(db, req.params.id);
+      const role = await platformGuards.requireCenterAction(req, pre.venue.id, 'REVERT_NO_SHOW');
+      const out = await db.transaction().execute(async (trx) => {
+        const { row, venue } = await getBookingWithVenue(trx, req.params.id, { forUpdate: true });
+        if (venue.id !== pre.venue.id) throw new ApiError(409, 'INVALID_TARGET', 'La réservation a changé de centre entre-temps.');
+        const back: Record<string, 'RESERVED' | 'HONORED'> = { PAID: 'HONORED', HONORED: 'RESERVED' };
+        const to = back[row.status];
+        if (!to) throw badRequest('Seule une réservation « Honorée » ou « Payée » se corrige ici.', 'INVALID_TRANSITION');
+        await trx.updateTable('bookings').set({ status: to }).where('id', '=', row.id).execute();
+        await writeAudit(trx, {
+          venueId: venue.id, actorId: req.platformAuth!.accountId, actorRole: role,
+          action: 'BOOKING_STATUS_CORRECTED', objectType: 'booking', objectId: row.id,
+          summary: `a corrigé le statut de la réservation ${row.reference ?? row.id} : ${row.status === 'PAID' ? 'Payée → Honorée' : 'Honorée → Réservée'} (${row.price_total_da} DA)`,
+          before: row.status, after: to,
+        });
+        return { status: to };
+      });
+      return reply.send({ ok: true, status: out.status });
+    });
+
   /* Modifier une réservation (16/09/2026, demande d'Aymen) — règle finale,
      volontairement simple : terrain/heure/durée modifiables SEULEMENT si
      `match_id IS NULL` (voir reschedule.ts, computeReschedule — c'est la

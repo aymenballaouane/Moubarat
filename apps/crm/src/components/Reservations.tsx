@@ -84,6 +84,8 @@ interface FicheActions {
   /** Règle 25 (audit 26/10, P1-4) : déclarer un inscrit ABSENT du match, une fois le créneau commencé. */
   onRequestAbsent: (row: ReservationRow, player: { userId: string; name: string }) => void;
   onRequestRevertNoShow: (row: ReservationRow) => void;
+  /** Suite de MS-036 (audit final) : corriger une « Honorée » / « Payée » posée par erreur — Manager et propriétaire. */
+  onRequestRevertCash: (row: ReservationRow) => void;
   onRequestCancel: (id: string, label: string) => void;
   onRequestModify: (row: ReservationRow) => void;
 }
@@ -95,6 +97,7 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
   const canHonorOrNoShow = row.status === 'RESERVED' && actions.canSetCashStatus;
   const canPay = row.status === 'HONORED' && actions.canSetCashStatus;
   const canRevert = row.status === 'NO_SHOW' && actions.canRevertNoShow;
+  const canRevertCash = (row.status === 'HONORED' || row.status === 'PAID') && actions.canRevertNoShow;
   const canCancelThis = row.status === 'RESERVED' && actions.canCancel;
   // BUG-1 (26/09/2026) : un match ANNULÉ par son organisateur n'est plus un match — la réservation redevient
   // ordinaire (modifiable, comme si le match n'avait jamais existé) ; le serveur applique la même règle
@@ -174,7 +177,7 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
       ) : row.source === 'MOUBARAT' ? (
         <div className="cm-line"><span>Profil</span><b>Compte App Moubarat — fiche dans Clients</b></div>
       ) : null}
-      {canVerify || canHonorOrNoShow || canPay || canCancelThis || canModifyThis || canRevert ? (
+      {canVerify || canHonorOrNoShow || canPay || canCancelThis || canModifyThis || canRevert || canRevertCash ? (
         <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {canModifyThis ? (
             <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={() => actions.onRequestModify(row)}>
@@ -199,6 +202,11 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
           {canRevert ? (
             <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={() => actions.onRequestRevertNoShow(row)}>
               {busy ? '…' : 'Annuler le no-show'}
+            </button>
+          ) : null}
+          {canRevertCash ? (
+            <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={() => actions.onRequestRevertCash(row)}>
+              {busy ? '…' : 'Corriger le statut'}
             </button>
           ) : null}
           {canPay ? (
@@ -289,6 +297,7 @@ export function Reservations({ role, venueId, token, onToast, openRequest, onOpe
   const [noShowTarget, setNoShowTarget] = useState<ReservationRow | null>(null);
   const [absentTarget, setAbsentTarget] = useState<{ row: ReservationRow; userId: string; name: string } | null>(null);
   const [revertTarget, setRevertTarget] = useState<ReservationRow | null>(null);
+  const [revertCashTarget, setRevertCashTarget] = useState<ReservationRow | null>(null);
   // La résa visée par la modale d'annulation, et son match s'il est VIVANT (cascade BUG-1, 26/09/2026).
   const cancelRow = cancelTarget ? rows.find((r) => r.id === cancelTarget.id) : undefined;
   const cancelLiveMatch = cancelRow?.match !== undefined && cancelRow.match.status !== 'CANCELLED' ? cancelRow.match : undefined;
@@ -367,6 +376,21 @@ export function Reservations({ role, venueId, token, onToast, openRequest, onOpe
     try {
       const res = await apiFetch<{ absenceRemoved?: boolean }>(`/bookings/${id}/revert-no-show`, { method: 'POST', token });
       onToast(res.absenceRemoved ? 'No-show annulé — l’absence du joueur est effacée.' : 'No-show annulé.');
+      await fetchDay();
+    } catch (e) {
+      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  /* Suite de MS-036 (audit final, 13/11/2026) : corriger une « Honorée » / « Payée » posée par erreur (Manager et propriétaire) — un pas en arrière,
+     Payée → Honorée ou Honorée → Réservée. Rien n'est retiré de la Caisse (saisie à part). */
+  async function revertCash(id: string) {
+    setBusyId(id);
+    try {
+      const res = await apiFetch<{ status: 'RESERVED' | 'HONORED' }>(`/bookings/${id}/revert-cash-status`, { method: 'POST', token });
+      onToast(res.status === 'HONORED' ? 'Statut corrigé : Honorée.' : 'Statut corrigé : Réservée.');
       await fetchDay();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -663,6 +687,7 @@ export function Reservations({ role, venueId, token, onToast, openRequest, onOpe
                       onRequestNoShow: (r) => setNoShowTarget(r),
                       onRequestAbsent: (r, p) => setAbsentTarget({ row: r, userId: p.userId, name: p.name }),
                       onRequestRevertNoShow: (r) => setRevertTarget(r),
+                      onRequestRevertCash: (r) => setRevertCashTarget(r),
                       onRequestCancel: (id, label) => setCancelTarget({ id, label, reason: null }),
                       onRequestModify: openModify,
                     }}
@@ -719,6 +744,17 @@ export function Reservations({ role, venueId, token, onToast, openRequest, onOpe
         confirmLabel="Annuler le no-show"
         onConfirm={() => { const r = revertTarget; setRevertTarget(null); if (r) void revertNoShow(r.id); }}
         onCancel={() => setRevertTarget(null)}
+      />
+
+      <ConfirmModal
+        open={revertCashTarget !== null}
+        title="Corriger ce statut ?"
+        body={
+          <p>« {revertCashTarget?.name}{revertCashTarget?.reference ? ` · ${revertCashTarget.reference}` : ''} » {revertCashTarget?.status === 'PAID' ? 'redevient « Honorée » (non payée)' : 'redevient « Réservée »'}. À utiliser seulement pour une erreur de saisie ; la correction est tracée au Journal. La Caisse n’est pas modifiée.</p>
+        }
+        confirmLabel="Corriger le statut"
+        onConfirm={() => { const r = revertCashTarget; setRevertCashTarget(null); if (r) void revertCash(r.id); }}
+        onCancel={() => setRevertCashTarget(null)}
       />
 
       <ConfirmModal

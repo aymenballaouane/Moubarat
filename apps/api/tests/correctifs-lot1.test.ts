@@ -789,3 +789,29 @@ describe('MS-022 — une restriction ne s’efface pas en supprimant son compte'
     expect((await bookSoon(again, 4)).statusCode).toBe(201);
   });
 });
+
+describe('MS-036 (suite) — un Manager corrige une « Honorée » ou « Payée » posée par erreur', () => {
+  it('Payée → Honorée → Réservée, un pas à la fois, tracé au Journal ; la Réception ne le peut pas ; rien d’autre ne se « corrige »', async () => {
+    const yacine = await loginAsPlatform(stack, seed.crmStaffEmails.yacine, seed.crmStaffPassword); // MANAGER
+    const nadia = await loginAsPlatform(stack, seed.crmStaffEmails.nadia, seed.crmStaffPassword); // RECEPTION
+    const date = algiersDateOf(Date.now() + 20 * 86_400_000);
+    const b = await call('POST', '/bookings', yacine, { fieldId: seed.fields.t1, date, startMin: 600, durationMin: 60, source: 'WALK_IN', reservationName: 'Client Correction' });
+    expect(b.statusCode, b.body).toBe(201);
+    const id = (b.json() as { booking: { id: string; reference: string } }).booking.id;
+    await stack.db.updateTable('bookings').set({ status: 'PAID' }).where('id', '=', id).execute();
+    const statusOf = async () => (await stack.db.selectFrom('bookings').select('status').where('id', '=', id).executeTakeFirstOrThrow()).status;
+
+    expect((await call('POST', `/bookings/${id}/revert-cash-status`, nadia)).statusCode).toBe(403);
+    expect(await statusOf()).toBe('PAID');
+    const first = await call('POST', `/bookings/${id}/revert-cash-status`, yacine);
+    expect([first.statusCode, (first.json() as { status: string }).status], first.body).toEqual([200, 'HONORED']);
+    const second = await call('POST', `/bookings/${id}/revert-cash-status`, yacine);
+    expect((second.json() as { status: string }).status).toBe('RESERVED');
+    const third = await call('POST', `/bookings/${id}/revert-cash-status`, yacine);
+    expect([third.statusCode, (third.json() as { error: string }).error]).toEqual([400, 'INVALID_TRANSITION']);
+    // Redevenue « Réservée », elle se gère de nouveau normalement (ici : annulée).
+    expect((await call('POST', `/bookings/${id}/status`, yacine, { status: 'CANCELLED', reason: 'CLIENT' })).statusCode).toBe(200);
+    const log = await stack.db.selectFrom('audit_log').select(['action', 'before_val', 'after_val', 'actor_role']).where('object_id', '=', id).where('action', '=', 'BOOKING_STATUS_CORRECTED').execute();
+    expect(log.map((l) => `${l.before_val}>${l.after_val}:${l.actor_role}`).sort()).toEqual(['HONORED>RESERVED:MANAGER', 'PAID>HONORED:MANAGER']);
+  });
+});

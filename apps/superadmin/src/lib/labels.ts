@@ -30,7 +30,7 @@ export const ACTION_LABELS: Record<string, string> = {
   USER_PHONE_CHANGED: 'Téléphone joueur corrigé',
   BOOKING_CLAIM_CONFIRMED: 'Réservation confirmée par le joueur', BOOKING_CLAIM_DECLINED: 'Réservation refusée par le joueur',
   // Audit final 26/10/2026 (CRM-6) : règle 25 et correction d'un no-show.
-  BOOKING_NO_SHOW_REVERTED: 'No-show annulé', PLAYER_ABSENCE_DECLARED: 'Absence déclarée', PLAYER_RESTRICTION_LIFTED: 'Restriction levée',
+  BOOKING_NO_SHOW_REVERTED: 'No-show annulé', BOOKING_STATUS_CORRECTED: 'Statut corrigé', PLAYER_ABSENCE_DECLARED: 'Absence déclarée', PLAYER_RESTRICTION_LIFTED: 'Restriction levée',
   // Écrit seulement par le seed de démo (`scripts/seed-demo-venue.ts`), jamais par une vraie route — absent de
   // ApiAuditAction pour cette raison, mais réel dans le Journal d'un centre de démo : un libellé quand même.
   CASH_SESSION_CLOSED: 'Session caisse clôturée',
