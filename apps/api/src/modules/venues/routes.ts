@@ -6,6 +6,7 @@ import { writeAudit } from '../../audit/log.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
 import { parseVenuePhone } from '../../lib/validate.js';
 import { archiveRefusalMessage, findFieldCommitments, findFormatBookings, formatRefusalMessage } from './archive-guard.js';
+import { findHoursConflicts, hoursRefusalMessage, loadVenueHours } from './hours-guard.js';
 import { VENUE_RATING_MIN_COUNT, ratingSummaryFor, ratingSummaryForMany } from '../results/service.js';
 import { READY_SIGNAL_COOLDOWN_MS, evaluateReadiness, lastReadySignalAt, loadVenueReadiness, notReadyMessage } from './readiness.js';
 
@@ -651,6 +652,16 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
       const before = await db.selectFrom('opening_hours').selectAll()
         .where('venue_id', '=', req.params.venueId).where('weekday', '=', weekday).executeTakeFirst();
 
+      // MS-015 (audit final) : pas de réduction qui laisserait une réservation à venir ou un abonnement hors horaires.
+      const allHours = await loadVenueHours(db, req.params.venueId);
+      const nextHours = before
+        ? allHours.map((h) => (h.weekday === weekday && h.startMin === before.start_min ? { weekday, startMin, endMin } : h))
+        : [...allHours, { weekday, startMin, endMin }];
+      const hit = await findHoursConflicts(db, req.params.venueId, allHours, nextHours, Date.now());
+      if (hit.bookings + hit.subscriptions > 0) {
+        throw new ApiError(409, 'HOURS_HAVE_BOOKINGS', hoursRefusalMessage(hit, false), hit);
+      }
+
       const row = before
         ? await db.updateTable('opening_hours').set({ start_min: startMin, end_min: endMin })
             .where('venue_id', '=', req.params.venueId).where('weekday', '=', weekday).where('start_min', '=', before.start_min)
@@ -687,6 +698,14 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
         .where('venue_id', '=', req.params.venueId).where('weekday', '=', weekday).where('start_min', '=', startMin)
         .executeTakeFirst();
       if (!before) throw notFound('Aucune plage horaire à cette heure pour ce jour.');
+
+      // MS-015 (audit final) : pas de fermeture qui laisserait une réservation à venir ou un abonnement hors horaires.
+      const allHours = await loadVenueHours(db, req.params.venueId);
+      const hit = await findHoursConflicts(db, req.params.venueId, allHours,
+        allHours.filter((h) => !(h.weekday === weekday && h.startMin === startMin)), Date.now());
+      if (hit.bookings + hit.subscriptions > 0) {
+        throw new ApiError(409, 'HOURS_HAVE_BOOKINGS', hoursRefusalMessage(hit, true), hit);
+      }
 
       await db.deleteFrom('opening_hours')
         .where('venue_id', '=', req.params.venueId).where('weekday', '=', weekday).where('start_min', '=', startMin)

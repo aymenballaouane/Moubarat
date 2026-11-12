@@ -708,3 +708,48 @@ describe('MS-016 — retirer un format ou changer le sport ne bloque plus une r�
     expect(ok.statusCode, ok.body).toBe(200);
   });
 });
+
+describe('MS-015 — réduire les horaires ou fermer un jour regarde les engagements à venir', () => {
+  it('refusé (409 HOURS_HAVE_BOOKINGS, avec la liste) si une réservation ou un abonnement tomberait hors horaires ; permis sinon (CONF-11, TRANS-17)', async () => {
+    const DAY = 86_400_000;
+    const v = await stack.db.insertInto('venues').values({ name: 'Centre Horaires Lot 1', wilaya: 'Alger', address: 'x', lat: 0, lng: 0, status: 'ACTIVE' })
+      .returning('id').executeTakeFirstOrThrow();
+    await stack.db.insertInto('opening_hours').values([0, 1, 2, 3, 4, 5, 6].map((weekday) => ({ venue_id: v.id, weekday, start_min: 480, end_min: 1500 }))).execute();
+    await stack.db.insertInto('center_staff').values({ venue_id: v.id, user_id: seed.crmStaff.hamid, role: 'OWNER' }).execute();
+    const f = await insertTestField(stack.db, { venue_id: v.id, name: 'H1', sport: 'FOOTBALL', formats: ['5v5'], hourly_rate_da: 2000, status: 'ACTIVE' });
+    const hamid = await loginAsPlatform(stack, seed.crmStaffEmails.hamid, seed.crmStaffPassword);
+    const J = algiersDateOf(Date.now() + 13 * DAY);
+    const wdJ = weekdayOfDayStart(dayStartMs(J));
+    const walk = (date: string, startMin: number) => call('POST', '/bookings', hamid, { fieldId: f.id, date, startMin, durationMin: 60, source: 'WALK_IN', reservationName: 'Client Horaires' });
+    expect((await walk(J, 1200)).statusCode).toBe(201); // 20:00 → 21:00
+    const put = (weekday: number, startMin: number, endMin: number) => call('PUT', `/venues/${v.id}/opening-hours/${weekday}`, hamid, { startMin, endMin });
+    const errorOf = (r: { body: string }) => (JSON.parse(r.body) as { error?: string }).error;
+
+    const tooShort = await put(wdJ, 480, 1080); // fermer à 18:00
+    expect([tooShort.statusCode, errorOf(tooShort)], tooShort.body).toEqual([409, 'HOURS_HAVE_BOOKINGS']);
+    expect((tooShort.json() as { details: { bookings: number; conflicts: { label: string }[] } }).details.bookings).toBe(1);
+    const close = await call('DELETE', `/venues/${v.id}/opening-hours/${wdJ}?startMin=480`, hamid);
+    expect([close.statusCode, errorOf(close)], close.body).toEqual([409, 'HOURS_HAVE_BOOKINGS']);
+    // Rien n'a changé.
+    expect(await stack.db.selectFrom('opening_hours').select(['start_min', 'end_min']).where('venue_id', '=', v.id).where('weekday', '=', wdJ).execute())
+      .toEqual([{ start_min: 480, end_min: 1500 }]);
+    // Une réduction qui garde la réservation passe (fermer à 22:00).
+    expect((await put(wdJ, 480, 1320)).statusCode).toBe(200);
+
+    // Après minuit : une réservation « J+1 00:00 » vit sur les horaires de J (jusqu'à 01:00) — fermer J à 24:00 la casserait.
+    const K = algiersDateOf(dayStartMs(J) + 7 * DAY + 12 * 3_600_000);
+    expect((await put(wdJ, 480, 1500)).statusCode).toBe(200);
+    expect((await walk(K, 1440)).statusCode).toBe(201);
+    const cut = await put(wdJ, 480, 1440);
+    expect([cut.statusCode, errorOf(cut)], cut.body).toEqual([409, 'HOURS_HAVE_BOOKINGS']);
+
+    // Abonnement actif : fermer son jour est refusé.
+    const wdSub = (wdJ + 3) % 7;
+    expect((await call('POST', `/venues/${v.id}/recurring-bookings`, hamid, { fieldId: f.id, weekday: wdSub, startMin: 600, durationMin: 60, holderName: 'Club Horaires', activeFrom: algiersDateOf(Date.now()) })).statusCode).toBe(201);
+    const closeSub = await call('DELETE', `/venues/${v.id}/opening-hours/${wdSub}?startMin=480`, hamid);
+    expect([closeSub.statusCode, errorOf(closeSub)], closeSub.body).toEqual([409, 'HOURS_HAVE_BOOKINGS']);
+    // Un jour sans engagement se ferme.
+    const free = [0, 1, 2, 3, 4, 5, 6].find((d) => d !== wdJ && d !== wdSub && d !== (wdJ + 1) % 7)!;
+    expect((await call('DELETE', `/venues/${v.id}/opening-hours/${free}?startMin=480`, hamid)).statusCode).toBe(204);
+  });
+});
