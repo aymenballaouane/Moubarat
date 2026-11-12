@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import type { FastifyInstance } from 'fastify';
 import {
-  RECIPIENTS, matchLeaveKind, activePlayers, canCancelBooking, canOrganizerAct, canTransition, changeTeam, createMatch, defaultTeam, joinMatch, leaveMatch,
+  RECIPIENTS, matchLeaveKind, activePlayers, canCancelBooking, cancellationKind, canOrganizerAct, canTransition, changeTeam, createMatch, defaultTeam, joinMatch, leaveMatch,
   removePlayer, MATCH_TRANSITIONS, MATCH_TEAMS,
   type MatchFormat, type MatchTeam, type SkillLevel,
 } from '@moubarat/core';
@@ -12,7 +12,7 @@ import { assertNotRestricted, recordAbsence } from '../absences/service.js';
 import { notifyDayAlerts, notifyFilling, notifySpotFreed } from '../notifications/alerts.js';
 import { withCommittedPush } from '../../notifications/push.js';
 import { sweepMatchReminders } from '../notifications/reminders.js';
-import { toPgRange } from '../../lib/pgrange.js';
+import { fromPgRange, toPgRange } from '../../lib/pgrange.js';
 import { decodeCursor, isoMicros, pageLimit, pageOf } from '../../lib/cursor.js';
 import { algiersDateOf, dayStartMs } from '../../lib/algiers.js';
 import { feedConditions, feedDayCounts, parseFeedFilters, type FeedQuery } from './feed.js';
@@ -515,6 +515,11 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
         if (row.organizer_id === req.auth!.userId) {
           throw new ApiError(400, 'FORBIDDEN', 'L’organisateur ne quitte pas son match — il l’annule.');
         }
+        /* Audit final, MS-021 (12/11/2026) : un match annulé ne se quitte plus — avant, le départ passait et coûtait une
+           demi-absence (règle 25) pour un match qui n'aura pas lieu, en prévenant l'organisateur pour rien. */
+        if (row.status === 'CANCELLED') {
+          throw new ApiError(409, 'INVALID_TRANSITION', 'Ce match est annulé : il n’y a plus rien à quitter.');
+        }
         const players = (await loadPlayers(trx, row.id)).map(rowToMatchPlayer);
         const result = leaveMatch(rowToMatch(row), players, req.auth!.userId, now);
         must(result.result);
@@ -630,6 +635,13 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
           await trx.updateTable('bookings')
             .set({ status: 'CANCELLED', cancelled_at: new Date(now), cancel_reason: 'CLIENT' })
             .where('id', 'in', live.map((b) => b.id)).execute();
+          /* Audit final, MS-021 (12/11/2026) : même conséquence que POST /bookings/:id/cancel — une annulation à moins de 2 h
+             du créneau est une demi-absence du réservant (règle 25). Avant, ce chemin-ci n'en comptait aucune. */
+          for (const b of live) {
+            if (cancellationKind(fromPgRange(b.time_range).start, now) === 'LATE') {
+              await recordAbsence(trx, { userId: req.auth!.userId, kind: 'HALF', source: 'LATE_CANCEL', bookingId: b.id, matchId: row.id, now });
+            }
+          }
         }
         return { bookingCancelled: cancelBooking, bookingIds: live.map((b) => b.id) };
       }));

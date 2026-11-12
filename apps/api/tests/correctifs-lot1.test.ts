@@ -13,7 +13,7 @@ import { makeSafeDayPicker } from './helpers/dates.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { hashPassword, newSessionToken, sha256 } from '../src/lib/crypto.js';
 import { algiersDateOf, dayStartMs } from '../src/lib/algiers.js';
-import { fromPgRange } from '../src/lib/pgrange.js';
+import { fromPgRange, toPgRange } from '../src/lib/pgrange.js';
 import { readEnv } from '../src/env.js';
 
 let stack: TestStack;
@@ -510,5 +510,63 @@ describe('MS-035 — un match annulé ne bloque plus sa réservation', () => {
     // L'ancien match reste annulé, sans lien ; le nouveau est celui de la réservation.
     const old = await stack.db.selectFrom('matches').select(['status', 'booking_id']).where('id', '=', matchId).executeTakeFirstOrThrow();
     expect(old).toEqual({ status: 'CANCELLED', booking_id: null });
+  });
+});
+
+describe('MS-021 — règle des absences identique quel que soit le chemin', () => {
+  const H = 3_600_000;
+  let n = 0;
+  async function ready(label: string): Promise<{ id: string; token: string }> {
+    const token = await loginAs(stack, `+21366149${String(1000 + ++n).slice(-4)}`, `lot1_${label}_${n}`);
+    const me = (await call('GET', '/auth/me', token)).json() as { user: { id: string } };
+    return { id: me.user.id, token };
+  }
+  async function insertMatch(o: { organizer: string; joined: string[]; startInMs: number; status: 'OPEN' | 'CANCELLED'; withBooking?: boolean }) {
+    const start = Date.now() + o.startInMs;
+    const range = toPgRange({ start, end: start + H });
+    const booking = o.withBooking ? await stack.db.insertInto('bookings').values({
+      field_id: seed.alwaysOpen.fieldId, time_range: range, source: 'MOUBARAT', verified_by_center: true,
+      by_user_id: o.organizer, reservation_name: 'Orga Lot Un', reference: `L1-${Math.floor(Math.random() * 1e6)}`, price_total_da: 3000,
+    }).returning('id').executeTakeFirstOrThrow() : null;
+    const m = await stack.db.insertInto('matches').values({
+      sport: 'FOOTBALL', format: '5v5' as never, level: 'LOISIR', title: 'Match Lot Un', venue_id: seed.alwaysOpen.venueId,
+      field_id: seed.alwaysOpen.fieldId, time_range: range, capacity: 10, price_per_player_da: 300,
+      organizer_id: o.organizer, status: o.status, ...(booking ? { booking_id: booking.id } : {}),
+    }).returning('id').executeTakeFirstOrThrow();
+    await stack.db.insertInto('match_players').values([o.organizer, ...o.joined].map((u) => ({ match_id: m.id, user_id: u, status: 'JOINED' as const }))).execute();
+    if (booking) await stack.db.updateTable('bookings').set({ match_id: m.id }).where('id', '=', booking.id).execute();
+    return { matchId: m.id, bookingId: booking?.id ?? null };
+  }
+  const absencesOf = (userId: string) => stack.db.selectFrom('absences').select(['kind', 'source']).where('user_id', '=', userId).execute();
+
+  it('quitter un match déjà annulé est refusé : ni départ, ni demi-absence, ni notification (MATCH-11)', async () => {
+    const orga = await ready('orga');
+    const karim = await ready('karim');
+    const { matchId } = await insertMatch({ organizer: orga.id, joined: [karim.id], startInMs: 90 * 60_000, status: 'CANCELLED' });
+    const res = await call('POST', `/matches/${matchId}/leave`, karim.token);
+    expect(res.statusCode, res.body).toBe(409);
+    expect(await absencesOf(karim.id)).toEqual([]);
+    const row = await stack.db.selectFrom('match_players').select('status').where('match_id', '=', matchId).where('user_id', '=', karim.id).executeTakeFirstOrThrow();
+    expect(row.status).toBe('JOINED');
+    expect(await stack.db.selectFrom('notifications').select('id').where('user_id', '=', orga.id).where('ref_id', '=', matchId).execute()).toEqual([]);
+  });
+
+  it('annuler son match AVEC la réservation après H-2 compte une demi-absence, comme l’autre route ; l’inscrit ne porte rien (MATCH-16)', async () => {
+    const orga = await ready('orga');
+    const karim = await ready('karim');
+    const { matchId, bookingId } = await insertMatch({ organizer: orga.id, joined: [karim.id], startInMs: 90 * 60_000, status: 'OPEN', withBooking: true });
+    const res = await call('POST', `/matches/${matchId}/cancel`, orga.token, { cancelBooking: true });
+    expect(res.statusCode, res.body).toBe(200);
+    expect(res.json()).toMatchObject({ status: 'CANCELLED', bookingCancelled: true, bookingIds: [bookingId] });
+    expect(await absencesOf(orga.id)).toEqual([{ kind: 'HALF', source: 'LATE_CANCEL' }]);
+    expect(await absencesOf(karim.id)).toEqual([]);
+  });
+
+  it('la même annulation bien avant H-2 ne compte rien', async () => {
+    const orga = await ready('orga');
+    const { matchId } = await insertMatch({ organizer: orga.id, joined: [], startInMs: 30 * H, status: 'OPEN', withBooking: true });
+    const res = await call('POST', `/matches/${matchId}/cancel`, orga.token, { cancelBooking: true });
+    expect(res.statusCode, res.body).toBe(200);
+    expect(await absencesOf(orga.id)).toEqual([]);
   });
 });

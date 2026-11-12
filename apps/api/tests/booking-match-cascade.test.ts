@@ -366,6 +366,12 @@ describe('sens 2 — l’organisateur annule son match', () => {
     expect(row.status).toBe('CANCELLED');
     expect(row.cancel_reason).toBe('CLIENT');
     expect(row.cancelled_at).not.toBeNull();
+    // MS-021 (audit final) : la demi-absence annoncée par le titre est désormais réellement comptée, comme par POST /bookings/:id/cancel.
+    const abs = await stack.db.selectFrom('absences').select(['kind', 'source']).where('user_id', '=', seed.users.sofiane).where('booking_id', '=', bookingId).execute();
+    expect(abs).toEqual([{ kind: 'HALF', source: 'LATE_CANCEL' }]);
+    // Ce fichier fait réserver Sofiane dans presque chaque test : ses absences sont remises à zéro pour ne pas la restreindre ensuite.
+    await stack.db.deleteFrom('player_restrictions').where('user_id', '=', seed.users.sofiane).execute();
+    await stack.db.deleteFrom('absences').where('user_id', '=', seed.users.sofiane).execute();
   });
 
   it('cancelBooking: true sur une résa déjà close (ex. HONORED) : 409 INVALID_TRANSITION — rien n’est annulé à moitié', async () => {
