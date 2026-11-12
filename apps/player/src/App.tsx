@@ -11,6 +11,7 @@ import { ErreurReseau } from './components/ErreurReseau.js';
 import { BookingFlow } from './components/BookingFlow.js';
 import { MatchDetail } from './components/MatchDetail.js';
 import { CreateMatchFlow } from './components/CreateMatchFlow.js';
+import { MatchRoute } from './components/MatchRoute.js';
 import { OrganizerMatchView } from './components/OrganizerMatchView.js';
 import { TeamsFlow } from './components/TeamsFlow.js';
 import { ChallengesFlow } from './components/ChallengesFlow.js';
@@ -305,11 +306,14 @@ function renderRoute(
           />
         );
       }
-      const entry = (route.matchId ? store.findMatch(route.matchId) : undefined) ?? store.openMatches()[0]!;
-      if (route.mode === 'organizer') {
-        return <OrganizerMatchView match={entry.match} players={entry.players} onExit={goBack} store={store} />;
-      }
-      return <MatchDetail key={entry.match.id} match={entry.match} players={entry.players} onExit={goBack} onOpenMatch={(matchId) => setRoute({ name: 'match', mode: 'detail', matchId })} store={store} />;
+      // MS-038 (audit final) : le match demandé, chargé par son identifiant s'il n'est pas en mémoire — jamais un autre à sa place.
+      return (
+        <MatchRoute matchId={route.matchId} store={store} onExit={goBack}>
+          {(entry) => (route.mode === 'organizer'
+            ? <OrganizerMatchView match={entry.match} players={entry.players} onExit={goBack} store={store} />
+            : <MatchDetail key={entry.match.id} match={entry.match} players={entry.players} onExit={goBack} onOpenMatch={(matchId) => setRoute({ name: 'match', mode: 'detail', matchId })} store={store} />)}
+        </MatchRoute>
+      );
     }
     case 'teams':
       return (
