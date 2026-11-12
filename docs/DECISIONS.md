@@ -6168,3 +6168,18 @@ liée à l'avis de l'avocat sur la suppression, MS-025) ; MS-036 (correction d'u
 **Non fait** : régénération du board visuel (`pnpm ui:board`) — elle réinitialise les données de démo locales et les
 écrans touchés (cartes de panne, « match introuvable », libellé du Journal) sont des états hors du parcours capturé.
 Traductions arabes PROVISOIRES ajoutées (5 textes) : à relire par un arabophone.
+
+### Suite du Lot 1 (13/11/2026 — décisions déléguées par Aymen : « choisis la meilleure décision pour le bien de l'application »)
+
+- **MS-022 — suppression de compte sous restriction** : la suppression reste TOUJOURS possible (droit à l'effacement ; refuser
+  serait pire sous un blocage sans fin). Seule la restriction en cours survit, réduite à l'empreinte SHA-256 du numéro, son niveau
+  et sa date de fin (migration additive 0044) ; reprise si le même numéro recrée un compte, puis effacée ; effacée aussi à
+  expiration. Écarté : refuser la suppression pendant une restriction. **À faire valider par l'avocat** :
+  `refonte-app-joueur/docs/corrections-politique.md`, point 7 (la politique doit le décrire).
+- **Correction d'une « Honorée » / « Payée » posée par erreur** : `POST /bookings/:id/revert-cash-status`, un pas en arrière
+  (Payée → Honorée → Réservée), Manager et propriétaire (permission REVERT_NO_SHOW du core, inchangé), tracée au Journal
+  (`BOOKING_STATUS_CORRECTED`), bouton « Corriger le statut » dans Réservations. La Caisse n'est pas touchée : « Payée » n'y écrit
+  rien. Non vérifiée visuellement en direct (le compte CRM local exige d'accepter les conditions, non fait à sa place).
+- **iOS 1.0.1 (build 8)** envoyée à TestFlight le 12/11/2026 au soir (étiquette `ios-v1.0.1-8`) plutôt qu'une 1.0 build 7 : la 1.0
+  (build 6) en examen n'est pas relancée. La build 7 avait échoué au nettoyage des certificats sans message lisible : le script
+  écrit désormais ses refus en annotations publiques et un refus de suppression n'arrête plus tout.
