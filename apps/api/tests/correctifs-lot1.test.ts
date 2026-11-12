@@ -319,3 +319,37 @@ describe('MS-007 — consentement et passerelle d’accès exigés par le serveu
     expect(res.statusCode, res.body).toBe(201);
   });
 });
+
+describe('MS-005 — un tiers ne tient plus un compte CRM hors de son compte, et n’apprend pas qu’il existe', () => {
+  const login = (email: string, password: string, from: string) => stack.app.inject({
+    method: 'POST', url: '/platform/auth/login', remoteAddress: from, payload: { email, password },
+  });
+  const codes = async (email: string, from: string, n: number) => {
+    const out: string[] = [];
+    for (let i = 0; i < n; i++) {
+      const r = await login(email, 'pas-le-bon', from);
+      out.push(`${r.statusCode} ${(r.json() as { error: string }).error}`);
+    }
+    return out;
+  };
+
+  it('six essais faux sur un email réel puis inconnu : mêmes réponses ; le vrai titulaire entre depuis son poste (SEC-04)', async () => {
+    const real = await codes(seed.crmStaffEmails.nadia, '10.7.0.1', 6);
+    const unknown = await codes('inconnu.lot1@moubarat.test', '10.7.0.1', 6);
+    expect(unknown).toEqual(real);
+    expect(real).not.toContain('429 LOGIN_LOCKED');
+    const owner = await login(seed.crmStaffEmails.nadia, seed.crmStaffPassword, '10.7.0.2');
+    expect(owner.statusCode, owner.body).toBe(200);
+    const row = await stack.db.selectFrom('platform_accounts').select(['locked_until']).where('id', '=', seed.crmStaff.nadia).executeTakeFirstOrThrow();
+    expect(row.locked_until).toBeNull();
+  });
+
+  it('« Déverrouiller » (écran Équipe) lève aussi le ralentissement, quelle que soit l’adresse', async () => {
+    await codes(seed.crmStaffEmails.yacine, '10.7.0.3', 4);
+    expect((await login(seed.crmStaffEmails.yacine, seed.crmStaffPassword, '10.7.0.3')).statusCode).toBe(429);
+    const hamid = await loginAsPlatform(stack, seed.crmStaffEmails.hamid, seed.crmStaffPassword);
+    const unlock = await call('POST', `/venues/${seed.venueId}/staff/${seed.crmStaff.yacine}/unlock`, hamid);
+    expect(unlock.statusCode, unlock.body).toBe(200);
+    expect((await login(seed.crmStaffEmails.yacine, seed.crmStaffPassword, '10.7.0.3')).statusCode).toBe(200);
+  });
+});

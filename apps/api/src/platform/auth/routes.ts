@@ -7,6 +7,7 @@ import type { PlatformGuards } from '../../auth/platform-guards.js';
 import { hashPassword, newSessionToken, sha256, verifyPassword } from '../../lib/crypto.js';
 import { ApiError, badRequest, must, toApiError } from '../../lib/http.js';
 import { checkRateLimit, type RateLimiter } from '../../lib/rate-limit.js';
+import { checkLoginThrottle, clearLoginThrottle, ipFingerprint, recordLoginFailure, throttleKey } from '../../lib/login-throttle.js';
 import { needsLegalConsent } from '../../modules/legal/service.js';
 import { writeAudit } from '../../audit/log.js';
 
@@ -48,8 +49,8 @@ async function centerMembershipsFor(db: Db, accountId: string) {
 export async function registerPlatformAuthRoutes(app: FastifyInstance, { db, guards, loginIpLimiter }: Deps): Promise<void> {
 
   app.post<{ Body: { email?: string; password?: string } }>('/platform/auth/login', async (req, reply) => {
-    // Audit 07-09/09/2026 (S12/Z1) : le verrou de 5 essais ci-dessous protège
-    // UN compte ; il ne dit rien du nombre de comptes DIFFÉRENTS qu'une même
+    // Audit 07-09/09/2026 (S12/Z1) : le ralentissement ci-dessous vise UN email
+    // tapé ; il ne dit rien du nombre de comptes DIFFÉRENTS qu'une même
     // source peut essayer. Limite par IP, évaluée avant toute lecture en base.
     await checkRateLimit(loginIpLimiter, req.ip, 'RATE_LIMITED', 'Trop de tentatives de connexion depuis cette adresse. Réessayez plus tard.');
 
@@ -61,38 +62,36 @@ export async function registerPlatformAuthRoutes(app: FastifyInstance, { db, gua
     // passe) — ne jamais révéler si un email existe côté plateforme.
     const invalidCredentials = () => new ApiError(401, 'INVALID_CREDENTIALS', 'Email ou mot de passe incorrect.');
 
-    // Audit 07-09/09/2026 (T1) : lecture du compte, décision et incrément du
-    // compteur anti-bruteforce sous UN SEUL verrou de ligne (FOR UPDATE) —
-    // même discipline que /auth/otp/verify (auth/routes.ts). Sans lui, une
-    // rafale de requêtes concurrentes sur le MÊME compte lisait toutes le
-    // même compteur avant qu'aucune n'écrive : le plafond de 5 essais se
-    // comptait en vagues parallèles, pas en essais réels. Le compte reste
-    // verrouillé pendant le calcul du mot de passe (scrypt, coûteux) — c'est
-    // précisément ce qui sérialise les tentatives concurrentes visant CE
-    // compte. On décide sous verrou, mais on ne jette qu'après le commit
-    // (jeter dans trx.execute() annulerait aussi l'incrément à garder).
+    // Audit 07-09/09/2026 (T1) : décision et incrément du compteur sous UN SEUL
+    // verrou (désormais celui du ralentissement, par email tapé et adresse) — une
+    // rafale concurrente se compte en essais réels, jamais en vagues parallèles.
+    // On décide sous verrou, mais on ne jette qu'après le commit (jeter dans
+    // trx.execute() annulerait aussi l'incrément à garder).
+    /* Audit final, MS-005 (12/11/2026) : plus de verrou du COMPTE après 5 échecs — n'importe qui connaissant l'email
+       d'un gérant ou du superadmin pouvait le tenir hors de son compte 15 minutes, et la réponse 429 LOGIN_LOCKED
+       prouvait que l'email existait. Même mécanisme que les joueurs (lib/login-throttle.ts) : un ralentissement
+       progressif compté par (email tapé, adresse de l'appelant) — celui qui s'acharne ne ralentit que lui-même, un
+       email inconnu est ralenti exactement comme un email réel. */
+    const tKey = throttleKey('platform', email);
+    const ipHash = ipFingerprint(req.ip);
     const outcome = await db.transaction().execute(async (trx) => {
+      const now = Date.now();
+      const slow = await checkLoginThrottle(trx, tKey, ipHash, now);
+      if (slow) return { ok: false as const, error: slow };
       const account = await trx.selectFrom('platform_accounts').selectAll()
         .where('email', '=', email).forUpdate().executeTakeFirst();
-      if (!account) return { ok: false as const, error: invalidCredentials() };
-
-      const now = Date.now();
-      const attemptState: LoginAttemptState = {
-        failedAttempts: account.failed_login_attempts,
-        lockedUntil: account.locked_until ? account.locked_until.getTime() : null,
-      };
-      const lockCheck = canAttemptLogin(attemptState, now);
-      if (!lockCheck.ok) return { ok: false as const, error: toApiError(lockCheck) };
-
-      const passwordOk = await verifyPassword(password, account.password_hash);
-      if (!passwordOk) {
-        const next = recordFailedLogin(attemptState, now);
-        await trx.updateTable('platform_accounts').set({
-          failed_login_attempts: next.failedAttempts,
-          locked_until: next.lockedUntil ? new Date(next.lockedUntil) : null,
-        }).where('id', '=', account.id).execute();
+      if (!account || !(await verifyPassword(password, account.password_hash))) {
+        await recordLoginFailure(trx, tKey, ipHash, now);
         return { ok: false as const, error: invalidCredentials() };
       }
+      await clearLoginThrottle(trx, tKey, ipHash);
+      // Verrou encore posé par POST /platform/me/password (5 « mot de passe actuel » faux, ce qui exige déjà une
+      // session) : révélé seulement à qui a donné le bon mot de passe — jamais un indice pour un tiers.
+      const lockCheck = canAttemptLogin({
+        failedAttempts: account.failed_login_attempts,
+        lockedUntil: account.locked_until ? account.locked_until.getTime() : null,
+      }, now);
+      if (!lockCheck.ok) return { ok: false as const, error: toApiError(lockCheck) };
       if (account.status !== 'ACTIVE') {
         return { ok: false as const, error: new ApiError(403, 'ACCOUNT_SUSPENDED', 'Ce compte est suspendu.') };
       }

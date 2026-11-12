@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { PASSWORD_MAX_ATTEMPTS } from '@moubarat/core';
+import { FREE_FAILURES } from '../src/lib/login-throttle.js';
 import { setupTestStack, LOOSE_LIMITS, type TestStack } from './helpers.js';
 import { createPlatformAccount } from '../src/platform/auth/routes.js';
 import { buildServer } from '../src/server.js';
@@ -18,32 +19,36 @@ describe('T1 — anti-bruteforce login plateforme sous concurrence réelle', () 
   let stack: TestStack;
   afterAll(() => stack?.teardown());
 
-  it(`une rafale de ${PASSWORD_MAX_ATTEMPTS + 5} mauvais mots de passe CONCURRENTS sur le MÊME compte : exactement ${PASSWORD_MAX_ATTEMPTS} comptabilisés, jamais plus — le compte reste verrouillé même au bon mot de passe`, async () => {
+  /* Audit final, MS-005 (12/11/2026) : plus de verrou du compte — un ralentissement par (email tapé, adresse). La
+     rafale concurrente se compte toujours en essais réels : 2 échecs gratuits, le 3e pose le premier délai, tous les
+     suivants de CETTE adresse attendent. Le vrai titulaire, depuis une autre adresse, n'est jamais bloqué. */
+  it(`une rafale de ${PASSWORD_MAX_ATTEMPTS + 5} mauvais mots de passe CONCURRENTS sur le MÊME email : exactement ${FREE_FAILURES + 1} comptés, les autres ralentis — le compte n'est jamais verrouillé pour son titulaire`, async () => {
     stack = await setupTestStack();
     const email = 'rate-limit-t1@moubarat.test';
     await createPlatformAccount(stack.db, { email, password: 'VraiMotDePasse9!', name: 'T1' });
 
     const n = PASSWORD_MAX_ATTEMPTS + 5;
     const attempts = Array.from({ length: n }, () =>
-      stack.app.inject({ method: 'POST', url: '/platform/auth/login', payload: { email, password: 'faux' } }));
+      stack.app.inject({ method: 'POST', url: '/platform/auth/login', remoteAddress: '10.9.0.1', payload: { email, password: 'faux' } }));
     const results = await Promise.all(attempts);
     const invalid = results.filter((r) => r.statusCode === 401).length;
-    const locked = results.filter((r) => r.statusCode === 429 && (r.json() as { error: string }).error === 'LOGIN_LOCKED').length;
-    // Sans le verrou de ligne (FOR UPDATE), une rafale concurrente lit toutes
-    // le même compteur avant qu'aucune n'écrive — le plafond serait dépassé
-    // (voire jamais atteint, chaque requête repartant de zéro).
-    expect(invalid).toBe(PASSWORD_MAX_ATTEMPTS);
-    expect(locked).toBe(5);
+    const slowed = results.filter((r) => r.statusCode === 429 && (r.json() as { error: string }).error === 'LOGIN_SLOWDOWN').length;
+    expect(invalid).toBe(FREE_FAILURES + 1);
+    expect(slowed).toBe(n - FREE_FAILURES - 1);
 
-    const row = await stack.db.selectFrom('platform_accounts').select('failed_login_attempts')
+    const row = await stack.db.selectFrom('platform_accounts').select(['failed_login_attempts', 'locked_until'])
       .where('email', '=', email).executeTakeFirstOrThrow();
-    expect(row.failed_login_attempts).toBe(PASSWORD_MAX_ATTEMPTS);
+    expect(row).toEqual({ failed_login_attempts: 0, locked_until: null });
 
-    // Le verrou est déjà posé : même le bon mot de passe reste refusé.
-    const correctButLocked = await stack.app.inject({
-      method: 'POST', url: '/platform/auth/login', payload: { email, password: 'VraiMotDePasse9!' },
+    // L'adresse qui s'acharne attend, même avec le bon mot de passe ; le titulaire, ailleurs, entre.
+    const sameAddress = await stack.app.inject({
+      method: 'POST', url: '/platform/auth/login', remoteAddress: '10.9.0.1', payload: { email, password: 'VraiMotDePasse9!' },
     });
-    expect(correctButLocked.statusCode).toBe(429);
+    expect(sameAddress.statusCode).toBe(429);
+    const owner = await stack.app.inject({
+      method: 'POST', url: '/platform/auth/login', remoteAddress: '10.9.0.2', payload: { email, password: 'VraiMotDePasse9!' },
+    });
+    expect(owner.statusCode, owner.body).toBe(200);
   });
 });
 

@@ -106,22 +106,32 @@ describe('SUPERADMIN V1 — authentification plateforme', () => {
     expect(unknownEmail.json()).toMatchObject({ error: 'INVALID_CREDENTIALS' });
   });
 
-  it('verrouille après trop d\'échecs, jamais un blocage permanent', async () => {
+  /* Audit final, MS-005 (12/11/2026) : avant, 5 échecs verrouillaient le COMPTE 15 minutes pour tout le monde, et la
+     réponse LOGIN_LOCKED prouvait que l'email existait. Désormais : ralentissement de l'adresse qui s'acharne. */
+  it('ralentit l’adresse qui s’acharne, sans verrouiller le compte ni révéler qu’il existe', async () => {
     const email = 'lockout@moubarat.test';
     await createPlatformAccount(stack.db, { email, password: 'RealPassword9!', name: 'Test verrouillage' });
-
-    for (let i = 0; i < PASSWORD_MAX_ATTEMPTS; i++) {
-      const r = await stack.app.inject({
-        method: 'POST', url: '/platform/auth/login', payload: { email, password: 'faux' },
-      });
-      expect(r.statusCode, `tentative ${i + 1}`).toBe(401);
-    }
-    // le (PASSWORD_MAX_ATTEMPTS + 1)-ième essai, même avec le BON mot de passe, est verrouillé
-    const lockedOut = await stack.app.inject({
-      method: 'POST', url: '/platform/auth/login', payload: { email, password: 'RealPassword9!' },
+    const attempt = (who: string, password: string, from: string) => stack.app.inject({
+      method: 'POST', url: '/platform/auth/login', remoteAddress: from, payload: { email: who, password },
     });
-    expect(lockedOut.statusCode).toBe(429);
-    expect(lockedOut.json()).toMatchObject({ error: 'LOGIN_LOCKED' });
+    const trace = async (who: string, from: string) => {
+      const out: string[] = [];
+      for (let i = 0; i < PASSWORD_MAX_ATTEMPTS + 1; i++) {
+        const r = await attempt(who, 'faux', from);
+        out.push(`${r.statusCode} ${(r.json() as { error: string }).error}`);
+      }
+      return out;
+    };
+    const real = await trace(email, '10.8.0.1');
+    const unknown = await trace('personne@moubarat.test', '10.8.0.1');
+    expect(real.slice(0, 3)).toEqual(Array(3).fill('401 INVALID_CREDENTIALS'));
+    expect(real.slice(3)).toEqual(Array(real.length - 3).fill('429 LOGIN_SLOWDOWN'));
+    expect(unknown).toEqual(real); // aucun oracle : un email inconnu se comporte exactement pareil
+    // Même le bon mot de passe attend, depuis CETTE adresse…
+    expect((await attempt(email, 'RealPassword9!', '10.8.0.1')).statusCode).toBe(429);
+    // … mais le titulaire, depuis la sienne, entre normalement.
+    const owner = await attempt(email, 'RealPassword9!', '10.8.0.2');
+    expect(owner.statusCode, owner.body).toBe(200);
   });
 
   it('logout révoque la session : /me échoue ensuite', async () => {

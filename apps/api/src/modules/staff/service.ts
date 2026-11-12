@@ -3,6 +3,7 @@ import type { CenterRoleDb } from '../../db/types.js';
 import { writeAudit } from '../../audit/log.js';
 import { ApiError, badRequest, notFound } from '../../lib/http.js';
 import { generateTemporaryPassword, hashPassword } from '../../lib/crypto.js';
+import { clearLoginThrottleForKeys, throttleKey } from '../../lib/login-throttle.js';
 
 /* Service PARTAGÉ pour la gestion du personnel d'un centre — utilisé par la console superadmin
    (platform/staff/routes.ts, réservé au superadmin, portée globale) ET par le CRM (modules/staff/routes.ts,
@@ -202,6 +203,8 @@ export async function resetStaffPassword(db: Db, p: {
       .where('id', '=', row.id).execute();
     await trx.updateTable('platform_sessions').set({ revoked_at: new Date() })
       .where('account_id', '=', row.id).where('revoked_at', 'is', null).execute();
+    // MS-005 : le ralentissement des connexions visant cet email est levé, quelle que soit l'adresse.
+    await clearLoginThrottleForKeys(trx, [throttleKey('platform', row.email.trim().toLowerCase())]);
   });
   await writeAudit(db, {
     venueId: p.venueId, actorId: p.actorId, actorRole: p.actorRole,
@@ -220,6 +223,8 @@ export async function unlockStaffAccount(db: Db, p: {
   const row = await loadCenterStaffRow(db, p.venueId, p.accountId);
   if (row.is_superadmin) throw new ApiError(403, 'FORBIDDEN', 'Un administrateur plateforme ne se déverrouille pas depuis cet écran.');
   await db.updateTable('platform_accounts').set({ failed_login_attempts: 0, locked_until: null }).where('id', '=', row.id).execute();
+  // MS-005 : lève aussi le ralentissement des connexions visant cet email, quelle que soit l'adresse.
+  await clearLoginThrottleForKeys(db, [throttleKey('platform', row.email.trim().toLowerCase())]);
   await writeAudit(db, {
     venueId: p.venueId, actorId: p.actorId, actorRole: p.actorRole,
     action: 'STAFF_UNLOCKED', objectType: 'platform_account', objectId: row.id,

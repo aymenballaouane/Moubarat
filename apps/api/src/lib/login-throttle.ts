@@ -25,7 +25,9 @@ export function loginDelayMs(failures: number): number {
   return Math.min(FIRST_DELAY_MS * 2 ** exp, MAX_DELAY_MS);
 }
 
-export function throttleKey(kind: 'id' | 'uid', value: string): string {
+/** `platform` (audit final, MS-005, 12/11/2026) : email d'un compte CRM ou superadmin, tel que tapé et mis en minuscules —
+    espace de clés distinct de celui des joueurs. */
+export function throttleKey(kind: 'id' | 'uid' | 'platform', value: string): string {
   return createHash('sha256').update(`login:${kind}:${value}`).digest('hex');
 }
 export function ipFingerprint(ip: string): string {
