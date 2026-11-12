@@ -392,3 +392,32 @@ describe('MS-006 — « mot de passe oublié » ne vide plus le quota de SMS', (
     }
   });
 });
+
+describe('MS-012 — les plafonds du joueur tiennent sous requêtes simultanées', () => {
+  it('quatre réservations simultanées le même jour : deux au plus (plafond de production), jamais de 500 (RESA-26)', async () => {
+    const prod = await setupTestStack({ envOverrides: { bookingMaxPerDay: 2, bookingMaxUpcoming: 4, bookingForbidOverlap: true } });
+    try {
+      const s = await seedDemo(prod.db);
+      const token = await loginAs(prod, '+213661450001', 'lot1_plafond');
+      const date = algiersDateOf(Date.now() + 3 * 86_400_000);
+      for (let round = 0; round < 3; round++) {
+        const day = algiersDateOf(dayStartMs(date) + round * 86_400_000 + 12 * 3_600_000);
+        const res = await Promise.all([600, 720, 840, 960].map((startMin) => prod.app.inject({
+          method: 'POST', url: '/bookings', headers: bearer(token),
+          payload: { fieldId: s.alwaysOpen.fieldId, date: day, startMin, durationMin: 60 },
+        })));
+        for (const r of res) expect(r.statusCode, r.body).toBeLessThan(500);
+        const accepted = res.filter((r) => r.statusCode === 201).length;
+        expect(accepted, res.map((r) => `${r.statusCode} ${r.body}`).join(' | ')).toBeLessThanOrEqual(2);
+        const refused = res.filter((r) => r.statusCode === 409).map((r) => (r.json() as { error: string }).error);
+        for (const code of refused) expect(['BOOKING_LIMIT_DAY', 'BOOKING_LIMIT_UPCOMING']).toContain(code);
+      }
+      // Sur trois jours, jamais plus de 4 réservations à venir au total.
+      const me = (await prod.app.inject({ method: 'GET', url: '/auth/me', headers: bearer(token) })).json() as { user: { id: string } };
+      const live = await prod.db.selectFrom('bookings').select('id').where('by_user_id', '=', me.user.id).where('status', '=', 'RESERVED').execute();
+      expect(live.length).toBeLessThanOrEqual(4);
+    } finally {
+      await prod.teardown();
+    }
+  });
+});

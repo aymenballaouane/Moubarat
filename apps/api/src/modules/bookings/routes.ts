@@ -148,29 +148,28 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
     /* Règle 23 (Lot 9, 26/10/2026) : au plus `bookingMaxPerDay` réservations par jour et `bookingMaxUpcoming` à venir, jamais deux qui se
        chevauchent (matchs rejoints compris) — pour une réservation posée par un JOUEUR seulement. Règle 32 : sans l'accord « numéro visible »,
        pas de nouvelle réservation. Posé en `playerGuard` : appelé par createBooking APRÈS la validation du créneau par le core, pour que
-       SLOT_TAKEN / centre fermé / format inconnu gardent la priorité. Verrou consultatif par joueur le temps de la lecture seulement. */
+       SLOT_TAKEN / centre fermé / format inconnu gardent la priorité. MS-012 (audit final, 12/11/2026) : exécutée DANS la transaction
+       de l'INSERT, sous le verrou consultatif du joueur, tenu jusqu'au commit — plus de fenêtre entre contrôle et écriture. */
     const playerGuard = !staffCreated && limits
-      ? async (range: { start: number; end: number }) => {
-        await db.transaction().execute(async (trx) => {
-          await sql`select pg_advisory_xact_lock(hashtext(${'booking-limits:' + byUserId}))`.execute(trx);
-          await assertPhoneVisible(trx, byUserId);
-          await assertNotRestricted(trx, byUserId, Date.now());   // règle 25
-          const mine = await trx.selectFrom('bookings').select(['time_range', 'status']).where('by_user_id', '=', byUserId)
-            .where('status', '=', 'RESERVED').where(sql<boolean>`upper(time_range) > now()`).execute();
-          const verdict = checkBookingLimits({
-            candidate: range, now: Date.now(), dayOf: algiersDateOf,
-            mine: mine.map((m) => ({ range: fromPgRange(m.time_range), status: m.status })),
-            maxPerDay: limits.bookingMaxPerDay, maxUpcoming: limits.bookingMaxUpcoming,
-          });
-          if (!verdict.ok) {
-            // `max` : la valeur réellement appliquée — l'app n'écrit « 2 » ou « 4 » dans sa fenêtre que si c'est la valeur de la règle.
-            throw new ApiError(409, verdict.code, verdict.message, { max: verdict.code === 'BOOKING_LIMIT_DAY' ? limits.bookingMaxPerDay : limits.bookingMaxUpcoming });
-          }
-          const conflict = limits.forbidOverlap ? await describeConflict(trx, byUserId, range) : null;
-          if (conflict) {
-            throw new ApiError(409, 'SCHEDULE_CONFLICT', 'Tu as déjà un match ou une réservation sur ce créneau.', conflict);
-          }
+      ? async (range: { start: number; end: number }, trx: Db) => {
+        await sql`select pg_advisory_xact_lock(hashtext(${'booking-limits:' + byUserId}))`.execute(trx);
+        await assertPhoneVisible(trx, byUserId);
+        await assertNotRestricted(trx, byUserId, Date.now());   // règle 25
+        const mine = await trx.selectFrom('bookings').select(['time_range', 'status']).where('by_user_id', '=', byUserId)
+          .where('status', '=', 'RESERVED').where(sql<boolean>`upper(time_range) > now()`).execute();
+        const verdict = checkBookingLimits({
+          candidate: range, now: Date.now(), dayOf: algiersDateOf,
+          mine: mine.map((m) => ({ range: fromPgRange(m.time_range), status: m.status })),
+          maxPerDay: limits.bookingMaxPerDay, maxUpcoming: limits.bookingMaxUpcoming,
         });
+        if (!verdict.ok) {
+          // `max` : la valeur réellement appliquée — l'app n'écrit « 2 » ou « 4 » dans sa fenêtre que si c'est la valeur de la règle.
+          throw new ApiError(409, verdict.code, verdict.message, { max: verdict.code === 'BOOKING_LIMIT_DAY' ? limits.bookingMaxPerDay : limits.bookingMaxUpcoming });
+        }
+        const conflict = limits.forbidOverlap ? await describeConflict(trx, byUserId, range) : null;
+        if (conflict) {
+          throw new ApiError(409, 'SCHEDULE_CONFLICT', 'Tu as déjà un match ou une réservation sur ce créneau.', conflict);
+        }
       }
       : undefined;
     must(validateDisplayName(reservationName));

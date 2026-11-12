@@ -246,7 +246,7 @@ export interface CreateBookingInput {
   /** Règle 23 / 32 (Lot 9) : garde propre à une réservation posée par un JOUEUR (plafonds, chevauchement, accord « numéro visible »),
       appelée une fois le créneau validé par le core (centre ouvert, créneau libre, format connu) et AVANT l'écriture — ainsi un
       créneau pris reste `SLOT_TAKEN`, un centre fermé reste fermé : ces refus-là gardent la priorité. Lève une ApiError. */
-  playerGuard?: (range: { start: number; end: number }) => Promise<void>;
+  playerGuard?: (range: { start: number; end: number }, tx: Db) => Promise<void>;
   /** Lot 3 : une réservation Téléphone créée depuis le CRM (le staff a le
       client au bout du fil) est vérifiée d'office, dans LA MÊME opération
       d'écriture que la création — jamais une UPDATE séparée après coup, et
@@ -351,7 +351,6 @@ export async function createBooking(db: Db, p: CreateBookingInput): Promise<Crea
   });
   must(prepared.result);
   const booking = prepared.booking!;
-  if (p.playerGuard) await p.playerGuard(booking.range);
   // Lot 3 : override posé APRÈS le core (jamais dans prepareBooking, gelé),
   // AVANT l'INSERT plus bas — verified_by_center=true part donc dans la même
   // écriture que la création, jamais une UPDATE séparée.
@@ -413,6 +412,11 @@ export async function createBooking(db: Db, p: CreateBookingInput): Promise<Crea
      créneau (course multi-postes) → la contrainte d'exclusion
      no_double_booking tranche en dernier ressort, comme avant. */
   const insertWithReference = async (tx: Db): Promise<BookingRow> => {
+    /* MS-012 (audit final, 12/11/2026) : la garde du joueur (plafonds, chevauchement, restriction) s'exécute DANS la
+       transaction de l'écriture, sous son verrou par joueur — avant, elle relâchait ce verrou avant l'INSERT, et quatre
+       réservations simultanées du même joueur passaient à trois au lieu de deux. Toujours après la validation du
+       créneau par le core (plus haut) : SLOT_TAKEN et centre fermé gardent la priorité. */
+    if (p.playerGuard) await p.playerGuard(booking.range, tx);
     /* MS-002 (audit final, 12/11/2026) : sous le verrou du terrain, les abonnements sont relus et comparés par
        instants absolus — le contexte chargé plus haut l'a été hors transaction, et un abonnement créé entre-temps
        (autre poste) ne passe par aucune contrainte de la base. */
