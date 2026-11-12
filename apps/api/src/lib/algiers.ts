@@ -10,6 +10,9 @@ export function dayStartMs(dateIso: string): number {
   }
   const t = Date.parse(`${dateIso}T00:00:00+01:00`);
   if (Number.isNaN(t)) throw new RangeError(`Date invalide : « ${dateIso} ».`);
+  // Audit final, MS-013 (12/11/2026) : une date impossible (31/02, 31/04…) était acceptée et décalée en silence au mois
+  // suivant par le moteur de dates — une réservation demandée le 31/02 tombait le 03/03. La date relue doit être la date saisie.
+  if (algiersDateOf(t) !== dateIso) throw new RangeError(`Date invalide : « ${dateIso} » n’existe pas.`);
   return t;
 }
 

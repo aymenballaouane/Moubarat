@@ -570,3 +570,23 @@ describe('MS-021 — règle des absences identique quel que soit le chemin', () 
     expect(await absencesOf(orga.id)).toEqual([]);
   });
 });
+
+describe('MS-013 — une date impossible est refusée, jamais décalée', () => {
+  it('31 février / 31 avril : 400 sur la réservation, la disponibilité, le planning, l’abonnement et la fermeture ; rien n’est écrit (TEMPS-17, TEMPS-18)', async () => {
+    const y = Number(algiersDateOf(Date.now()).slice(0, 4)) + 1;
+    const hamid = await loginAsPlatform(stack, seed.crmStaffEmails.hamid, seed.crmStaffPassword);
+    const before = (await stack.db.selectFrom('bookings').select('id').execute()).length;
+    for (const bad of [`${y}-02-31`, `${y}-04-31`, `${y}-02-30`]) {
+      const res = [
+        await call('POST', '/bookings', hamid, { fieldId: seed.fields.t1, date: bad, startMin: 900, durationMin: 60, source: 'WALK_IN', reservationName: 'Client Date' }),
+        await call('GET', `/fields/${seed.fields.t1}/availability?date=${bad}&duration=60`),
+        await call('GET', `/venues/${seed.venueId}/bookings?date=${bad}`, hamid),
+        await call('POST', `/venues/${seed.venueId}/recurring-bookings`, hamid, { fieldId: seed.fields.t1, weekday: 2, startMin: 600, durationMin: 60, holderName: 'Club Date', activeFrom: bad }),
+        await call('POST', `/venues/${seed.venueId}/closures`, hamid, { fieldId: seed.fields.t1, reason: 'OTHER', date: bad, wholeDay: true }),
+      ];
+      for (const r of res) expect(r.statusCode, `${bad} : ${r.body}`).toBe(400);
+    }
+    expect((await stack.db.selectFrom('bookings').select('id').execute()).length).toBe(before);
+    expect(() => dayStartMs(`${y}-03-03`)).not.toThrow();
+  });
+});
