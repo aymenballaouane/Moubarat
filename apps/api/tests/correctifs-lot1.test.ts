@@ -606,3 +606,19 @@ describe('MS-017 — un format demandé n’est jamais remplacé en silence', ()
     expect((await call('POST', '/bookings', staff, { fieldId: seed.alwaysOpen.fieldId, date, startMin: 600, durationMin: 60, source: 'WALK_IN', reservationName: 'Client Format' })).statusCode).toBe(201);
   });
 });
+
+describe('MS-019 — la confirmation d’une déclaration téléphonique prévient le joueur', () => {
+  it('le centre confirme : le joueur reçoit BOOKING_CONFIRMED sur sa réservation, une fois (TRANS-06)', async () => {
+    const token = await loginAs(stack, '+213661510001', 'lot1_telephone');
+    const me = (await call('GET', '/auth/me', token)).json() as { user: { id: string } };
+    const date = algiersDateOf(Date.now() + 10 * 86_400_000);
+    const declared = await call('POST', '/bookings', token, { fieldId: seed.alwaysOpen.fieldId, date, startMin: 660, durationMin: 60, source: 'PHONE' });
+    expect(declared.statusCode, declared.body).toBe(201);
+    const id = (declared.json() as { booking: { id: string } }).booking.id;
+    const staff = await loginAsPlatform(stack, seed.alwaysOpen.staffEmail, seed.crmStaffPassword);
+    const verify = await call('POST', `/bookings/${id}/verify`, staff);
+    expect(verify.statusCode, verify.body).toBe(200);
+    const notifs = await stack.db.selectFrom('notifications').select(['type', 'ref_id']).where('user_id', '=', me.user.id).where('type', '=', 'BOOKING_CONFIRMED').execute();
+    expect(notifs).toEqual([{ type: 'BOOKING_CONFIRMED', ref_id: id }]);
+  });
+});

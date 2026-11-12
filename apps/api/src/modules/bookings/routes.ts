@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import type { FastifyInstance } from 'fastify';
 import {
-  activePlayers, cancellationKind, canCancelBooking, canCenterAct, recurringOccurrence, setBookingStatus,
+  RECIPIENTS, activePlayers, cancellationKind, canCancelBooking, canCenterAct, recurringOccurrence, setBookingStatus,
   checkBookingLimits, validateDisplayName, weekdayOfDayStart, type BookingStatus,
 } from '@moubarat/core';
 import type { Db } from '../../db/client.js';
@@ -18,6 +18,7 @@ import { createBooking, getBookingWithVenue, rowToBooking, type BookingRow } fro
 import { computeReschedule, parseRescheduleQuery } from './reschedule.js';
 import { cancelLinkedMatch, notifiedLabel, notifyBookerOfCenterCancel, type LinkedMatchCancelled } from './cascade.js';
 import { withCommittedPush } from '../../notifications/push.js';
+import { writeNotifications } from '../../notifications/write.js';
 import { assertNotRestricted, recordAbsence } from '../absences/service.js';
 import { attachClaim } from '../claims/service.js';
 import { assertPhoneVisible, describeConflict, rowToMatchPlayer, type MatchRow } from '../matches/service.js';
@@ -323,7 +324,8 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
          quand même : jamais une garde évaluée sur une prémisse non contrôlée. */
       const pre = await getBookingWithVenue(db, req.params.id);
       const role = await platformGuards.requireCenterAction(req, pre.venue.id, 'CONFIRM_EXTERNAL');
-      const outcome = await db.transaction().execute(async (trx) => {
+      // MS-019 : la confirmation prévient désormais le joueur — push différé après le commit réel, comme toute route qui notifie.
+      const outcome = await withCommittedPush(() => db.transaction().execute(async (trx) => {
         const { row, venue } = await getBookingWithVenue(trx, req.params.id, { forUpdate: true });
         if (venue.id !== pre.venue.id) throw new ApiError(409, 'INVALID_TARGET', 'La réservation a changé de centre entre-temps.');
         if (row.source !== 'PHONE') throw badRequest('Seule une réservation téléphonique se confirme.', 'INVALID_TARGET');
@@ -341,8 +343,14 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
           summary: `a confirmé la réservation téléphonique ${row.reference ?? row.id} — origine conservée : Téléphone`,
           before: 'verified=false', after: 'verified=true',
         });
+        /* Audit final, MS-019 (12/11/2026) : le joueur qui a déclaré cette réservation est prévenu (BOOKING_CONFIRMED, type du
+           core jusqu'ici jamais écrit) — c'est ce qui lui permet d'ouvrir un match dessus. Seulement si le réservant est un
+           compte joueur vivant (jamais un compte du personnel). */
+        const booker = await trx.selectFrom('users').select('id')
+          .where('id', '=', row.by_user_id).where('deleted_at', 'is', null).executeTakeFirst();
+        if (booker) await writeNotifications(trx, RECIPIENTS.bookingConfirmed(booker.id), 'BOOKING_CONFIRMED', row.id, Date.now());
         return { source: row.source };
-      });
+      }));
       return reply.send({ ok: true, source: outcome.source, verifiedByCenter: true });
     });
 
