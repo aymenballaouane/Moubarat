@@ -81,7 +81,8 @@ async function setStatus(byToken: string, id: string, status: string, reason?: '
     method: 'POST', url: `/bookings/${id}/status`, headers: bearer(byToken),
     payload: { status, ...(reason ? { reason } : {}) },
   });
-  const res = status === 'NO_SHOW' ? await withBookingStarted(stack.db, id, call) : await call();
+  // MS-036 (audit final) : « honorée » et « payée » aussi ne se posent qu'une fois le créneau commencé.
+  const res = ['NO_SHOW', 'HONORED', 'PAID'].includes(status) ? await withBookingStarted(stack.db, id, call) : await call();
   expect(res.statusCode, res.body).toBe(200);
 }
 
