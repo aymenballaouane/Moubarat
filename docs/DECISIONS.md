@@ -6116,3 +6116,55 @@ Audit en lecture seule du 26/10/2026 (`refonte-app-joueur/docs/audit-final.md`, 
 - **Portabilité imposée** : image Docker standard (`apps/api/Dockerfile`), DNS gardé chez le registrar, `api.moubaratsport.com` conservé chez le prochain hébergeur (les fronts ont l'URL de l'API figée au build). Procédure de départ : `docs/PASSATION.md` §4.18.
 - **Choix techniques** : `healthCheckPath: /health` (et non `/ready?ignoreLatency=1` du §4.10) — Render retire le trafic avant le signal et `preDeployCommand` migre avant le démarrage, `/ready` n'apporterait rien ; `TRUST_PROXY_CIDRS` absent du premier déploiement, posé après mesure (§4.17, étape 6) ; base sans accès Internet (`ipAllowList: []`) ; vérification GitHub (`ci.yml`) obligatoire avant déploiement automatique.
 - **Non vérifié à ce stade** (pas de Docker sur le poste de développement, aucun compte Render) : la construction de l'image, la lecture du Blueprint par Render, l'installation `npx pnpm@11.23.0 … --filter` des sites statiques et la vérification GitHub elle-même (premier passage au push). Vérifié en local (04/11/2026) : démarrage `node --import tsx src/index.ts` avec `HOST=0.0.0.0` et `OTP_DEV_MODE=false` → `/health` 200 avec la base en ~18 s (compilation tsx au démarrage) ; migration par `pnpm --dir apps/api run db:migrate` (« Schéma déjà à jour. ») ; les trois fronts se construisent avec `VITE_API_BASE_URL=https://api.moubaratsport.com` (adresse présente dans le bundle) ; `pnpm install --frozen-lockfile` passe (fichier de verrouillage à jour).
+
+## Audit final (11-12/11/2026) — Lot 1 des correctifs (12/11/2026, GO d'Aymen « Oui, Lot 1 »)
+
+Branche `correctifs/lot-1`, un commit par anomalie (identifiants MS-xxx du registre `docs/final-audit/10_ANOMALIES_REGISTER.md`,
+branche `audit/final`), tests de non-régression dans `apps/api/tests/correctifs-lot1.test.ts` (et tests de composant côté fronts).
+Core INCHANGÉ (181 tests) : aucune règle gelée modifiée.
+
+- **MS-001** — `/me/access-setup` ne sert qu'une fois (409 `ACCESS_ALREADY_SET`), écriture conditionnée sous transaction.
+- **MS-002** — abonnements : occupations comparées par instants absolus (minuit et samedi → dimanche compris, via
+  `recurringOccurrence` du core appelé sur la veille et le lendemain — `recurring-bookings/occupancy.ts`) ; verrou
+  transactionnel par terrain partagé par la création d'abonnement, la création et le déplacement de réservation.
+- **MS-007** — le serveur exige le consentement aux textes en vigueur (403 `LEGAL_CONSENT_REQUIRED`) et l'attestation
+  « 18 ans » (403 `ACCESS_SETUP_REQUIRED`) pour toute écriture joueur ; les écrans de garde restent utilisables. Tests :
+  `loginAs` rend un joueur « prêt » (`{ ready: false }` pour éprouver les gardes).
+- **MS-005** — connexion CRM/superadmin : plus de verrou du compte, ralentissement par (email tapé, adresse) comme les
+  joueurs ; « Déverrouiller » et la réinitialisation le lèvent ; le verrou de `/platform/me/password` n'est révélé
+  qu'après le bon mot de passe.
+- **MS-006** — « mot de passe oublié » : aucun SMS ni quota pour un numéro sans compte (même réponse) ; 80 % au plus des
+  plafonds globaux de SMS, le reste gardé pour l'inscription.
+- **MS-012** — plafonds du joueur contrôlés dans la transaction de l'INSERT, sous son verrou.
+- **MS-009** — Fastify 5.12.7, `overrides` fast-uri et brace-expansion ; `pnpm audit --prod --audit-level high` en CI
+  (bloque la mise en ligne sur un nouvel avis élevé). uuid 8 sous exceljs laissé (avis hors usage : v3/v5/v6).
+- **MS-011** — `TEAMS_CHALLENGES_ENABLED` (défaut éteint) : routes équipes/défis non servies. **Reporté** : faire passer
+  l'acceptation d'un défi par la création de réservation standard, à la réactivation.
+- **MS-008** — fiche d'un centre non publié : 404 pour tout autre que son personnel ; le CRM envoie son jeton.
+- **MS-036** — « Honorée »/« Payée » pas avant le début du créneau. **En attente d'Aymen** : la correction par un
+  Manager d'un statut posé à tort (touche l'encaissement).
+- **MS-035** — seul un match vivant occupe une réservation ; `/me/bookings` sert `matchId: null` pour un match annulé
+  (le lien reste en base pour l'historique du CRM, décision BUG-1 intacte).
+- **MS-021** — quitter un match annulé : refusé ; « annuler mon match avec la réservation » après H-2 compte la
+  demi-absence, comme l'autre route.
+- **MS-013** — date impossible (31/02) refusée partout, jamais décalée.
+- **MS-017** — format demandé non proposé : 400, jamais remplacé.
+- **MS-019** — confirmation d'une déclaration téléphonique : notification `BOOKING_CONFIRMED` au joueur.
+- **MS-014** — « Ce week-end » = vendredi et samedi.
+- **MS-020** — annulation par le joueur au Journal du centre (migration additive 0043 : `actor_role` PLAYER) ; libellé
+  « Joueur » au CRM et à la console.
+- **MS-016** — retirer un format / changer le sport : 409 `FORMAT_IN_USE` tant qu'une réservation à venir le porte.
+- **MS-015** — réduire les horaires / fermer un jour : 409 `HOURS_HAVE_BOOKINGS` si ce changement met hors horaires une
+  réservation à venir ou un abonnement (après minuit compris). **Non fait** : confirmation avant « Fermer » et
+  réservations d'un jour fermé visibles au Planning (interface).
+- **MS-040** — CRM et console : une panne au démarrage garde la session et réessaie (« Serveur injoignable »).
+- **MS-039** — Caisse : montant vide ou illisible refusé, « 50 000 » accepté.
+- **MS-038** — app : le match demandé (chargé par son identifiant) ou « introuvable », jamais un autre.
+- **MS-028** — app : « Moubarat ne répond pas » distinct de « Pas de réseau », réessai automatique réel.
+
+**Laissés hors du lot, décision d'Aymen requise** : MS-022 (joueur restreint qui supprime son compte puis se réinscrit —
+refuser la suppression pendant une restriction, ou garder une trace pseudonymisée liée au numéro : question juridique,
+liée à l'avis de l'avocat sur la suppression, MS-025) ; MS-036 (correction d'une « Honorée/Payée » par un Manager).
+**Non fait** : régénération du board visuel (`pnpm ui:board`) — elle réinitialise les données de démo locales et les
+écrans touchés (cartes de panne, « match introuvable », libellé du Journal) sont des états hors du parcours capturé.
+Traductions arabes PROVISOIRES ajoutées (5 textes) : à relire par un arabophone.
