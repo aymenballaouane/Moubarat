@@ -31,6 +31,20 @@ interface Deps {
 }
 
 /** MS-001 : les accès (pseudo + mot de passe) sont déjà posés — un changement passe par POST /me/password. */
+/** Audit final, MS-006 (12/11/2026) : part des plafonds globaux de SMS ouverte au « mot de passe oublié » — au-delà,
+    il est refusé alors que l'inscription passe encore (avec 300/h : 240 pour la réinitialisation, 60 toujours gardés). */
+export const FORGOT_SMS_SHARE = 0.8;
+
+/** Compte l'envoi dans `limiter` (dans la transaction de l'appelant : un refus l'annule) et refuse au-delà de la part
+    réservée à la réinitialisation. */
+async function checkSmsShare(limiter: RateLimiter | undefined, trx: Db): Promise<void> {
+  if (!limiter) return;
+  const { allowed, hits } = await limiter.check('global', trx);
+  if (!allowed || hits > Math.floor(limiter.max * FORGOT_SMS_SHARE)) {
+    throw new ApiError(429, 'RATE_LIMITED', 'Trop de demandes de code en ce moment. Réessayez plus tard.');
+  }
+}
+
 function accessAlreadySet(): ApiError {
   return new ApiError(409, 'ACCESS_ALREADY_SET', 'Ton compte a déjà un mot de passe. Pour le changer, passe par Profil › Mot de passe.');
 }
@@ -296,6 +310,13 @@ export async function registerAuthRoutes(
     await checkRateLimit(otpIpLimiter, req.ip, 'RATE_LIMITED', 'Trop de demandes depuis cette adresse. Réessayez plus tard.');
     const norm = normalizeAlgerianMobile(String(req.body?.phone ?? ''));
     if (!norm.ok) throw badRequest(norm.message, norm.code);
+    /* Audit final, MS-006 (12/11/2026) : un numéro sans compte reçoit la MÊME réponse, mais aucun SMS ne part et aucun
+       quota n'est consommé — avant, n'importe qui vidait le plafond global de SMS (et bloquait les inscriptions) en
+       demandant des réinitialisations pour des numéros quelconques. Ce n'est pas un nouvel indice sur l'existence d'un
+       compte : /auth/otp/request le dit déjà, par construction (inscription). */
+    const holder = await db.selectFrom('users').select('id')
+      .where('phone', '=', norm.e164).where('deleted_at', 'is', null).executeTakeFirst();
+    if (!holder) return reply.send({ ok: true });
     const now = Date.now();
     const code = newOtpCode();
     const ch = newOtpChallenge('', norm.e164, sha256(code), now);
@@ -308,8 +329,9 @@ export async function registerAuthRoutes(
         .where('created_at', '>', new Date(now - OTP_SEND_WINDOW_MS))
         .execute();
       must(canRequestOtp(recent.map((r) => r.created_at.getTime()), now));
-      await checkRateLimit(otpSendHourLimiter, 'global', 'RATE_LIMITED', 'Trop de demandes de code en ce moment. Réessayez plus tard.', trx);
-      await checkRateLimit(otpSendDayLimiter, 'global', 'RATE_LIMITED', 'Trop de demandes de code en ce moment. Réessayez plus tard.', trx);
+      // MS-006 : la réinitialisation n'utilise qu'une part des plafonds globaux — le reste est gardé pour l'inscription.
+      await checkSmsShare(otpSendHourLimiter, trx);
+      await checkSmsShare(otpSendDayLimiter, trx);
       const row = await trx.insertInto('otp_challenges').values({
         phone: ch.phone, code_hash: ch.code, expires_at: new Date(ch.expiresAt),
       }).returning('id').executeTakeFirstOrThrow();

@@ -353,3 +353,42 @@ describe('MS-005 — un tiers ne tient plus un compte CRM hors de son compte, et
     expect((await login(seed.crmStaffEmails.yacine, seed.crmStaffPassword, '10.7.0.3')).statusCode).toBe(200);
   });
 });
+
+describe('MS-006 — « mot de passe oublié » ne vide plus le quota de SMS', () => {
+  it('numéro sans compte : même réponse, aucun SMS, aucune ligne, aucun quota consommé (SEC-05)', async () => {
+    const phone = '+213555180001';
+    const before = await stack.db.selectFrom('rate_limit_counters').select(['key', 'hits']).execute();
+    const res = await call('POST', '/auth/password/forgot', undefined, { phone });
+    expect(res.statusCode, res.body).toBe(200);
+    expect(res.json()).toEqual({ ok: true });
+    expect(stack.sms.codeFor(phone)).toBeUndefined();
+    expect(await stack.db.selectFrom('otp_challenges').select('id').where('phone', '=', phone).execute()).toHaveLength(0);
+    const after = await stack.db.selectFrom('rate_limit_counters').select(['key', 'hits']).execute();
+    expect(after.filter((r) => r.key.startsWith('otp-send') || r.key.includes('global')))
+      .toEqual(before.filter((r) => r.key.startsWith('otp-send') || r.key.includes('global')));
+  });
+
+  it('numéro d’un compte : le SMS part comme avant', async () => {
+    const u = await player();
+    const res = await call('POST', '/auth/password/forgot', undefined, { phone: u.phone });
+    expect(res.statusCode, res.body).toBe(200);
+    expect(stack.sms.codeFor(u.phone)).toBeDefined();
+  });
+
+  it('la réinitialisation n’utilise que 80 % du plafond global : l’inscription garde sa part', async () => {
+    const tight = await setupTestStack({ envOverrides: { otpIpMaxPerHour: 100_000, otpGlobalMaxPerHour: 5 } });
+    try {
+      const phones = Array.from({ length: 6 }, (_, i) => `+21355519000${i}`);
+      for (const phone of phones) await tight.db.insertInto('users').values({ phone, name: `oubli_${phone.slice(-2)}` }).execute();
+      const forgot = [];
+      for (const phone of phones) forgot.push((await tight.app.inject({ method: 'POST', url: '/auth/password/forgot', payload: { phone } })).statusCode);
+      // Plafond 5 : 4 réinitialisations (80 %), la 5e et la 6e refusées…
+      expect(forgot).toEqual([200, 200, 200, 200, 429, 429]);
+      // … et une inscription passe encore.
+      const signup = await tight.app.inject({ method: 'POST', url: '/auth/otp/request', payload: { phone: '+213555191111' } });
+      expect(signup.statusCode, signup.body).toBe(200);
+    } finally {
+      await tight.teardown();
+    }
+  });
+});
