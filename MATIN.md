@@ -41,7 +41,7 @@ Branche de travail : **`prep-lancement`** (rien n'est poussé, rien n'est déplo
 ### D. Sécurité et ménage (≈ 20 min)
 1. **Changer les mots de passe qui ont circulé dans le chat** : compte relecteur (`moubaratsport`), mot de passe du gérant du centre de test, et celui du fichier supprimé. Pour le relecteur : `pnpm reviewer:create` avec de nouvelles variables, ou « mot de passe oublié » dans l'app.
 2. **Activer la double authentification sur Vercel** (Compte › Security).
-3. `docs/DECISIONS.md` ligne 4107 mentionne le mot de passe du **centre de démo de développement** (`Demo2026Arena!`) : sans conséquence en production (comptes de démo suspendus sur la base pilote), mais à ne pas réutiliser.
+3. `docs/DECISIONS.md` ligne 4107 mentionne le mot de passe du **centre de démo de développement** (`valeur retirée du dépôt le 12/11/2026, à considérer comme compromise`) : sans conséquence en production (comptes de démo suspendus sur la base pilote), mais à ne pas réutiliser.
 
 ### E. Avant le vrai lancement
 1. **Centre de test** : « Centre Test Moubarat » n'est pas dans le dépôt (créé dans la base de production par la console). **Procédure de suspension** : console superadmin › Centres › ligne du centre › **Suspendre** (`POST /platform/venues/:id/suspend`) → il disparaît de l'app ; puis console › Comptes CRM › suspendre le compte du gérant de test. **Ne pas supprimer** : réservations de test conservées pour l'audit. Le compte joueur relecteur `moubaratsport` doit **rester actif** pendant l'examen des stores.

@@ -4104,7 +4104,7 @@ audit JO5 : lot ultérieur) — non traités ici, signalés. Console superadmin 
 ## Lot 1 — correctif 5/6 : mot de passe de démo et garde du seed (22/09/2026, audit produit TR17/TR16b)
 
 **Besoin.** Le compte CRM du centre de démo (`demo@moubarat.app`) avait un mot de passe par défaut écrit en clair dans le code
-(`Demo2026Arena!`) — publié dans le zip transmis aux développeurs, lisible par quiconque ouvre le dépôt. Par ailleurs, le
+(`valeur retirée du dépôt le 12/11/2026, à considérer comme compromise`) — publié dans le zip transmis aux développeurs, lisible par quiconque ouvre le dépôt. Par ailleurs, le
 garde-fou du seed (`assertSafeToReset`) ne comptait que 5 tables d'activité ; le `TRUNCATE … CASCADE` en emporte
 davantage — une demande d'inscription reçue depuis le formulaire public, un match organisé par un joueur de démo, ou un
 paiement auraient disparu sans qu'aucun garde ne le voie.
