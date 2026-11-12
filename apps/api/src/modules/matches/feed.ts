@@ -110,7 +110,10 @@ export function feedConditions(f: FeedFilters, now: Date): RawBuilder<boolean>[]
   }
   if (f.spots) conds.push(sql<boolean>`matches.status = 'OPEN'`);
   if (f.evening) conds.push(sql<boolean>`extract(hour from ${startLocal}) >= 18`);
-  if (f.weekend) conds.push(sql<boolean>`extract(dow from ${startLocal}) IN (0, 6)`);
+  // Audit final, MS-014 (12/11/2026) : en Algérie, le week-end est le VENDREDI et le SAMEDI (dow 5 et 6) — avant (0, 6), le
+  // filtre montrait samedi et dimanche et omettait le vendredi. Un match d'après minuit compte encore pour l'heure qu'il est
+  // (la définition du « jour » des soirées, MS-050, reste une décision en attente).
+  if (f.weekend) conds.push(sql<boolean>`extract(dow from ${startLocal}) IN (5, 6)`);
   if (f.q) {
     const re = accentInsensitiveRegex(f.q);
     conds.push(sql<boolean>`(matches.title ~* ${re} OR matches.format::text ~* ${re})`);

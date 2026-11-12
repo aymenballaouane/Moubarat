@@ -622,3 +622,29 @@ describe('MS-019 — la confirmation d’une déclaration téléphonique prévie
     expect(notifs).toEqual([{ type: 'BOOKING_CONFIRMED', ref_id: id }]);
   });
 });
+
+describe('MS-014 — « Ce week-end » = vendredi et samedi', () => {
+  it('le filtre week-end montre les matchs du vendredi et du samedi, jamais du dimanche', async () => {
+    const DAY = 86_400_000;
+    const nextDow = (dow: number) => {
+      for (let d = 2; d <= 9; d++) {
+        const date = algiersDateOf(Date.now() + d * DAY);
+        if (new Date(`${date}T12:00:00Z`).getUTCDay() === dow) return date;
+      }
+      throw new Error('unreachable');
+    };
+    const orga = (await stack.db.selectFrom('users').select('id').limit(1).executeTakeFirstOrThrow()).id;
+    for (const [dow, label] of [[5, 'Vendredi'], [6, 'Samedi'], [0, 'Dimanche']] as const) {
+      const start = dayStartMs(nextDow(dow)) + 19 * 3_600_000;
+      await stack.db.insertInto('matches').values({
+        sport: 'FOOTBALL', format: '5v5' as never, level: 'LOISIR', title: `Weekend Lot Un ${label}`, venue_id: seed.alwaysOpen.venueId,
+        field_id: seed.alwaysOpen.fieldId, time_range: toPgRange({ start, end: start + 3_600_000 }), capacity: 10, price_per_player_da: 300,
+        organizer_id: orga, status: 'OPEN',
+      }).execute();
+    }
+    const res = await call('GET', `/matches?weekend=1&q=${encodeURIComponent('Weekend Lot Un')}&limit=100`);
+    expect(res.statusCode, res.body).toBe(200);
+    const titles = (res.json() as { matches: { title: string }[] }).matches.map((m) => m.title).sort();
+    expect(titles).toEqual(['Weekend Lot Un Samedi', 'Weekend Lot Un Vendredi']);
+  });
+});
