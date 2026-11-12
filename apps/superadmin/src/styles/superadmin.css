@@ -56,6 +56,7 @@ body {
   color: var(--primary-glow); text-transform: uppercase; margin: 0;
 }
 .sa-login__title { font-family: var(--font-display); font-size: var(--fs-d2); color: var(--text); margin: 0 0 4px; text-transform: uppercase; }
+.sa-login__text { margin: 0; font-size: var(--fs-b3); color: var(--text-2); line-height: 1.5; } /* MS-040 : écran « Serveur injoignable » (même règle que .cm-login__text du CRM) */
 
 /* --- Contenu commun ------------------------------------------------------------ */
 .sa-view-note { color: var(--text-3); font-size: var(--fs-b2); margin: 0 0 16px; }

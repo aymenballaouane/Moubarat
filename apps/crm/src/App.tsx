@@ -25,6 +25,7 @@ import { hasSupport, useSupport } from './lib/support.js';
 import { type AuditLogEntry } from './data/auditDemo.js';
 import { apiFetch, setUnauthorizedHandler } from './lib/api.js';
 import { loadToken, saveToken, clearToken } from './lib/session.js';
+import { BOOT_RETRY_MS, bootFailureAction } from './lib/bootSession.js';
 
 type ViewId = 'dash' | 'plan' | 'resa' | 'subs' | 'stats' | 'clients' | 'teams' | 'staff' | 'caisse' | 'audit' | 'conf';
 
@@ -76,6 +77,8 @@ interface ConnectedVenue { id: string; name: string; wilaya?: string; address?: 
 export function App() {
   const [token, setToken] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
+  /** MS-040 : le serveur ne répond pas au démarrage — la session est gardée, l'écran le dit et réessaie tout seul. */
+  const [serverDown, setServerDown] = useState(false);
   const [accountName, setAccountName] = useState<string | null>(null);
   const [role, setRole] = useState<CenterRole | null>(null);
   const [venue, setVenue] = useState<ConnectedVenue | null>(null);
@@ -146,13 +149,23 @@ export function App() {
     setUnauthorizedHandler(() => { clearToken(); setToken(null); setAccountName(null); setRole(null); setVenue(null); });
     const stored = loadToken();
     if (!stored) { setChecking(false); return; }
-    apiFetch<MeResponse>('/platform/auth/me', { token: stored })
+    // MS-040 (audit final) : une panne (réseau, 5xx) garde la session et se réessaie ; seul un refus la jette.
+    let cancelled = false;
+    let retry: number | undefined;
+    const check = () => apiFetch<MeResponse>('/platform/auth/me', { token: stored })
       .then((r) => {
+        if (cancelled) return;
+        setServerDown(false);
         if (!applyMe(r, stored)) { clearToken(); setChecking(false); return; }
         setToken(stored); setChecking(false);
       })
-      .catch(() => { clearToken(); setChecking(false); });
-    return () => setUnauthorizedHandler(null);
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        if (bootFailureAction(e) === 'retry') { setServerDown(true); retry = window.setTimeout(() => { void check(); }, BOOT_RETRY_MS); return; }
+        clearToken(); setChecking(false);
+      });
+    void check();
+    return () => { cancelled = true; if (retry !== undefined) window.clearTimeout(retry); setUnauthorizedHandler(null); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -211,7 +224,18 @@ export function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  if (checking) return null;
+  if (checking) {
+    // MS-040 (audit final) : pendant une panne au démarrage, un message plutôt qu'un écran vide — la session est gardée.
+    return serverDown ? (
+      <div className="cm-login" role="status" aria-live="polite">
+        <div className="cm-login__card">
+          <p className="cm-login__eyebrow">— MOUBARAT</p>
+          <h1 className="cm-login__title">Serveur injoignable</h1>
+          <p className="cm-login__text">Le serveur de Moubarat ne répond pas pour l’instant (mise à jour ou panne). Ta session est gardée : nouvel essai automatique toutes les 5 secondes.</p>
+        </div>
+      </div>
+    ) : null;
+  }
   if (!token || !role || !venue) {
     return (<><IconSprite />{hash === '#/rejoindre' ? <RequestScreen /> : <LoginScreen onLoggedIn={handleLoggedIn} />}</>);
   }
