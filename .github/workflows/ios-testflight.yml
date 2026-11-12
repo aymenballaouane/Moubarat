@@ -120,6 +120,7 @@ jobs:
           for f in "$RUNNER_TEMP/archive.log" "$RUNNER_TEMP/export.log"; do
             [ -f "$f" ] && grep -E "error:|\*\* .* FAILED|Error Domain|No profiles|requires a development team|Provisioning" "$f" | head -15 | while read -r l; do echo "::error::${l}"; done
           done
+          exit 0 # l'étape ne fait que recopier : sans journal (échec avant l'archivage), elle ne doit pas échouer elle-même
 
       - name: Supprimer la clé
         if: always()

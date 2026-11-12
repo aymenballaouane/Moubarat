@@ -21,7 +21,9 @@ const jwt = `${header}.${payload}.${b64(signature)}`;
 const headers = { Authorization: `Bearer ${jwt}` };
 
 const list = await fetch('https://api.appstoreconnect.apple.com/v1/certificates?limit=200', { headers });
-if (!list.ok) { console.error('Liste des certificats refusée :', list.status, (await list.text()).slice(0, 300)); process.exit(1); }
+// Erreurs écrites en commandes GitHub (::error:: / ::warning::) : elles deviennent des annotations lisibles SANS compte (12/11/2026,
+// build 7 en échec ici sans aucun message visible).
+if (!list.ok) { console.log(`::error::App Store Connect refuse la liste des certificats : HTTP ${list.status} — ${(await list.text()).slice(0, 300).replace(/\s+/g, ' ')}`); process.exit(1); }
 const { data = [] } = await list.json();
 console.log(`${data.length} certificat(s) dans le compte :`);
 for (const c of data) console.log(` - ${c.id} | ${c.attributes.certificateType} | ${c.attributes.name} | expire ${c.attributes.expirationDate}`);
@@ -31,5 +33,6 @@ console.log(`${targets.length} certificat(s) de développement « Created via AP
 for (const c of targets) {
   const r = await fetch(`https://api.appstoreconnect.apple.com/v1/certificates/${c.id}`, { method: 'DELETE', headers });
   console.log(` suppression ${c.id} : ${r.status}`);
-  if (!r.ok && r.status !== 404) process.exit(1);
+  // Un refus ici n'arrête plus tout : si l'ancien certificat gêne vraiment, l'archivage le dira (annotation de l'étape suivante).
+  if (!r.ok && r.status !== 404) console.log(`::warning::Suppression du certificat ${c.id} refusée : HTTP ${r.status} — ${(await r.text()).slice(0, 300).replace(/\s+/g, ' ')}`);
 }
