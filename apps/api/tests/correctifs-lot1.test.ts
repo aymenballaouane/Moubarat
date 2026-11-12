@@ -448,3 +448,25 @@ describe('MS-011 — équipes et défis éteints côté serveur, comme dans l’
     }
   });
 });
+
+describe('MS-008 — la fiche d’un centre non publié n’est lisible que par son personnel', () => {
+  it('centre en attente ou suspendu : 404 sans compte, pour un joueur et pour le personnel d’un autre centre ; 200 pour le sien (CONF-21, TRANS-21)', async () => {
+    const v = await stack.db.insertInto('venues').values({ name: 'Centre Pas Encore Ouvert', wilaya: 'Alger', address: 'x', lat: 0, lng: 0, status: 'PENDING' })
+      .returning('id').executeTakeFirstOrThrow();
+    await stack.db.insertInto('center_staff').values({ venue_id: v.id, user_id: seed.crmStaff.yacine, role: 'MANAGER' }).execute();
+    const own = await loginAsPlatform(stack, seed.crmStaffEmails.yacine, seed.crmStaffPassword);
+    const other = await loginAsPlatform(stack, seed.alwaysOpen.staffEmail, seed.crmStaffPassword);
+    const joueur = await loginAs(stack, '+213661470001', 'lot1_curieux');
+    for (const status of ['PENDING', 'SUSPENDED', 'REJECTED'] as const) {
+      await stack.db.updateTable('venues').set({ status }).where('id', '=', v.id).execute();
+      const anonymous = await call('GET', `/venues/${v.id}`);
+      expect([anonymous.statusCode, anonymous.body.includes('cashModuleEnabled')], status).toEqual([404, false]);
+      expect((await call('GET', `/venues/${v.id}`, joueur)).statusCode, status).toBe(404);
+      expect((await call('GET', `/venues/${v.id}`, other)).statusCode, status).toBe(404);
+      const mine = await call('GET', `/venues/${v.id}`, own);
+      expect(mine.statusCode, mine.body).toBe(200);
+    }
+    // Un centre publié reste lisible par tous.
+    expect((await call('GET', `/venues/${seed.venueId}`)).statusCode).toBe(200);
+  });
+});

@@ -188,6 +188,14 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
       const v = await db.selectFrom('venues').selectAll()
         .where('id', '=', req.params.venueId).executeTakeFirst();
       if (!v) throw notFound('Centre introuvable.');
+      /* Audit final, MS-008 (12/11/2026) : la fiche d'un centre NON PUBLIÉ (en attente, suspendu, refusé — tarifs, module
+         caisse…) n'est servie qu'à son propre personnel. Pour tout autre appelant, sans compte ou non : la même réponse
+         qu'un centre inexistant. Le CRM d'un centre en cours d'ouverture ou suspendu (offre « CRM seul », I5) envoie son
+         jeton et garde sa fiche. */
+      if (v.status !== 'ACTIVE') {
+        try { await guards.requireCenterAction(req, v.id, 'VIEW_PLANNING'); }
+        catch { throw notFound('Centre introuvable.'); }
+      }
       const includeArchived = req.query.includeArchived === '1' || req.query.includeArchived === 'true';
       if (includeArchived) await guards.requireCenterAction(req, v.id, 'VIEW_PLANNING');
 

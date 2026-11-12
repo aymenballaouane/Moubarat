@@ -92,7 +92,7 @@ export function App() {
   /** Applique un /me accepté : rôle + centre, puis complète le bandeau avec
       la fiche publique du centre (échec silencieux : le nom suffit) — y
       compris le réglage persisté du module Caisse (audit D2). */
-  function applyMe(r: MeResponse): boolean {
+  function applyMe(r: MeResponse, authToken: string): boolean {
     const first = r.centerMemberships[0];
     if (!first) return false;
     setAccountName(r.account.name);
@@ -100,7 +100,8 @@ export function App() {
     setVenue({ id: first.venueId, name: first.venueName });
     setNeedsLegalConsent(r.needsLegalConsent);
     setSubscription({ status: first.subscriptionStatus, dueAt: first.subscriptionDueAt });
-    apiFetch<{ venue: { wilaya: string; address: string; cashModuleEnabled: boolean } }>(`/venues/${first.venueId}`)
+    // MS-008 (audit final, 12/11/2026) : la fiche d'un centre non publié n'est servie qu'à son personnel — jeton requis.
+    apiFetch<{ venue: { wilaya: string; address: string; cashModuleEnabled: boolean } }>(`/venues/${first.venueId}`, { token: authToken })
       .then((d) => {
         setVenue((v) => (v && v.id === first.venueId ? { ...v, wilaya: d.venue.wilaya, address: d.venue.address } : v));
         setModulesCaisse(d.venue.cashModuleEnabled);
@@ -147,7 +148,7 @@ export function App() {
     if (!stored) { setChecking(false); return; }
     apiFetch<MeResponse>('/platform/auth/me', { token: stored })
       .then((r) => {
-        if (!applyMe(r)) { clearToken(); setChecking(false); return; }
+        if (!applyMe(r, stored)) { clearToken(); setChecking(false); return; }
         setToken(stored); setChecking(false);
       })
       .catch(() => { clearToken(); setChecking(false); });
@@ -158,7 +159,7 @@ export function App() {
   function handleLoggedIn(newToken: string) {
     saveToken(newToken);
     apiFetch<MeResponse>('/platform/auth/me', { token: newToken }).then((r) => {
-      if (!applyMe(r)) return; // LoginScreen a déjà vérifié — filet, pas un chemin normal
+      if (!applyMe(r, newToken)) return; // LoginScreen a déjà vérifié — filet, pas un chemin normal
       setToken(newToken);
     }).catch(() => {});
   }
