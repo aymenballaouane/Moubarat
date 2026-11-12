@@ -30,6 +30,11 @@ interface Deps {
   playerLoginIpLimiter?: RateLimiter;
 }
 
+/** MS-001 : les accès (pseudo + mot de passe) sont déjà posés — un changement passe par POST /me/password. */
+function accessAlreadySet(): ApiError {
+  return new ApiError(409, 'ACCESS_ALREADY_SET', 'Ton compte a déjà un mot de passe. Pour le changer, passe par Profil › Mot de passe.');
+}
+
 export async function registerAuthRoutes(
   app: FastifyInstance, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter }: Deps,
 ): Promise<void> {
@@ -380,6 +385,10 @@ export async function registerAuthRoutes(
   } }>(
     '/me/access-setup', { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
       const userId = req.auth!.userId;
+      /* Audit final, MS-001 (12/11/2026) : la mise en place des accès ne sert qu'UNE fois, tant que le compte n'a pas de
+         mot de passe. Avant, une session (vol, appareil prêté) suffisait à remplacer pseudo et mot de passe sans
+         l'actuel ; un changement passe désormais par POST /me/password, qui l'exige. */
+      if (!req.auth!.needsAccessSetup) throw accessAlreadySet();
       const pseudo = String(req.body?.pseudo ?? '').trim();
       const password = String(req.body?.password ?? '');
       // "Comment tu t'appelles ?" (OnboardingAcces.dc.html) — affichage, jamais unique, jamais
@@ -397,24 +406,32 @@ export async function registerAuthRoutes(
       must(validatePlayerPassword(password));
 
       const hash = await hashPassword(password);
-      try {
-        await db.updateTable('users')
-          .set({ name: pseudo, name_change_required: false, password_hash: hash })
-          .where('id', '=', userId).where('deleted_at', 'is', null).execute();
-      } catch (e) {
-        if (isNameTakenViolation(e)) throw nameTaken();
-        throw e;
-      }
-      await recordAgeConsent(db, userId, req.ip);
       const promoOptIn = req.body?.promoOptIn === true;
-      await db.insertInto('profiles')
-        .values({
-          user_id: userId, position: null, strong_foot: null, availability: null, avatar_url: null,
-          city: null, gender: null, level: null, sports: [], first_name: firstName, last_name: lastName,
-          phone_visible: true, promo_opt_in: promoOptIn,
-        })
-        .onConflict((oc) => oc.column('user_id').doUpdateSet({ first_name: firstName, last_name: lastName, phone_visible: true, promo_opt_in: promoOptIn }))
-        .execute();
+      /* MS-001 : une seule transaction, et l'écriture n'a lieu que si le mot de passe est ENCORE vide (deux envois
+         simultanés, ou un mot de passe posé entre-temps : le second est refusé, rien n'est écrit à moitié). */
+      await db.transaction().execute(async (trx) => {
+        let updated: bigint;
+        try {
+          const res = await trx.updateTable('users')
+            .set({ name: pseudo, name_change_required: false, password_hash: hash })
+            .where('id', '=', userId).where('deleted_at', 'is', null).where('password_hash', 'is', null)
+            .executeTakeFirst();
+          updated = res.numUpdatedRows;
+        } catch (e) {
+          if (isNameTakenViolation(e)) throw nameTaken();
+          throw e;
+        }
+        if (updated === 0n) throw accessAlreadySet();
+        await recordAgeConsent(trx, userId, req.ip);
+        await trx.insertInto('profiles')
+          .values({
+            user_id: userId, position: null, strong_foot: null, availability: null, avatar_url: null,
+            city: null, gender: null, level: null, sports: [], first_name: firstName, last_name: lastName,
+            phone_visible: true, promo_opt_in: promoOptIn,
+          })
+          .onConflict((oc) => oc.column('user_id').doUpdateSet({ first_name: firstName, last_name: lastName, phone_visible: true, promo_opt_in: promoOptIn }))
+          .execute();
+      });
 
       const user = await db.selectFrom('users').selectAll().where('id', '=', userId).executeTakeFirstOrThrow();
       return reply.send({
