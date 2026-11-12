@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { sql } from 'kysely';
 import {
   activeRestriction, nextRestriction, type AbsenceEvent, type AbsenceKind, type AbsenceSource, type RestrictionRecord,
@@ -72,4 +73,34 @@ export async function liftRestrictions(trx: Db, userId: string, byAccountId: str
     .where((eb) => eb.or([eb('ends_at', 'is', null), eb('ends_at', '>', new Date(now))]))
     .executeTakeFirst();
   return Number(res.numUpdatedRows);
+}
+
+/* Audit final, MS-022 (12/11/2026, décision déléguée par Aymen) — un joueur restreint qui supprimait son compte puis se réinscrivait avec le
+   même numéro repartait libre. La suppression reste toujours possible ; seule la restriction EN COURS survit, sous l'empreinte du numéro
+   (migration 0044 — jamais le numéro, ni le nom, ni l'historique d'absences), et revient si ce numéro recrée un compte. */
+function carryoverKey(phone: string): string {
+  return createHash('sha256').update(`restriction-carryover:${phone}`).digest('hex');
+}
+
+/** À la suppression du compte (dans sa transaction) : garde la restriction en cours, s'il y en a une, sous l'empreinte du numéro. */
+export async function carryRestrictionOnDeletion(trx: Db, userId: string, phone: string, now: number): Promise<boolean> {
+  const active = activeRestriction(await loadRestrictions(trx, userId), now);
+  if (active === null) return false;
+  await trx.insertInto('restriction_carryovers')
+    .values({ phone_hash: carryoverKey(phone), level: active.level, ends_at: active.endsAt === null ? null : new Date(active.endsAt) })
+    .onConflict((oc) => oc.column('phone_hash').doUpdateSet({ level: active.level, ends_at: active.endsAt === null ? null : new Date(active.endsAt) }))
+    .execute();
+  return true;
+}
+
+/** À la création d'un compte : si ce numéro portait une restriction encore en cours, elle est reposée sur le nouveau compte (même niveau,
+    même fin) et la trace est effacée. Une trace expirée est effacée sans effet. */
+export async function restoreCarriedRestriction(db: Db, userId: string, phone: string, now: number): Promise<boolean> {
+  const key = carryoverKey(phone);
+  const row = await db.selectFrom('restriction_carryovers').selectAll().where('phone_hash', '=', key).executeTakeFirst();
+  if (!row) return false;
+  await db.deleteFrom('restriction_carryovers').where('phone_hash', '=', key).execute();
+  if (row.ends_at !== null && row.ends_at.getTime() <= now) return false;
+  await db.insertInto('player_restrictions').values({ user_id: userId, level: row.level, starts_at: new Date(now), ends_at: row.ends_at }).execute();
+  return true;
 }

@@ -14,6 +14,7 @@ import { ApiError, badRequest, must } from '../lib/http.js';
 import { checkLoginThrottle, clearLoginThrottle, clearLoginThrottleForKeys, foldedName, ipFingerprint, recordLoginFailure, throttleKey } from '../lib/login-throttle.js';
 import { checkRateLimit, type RateLimiter } from '../lib/rate-limit.js';
 import { needsLegalConsent, recordLegalConsent, recordAgeConsent } from '../modules/legal/service.js';
+import { restoreCarriedRestriction } from '../modules/absences/service.js';
 import { isNameTakenViolation, nameKeyOf, nameTaken } from '../lib/display-name.js';
 
 interface Deps {
@@ -198,6 +199,8 @@ export async function registerAuthRoutes(
       }
       isNew = true;
       await recordLegalConsent(db, 'PLAYER', user.id, req.ip);
+      // MS-022 (audit final) : un numéro dont le compte a été supprimé sous restriction la retrouve (règle 25).
+      await restoreCarriedRestriction(db, user.id, norm.e164, Date.now());
     }
     await db.updateTable('otp_challenges').set({ verified_at: new Date(now) })
       .where('id', '=', row.id).execute();

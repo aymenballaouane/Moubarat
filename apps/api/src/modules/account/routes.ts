@@ -6,6 +6,7 @@ import type { Guards } from '../../auth/guards.js';
 import { ApiError, must } from '../../lib/http.js';
 import { isNameTakenViolation, nameTaken, nameKeyOf } from '../../lib/display-name.js';
 import { checkRateLimit, type RateLimiter } from '../../lib/rate-limit.js';
+import { carryRestrictionOnDeletion } from '../absences/service.js';
 
 interface Deps {
   db: Db; guards: Guards;
@@ -199,6 +200,8 @@ export async function registerAccountRoutes(app: FastifyInstance, { db, guards, 
          écrit sur ses réservations (`bookings.reservation_name` / `customer_phone`), ses alertes, son mot de passe — contraire à la règle 36 (« anciennes
          réservations … sans le nom »), à la notice « Tes données » et à l'article 9 de la politique de confidentialité. Tout ce qui l'identifie part ici ;
          ce que le CENTRE a saisi de lui-même (le nom d'un client du comptoir) reste le fichier du centre. */
+      // MS-022 (audit final) : une restriction en cours survit, sous la seule empreinte du numéro, et revient si ce numéro se réinscrit.
+      await carryRestrictionOnDeletion(trx, userId, user.phone, now.getTime());
       await trx.updateTable('users')
         .set({ name: DELETED_NAME, phone: `deleted:${userId}`, deleted_at: now, password_hash: null, failed_login_attempts: 0, locked_until: null })
         .where('id', '=', userId).execute();

@@ -411,6 +411,14 @@ export interface PlayerRestrictionsTable {
   created_at: Generated<Date>;
 }
 
+/** Migration 0044 (audit final, MS-022) — la restriction EN COURS d'un compte supprimé, reprise si le même numéro se réinscrit. */
+export interface RestrictionCarryoversTable {
+  phone_hash: string;
+  level: number;
+  ends_at: Date | null;
+  created_at: Generated<Date>;
+}
+
 /** Migration 0042 — ralentissement progressif des connexions joueur (clé = empreinte de l'identifiant tapé, par adresse). */
 export interface LoginThrottleTable {
   key: string;
@@ -567,6 +575,7 @@ export interface Database {
   match_watchers: MatchWatchersTable;
   day_alerts: DayAlertsTable;
   player_restrictions: PlayerRestrictionsTable;
+  restriction_carryovers: RestrictionCarryoversTable;
   otp_challenges: OtpChallengesTable;
   sessions: SessionsTable;
   venues: VenuesTable;

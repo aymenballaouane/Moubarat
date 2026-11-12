@@ -753,3 +753,39 @@ describe('MS-015 — réduire les horaires ou fermer un jour regarde les engagem
     expect((await call('DELETE', `/venues/${v.id}/opening-hours/${free}?startMin=480`, hamid)).statusCode).toBe(204);
   });
 });
+
+describe('MS-022 — une restriction ne s’efface pas en supprimant son compte', () => {
+  const DAY = 86_400_000;
+  const meOf = async (token: string) => ((await call('GET', '/auth/me', token)).json() as { user: { id: string } }).user.id;
+  const bookSoon = (token: string, offset: number) =>
+    call('POST', '/bookings', token, { fieldId: seed.alwaysOpen.fieldId, date: algiersDateOf(Date.now() + offset * DAY), startMin: 600, durationMin: 60 });
+
+  it('restreint, il supprime son compte et se réinscrit avec le même numéro : la restriction revient ; aucun numéro en clair gardé (P3-06)', async () => {
+    const phone = '+213661530001';
+    const token = await loginAs(stack, phone, 'lot1_restreint');
+    const id = await meOf(token);
+    await stack.db.insertInto('player_restrictions').values({ user_id: id, level: 1, starts_at: new Date(), ends_at: new Date(Date.now() + 7 * DAY) }).execute();
+    const del = await call('DELETE', '/me', token);
+    expect(del.statusCode, del.body).toBeLessThan(300); // la suppression reste toujours possible
+    const traces = await stack.db.selectFrom('restriction_carryovers').selectAll().execute();
+    expect(traces).toHaveLength(1);
+    expect(JSON.stringify(traces)).not.toContain('661530001');
+
+    const again = await loginAs(stack, phone, 'lot1_revenu');
+    expect(await meOf(again)).not.toBe(id);
+    const refused = await bookSoon(again, 3);
+    expect([refused.statusCode, (refused.json() as { error: string }).error], refused.body).toEqual([403, 'PLAYER_RESTRICTED']);
+    expect(await stack.db.selectFrom('restriction_carryovers').select('phone_hash').execute()).toHaveLength(0); // trace consommée
+  });
+
+  it('sans restriction en cours (ou restriction échue) : aucune trace, le nouveau compte réserve', async () => {
+    const phone = '+213661530002';
+    const token = await loginAs(stack, phone, 'lot1_libre');
+    const id = await meOf(token);
+    await stack.db.insertInto('player_restrictions').values({ user_id: id, level: 1, starts_at: new Date(Date.now() - 10 * DAY), ends_at: new Date(Date.now() - 3 * DAY) }).execute();
+    expect((await call('DELETE', '/me', token)).statusCode).toBeLessThan(300);
+    expect(await stack.db.selectFrom('restriction_carryovers').select('phone_hash').execute()).toHaveLength(0);
+    const again = await loginAs(stack, phone, 'lot1_libre_bis');
+    expect((await bookSoon(again, 4)).statusCode).toBe(201);
+  });
+});
