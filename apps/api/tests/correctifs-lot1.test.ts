@@ -488,3 +488,27 @@ describe('MS-036 — « Honorée » et « Payée » pas avant le début du crén
     expect(cancel.statusCode, cancel.body).toBe(200);
   });
 });
+
+describe('MS-035 — un match annulé ne bloque plus sa réservation', () => {
+  it('annuler le match en gardant le terrain : la réservation n’a plus de match, un nouveau match s’y ouvre (REG-12)', async () => {
+    const token = await loginAs(stack, '+213661480001', 'lot1_orga');
+    const date = algiersDateOf(Date.now() + 6 * 86_400_000);
+    const b = await call('POST', '/bookings', token, { fieldId: seed.alwaysOpen.fieldId, date, startMin: 1140, durationMin: 60 });
+    expect(b.statusCode, b.body).toBe(201);
+    const bookingId = (b.json() as { booking: { id: string } }).booking.id;
+    const first = await call('POST', '/matches', token, { bookingId, title: 'Premier essai' });
+    expect(first.statusCode, first.body).toBe(201);
+    const matchId = (first.json() as { match: { id: string } }).match.id;
+    const cancel = await call('POST', `/matches/${matchId}/cancel`, token, { cancelBooking: false });
+    expect(cancel.statusCode, cancel.body).toBe(200);
+    const mine = (await call('GET', '/me/bookings', token)).json() as { bookings: { id: string; status: string; matchId?: string | null }[] };
+    const row = mine.bookings.find((x) => x.id === bookingId);
+    expect(row?.status).toBe('RESERVED');
+    expect(row?.matchId ?? null).toBeNull();
+    const again = await call('POST', '/matches', token, { bookingId, title: 'Second essai' });
+    expect(again.statusCode, again.body).toBe(201);
+    // L'ancien match reste annulé, sans lien ; le nouveau est celui de la réservation.
+    const old = await stack.db.selectFrom('matches').select(['status', 'booking_id']).where('id', '=', matchId).executeTakeFirstOrThrow();
+    expect(old).toEqual({ status: 'CANCELLED', booking_id: null });
+  });
+});

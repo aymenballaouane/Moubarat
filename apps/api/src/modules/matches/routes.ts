@@ -138,9 +138,15 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
         );
       }
 
+      /* Audit final, MS-035 (12/11/2026) : seul un match VIVANT occupe la réservation. Après « annuler le match, garder le
+         terrain », le lien vers le match mort reste (historique du CRM, BUG-1) mais ne bloque plus un nouveau match : il est
+         ignoré ici, puis le match mort est détaché de la réservation (un seul match pointe vers elle). */
+      const deadMatchId = bookingRow.match_id !== null
+        && (await trx.selectFrom('matches').select('status').where('id', '=', bookingRow.match_id).executeTakeFirst())?.status === 'CANCELLED'
+        ? bookingRow.match_id : null;
       const result = createMatch({
         id: '',
-        booking: rowToBooking(bookingRow),
+        booking: rowToBooking(deadMatchId !== null ? { ...bookingRow, match_id: null } : bookingRow),
         field: { id: field.id, sport: field.sport, formats: field.formats },
         venueId: field.venue_id,
         title: String(b.title ?? ''),
@@ -164,6 +170,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
       await trx.insertInto('match_players').values({
         match_id: row.id, user_id: req.auth!.userId, status: 'JOINED', joined_at: new Date(match.createdAt), team: 'A',
       }).execute();
+      if (deadMatchId !== null) await trx.updateTable('matches').set({ booking_id: null }).where('id', '=', deadMatchId).execute();
       await trx.updateTable('bookings').set({ match_id: row.id }).where('id', '=', bookingId).execute();
       // Lot 11 : « M'alerter si un match est créé » — les joueurs qui l'ont demandé pour ce jour-là sont prévenus (push + dans l'app, jamais de SMS).
       await notifyDayAlerts(trx, row, now);

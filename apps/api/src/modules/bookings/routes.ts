@@ -240,8 +240,9 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
     let query = db.selectFrom('bookings')
       .innerJoin('fields', 'fields.id', 'bookings.field_id')
       .innerJoin('venues', 'venues.id', 'fields.venue_id')
+      .leftJoin('matches', 'matches.id', 'bookings.match_id')
       .selectAll('bookings')
-      .select(['fields.name as field_name', 'venues.name as venue_name', 'venues.id as venue_id'])
+      .select(['fields.name as field_name', 'venues.name as venue_name', 'venues.id as venue_id', 'matches.status as linked_match_status'])
       .select(isoMicros(sql.ref('bookings.created_at')).as('created_at_cursor'))
       .where('bookings.by_user_id', '=', req.auth!.userId)
       .orderBy('bookings.created_at', 'desc').orderBy('bookings.id', 'desc')
@@ -252,6 +253,9 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       nextCursor: page.nextCursor,
       bookings: page.items.map((r) => ({
         ...publicBooking(r),
+        /* Audit final, MS-035 (12/11/2026) : un match ANNULÉ ne compte plus pour l'app — la réservation redevient une
+           réservation sans match (« Créer un match » réapparaît). Le lien reste en base pour l'historique du CRM (BUG-1). */
+        ...(r.linked_match_status === 'CANCELLED' ? { matchId: null } : {}),
         field: r.field_name,
         venue: { id: r.venue_id, name: r.venue_name },
       })),
