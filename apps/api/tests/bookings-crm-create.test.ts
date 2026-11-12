@@ -38,6 +38,11 @@ beforeAll(async () => {
   amine = await loginAsPlatform(stack, seed.crmStaffEmails.amine, seed.crmStaffPassword); // STAFF
   hamid = await loginAsPlatform(stack, seed.crmStaffEmails.hamid, seed.crmStaffPassword); // OWNER
   await stack.db.updateTable('venues').set({ status: 'ACTIVE' }).where('id', '=', seed.venueId).execute();
+  /* 12/11/2026 (CI de la fusion du Lot 1, 22 h 53) : « ouvert 24 h / 24 » vaut 00:00 → 24:00 PAR JOUR dans le seed — un créneau de
+     60 min qui commence après 23:00 dépasse minuit et sort des horaires, à raison. Les tests « dans 10 minutes » / « il y a 5 min »
+     ci-dessous échouaient donc chaque soir de ~22 h 50 à minuit. Dans CE fichier seulement, le terrain reste ouvert jusqu'à 01:00
+     le lendemain (comme un vrai centre ouvert tard) : le créneau tient toujours, quelle que soit l'heure d'exécution. */
+  await stack.db.updateTable('opening_hours').set({ end_min: 1500 }).where('venue_id', '=', seed.alwaysOpen.venueId).execute();
 
   // Centre jetable distinct, sans aucun rattachement du personnel du centre
   // pilote — pour l'exigence « autre centre refusé ».
