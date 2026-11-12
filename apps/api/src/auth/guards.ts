@@ -4,6 +4,13 @@ import type { Env } from '../env.js';
 import { sha256 } from '../lib/crypto.js';
 import { ApiError, unauthorized } from '../lib/http.js';
 import type { UserRole } from '../db/types.js';
+import { playerWriteBlock } from '../modules/legal/service.js';
+
+/** Audit final, MS-007 (12/11/2026) : écritures qu'un joueur doit pouvoir faire AVANT d'avoir accepté les textes et
+    franchi la passerelle d'accès — ce sont celles des écrans de garde eux-mêmes (consentement, changement de nom,
+    passerelle), plus se déconnecter, supprimer son compte et l'enregistrement de l'appareil par la coque native. */
+const WRITE_GATE_EXEMPT = new Set(['/me/legal-consent', '/me/access-setup', '/auth/logout', '/me', '/me/push-devices', '/me/push-devices/:token']);
+const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /** Compte joueur suspendu par le superadmin (audit produit JO6/JO7, 22/09/2026). Le message est le même à la
     connexion (403 après le bon code) et en cours de session (401) — l'app branche sur le CODE, jamais le statut. */
@@ -38,6 +45,10 @@ export interface Guards {
       consulte sans compte) qui doivent malgré tout restreindre certains
       contenus (un match PRIVATE) à l'appelant identifié et concerné. */
   tryAuth(req: FastifyRequest): Promise<void>;
+  /** MS-007 : refuse (403) un joueur identifié qui n'a pas accepté les textes en vigueur (`LEGAL_CONSENT_REQUIRED`) ou
+      pas franchi la passerelle d'accès (`ACCESS_SETUP_REQUIRED`). Déjà appliqué par `requireAuth` à toute écriture ;
+      à appeler soi-même sur une écriture joueur servie par `tryAuth`. */
+  requirePlayerReady(req: FastifyRequest): Promise<void>;
 }
 
 export function makeGuards(db: Db, env: Env): Guards {
@@ -93,11 +104,25 @@ export function makeGuards(db: Db, env: Env): Guards {
     // 401 (et non 403) : un client déjà installé, qui ne connaît pas ce code, se déconnecte comme avant.
     if (state === 'suspended') throw new ApiError(401, ACCOUNT_SUSPENDED_CODE, ACCOUNT_SUSPENDED_MESSAGE);
     if (state === 'missing') throw unauthorized();
+    if (!READ_METHODS.has(req.method) && !WRITE_GATE_EXEMPT.has(req.routeOptions.url ?? '')) await requirePlayerReady(req);
+  }
+
+  /* MS-007 : toute écriture d'un joueur exige le consentement aux textes en vigueur et l'attestation d'âge — avant,
+     seuls les écrans de l'app l'imposaient, et un appel direct réservait sans eux. 403 (la session reste valable). */
+  async function requirePlayerReady(req: FastifyRequest): Promise<void> {
+    if (!req.auth) throw unauthorized();
+    const block = await playerWriteBlock(db, req.auth.userId);
+    if (block === 'LEGAL') {
+      throw new ApiError(403, 'LEGAL_CONSENT_REQUIRED', 'Accepte d’abord les conditions d’utilisation et la politique de confidentialité.');
+    }
+    if (block === 'ACCESS') {
+      throw new ApiError(403, 'ACCESS_SETUP_REQUIRED', 'Termine d’abord la création de ton compte (pseudo, mot de passe et accords).');
+    }
   }
 
   async function tryAuth(req: FastifyRequest): Promise<void> {
     await resolveSession(req);
   }
 
-  return { requireAuth, tryAuth };
+  return { requireAuth, tryAuth, requirePlayerReady };
 }

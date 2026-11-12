@@ -118,6 +118,7 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       reservationName = String(b.reservationName).trim();
     } else {
       if (!req.auth) throw unauthorized();
+      await guards.requirePlayerReady(req); // MS-007 : consentement et passerelle d'accès exigés côté serveur
       byUserId = req.auth.userId;
       reservationName = String(b.reservationName ?? req.auth.name).trim();
       /* BUG-4 (c), audit pré-lancement (27/09/2026) — deux garde-fous réservés aux réservations posées par un JOUEUR

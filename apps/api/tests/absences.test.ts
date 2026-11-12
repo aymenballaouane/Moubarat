@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { setupTestStack, loginAsPlatform, bearer, type TestStack } from './helpers.js';
+import { setupTestStack, markUserReady, loginAsPlatform, bearer, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { newSessionToken, sha256 } from '../src/lib/crypto.js';
 import { createPlatformAccount } from '../src/platform/auth/routes.js';
@@ -26,6 +26,7 @@ async function player(pseudo: string): Promise<{ id: string; phone: string; toke
   }).execute();
   const token = newSessionToken();
   await stack.db.insertInto('sessions').values({ user_id: u.id, token_hash: sha256(token) }).execute();
+  await markUserReady(stack.db, u.id); // MS-007 : joueur « prêt » (textes et attestation d’âge)
   return { id: u.id, phone, token };
 }
 type Entry = { id: string; status?: 'JOINED' | 'REMOVED' | 'LEFT' };

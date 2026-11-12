@@ -5,7 +5,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { weekdayOfDayStart } from '@moubarat/core';
-import { setupTestStack, loginAs, loginAsPlatform, bearer, LOOSE_LIMITS, type TestStack } from './helpers.js';
+import { setupTestStack, loginAs, markPlayerReady, loginAsPlatform, bearer, LOOSE_LIMITS, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { algiersDateOf, dayStartMs } from '../src/lib/algiers.js';
 import { toPgRange } from '../src/lib/pgrange.js';
@@ -173,6 +173,7 @@ describe('santé & auth OTP', () => {
     expect(body.user.name).toBe('Rachid Testeur');
     expect(body.needsLegalConsent).toBe(false);
     playerToken = body.token;
+    await markPlayerReady(stack.db, PLAYER_PHONE); // MS-007 : attestation d’âge (posée par la passerelle d’accès dans l’app)
 
     const replay = await stack.app.inject({
       method: 'POST', url: '/auth/otp/verify', payload: { phone: PLAYER_PHONE, code: '123456' },

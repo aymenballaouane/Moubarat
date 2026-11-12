@@ -6,6 +6,7 @@ import { createDb, createPool, primeEnumArrayParsers, type Db } from '../src/db/
 import { migrate } from '../src/db/migrate.js';
 import { readEnv, type Env } from '../src/env.js';
 import { buildServer } from '../src/server.js';
+import { CURRENT_LEGAL_DOCUMENTS, LEGAL_DOCUMENT_KEYS } from '../src/modules/legal/content.js';
 import type { SmsProvider } from '../src/lib/sms.js';
 import type { PushDevice, PushDelivery, PushMessage, PushProvider } from '../src/lib/push.js';
 
@@ -118,7 +119,7 @@ export async function setupTestStack(opts: { poolMax?: number; envOverrides?: Pa
     Prend le `TestStack` entier (pas juste `app`) pour lire le code capturé
     par son `CapturingSmsProvider` — jamais la réponse HTTP, qui ne porte
     plus aucun code depuis le correctif Lot 3C (voir lib/sms.ts). */
-export async function loginAs(stack: TestStack, phone: string, name?: string): Promise<string> {
+export async function loginAs(stack: TestStack, phone: string, name?: string, opts: { ready?: boolean } = {}): Promise<string> {
   const req = await stack.app.inject({ method: 'POST', url: '/auth/otp/request', payload: { phone } });
   if (req.statusCode !== 200) throw new Error(`Demande OTP refusée pour ${phone} (${req.statusCode}) : ${req.body}`);
   const code = stack.sms.codeFor(phone);
@@ -132,7 +133,33 @@ export async function loginAs(stack: TestStack, phone: string, name?: string): P
   });
   const body = verify.json() as { token?: string };
   if (!body.token) throw new Error(`Login échoué pour ${phone} : ${verify.body}`);
+  if (opts.ready !== false) await markPlayerReady(stack.db, phone);
   return body.token;
+}
+
+/** Audit final, MS-007 (12/11/2026) : le serveur refuse désormais toute écriture d'un joueur qui n'a pas accepté les textes
+    en vigueur ni enregistré l'attestation « 18 ans ou plus ». Un test qui n'éprouve pas ces gardes reçoit un joueur
+    « prêt » : les lignes manquantes sont posées directement en base (jamais de mot de passe — un compte qui en a un ne
+    se connecte plus par code SMS, ce que `loginAs` utilise). `loginAs(..., { ready: false })` laisse le compte tel quel. */
+export async function markPlayerReady(db: Db, phone: string): Promise<void> {
+  const user = await db.selectFrom('users').select('id').where('phone', '=', phone).executeTakeFirstOrThrow();
+  await markUserReady(db, user.id);
+}
+
+/** Même chose, pour un joueur posé directement en base (identifiant connu). */
+export async function markUserReady(db: Db, userId: string): Promise<void> {
+  const user = { id: userId };
+  const existing = await db.selectFrom('legal_acceptances').select(['document', 'version'])
+    .where('subject_type', '=', 'PLAYER').where('subject_id', '=', user.id).execute();
+  const has = (doc: string, version: string) => existing.some((r) => r.document === doc && r.version === version);
+  const wanted = [
+    ...LEGAL_DOCUMENT_KEYS.map((doc) => ({ document: doc as 'CGU' | 'CONFIDENTIALITE' | 'AGE_MAJEUR', version: CURRENT_LEGAL_DOCUMENTS[doc].version })),
+    { document: 'AGE_MAJEUR' as const, version: '1' },
+  ].filter((w) => !has(w.document, w.version));
+  if (wanted.length === 0) return;
+  await db.insertInto('legal_acceptances').values(wanted.map((w) => ({
+    subject_type: 'PLAYER' as const, subject_id: user.id, document: w.document, version: w.version, ip_hash: 'test',
+  }))).execute();
 }
 
 export function bearer(token: string): { authorization: string } {

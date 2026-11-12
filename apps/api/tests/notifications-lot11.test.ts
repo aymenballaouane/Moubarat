@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { setupTestStack, bearer, type TestStack } from './helpers.js';
+import { setupTestStack, markUserReady, bearer, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { newSessionToken, sha256 } from '../src/lib/crypto.js';
 import { toPgRange } from '../src/lib/pgrange.js';
@@ -28,6 +28,7 @@ async function player(pseudo: string, opts: { city?: string | null; sports?: ('F
   }).execute();
   const token = newSessionToken();
   await stack.db.insertInto('sessions').values({ user_id: u.id, token_hash: sha256(token) }).execute();
+  await markUserReady(stack.db, u.id); // MS-007 : joueur « prêt » (textes et attestation d’âge)
   return { id: u.id, token };
 }
 async function insertMatch(o: { startOffset: number; organizer: string; players: string[]; capacity?: number; sport?: 'FOOTBALL' | 'PADEL'; status?: 'OPEN' | 'FULL'; joinedAgo?: number }): Promise<string> {
@@ -74,6 +75,7 @@ describe('Réglages — les trois interrupteurs', () => {
     const bare = await stack.db.insertInto('users').values({ phone: '+213555660001', name: 'reg_sans_profil' }).returning('id').executeTakeFirstOrThrow();
     const token = newSessionToken();
     await stack.db.insertInto('sessions').values({ user_id: bare.id, token_hash: sha256(token) }).execute();
+    await markUserReady(stack.db, bare.id);
     expect((await call('GET', token, '/me/notification-settings')).json()).toEqual({ spotInCity: true, reminder: true, promos: false });
   });
 });

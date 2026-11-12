@@ -25,6 +25,24 @@ export async function needsLegalConsent(db: Db, subjectType: LegalSubjectType, s
   return LEGAL_DOCUMENT_KEYS.some((doc) => latestByDoc.get(doc) !== CURRENT_LEGAL_DOCUMENTS[doc].version);
 }
 
+/** Audit final, MS-007 (12/11/2026) : ce qui empêche encore un joueur d'écrire (réserver, rejoindre, créer…) — garde
+    SERVEUR, jusqu'ici tenue par les seuls écrans de l'app. `LEGAL` : CGU ou confidentialité pas acceptées à la version
+    courante ; `ACCESS` : attestation « 18 ans ou plus » jamais enregistrée, c'est-à-dire passerelle d'accès jamais
+    franchie (seul `/me/access-setup` l'écrit, avec le mot de passe et l'accord « numéro visible »). Une seule lecture. */
+export async function playerWriteBlock(db: Db, userId: string): Promise<'LEGAL' | 'ACCESS' | null> {
+  const rows = await db.selectFrom('legal_acceptances')
+    .select(['document', 'version'])
+    .where('subject_type', '=', 'PLAYER')
+    .where('subject_id', '=', userId)
+    .orderBy('accepted_at', 'desc')
+    .execute();
+  const latestByDoc = new Map<string, string>();
+  for (const r of rows) if (!latestByDoc.has(r.document)) latestByDoc.set(r.document, r.version);
+  if (LEGAL_DOCUMENT_KEYS.some((doc) => latestByDoc.get(doc) !== CURRENT_LEGAL_DOCUMENTS[doc].version)) return 'LEGAL';
+  if (!latestByDoc.has('AGE_MAJEUR')) return 'ACCESS';
+  return null;
+}
+
 /** Enregistre l'acceptation des DEUX documents, à la version courante, en une seule fois — un
     consentement à l'inscription vaut pour les CGU et la politique de confidentialité ensemble (une
     case, deux documents), jamais deux gestes séparés côté utilisateur. */

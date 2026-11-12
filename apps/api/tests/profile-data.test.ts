@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { setupTestStack, bearer, type TestStack } from './helpers.js';
+import { setupTestStack, markUserReady, bearer, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { hashPassword, newSessionToken, sha256 } from '../src/lib/crypto.js';
 import { toPgRange } from '../src/lib/pgrange.js';
@@ -25,6 +25,7 @@ async function player(pseudo: string, opts: { phoneVisible?: boolean; password?:
   }).execute();
   const token = newSessionToken();
   await stack.db.insertInto('sessions').values({ user_id: u.id, token_hash: sha256(token) }).execute();
+  await markUserReady(stack.db, u.id); // MS-007 : joueur « prêt » (textes et attestation d’âge)
   return { id: u.id, phone, token };
 }
 async function insertMatch(o: { start: number; status: 'PLAYED' | 'OPEN'; organizer: string; players: string[]; fieldId?: string; venueId?: string }): Promise<string> {
@@ -172,6 +173,7 @@ describe('PATCH /me/consents — « Mes accords »', () => {
     const bare = await stack.db.insertInto('users').values({ phone: '+213555990001', name: 'accords_sans_profil' }).returning('id').executeTakeFirstOrThrow();
     const token = newSessionToken();
     await stack.db.insertInto('sessions').values({ user_id: bare.id, token_hash: sha256(token) }).execute();
+    await markUserReady(stack.db, bare.id);
     expect((await patch(token, '/me/consents', { promoOptIn: true })).statusCode).toBe(200);
   });
 });

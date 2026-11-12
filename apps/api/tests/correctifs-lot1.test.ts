@@ -266,3 +266,56 @@ describe('MS-002 — un terrain n’est jamais occupé deux fois par un abonneme
     }
   });
 });
+
+describe('MS-007 — consentement et passerelle d’accès exigés par le serveur', () => {
+  const day = makeSafeDayPicker();
+  const book = (token: string, offset: number) =>
+    call('POST', '/bookings', token, { fieldId: seed.fields.t1, date: day(offset), startMin: 600, durationMin: 60 });
+  const errorOf = (res: { body: string }) => (JSON.parse(res.body) as { error?: string }).error;
+  const bookingsOf = async (userId: string) =>
+    (await stack.db.selectFrom('bookings').select('id').where('by_user_id', '=', userId).execute()).length;
+
+  it('passerelle jamais franchie : réserver, créer une équipe ou signaler → 403 ACCESS_SETUP_REQUIRED ; le même geste passe ensuite (AUTH-26)', async () => {
+    const token = await loginAs(stack, '+213555170001', 'Pas Installe', { ready: false });
+    const me = (await call('GET', '/auth/me', token)).json() as { user: { id: string }; needsAccessSetup: boolean };
+    expect(me.needsAccessSetup).toBe(true);
+    for (const res of [
+      await book(token, 4),
+      await call('POST', '/teams', token, { name: 'Equipe Sans Acces' }),
+      await call('PUT', '/me/day-alerts', token, { date: day(4) }),
+    ]) expect([res.statusCode, errorOf(res)], res.body).toEqual([403, 'ACCESS_SETUP_REQUIRED']);
+    expect(await bookingsOf(me.user.id)).toBe(0);
+    // Les lectures restent ouvertes, et la passerelle elle-même aussi.
+    expect((await call('GET', '/me/bookings', token)).statusCode).toBe(200);
+    const setup = await call('POST', '/me/access-setup', token, { pseudo: 'installe_lot1', password: 'Installe1Pw', ...ACCESS });
+    expect(setup.statusCode, setup.body).toBe(200);
+    const ok = await book(token, 4);
+    expect(ok.statusCode, ok.body).toBe(201);
+  });
+
+  it('textes pas acceptés à la version courante : 403 LEGAL_CONSENT_REQUIRED, levé par POST /me/legal-consent (AUTH-27)', async () => {
+    const u = await player({ password: 'Legal1Pwxx' }); // aucune acceptation enregistrée
+    const refused = await book(u.token, 5);
+    expect([refused.statusCode, errorOf(refused)], refused.body).toEqual([403, 'LEGAL_CONSENT_REQUIRED']);
+    expect(await bookingsOf(u.id)).toBe(0);
+    expect((await call('POST', '/me/legal-consent', u.token)).statusCode).toBe(200);
+    // Consentement donné mais attestation d'âge absente : toujours refusé, pour l'autre motif.
+    const still = await book(u.token, 5);
+    expect([still.statusCode, errorOf(still)], still.body).toEqual([403, 'ACCESS_SETUP_REQUIRED']);
+  });
+
+  it('les écrans de garde restent utilisables : changer de nom, se déconnecter, supprimer son compte', async () => {
+    const u = await player(); // ni textes, ni passerelle
+    const rename = await call('PATCH', '/me', u.token, { name: 'renomme_lot1' });
+    expect(rename.statusCode, rename.body).toBe(200);
+    expect((await call('POST', '/auth/logout', u.token)).statusCode).toBeLessThan(300);
+  });
+
+  it('le comptoir du centre n’est pas concerné (identité plateforme)', async () => {
+    const hamid = await loginAsPlatform(stack, seed.crmStaffEmails.hamid, seed.crmStaffPassword);
+    const res = await call('POST', '/bookings', hamid, {
+      fieldId: seed.fields.t1, date: day(6), startMin: 600, durationMin: 60, source: 'WALK_IN', reservationName: 'Client Comptoir',
+    });
+    expect(res.statusCode, res.body).toBe(201);
+  });
+});
