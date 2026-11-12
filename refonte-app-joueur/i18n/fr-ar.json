@@ -1098,7 +1098,12 @@
     "Nous joindre": "تواصل معنا",
     "Écrire": "راسلنا",
     "Support indisponible": "الدعم غير متاح",
-    "Impossible d’afficher nos coordonnées pour le moment. Vérifie ta connexion et réessaie.": "تعذّر عرض بيانات التواصل حاليًا. تحقّق من اتصالك وحاول مرة أخرى."
+    "Impossible d’afficher nos coordonnées pour le moment. Vérifie ta connexion et réessaie.": "تعذّر عرض بيانات التواصل حاليًا. تحقّق من اتصالك وحاول مرة أخرى.",
+    "✓ Alerte posée — à voir dans tes notifications": "✓ تم ضبط التنبيه — ستجده في إشعاراتك",
+    "M’alerter si une place se libère": "نبّهني إذا تحرّر مكان",
+    "Dans l’app": "داخل التطبيق",
+    "Pour l’instant, tes alertes s’affichent dans l’app (la cloche en haut de l’accueil), pas sur l’écran de ton téléphone. Pense à ouvrir Moubarat avant tes matchs.": "حاليًا تظهر تنبيهاتك داخل التطبيق (الجرس أعلى الصفحة الرئيسية)، وليس على شاشة هاتفك. تذكّر فتح التطبيق قبل مبارياتك.",
+    "Ce qui touche à tes matchs et à tes réservations (une confirmation, une annulation, un joueur qui arrive ou qui part, un centre qui réserve à ton numéro), on te l’affiche toujours.": "كل ما يخص مبارياتك وحجوزاتك (تأكيد، إلغاء، لاعب ينضم أو يغادر، مركز يحجز برقمك) نعرضه لك دائمًا."
   },
   "par_ecran": {}
 }

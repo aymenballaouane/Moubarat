@@ -31,7 +31,7 @@ export function DayAlertButton({ store, day, sport }: { store: AppStore; day: st
   return (
     <>
       <button type="button" className="mb-btn mb-btn--secondary mb-btn--block mb-tap" aria-pressed={active === true} disabled={busy || active === null} onClick={() => { void toggle(); }}>
-        {active ? t('✓ On te prévient dès qu’un match est créé') : t('M’alerter si un match est créé')}
+        {active ? t('✓ Alerte posée — à voir dans tes notifications') : t('M’alerter si un match est créé')}
       </button>
       <div className={`mb-toast${toast.message ? ' on' : ''}`} role="status" aria-live="polite">{toast.message ?? ''}</div>
     </>

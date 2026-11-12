@@ -396,7 +396,7 @@ export function MatchDetail({ match, players, onExit, onOpenMatch, store }: Matc
               ? <span className="md-closed">{t('Complet')}</span>
               : (
                 <button type="button" className={'md-cta mb-tap' + (watching ? ' md-cta--ghost' : '')} disabled={watchBusy} onClick={() => { void toggleWatch(); }}>
-                  {watching ? t('✓ On te prévient') : t('Préviens-moi si ça se libère')}
+                  {watching ? t('✓ Alerte posée — à voir dans tes notifications') : t('M’alerter si une place se libère')}
                 </button>
               )
           ) : null}

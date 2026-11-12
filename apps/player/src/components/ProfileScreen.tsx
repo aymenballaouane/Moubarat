@@ -144,7 +144,7 @@ export function ProfileScreen({ onNavigate, identityName, onLogout, store }: Pro
           <span className="pf-row__v">{t(THEME_LABEL[theme])}</span><Icon id="i-chev" className="pf-row__chev" />
         </button>
         <button type="button" className="pf-row" onClick={() => onNavigate({ name: 'notif-settings' })}>
-          <Icon id="i-bell" /><span className="pf-row__t">{t('Notifications')}</span><span className="pf-row__v">{store.notificationSettings && (store.notificationSettings.spotInCity || store.notificationSettings.reminder || store.notificationSettings.promos) ? t('Activées') : ''}</span><Icon id="i-chev" className="pf-row__chev" />
+          <Icon id="i-bell" /><span className="pf-row__t">{t('Notifications')}</span><span className="pf-row__v">{store.notificationSettings && (store.notificationSettings.spotInCity || store.notificationSettings.reminder || store.notificationSettings.promos) ? t('Dans l’app') : ''}</span><Icon id="i-chev" className="pf-row__chev" />
         </button>
         <button type="button" className="pf-row" onClick={() => onNavigate({ name: 'notice' })}>
           <Icon id="i-lock" /><span className="pf-row__t">{t('Confidentialité')}</span><span className="pf-row__v" /><Icon id="i-chev" className="pf-row__chev" />

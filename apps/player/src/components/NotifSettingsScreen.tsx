@@ -34,6 +34,9 @@ export function NotifSettingsScreen({ store, onBack }: { store: AppStore; onBack
     <section className="au-screen pf pf-sub" id="s-notif-settings">
       <div className="pf-sub__top"><button type="button" className="pf-back mb-tap" aria-label={t('Retour')} onClick={onBack}><Icon id="i-back" /></button></div>
       <h1 className="pf-sub__title">{t('Notifications')}</h1>
+      {/* Lot 0 de l'audit final (MS-027, décision d'Aymen du 12/11/2026) : aucun push ne part au lancement (TWA sans
+          notifications, aucun fournisseur configuré côté serveur). L'écran dit donc où les alertes apparaissent vraiment. */}
+      <p className="pf-note pf-note--center">{t('Pour l’instant, tes alertes s’affichent dans l’app (la cloche en haut de l’accueil), pas sur l’écran de ton téléphone. Pense à ouvrir Moubarat avant tes matchs.')}</p>
 
       <div className="pf-card pf-accords pf-accords--switches">
         {NOTIFICATION_SWITCHES.map((sw) => (
@@ -46,7 +49,7 @@ export function NotifSettingsScreen({ store, onBack }: { store: AppStore; onBack
           </div>
         ))}
       </div>
-      <p className="pf-note pf-note--center pf-note--below">{t('Ce qui touche à tes matchs et à tes réservations (une confirmation, une annulation, un joueur qui arrive ou qui part, un centre qui réserve à ton numéro), on te le dit toujours.')}</p>
+      <p className="pf-note pf-note--center pf-note--below">{t('Ce qui touche à tes matchs et à tes réservations (une confirmation, une annulation, un joueur qui arrive ou qui part, un centre qui réserve à ton numéro), on te l’affiche toujours.')}</p>
 
       <div className={`mb-toast${toast.message ? ' on' : ''}`} role="status" aria-live="polite">{toast.message ?? ''}</div>
     </section>
