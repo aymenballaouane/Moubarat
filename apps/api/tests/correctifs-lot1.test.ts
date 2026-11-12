@@ -590,3 +590,19 @@ describe('MS-013 — une date impossible est refusée, jamais décalée', () => 
     expect(() => dayStartMs(`${y}-03-03`)).not.toThrow();
   });
 });
+
+describe('MS-017 — un format demandé n’est jamais remplacé en silence', () => {
+  it('terrain à format unique : un autre format demandé → 400 FORMAT_NOT_AVAILABLE, côté joueur et comptoir ; le bon format ou aucun passe (RESA-08, CONF-13)', async () => {
+    const staff = await loginAsPlatform(stack, seed.alwaysOpen.staffEmail, seed.crmStaffPassword);
+    const token = await loginAs(stack, '+213661500001', 'lot1_format');
+    const offered = (await stack.db.selectFrom('field_format_prices').select('format').where('field_id', '=', seed.alwaysOpen.fieldId).execute()).map((r) => r.format);
+    expect(offered).toHaveLength(1);
+    const other = offered[0] === '5v5' ? '7v7' : '5v5';
+    const date = algiersDateOf(Date.now() + 9 * 86_400_000);
+    const player = await call('POST', '/bookings', token, { fieldId: seed.alwaysOpen.fieldId, date, startMin: 480, durationMin: 60, format: other });
+    const counter = await call('POST', '/bookings', staff, { fieldId: seed.alwaysOpen.fieldId, date, startMin: 600, durationMin: 60, source: 'WALK_IN', reservationName: 'Client Format', format: other });
+    for (const r of [player, counter]) expect([r.statusCode, (r.json() as { error: string }).error], r.body).toEqual([400, 'FORMAT_NOT_AVAILABLE']);
+    expect((await call('POST', '/bookings', token, { fieldId: seed.alwaysOpen.fieldId, date, startMin: 480, durationMin: 60, format: offered[0] })).statusCode).toBe(201);
+    expect((await call('POST', '/bookings', staff, { fieldId: seed.alwaysOpen.fieldId, date, startMin: 600, durationMin: 60, source: 'WALK_IN', reservationName: 'Client Format' })).statusCode).toBe(201);
+  });
+});

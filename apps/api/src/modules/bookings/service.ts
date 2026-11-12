@@ -215,7 +215,15 @@ export function resolveFormat(prices: readonly FieldFormatPrice[], requested?: s
   if (prices.length === 0) {
     throw badRequest('Ce terrain ne propose aucun format tarifé.', 'FORMAT_NOT_AVAILABLE');
   }
-  if (prices.length === 1) return prices[0]!;
+  if (prices.length === 1) {
+    /* Audit final, MS-017 (12/11/2026) : un format DEMANDÉ que le terrain ne propose pas est refusé, même sur un terrain à
+       format unique — avant, la réservation était créée dans le format du terrain (prix et capacité différents de la
+       demande), sans erreur. Sans format demandé, le format unique reste déduit en silence, comme avant. */
+    if (requested && requested !== prices[0]!.format) {
+      throw badRequest(`Ce terrain ne propose pas le format ${requested}.`, 'FORMAT_NOT_AVAILABLE');
+    }
+    return prices[0]!;
+  }
   if (!requested) {
     throw badRequest('Ce terrain propose plusieurs formats : précisez lequel.', 'FORMAT_REQUIRED');
   }
