@@ -11,7 +11,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { weekdayOfDayStart } from '@moubarat/core';
-import { setupTestStack, loginAs, loginAsPlatform, bearer, insertTestField, type TestStack } from './helpers.js';
+import { setupTestStack, loginAs, loginAsPlatform, bearer, insertTestField, withBookingStarted, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { algiersDateOf, dayStartMs } from '../src/lib/algiers.js';
 import { toPgRange } from '../src/lib/pgrange.js';
@@ -185,9 +185,10 @@ describe('gardes — mêmes que la création (horaires, fermetures, conflit), au
   it('statut non-RESERVED (HONORED) refusé — seule une résa encore à venir se modifie', async () => {
     const day = freshDay();
     const b = await walkIn(seed.fields.t1, day, 600);
-    const status = await stack.app.inject({
+    // MS-036 (audit final) : « honorée » ne se pose qu'une fois le créneau commencé.
+    const status = await withBookingStarted(stack.db, b.id, () => stack.app.inject({
       method: 'POST', url: `/bookings/${b.id}/status`, headers: bearer(yacine), payload: { status: 'HONORED' },
-    });
+    }));
     expect(status.statusCode, status.body).toBe(200);
     // INVALID_TARGET (rescheduleBooking, core) n'est pas dans STATUS_BY_CODE
     // (lib/http.ts) → 400 via must(), même statut que partout ailleurs où ce

@@ -5,7 +5,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { weekdayOfDayStart } from '@moubarat/core';
-import { setupTestStack, loginAs, markPlayerReady, loginAsPlatform, bearer, LOOSE_LIMITS, type TestStack } from './helpers.js';
+import { setupTestStack, loginAs, markPlayerReady, withBookingStarted, loginAsPlatform, bearer, LOOSE_LIMITS, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { algiersDateOf, dayStartMs } from '../src/lib/algiers.js';
 import { toPgRange } from '../src/lib/pgrange.js';
@@ -452,11 +452,17 @@ describe('chemin téléphone + CRM : alerte, confirmation, cycle cash', () => {
     });
     expect(staffTry.statusCode).toBe(403);
 
+    // MS-036 (audit final) : avant le début du créneau, « honorée » est refusée ; une fois commencé, le cycle passe.
+    const early = await stack.app.inject({
+      method: 'POST', url: `/bookings/${phoneBookingId}/status`, headers: bearer(nadiaToken),
+      payload: { status: 'HONORED' },
+    });
+    expect([early.statusCode, (early.json() as { error: string }).error]).toEqual([400, 'BOOKING_NOT_STARTED']);
     for (const status of ['HONORED', 'PAID'] as const) {
-      const res = await stack.app.inject({
+      const res = await withBookingStarted(stack.db, phoneBookingId, () => stack.app.inject({
         method: 'POST', url: `/bookings/${phoneBookingId}/status`, headers: bearer(nadiaToken),
         payload: { status },
-      });
+      }));
       expect(res.statusCode).toBe(200);
     }
     const audits = await stack.db.selectFrom('audit_log').selectAll()

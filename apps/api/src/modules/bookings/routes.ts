@@ -377,6 +377,11 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
         if (to === 'NO_SHOW' && now < fromPgRange(row.time_range).start) {
           throw badRequest('Le créneau n’a pas encore commencé : impossible de le marquer no-show.', 'BOOKING_NOT_STARTED');
         }
+        /* Audit final, MS-036 (12/11/2026) : même garde pour « Honorée » (et donc « Payée », qui la suit) — une réservation de
+           la semaine prochaine marquée honorée par erreur ne pouvait plus être ni annulée ni déplacée. */
+        if ((to === 'HONORED' || to === 'PAID') && now < fromPgRange(row.time_range).start) {
+          throw badRequest('Le créneau n’a pas encore commencé : impossible de le marquer honoré ou payé.', 'BOOKING_NOT_STARTED');
+        }
         await trx.updateTable('bookings')
           .set({
             status: to,

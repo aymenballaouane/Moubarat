@@ -470,3 +470,21 @@ describe('MS-008 — la fiche d’un centre non publié n’est lisible que par 
     expect((await call('GET', `/venues/${seed.venueId}`)).statusCode).toBe(200);
   });
 });
+
+describe('MS-036 — « Honorée » et « Payée » pas avant le début du créneau', () => {
+  it('une réservation de la semaine prochaine ne se marque ni honorée ni payée, et reste annulable (REG-01)', async () => {
+    const staff = await loginAsPlatform(stack, seed.alwaysOpen.staffEmail, seed.crmStaffPassword); // personnel du centre ouvert 24 h/24
+    const date = algiersDateOf(Date.now() + 8 * 86_400_000);
+    const created = await call('POST', '/bookings', staff, { fieldId: seed.alwaysOpen.fieldId, date, startMin: 600, durationMin: 60, source: 'WALK_IN', reservationName: 'Client Semaine Pro' });
+    expect(created.statusCode, created.body).toBe(201);
+    const id = (created.json() as { booking: { id: string } }).booking.id;
+    for (const status of ['HONORED', 'PAID']) {
+      const res = await call('POST', `/bookings/${id}/status`, staff, { status });
+      expect(res.statusCode, `${status} : ${res.body}`).toBeGreaterThanOrEqual(400);
+      expect(res.statusCode).toBeLessThan(500);
+    }
+    expect((await stack.db.selectFrom('bookings').select('status').where('id', '=', id).executeTakeFirstOrThrow()).status).toBe('RESERVED');
+    const cancel = await call('POST', `/bookings/${id}/status`, staff, { status: 'CANCELLED', reason: 'CLIENT' });
+    expect(cancel.statusCode, cancel.body).toBe(200);
+  });
+});

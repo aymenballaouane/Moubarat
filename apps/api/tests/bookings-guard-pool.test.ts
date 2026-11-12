@@ -12,7 +12,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { weekdayOfDayStart } from '@moubarat/core';
-import { setupTestStack, loginAs, loginAsPlatform, bearer, type TestStack, insertTestField } from './helpers.js';
+import { setupTestStack, loginAs, loginAsPlatform, bearer, type TestStack, insertTestField, withBookingStarted } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { algiersDateOf, dayStartMs } from '../src/lib/algiers.js';
 import { toPgRange } from '../src/lib/pgrange.js';
@@ -56,7 +56,8 @@ describe('garde centre hors transaction (audit T3)', () => {
     const setHonored = (id: string) => stack.app.inject({
       method: 'POST', url: `/bookings/${id}/status`, headers: bearer(hamid), payload: { status: 'HONORED' },
     });
-    const [ra, rb] = await Promise.all([setHonored(a), setHonored(b)]);
+    // MS-036 (audit final) : « honorée » ne se pose qu'une fois le créneau commencé — les deux créneaux sont reculés le temps des appels.
+    const [ra, rb] = await withBookingStarted(stack.db, a, () => withBookingStarted(stack.db, b, () => Promise.all([setHonored(a), setHonored(b)])));
     expect(ra.statusCode, ra.body).toBe(200);
     expect(rb.statusCode, rb.body).toBe(200);
 

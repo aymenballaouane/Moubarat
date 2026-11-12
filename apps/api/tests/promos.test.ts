@@ -7,7 +7,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { weekdayOfDayStart } from '@moubarat/core';
-import { setupTestStack, loginAs, loginAsPlatform, bearer, type TestStack } from './helpers.js';
+import { setupTestStack, loginAs, loginAsPlatform, bearer, withBookingStarted, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { algiersDateOf, dayStartMs } from '../src/lib/algiers.js';
 import { makeSafeDayPicker } from './helpers/dates.js';
@@ -196,8 +196,11 @@ describe('ROI — liste avec revenu réel (cashReport) vs remise accordée', () 
     const a = await tryBook(seed.fields.t1, day, 540, 60, promo.code);
     expect(a.statusCode).toBe(201);
     const aBody = (a.json() as { booking: { id: string; discountDa: number } }).booking;
-    await stack.app.inject({ method: 'POST', url: `/bookings/${aBody.id}/status`, headers: bearer(nadia), payload: { status: 'HONORED' } });
-    await stack.app.inject({ method: 'POST', url: `/bookings/${aBody.id}/status`, headers: bearer(nadia), payload: { status: 'PAID' } });
+    // MS-036 (audit final) : « honorée » et « payée » ne se posent qu'une fois le créneau commencé.
+    await withBookingStarted(stack.db, aBody.id, async () => {
+      await stack.app.inject({ method: 'POST', url: `/bookings/${aBody.id}/status`, headers: bearer(nadia), payload: { status: 'HONORED' } });
+      await stack.app.inject({ method: 'POST', url: `/bookings/${aBody.id}/status`, headers: bearer(nadia), payload: { status: 'PAID' } });
+    });
 
     const b = await tryBook(seed.fields.t1, day, 630, 60, promo.code);
     expect(b.statusCode).toBe(201);

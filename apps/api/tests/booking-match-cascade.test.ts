@@ -208,7 +208,8 @@ describe('sens 1 — ce qui ne déclenche PAS la cascade', () => {
     const b1 = await book(sofiane, seed.fields.t1, D2, 600);
     const m1 = await createMatch(sofiane, b1, 'Cash cycle');
     for (const status of ['HONORED', 'PAID']) {
-      const res = await stack.app.inject({ method: 'POST', url: `/bookings/${b1}/status`, headers: bearer(nadia), payload: { status } });
+      // MS-036 (audit final) : « honorée » et « payée » ne se posent qu'une fois le créneau commencé.
+      const res = await withBookingStarted(stack.db, b1, () => stack.app.inject({ method: 'POST', url: `/bookings/${b1}/status`, headers: bearer(nadia), payload: { status } }));
       expect(res.statusCode, res.body).toBe(200);
       expect(res.json()).not.toHaveProperty('matchCancelled');
       expect(await matchStatus(m1)).toBe('OPEN');
