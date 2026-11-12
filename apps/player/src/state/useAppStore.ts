@@ -13,6 +13,7 @@ import {
 import { loadToken, saveToken, clearToken, loadPrefs, savePrefs, clearPrefs, saveAuthNotice } from '../lib/session.js';
 import { loadPushToken, savePushToken, clearPushToken } from '../lib/native.js';
 import { fetchMatchPreview } from '../lib/matchPreview.js';
+import { bootFailureKind, type BootFailureKind } from '../lib/bootFailure.js';
 import type { MatchContact } from '../lib/contacts.js';
 import type { ProfileSummary } from '../lib/profileView.js';
 import type { NotificationSettings } from '../lib/notificationSettings.js';
@@ -247,6 +248,8 @@ export function useAppStore() {
       faire) ou, pire, déconnecter un utilisateur dont la session était en
       fait toujours valide. */
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  /** MS-028 (audit final) : quelle panne — le téléphone hors ligne, ou Moubarat qui ne répond pas. */
+  const [bootstrapErrorKind, setBootstrapErrorKind] = useState<BootFailureKind>('server');
   /* C7 (audit produit 21/09/2026) : volontairement HORS de StoreState (pas besoin de reducer testable
      pour un simple booléen posé par le bootstrap et remis à zéro par une seule action serveur). */
   const [needsLegalConsent, setNeedsLegalConsent] = useState(false);
@@ -324,17 +327,21 @@ export function useAppStore() {
     return e instanceof ApiError ? e.message : 'Connexion impossible. Vérifie ta connexion et réessaie.';
   }
 
-  function runBootstrap(token: string, onSettled?: () => void) {
+  /** `quiet` (MS-028) : essai automatique pendant l'écran d'échec — l'erreur affichée n'est PAS effacée avant un vrai succès
+      (sans elle, App.tsx rendrait l'accueil avec les données de démo pendant l'essai). */
+  function runBootstrap(token: string, onSettled?: () => void, quiet = false) {
     let cancelled = false;
-    setBootstrapError(null);
+    if (!quiet) setBootstrapError(null);
     loadEverything(token)
-      .then((b) => { if (!cancelled) applyBootstrapped(b); })
+      .then((b) => { if (!cancelled) { applyBootstrapped(b); setBootstrapError(null); } })
       .catch((e: unknown) => {
         if (cancelled) return;
         if (isRealSessionInvalid(e)) {
           clearToken();
           setState((s) => applySetToken(s, null));
+          setBootstrapError(null);
         } else {
+          setBootstrapErrorKind(bootFailureKind(typeof navigator === 'undefined' ? true : navigator.onLine));
           setBootstrapError(bootstrapErrorMessage(e));
         }
       })
@@ -357,6 +364,13 @@ export function useAppStore() {
     if (!token) return;
     setBootstrapping(true);
     runBootstrap(token);
+  }
+
+  /** MS-028 (audit final) : essai automatique silencieux — l'écran d'échec reste affiché jusqu'au succès. */
+  function retryBootstrapQuietly(): void {
+    const token = loadToken();
+    if (!token) return;
+    runBootstrap(token, undefined, true);
   }
 
   useEffect(() => {
@@ -648,7 +662,9 @@ export function useAppStore() {
         App.tsx s'en sert pour montrer un état honnête hors-ligne au lieu de
         rendre le Home avec les données de démo restées en place. */
     bootstrapError,
+    bootstrapErrorKind,
     retryBootstrap,
+    retryBootstrapQuietly,
     /** C7 (audit produit 21/09/2026) : App.tsx affiche LegalConsentGate tant que c'est vrai, avant
         tout autre écran — compte déjà existant qui n'a jamais accepté, ou dont la version acceptée
         est périmée. */

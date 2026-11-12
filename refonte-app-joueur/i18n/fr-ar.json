@@ -1106,7 +1106,9 @@
     "Ce qui touche à tes matchs et à tes réservations (une confirmation, une annulation, un joueur qui arrive ou qui part, un centre qui réserve à ton numéro), on te l’affiche toujours.": "كل ما يخص مبارياتك وحجوزاتك (تأكيد، إلغاء، لاعب ينضم أو يغادر، مركز يحجز برقمك) نعرضه لك دائمًا.",
     "Chargement du match…": "جارٍ تحميل المباراة…",
     "Ce match est introuvable": "هذه المباراة غير موجودة",
-    "Il a peut-être été retiré, ou le lien n’est plus valable.": "ربما حُذفت، أو أن الرابط لم يعد صالحًا."
+    "Il a peut-être été retiré, ou le lien n’est plus valable.": "ربما حُذفت، أو أن الرابط لم يعد صالحًا.",
+    "Moubarat ne répond pas": "مبارات لا تستجيب",
+    "Mise à jour ou panne de notre côté, ou connexion trop faible. On réessaie tout seul dans quelques secondes.": "تحديث أو عطل من جهتنا، أو اتصال ضعيف جدًا. سنعيد المحاولة تلقائيًا بعد ثوانٍ."
   },
   "par_ecran": {}
 }

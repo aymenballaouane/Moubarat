@@ -8,6 +8,7 @@ import { LegalConsentGate } from './components/LegalConsentGate.js';
 import { NameChangeGate } from './components/NameChangeGate.js';
 import { AccessSetupGate } from './components/AccessSetupGate.js';
 import { ErreurReseau } from './components/ErreurReseau.js';
+import { BOOT_AUTO_RETRY_MS } from './lib/bootFailure.js';
 import { BookingFlow } from './components/BookingFlow.js';
 import { MatchDetail } from './components/MatchDetail.js';
 import { CreateMatchFlow } from './components/CreateMatchFlow.js';
@@ -167,6 +168,18 @@ export function App() {
     }
   }, [store.me]);
 
+  /* Audit final, MS-028 (12/11/2026) : l'écran d'échec du chargement promettait « on réessaie tout seul » sans le faire. Essai
+     silencieux toutes les 10 secondes, et dès que le téléphone retrouve le réseau ; l'écran reste affiché jusqu'au succès. */
+  const bootFailed = store.bootstrapError !== null && !store.me;
+  useEffect(() => {
+    if (!bootFailed) return;
+    const id = window.setInterval(() => store.retryBootstrapQuietly(), BOOT_AUTO_RETRY_MS);
+    const onOnline = () => store.retryBootstrapQuietly();
+    window.addEventListener('online', onOnline);
+    return () => { window.clearInterval(id); window.removeEventListener('online', onOnline); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bootFailed]);
+
   const unread = unreadCount(store.notifications, CURRENT_USER_ID);
 
   /* Rien tant que "suis-je vraiment encore connecté ?" n'a pas de réponse
@@ -206,7 +219,7 @@ export function App() {
     return (
       <>
         <IconSprite />
-        <ErreurReseau onRetry={store.retryBootstrap} />
+        <ErreurReseau onRetry={store.retryBootstrap} kind={store.bootstrapErrorKind} />
       </>
     );
   }
