@@ -678,3 +678,33 @@ describe('MS-020 — l’annulation par le joueur apparaît au Journal du centre
     expect(entries.find((x) => x.summary.includes(b.reference))!.summary).toContain('Match Journal');
   });
 });
+
+describe('MS-016 — retirer un format ou changer le sport ne bloque plus une réservation', () => {
+  it('refusé (409 FORMAT_IN_USE, avec la liste) tant qu’une réservation à venir porte le format ; permis une fois libérée (CONF-06, CONF-19)', async () => {
+    const hamid = await loginAsPlatform(stack, seed.crmStaffEmails.hamid, seed.crmStaffPassword);
+    const created = await call('POST', `/venues/${seed.venueId}/fields`, hamid, { name: 'T-Lot1-Formats', sport: 'FOOTBALL', formats: ['5v5', '7v7'], hourlyRateDa: 3000 });
+    expect(created.statusCode, created.body).toBe(201);
+    const fieldId = (created.json() as { field: { id: string } }).field.id;
+    const date = algiersDateOf(Date.now() + 12 * 86_400_000);
+    const b = await call('POST', '/bookings', hamid, { fieldId, date, startMin: 1200, durationMin: 60, source: 'WALK_IN', reservationName: 'Client Sept', format: '7v7' });
+    expect(b.statusCode, b.body).toBe(201);
+    const bookingId = (b.json() as { booking: { id: string } }).booking.id;
+
+    const removeFormat = await call('DELETE', `/venues/${seed.venueId}/fields/${fieldId}/formats/7v7`, hamid);
+    expect(removeFormat.statusCode, removeFormat.body).toBe(409);
+    const body = removeFormat.json() as { error: string; details: { bookings: number; conflicts: { label: string }[] } };
+    expect(body.error).toBe('FORMAT_IN_USE');
+    expect(body.details.bookings).toBe(1);
+    const changeSport = await call('PATCH', `/venues/${seed.venueId}/fields/${fieldId}`, hamid, { sport: 'PADEL' });
+    expect([changeSport.statusCode, (changeSport.json() as { error: string }).error], changeSport.body).toEqual([409, 'FORMAT_IN_USE']);
+    // Rien n'a bougé : le terrain garde ses deux formats et son sport.
+    const formats = (await stack.db.selectFrom('field_format_prices').select('format').where('field_id', '=', fieldId).execute()).map((r) => r.format).sort();
+    expect(formats).toEqual(['5v5', '7v7']);
+    // L'autre format, qu'aucune réservation ne porte, se retire.
+    expect((await call('DELETE', `/venues/${seed.venueId}/fields/${fieldId}/formats/5v5`, hamid)).statusCode).toBe(204);
+    // Réservation libérée : le changement de sport passe.
+    expect((await call('POST', `/bookings/${bookingId}/status`, hamid, { status: 'CANCELLED', reason: 'CLIENT' })).statusCode).toBe(200);
+    const ok = await call('PATCH', `/venues/${seed.venueId}/fields/${fieldId}`, hamid, { sport: 'PADEL' });
+    expect(ok.statusCode, ok.body).toBe(200);
+  });
+});

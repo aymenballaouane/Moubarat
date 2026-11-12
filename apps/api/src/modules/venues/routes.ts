@@ -5,7 +5,7 @@ import type { PlatformGuards } from '../../auth/platform-guards.js';
 import { writeAudit } from '../../audit/log.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
 import { parseVenuePhone } from '../../lib/validate.js';
-import { archiveRefusalMessage, findFieldCommitments } from './archive-guard.js';
+import { archiveRefusalMessage, findFieldCommitments, findFormatBookings, formatRefusalMessage } from './archive-guard.js';
 import { VENUE_RATING_MIN_COUNT, ratingSummaryFor, ratingSummaryForMany } from '../results/service.js';
 import { READY_SIGNAL_COOLDOWN_MS, evaluateReadiness, lastReadySignalAt, loadVenueReadiness, notReadyMessage } from './readiness.js';
 
@@ -377,6 +377,16 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
     if ('status' in patch) dbPatch.status = patch.status;
 
     const sportChanged = 'sport' in patch && patch.sport !== before.sport;
+    // MS-016 (audit final) : changer de sport retire les formats de l'ancien sport — refusé tant qu'une réservation à venir en porte un.
+    if (sportChanged) {
+      const kept = SPORT_FORMATS[patch.sport as Sport];
+      const dropped = (await db.selectFrom('field_format_prices').select('format').where('field_id', '=', req.params.fieldId).execute())
+        .map((r) => r.format).filter((f) => !kept.includes(f));
+      const inUse = await findFormatBookings(db, req.params.fieldId, dropped, Date.now());
+      if (inUse.count > 0) {
+        throw new ApiError(409, 'FORMAT_IN_USE', formatRefusalMessage(inUse.count, 'sport'), { conflicts: inUse.conflicts, bookings: inUse.count });
+      }
+    }
     const row = await db.transaction().execute(async (trx) => {
       const updated = await trx.updateTable('fields').set(dbPatch)
         .where('id', '=', req.params.fieldId).returningAll().executeTakeFirstOrThrow();
@@ -561,6 +571,11 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
         .executeTakeFirstOrThrow() as { n: string | number | bigint };
       if (Number(count.n) <= 1) {
         throw badRequest('Un terrain propose toujours au moins un format — configurez-en un autre avant de retirer celui-ci.', 'FORMAT_SPORT_MISMATCH');
+      }
+      // MS-016 (audit final) : pas tant qu'une réservation à venir porte ce format (elle deviendrait impossible à déplacer).
+      const inUse = await findFormatBookings(db, field.id, [format], Date.now());
+      if (inUse.count > 0) {
+        throw new ApiError(409, 'FORMAT_IN_USE', formatRefusalMessage(inUse.count, 'format'), { conflicts: inUse.conflicts, bookings: inUse.count });
       }
 
       await db.transaction().execute(async (trx) => {

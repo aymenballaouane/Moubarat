@@ -12,6 +12,7 @@ import { setupTestStack, loginAs, loginAsPlatform, bearer, insertTestField, type
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { algiersDateOf, dayStartMs } from '../src/lib/algiers.js';
 import { makeSafeDayPicker } from './helpers/dates.js';
+import { sql } from 'kysely';
 
 let stack: TestStack;
 let seed: SeedResult;
@@ -41,6 +42,14 @@ async function availability(fieldId: string, date: string, duration = 60): Promi
   expect(res.statusCode, res.body).toBe(200);
   return res.json() as { field: { formats: { format: string; hourlyRateDa: number }[] }; starts: AvailStart[] };
 }
+/** MS-016 (audit final, 12/11/2026) : un format ne se retire plus tant qu'une réservation À VENIR le porte — les tests qui en
+    retirent un libèrent d'abord celles du seed (annulées en base, comme le ferait le centre). Les passées gardent leur format. */
+async function releaseFutureBookings(fieldId: string, format: string): Promise<void> {
+  await stack.db.updateTable('bookings').set({ status: 'CANCELLED', cancelled_at: new Date(), cancel_reason: 'CLIENT' })
+    .where('field_id', '=', fieldId).where(sql<boolean>`format::text = ${format}`).where('status', 'in', ['RESERVED', 'HONORED', 'PAID'])
+    .where(sql<boolean>`upper(time_range) > now()`).execute();
+}
+
 async function venueField(fieldId: string) {
   const res = await stack.app.inject({ method: 'GET', url: `/venues/${seed.venueId}` });
   expect(res.statusCode, res.body).toBe(200);
@@ -226,6 +235,10 @@ describe('CRUD formats & prix — permissions, isolation, garde-fous', () => {
     t1 = await venueField(seed.fields.t1);
     expect(t1.formatPrices.find((p) => p.format === '6v6')!.hourlyRateDa).toBe(3900);
 
+    // MS-016 (audit final) : refusé tant qu'une réservation à venir porte ce format ; permis une fois celles du seed libérées.
+    const refused = await stack.app.inject({ method: 'DELETE', url: formatsUrl(seed.fields.t1, '6v6'), headers: bearer(hamid) });
+    expect([refused.statusCode, (refused.json() as { error: string }).error], refused.body).toEqual([409, 'FORMAT_IN_USE']);
+    await releaseFutureBookings(seed.fields.t1, '6v6');
     const del = await stack.app.inject({ method: 'DELETE', url: formatsUrl(seed.fields.t1, '6v6'), headers: bearer(hamid) });
     expect(del.statusCode, del.body).toBe(204);
     t1 = await venueField(seed.fields.t1);
@@ -378,6 +391,7 @@ describe('CRUD formats & prix — permissions, isolation, garde-fous', () => {
     const before = await venueField(seed.fields.t3);
     expect(before.pricingRules.filter((r) => r.format === 'SIMPLE')).toHaveLength(3);
 
+    await releaseFutureBookings(seed.fields.t3, 'SIMPLE'); // MS-016 : sinon refusé (409 FORMAT_IN_USE)
     const del = await stack.app.inject({ method: 'DELETE', url: formatsUrl(seed.fields.t3, 'SIMPLE'), headers: bearer(hamid) });
     expect(del.statusCode, del.body).toBe(204);
     const after = await venueField(seed.fields.t3);

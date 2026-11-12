@@ -66,3 +66,36 @@ export function archiveRefusalMessage(c: Pick<FieldCommitments, 'bookings' | 'su
   if (c.subscriptions > 0) parts.push(`${c.subscriptions} abonnement${c.subscriptions > 1 ? 's' : ''} actif${c.subscriptions > 1 ? 's' : ''}`);
   return `Ce terrain a ${parts.join(' et ')} — à déplacer ou annuler avant de l’archiver.`;
 }
+
+/** Audit final, MS-016 (12/11/2026) : réservations vivantes à venir d'un terrain qui PORTENT l'un des formats donnés. Retirer
+    un format (ou changer le sport, qui retire tous les formats de l'ancien sport) les laissait avec un format que le terrain
+    ne propose plus : tout déplacement était ensuite refusé (FORMAT_NOT_AVAILABLE). Les réservations historiques sans format
+    (`format` NULL) ne sont pas concernées : leur format se déduit du terrain au déplacement. */
+export async function findFormatBookings(
+  db: Db, fieldId: string, formats: readonly string[], now: number,
+): Promise<{ count: number; conflicts: FieldCommitment[] }> {
+  if (formats.length === 0) return { count: 0, conflicts: [] };
+  const rows = await db.selectFrom('bookings')
+    .select(['reference', 'reservation_name', 'format', sql<Date>`lower(time_range)`.as('starts_at')])
+    .where('field_id', '=', fieldId)
+    .where('status', 'in', ['RESERVED', 'HONORED', 'PAID'])
+    .where(sql<boolean>`upper(time_range) > ${new Date(now)}`)
+    .where(sql<boolean>`format::text IN (${sql.join([...formats])})`)
+    .orderBy(sql`lower(time_range)`)
+    .execute();
+  return {
+    count: rows.length,
+    conflicts: rows.slice(0, SHOWN).map((r) => ({
+      kind: 'BOOKING' as const,
+      label: `${r.reference ?? 'Résa'} · ${r.reservation_name ?? '—'} · ${r.format} — ${whenLabel(new Date(r.starts_at).getTime())}`,
+    })),
+  };
+}
+
+/** « 2 réservations à venir portent ce format — … » (pluriels accordés). */
+export function formatRefusalMessage(count: number, what: 'format' | 'sport'): string {
+  const head = `${count} réservation${count > 1 ? 's' : ''} à venir ${count > 1 ? 'portent' : 'porte'}`;
+  return what === 'format'
+    ? `${head} ce format — à déplacer ou annuler avant de le retirer.`
+    : `${head} un format de l’ancien sport — à déplacer ou annuler avant de changer le sport du terrain.`;
+}
