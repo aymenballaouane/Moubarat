@@ -83,6 +83,12 @@ export interface Env {
   bookingMaxUpcoming: number;
   /** Refuser une réservation qui chevauche un autre engagement du joueur (règle 23) — toujours vrai ; relâché par les seuls tests (données chevauchantes). */
   bookingForbidOverlap: boolean;
+  /** Audit final, MS-011 (12/11/2026) : routes des équipes (`/teams`, `/me/teams`) et des défis (`/challenges`) servies ou non.
+      Éteintes par défaut, comme dans l'app (`TEAMS_CHALLENGES_ENABLED` côté player) : avant, elles répondaient à des appels
+      directs alors que la fonction était masquée, et l'acceptation d'un défi créait une réservation sans plafonds, sans
+      horizon ni restriction. Seule la chaîne exacte `true` les allume — à ne faire qu'après avoir fait passer l'acceptation
+      par la création de réservation standard (docs/PASSATION.md). */
+  teamsChallengesEnabled: boolean;
   /** `req.ip` ne reflète l'IP réelle du client derrière un reverse proxy
       QUE si Fastify est configuré pour lui faire confiance — sans ça, toutes
       les requêtes semblent venir du proxy (une seule IP), ce qui rendrait la
@@ -218,6 +224,7 @@ export function readEnv(overrides: Partial<Env> = {}): Env {
     bookingMaxPerDay: intEnv('BOOKING_MAX_PER_DAY', 2, { min: 1 }),
     bookingMaxUpcoming: intEnv('BOOKING_MAX_UPCOMING', 4, { min: 1 }),
     bookingForbidOverlap: true,
+    teamsChallengesEnabled: process.env.TEAMS_CHALLENGES_ENABLED === 'true',
     trustProxy: process.env.TRUST_PROXY === 'true',
     trustProxyCidrs: parseTrustedProxies(process.env.TRUST_PROXY_CIDRS),
     support: {

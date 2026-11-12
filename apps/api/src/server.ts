@@ -291,7 +291,8 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
       bookingMaxPerDay: env.bookingMaxPerDay, bookingMaxUpcoming: env.bookingMaxUpcoming, forbidOverlap: env.bookingForbidOverlap,
     },
   });
-  await registerTeamRoutes(app, { db, guards, inviteLimiter: teamInviteLimiter });
+  // MS-011 (audit final, 12/11/2026) : équipes et défis servis seulement si la fonction est allumée (env.ts).
+  if (env.teamsChallengesEnabled) await registerTeamRoutes(app, { db, guards, inviteLimiter: teamInviteLimiter });
   await registerMatchRoutes(app, { db, guards });
   await registerNotificationRoutes(app, { db, guards });
   await registerPushRoutes(app, { db, guards });
@@ -300,7 +301,7 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
   await registerAbsenceRoutes(app, { db, guards, platformGuards });
   await registerReportRoutes(app, { db, guards, platformGuards });
   await registerClaimRoutes(app, { db, guards });
-  await registerChallengeRoutes(app, { db, guards });
+  if (env.teamsChallengesEnabled) await registerChallengeRoutes(app, { db, guards });
   await registerResultRoutes(app, { db, guards });
   await registerCashRoutes(app, { db, guards: platformGuards });
   await registerAnalyticsRoutes(app, { db, guards: platformGuards });

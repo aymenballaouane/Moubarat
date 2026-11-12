@@ -14,6 +14,7 @@ import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { hashPassword, newSessionToken, sha256 } from '../src/lib/crypto.js';
 import { algiersDateOf, dayStartMs } from '../src/lib/algiers.js';
 import { fromPgRange } from '../src/lib/pgrange.js';
+import { readEnv } from '../src/env.js';
 
 let stack: TestStack;
 let seed: SeedResult;
@@ -418,6 +419,32 @@ describe('MS-012 — les plafonds du joueur tiennent sous requêtes simultanées
       expect(live.length).toBeLessThanOrEqual(4);
     } finally {
       await prod.teardown();
+    }
+  });
+});
+
+describe('MS-011 — équipes et défis éteints côté serveur, comme dans l’app', () => {
+  it('par défaut (production) : /teams, /me/teams et /challenges ne répondent pas (404) ; le CRM garde ses équipes de centre (DIV-01)', async () => {
+    expect(readEnv({ databaseUrl: 'postgres://x' }).teamsChallengesEnabled).toBe(process.env.TEAMS_CHALLENGES_ENABLED === 'true');
+    expect(process.env.TEAMS_CHALLENGES_ENABLED).not.toBe('true'); // défaut : éteint
+    const off = await setupTestStack({ envOverrides: { teamsChallengesEnabled: false } });
+    try {
+      const s = await seedDemo(off.db);
+      const token = await loginAs(off, '+213661460001', 'lot1_equipes');
+      const hit = (method: 'GET' | 'POST', url: string, payload?: Record<string, unknown>) =>
+        off.app.inject({ method, url, headers: bearer(token), ...(payload ? { payload } : {}) });
+      for (const res of [
+        await hit('POST', '/teams', { name: 'Equipe Eteinte' }),
+        await hit('GET', '/me/teams'),
+        await hit('GET', '/challenges/inbox'),
+        await hit('POST', '/challenges/00000000-0000-0000-0000-000000000000/accept', {}),
+      ]) expect(res.statusCode, res.body).toBe(404);
+      expect(await off.db.selectFrom('teams').select('id').where('name', '=', 'Equipe Eteinte').execute()).toHaveLength(0);
+      const hamid = await loginAsPlatform(off, s.crmStaffEmails.hamid, s.crmStaffPassword);
+      const crm = await off.app.inject({ method: 'GET', url: `/venues/${s.venueId}/teams`, headers: bearer(hamid) });
+      expect(crm.statusCode, crm.body).toBe(200);
+    } finally {
+      await off.teardown();
     }
   });
 });

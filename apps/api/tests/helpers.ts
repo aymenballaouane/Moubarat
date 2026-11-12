@@ -67,6 +67,9 @@ export const LOOSE_LIMITS = {
   bookingMaxPerDay: 100_000, bookingMaxUpcoming: 100_000,
   // Plusieurs suites posent, pour un même joueur, des réservations qui se chevauchent comme données de test (analytics, clients…).
   bookingForbidOverlap: false,
+  // MS-011 (audit final, 12/11/2026) : équipes et défis éteints par défaut en production ; allumés ici pour que leurs suites
+  // continuent de les éprouver. `correctifs-lot1.test.ts` vérifie qu'éteints, ils ne répondent pas.
+  teamsChallengesEnabled: true,
 };
 
 /** `poolMax` : taille du pool de la stack (5 par défaut). Un test peut la
