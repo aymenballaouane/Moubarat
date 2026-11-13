@@ -8,7 +8,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { weekdayOfDayStart } from '@moubarat/core';
-import { setupTestStack, bearer, insertTestField, loginAs, loginAsPlatform, type TestStack } from './helpers.js';
+import { setupTestStack, bearer, insertTestField, loginAs, loginAsPlatform, withBookingStarted, type TestStack } from './helpers.js';
 import { makeSafeDayPicker } from './helpers/dates.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { hashPassword, newSessionToken, sha256 } from '../src/lib/crypto.js';
@@ -813,5 +813,22 @@ describe('MS-036 (suite) — un Manager corrige une « Honorée » ou « Payée 
     expect((await call('POST', `/bookings/${id}/status`, yacine, { status: 'CANCELLED', reason: 'CLIENT' })).statusCode).toBe(200);
     const log = await stack.db.selectFrom('audit_log').select(['action', 'before_val', 'after_val', 'actor_role']).where('object_id', '=', id).where('action', '=', 'BOOKING_STATUS_CORRECTED').execute();
     expect(log.map((l) => `${l.before_val}>${l.after_val}:${l.actor_role}`).sort()).toEqual(['HONORED>RESERVED:MANAGER', 'PAID>HONORED:MANAGER']);
+  });
+});
+
+describe('Journal — le cycle cash en français', () => {
+  it('« a passé … en « Honorée » » puis « Payée », jamais le code anglais', async () => {
+    const staff = await loginAsPlatform(stack, seed.alwaysOpen.staffEmail, seed.crmStaffPassword);
+    const date = algiersDateOf(Date.now() + 15 * 86_400_000);
+    const b = await call('POST', '/bookings', staff, { fieldId: seed.alwaysOpen.fieldId, date, startMin: 300, durationMin: 60, source: 'WALK_IN', reservationName: 'Client Journal' });
+    expect(b.statusCode, b.body).toBe(201);
+    const id = (b.json() as { booking: { id: string } }).booking.id;
+    await withBookingStarted(stack.db, id, async () => {
+      for (const status of ['HONORED', 'PAID']) expect((await call('POST', `/bookings/${id}/status`, staff, { status })).statusCode).toBe(200);
+    });
+    const lines = (await stack.db.selectFrom('audit_log').select('summary').where('object_id', '=', id).where('action', '=', 'BOOKING_CASH_STATUS').execute()).map((l) => l.summary);
+    expect(lines.some((s) => s.includes('en « Honorée »'))).toBe(true);
+    expect(lines.some((s) => s.includes('en « Payée »'))).toBe(true);
+    expect(lines.join(' ')).not.toMatch(/\b(HONORED|PAID)\b/);
   });
 });

@@ -60,6 +60,9 @@ function publicBooking(row: BookingRow): Record<string, unknown> {
   };
 }
 
+/** Libellés du Journal pour le cycle cash (13/11/2026) : la ligne disait « a passé COM-0103 en PAID », code anglais brut. */
+const CASH_STATUS_LABEL: Record<string, string> = { HONORED: 'Honorée', PAID: 'Payée', NO_SHOW: 'No-show' };
+
 export async function registerBookingRoutes(app: FastifyInstance, { db, guards, platformGuards, limits }: Deps): Promise<void> {
 
   /* Création — le seul chemin (core prepareBooking) pour les trois sources :
@@ -437,7 +440,7 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
             ? (reason === 'STAFF_ERROR'
               ? `a annulé la réservation ${row.reference ?? row.id} (erreur de saisie du centre — ${row.price_total_da} DA, non compté en CA perdu)${cascadeSummary}`
               : `a annulé la réservation ${row.reference ?? row.id} (client — ${row.price_total_da} DA retirés du CA engagé)${cascadeSummary}`)
-            : `a passé ${row.reference ?? row.id} en ${to} (${row.price_total_da} DA)`,
+            : `a passé ${row.reference ?? row.id} en « ${CASH_STATUS_LABEL[to] ?? to} » (${row.price_total_da} DA)`,
           before: row.status, after: to,
         });
         return { cascade, bookerNotified };
