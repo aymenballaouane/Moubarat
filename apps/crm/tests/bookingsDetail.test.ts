@@ -23,6 +23,8 @@ function subOcc(over: Partial<ApiSubscriptionOccurrence> = {}): ApiSubscriptionO
   return {
     id: 'sub-occ:r1', recurringBookingId: 'r1', holderName: 'FC Kahwa',
     fieldId: 'f1', fieldName: 'T1', start: DAY + 20 * 3_600_000, end: DAY + 21.5 * 3_600_000,
+    // P1-12 (15/11/2026) : séance sans prix ni statut posé — n'entre dans aucun montant (comportement d'avant).
+    date: '2026-09-07', status: 'RESERVED', priceDa: null, recorded: false,
     ...over,
   };
 }
@@ -176,9 +178,23 @@ describe('subscriptionBlocksFromApi — chantier Abonnements (06/09/2026)', () =
 });
 
 describe('subscriptionReservationRowsFromApi — chantier Abonnements (06/09/2026)', () => {
-  it('ligne minimale (holder/terrain/créneau), jamais de prix/statut inventés', () => {
+  // P1-12 (15/11/2026) : la ligne porte désormais le statut et le prix de la séance — ceux que sert l'API, jamais inventés.
+  it('ligne de séance : holder/terrain/créneau, plus le statut et le prix servis par l’API, tels quels', () => {
     const [r] = subscriptionReservationRowsFromApi([subOcc()], DAY);
-    expect(r).toEqual({ id: 'sub-occ:r1', startMin: 20 * 60, durationMin: 90, holderName: 'FC Kahwa', field: 'T1' });
+    expect(r).toEqual({
+      id: 'sub-occ:r1', startMin: 20 * 60, durationMin: 90, holderName: 'FC Kahwa', field: 'T1',
+      recurringBookingId: 'r1', date: '2026-09-07', startsAt: DAY + 20 * 3_600_000, status: 'RESERVED', priceDa: null, recorded: false,
+    });
+    const [paid] = subscriptionReservationRowsFromApi([subOcc({ status: 'PAID', priceDa: 2500, recorded: true })], DAY);
+    expect(paid).toMatchObject({ status: 'PAID', priceDa: 2500, recorded: true });
+  });
+
+  it('résumé du jour : une séance avec prix compte (payée, no-show, à encaisser) ; sans prix, rien', () => {
+    const s = summaryFromApi([], [
+      subOcc({ status: 'PAID', priceDa: 2500 }), subOcc({ status: 'NO_SHOW', priceDa: 2000 }),
+      subOcc({ status: 'RESERVED', priceDa: 1800 }), subOcc({ status: 'PAID', priceDa: null }),
+    ]);
+    expect(s).toEqual({ collectedDa: 2500, engagedDa: 1800, lostCancelledDa: 0, lostNoShowDa: 2000 });
   });
 });
 

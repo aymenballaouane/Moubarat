@@ -23,7 +23,8 @@ import { assertNotRestricted, recordAbsence } from '../absences/service.js';
 import { attachClaim } from '../claims/service.js';
 import { assertPhoneVisible, describeConflict, rowToMatchPlayer, type MatchRow } from '../matches/service.js';
 import { rowToRecurringBooking } from '../recurring-bookings/service.js';
-import { applyCashMovement, loadOpenSession, rowToCashSession } from '../cash/service.js';
+import { collectIntoOpenSession } from '../cash/collect.js';
+import { sessionsForCivilDay, sessionsForPeriod } from '../recurring-bookings/sessions.js';
 
 /* CRM Auth V1 : ce module mélange deux identités — le joueur (guards, Player)
    pour créer/annuler SA réservation, et le centre (platformGuards, plateforme)
@@ -439,27 +440,11 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
             await recordAbsence(trx, { userId: holder.id, kind: 'FULL', source: 'CENTER', bookingId: row.id, matchId: row.match_id, declaredBy: req.platformAuth!.accountId, now });
           }
         }
-        let cashRecorded = false;
-        if (recordCash && row.price_total_da > 0 && canCenterAct(role, 'CASH_SESSION').ok) {
-          const cashOn = await trx.selectFrom('venues').select('cash_module_enabled').where('id', '=', venue.id).executeTakeFirst();
-          const session = cashOn?.cash_module_enabled ? await loadOpenSession(trx, venue.id, { forUpdate: true }) : null;
-          if (session) {
-            const movement = applyCashMovement({
-              session: rowToCashSession(session), kind: 'COLLECTION', amountDa: row.price_total_da,
-              by: req.platformAuth!.accountId, at: now, ref: row.reference ?? row.id, note: 'Réservation payée',
-            });
-            const mv = await trx.insertInto('cash_movements').values({
-              session_id: movement.sessionId, kind: movement.kind, amount_da: movement.amountDa,
-              by_user_id: movement.byUserId, ref: movement.ref ?? null, note: movement.note ?? null,
-            }).returning('id').executeTakeFirstOrThrow();
-            await writeAudit(trx, {
-              venueId: venue.id, actorId: req.platformAuth!.accountId, actorRole: role,
-              action: 'CASH_MOVEMENT', objectType: 'cash_movement', objectId: mv.id,
-              summary: `a encaissé ${row.price_total_da} DA en caisse — réservation ${row.reference ?? row.id} payée`,
-            });
-            cashRecorded = true;
-          }
-        }
+        const cashRecorded = recordCash && await collectIntoOpenSession(trx, {
+          venueId: venue.id, role, actorId: req.platformAuth!.accountId, amountDa: row.price_total_da,
+          ref: row.reference ?? row.id, note: 'Réservation payée', now,
+          summary: `a encaissé ${row.price_total_da} DA en caisse — réservation ${row.reference ?? row.id} payée`,
+        });
         let cascade: LinkedMatchCancelled | null = null;
         let bookerNotified = false;
         if (to === 'CANCELLED') {
@@ -743,27 +728,14 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       // risque de faire glisser une occurrence sans prix/statut réel dans les
       // totaux encaissé/engagé/origine déjà en place ailleurs (Dashboard,
       // Analytics) — ceux-ci ne touchent jamais ce nouveau tableau.
-      let recurringQuery = db.selectFrom('recurring_bookings')
-        .innerJoin('fields', 'fields.id', 'recurring_bookings.field_id')
-        .select([
-          'recurring_bookings.id', 'recurring_bookings.field_id', 'recurring_bookings.weekday',
-          'recurring_bookings.start_min', 'recurring_bookings.duration_min', 'recurring_bookings.holder_name',
-          'recurring_bookings.active_from', 'recurring_bookings.active_until', 'recurring_bookings.status',
-          'fields.name as field_name',
-        ])
-        .where('fields.venue_id', '=', req.params.venueId)
-        .where('recurring_bookings.status', '=', 'ACTIVE');
-      if (req.query.fieldId) recurringQuery = recurringQuery.where('fields.id', '=', req.query.fieldId);
-      const recurringRows = await recurringQuery.execute();
-      const weekday = weekdayOfDayStart(dayStart);
-      const subscriptions = recurringRows.flatMap((r) => {
-        const occ = recurringOccurrence(rowToRecurringBooking(r), weekday, dayStart);
-        if (!occ) return [];
-        return [{
-          id: `sub-occ:${r.id}`, recurringBookingId: r.id, holderName: r.holder_name,
-          fieldId: r.field_id, fieldName: r.field_name, start: occ.start, end: occ.end,
-        }];
-      });
+      /* P1-12 (audit stratégique du CRM, 15/11/2026) : chaque séance porte son jour (sa clé), son statut (« RESERVED » tant qu'il
+         n'est pas posé) et son prix — figé si le statut est posé, sinon le prix par séance de l'abonnement (null : sans prix). */
+      const sessions = await sessionsForCivilDay(db, req.params.venueId, algiersDateOf(dayStart), req.query.fieldId);
+      const subscriptions = sessions.map((x) => ({
+        id: `sub-occ:${x.recurringId}`, recurringBookingId: x.recurringId, holderName: x.holderName,
+        fieldId: x.fieldId, fieldName: x.fieldName, start: x.range.start, end: x.range.end,
+        date: x.date, status: x.status, priceDa: x.priceDa, recorded: x.recorded,
+      }));
 
       return reply.send({
         bookings: rows.map((r) => {
@@ -834,10 +806,20 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       ]);
       const rows = [...reservedRows, ...honoredRows];
       const countOf = (st: string) => Number(counts.find((c) => c.status === st)?.n ?? 0);
+      /* P1-12 (15/11/2026) : les séances d'abonnés passées (avec un prix) restées sans statut, ou honorées sans paiement. */
+      const pastSessions = (await sessionsForPeriod(db, req.params.venueId, operatingDateOf(since.getTime()), operatingDateOf(now)))
+        .filter((x) => x.priceDa !== null && x.range.end <= now && x.range.start >= since.getTime() && (x.status === 'RESERVED' || x.status === 'HONORED'));
+      const openSessions = pastSessions.filter((x) => x.status === 'RESERVED');
       return reply.send({
         lookbackDays: UNCLOSED_LOOKBACK_DAYS,
         reserved: countOf('RESERVED'),
         honoredUnpaid: countOf('HONORED'),
+        sessionsReserved: openSessions.length,
+        sessionsHonoredUnpaid: pastSessions.length - openSessions.length,
+        sessions: openSessions.slice(0, UNCLOSED_LIST_MAX).map((x) => ({
+          recurringBookingId: x.recurringId, holderName: x.holderName, fieldName: x.fieldName, date: x.date,
+          operatingDate: operatingDateOf(x.range.start), start: x.range.start, priceDa: x.priceDa,
+        })),
         bookings: rows.map((r) => {
           const range = fromPgRange(r.time_range);
           return {

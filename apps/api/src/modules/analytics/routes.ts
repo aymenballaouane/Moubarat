@@ -6,6 +6,7 @@ import {
   buildOccupancyReport, buildOriginReport, buildRevenueReport, loadPeriodBookings,
   parsePeriod, previousPeriod,
 } from './service.js';
+import { sessionsAsBookings, sessionsForPeriod } from '../recurring-bookings/sessions.js';
 import { buildExportWorkbook, exportFilename, exportRowsFromBookings, loadBookingsForExport } from './export.js';
 
 interface Deps { db: Db; guards: PlatformGuards; }
@@ -29,8 +30,13 @@ export async function registerAnalyticsRoutes(app: FastifyInstance, { db, guards
     { preHandler: (req) => guards.requirePlatformAuth(req) }, async (req, reply) => {
       await guards.requireCenterAction(req, req.params.venueId, 'VIEW_ANALYTICS');
       const period = parsePeriod(req.query.from, req.query.to);
-      const bookings = await loadPeriodBookings(db, req.params.venueId, period, req.query.fieldId);
-      return reply.send({ period, ...buildRevenueReport(bookings) });
+      /* P1-12 (15/11/2026) : les séances d'abonnés qui ont un prix entrent dans le chiffre (encaissé, engagé, no-shows), en
+         source « comptoir » — jamais dans l'origine des réservations, et le remplissage les comptait déjà (occupancy). */
+      const [bookings, sessions] = await Promise.all([
+        loadPeriodBookings(db, req.params.venueId, period, req.query.fieldId),
+        sessionsForPeriod(db, req.params.venueId, period.fromDay, period.toDay, req.query.fieldId),
+      ]);
+      return reply.send({ period, ...buildRevenueReport([...bookings, ...sessionsAsBookings(sessions)]) });
     });
 
   /* Occupation — globale et par terrain, sur la même période. */
@@ -73,8 +79,13 @@ export async function registerAnalyticsRoutes(app: FastifyInstance, { db, guards
         buildOccupancyReport(db, req.params.venueId, period, bookings),
         buildOccupancyReport(db, req.params.venueId, prior, priorBookings),
       ]);
-      const revenue = buildRevenueReport(bookings);
-      const priorRevenue = buildRevenueReport(priorBookings);
+      // P1-12 : séances d'abonnés dans le chiffre, comme /analytics/revenue (jamais dans l'occupation : déjà comptées).
+      const [sessions, priorSessions] = await Promise.all([
+        sessionsForPeriod(db, req.params.venueId, period.fromDay, period.toDay),
+        sessionsForPeriod(db, req.params.venueId, prior.fromDay, prior.toDay),
+      ]);
+      const revenue = buildRevenueReport([...bookings, ...sessionsAsBookings(sessions)]);
+      const priorRevenue = buildRevenueReport([...priorBookings, ...sessionsAsBookings(priorSessions)]);
       const origin = buildOriginReport(bookings);
       const priorOrigin = buildOriginReport(priorBookings);
 

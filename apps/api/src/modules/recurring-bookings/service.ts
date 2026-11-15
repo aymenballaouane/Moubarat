@@ -8,7 +8,7 @@ import { lockFieldSchedule, recurringClash, weeklyOverlap } from './occupancy.js
 
 export type RecurringRow = Selectable<RecurringBookingsTable>;
 
-export function rowToRecurringBooking(row: RecurringRow): RecurringBooking {
+export function rowToRecurringBooking(row: Omit<RecurringRow, 'price_per_session_da'>): RecurringBooking {
   return {
     id: row.id, fieldId: row.field_id, weekday: row.weekday, startMin: row.start_min,
     durationMin: row.duration_min, holderName: row.holder_name,
@@ -20,6 +20,8 @@ export function rowToRecurringBooking(row: RecurringRow): RecurringBooking {
 export interface RecurringBookingPublic {
   id: string; fieldId: string; fieldName: string; weekday: number; startMin: number; durationMin: number;
   holderName: string; activeFromMs: number; activeUntilMs: number | null; status: 'ACTIVE' | 'ENDED';
+  /** P1-12 (15/11/2026) : prix d'une séance ; null pour un abonnement créé avant (séances hors CA tant qu'il n'est pas fixé). */
+  pricePerSessionDa: number | null;
 }
 
 function publicRecurring(row: RecurringRow, fieldName: string): RecurringBookingPublic {
@@ -27,7 +29,7 @@ function publicRecurring(row: RecurringRow, fieldName: string): RecurringBooking
     id: row.id, fieldId: row.field_id, fieldName, weekday: row.weekday, startMin: row.start_min,
     durationMin: row.duration_min, holderName: row.holder_name,
     activeFromMs: row.active_from.getTime(), activeUntilMs: row.active_until?.getTime() ?? null,
-    status: row.status,
+    status: row.status, pricePerSessionDa: row.price_per_session_da,
   };
 }
 
@@ -38,7 +40,7 @@ export async function listRecurringBookings(db: Db, venueId: string): Promise<Re
       'recurring_bookings.id', 'recurring_bookings.field_id', 'recurring_bookings.weekday',
       'recurring_bookings.start_min', 'recurring_bookings.duration_min', 'recurring_bookings.holder_name',
       'recurring_bookings.active_from', 'recurring_bookings.active_until', 'recurring_bookings.status',
-      'fields.name as field_name',
+      'recurring_bookings.price_per_session_da', 'fields.name as field_name',
     ])
     .where('fields.venue_id', '=', venueId)
     .orderBy('recurring_bookings.status', 'asc') // ACTIVE avant ENDED (ordre alphabétique, pratique ici)
@@ -50,6 +52,8 @@ export async function listRecurringBookings(db: Db, venueId: string): Promise<Re
 export interface CreateRecurringInput {
   fieldId: string; weekday: number; startMin: number; durationMin: number;
   holderName: string; activeFromMs: number; activeUntilMs?: number;
+  /** P1-12 : prix d'une séance, en DA (entier > 0). */
+  pricePerSessionDa?: number;
 }
 
 /** Un abonnement ne doit jamais entrer en conflit avec un autre abonnement actif
@@ -106,6 +110,9 @@ export async function createRecurringBooking(db: Db, venueId: string, p: CreateR
   }
   const holderName = p.holderName.trim();
   must(validateDisplayName(holderName));
+  if (p.pricePerSessionDa !== undefined && (!Number.isInteger(p.pricePerSessionDa) || p.pricePerSessionDa <= 0)) {
+    throw badRequest('Prix par séance : un entier de DA supérieur à 0.');
+  }
   if (p.activeUntilMs !== undefined && p.activeUntilMs < p.activeFromMs) {
     throw badRequest('La date de fin doit être postérieure à la date de début.');
   }
@@ -119,6 +126,7 @@ export async function createRecurringBooking(db: Db, venueId: string, p: CreateR
       field_id: p.fieldId, weekday: p.weekday, start_min: p.startMin, duration_min: p.durationMin,
       holder_name: holderName, active_from: new Date(p.activeFromMs),
       active_until: p.activeUntilMs !== undefined ? new Date(p.activeUntilMs) : null,
+      ...(p.pricePerSessionDa !== undefined ? { price_per_session_da: p.pricePerSessionDa } : {}),
     }).returningAll().executeTakeFirstOrThrow();
   });
   return publicRecurring(row, field.name);
@@ -140,4 +148,19 @@ export async function endRecurringBooking(db: Db, venueId: string, id: string): 
   const updated = await db.updateTable('recurring_bookings').set({ status: 'ENDED' })
     .where('id', '=', id).returningAll().executeTakeFirstOrThrow();
   return publicRecurring(updated, row.field_name);
+}
+
+/** P1-12 (15/11/2026) : fixer ou changer le prix d'une séance. Vaut pour les séances dont le statut n'est pas encore posé ;
+    une séance déjà honorée, payée ou no-show garde le prix figé au moment où son statut a été posé. */
+export async function setRecurringPrice(db: Db, venueId: string, id: string, priceDa: number): Promise<{ sub: RecurringBookingPublic; previous: number | null }> {
+  if (!Number.isInteger(priceDa) || priceDa <= 0) throw badRequest('Prix par séance : un entier de DA supérieur à 0.');
+  const row = await db.selectFrom('recurring_bookings')
+    .innerJoin('fields', 'fields.id', 'recurring_bookings.field_id')
+    .select(['recurring_bookings.price_per_session_da', 'fields.name as field_name', 'fields.venue_id as venue_id'])
+    .where('recurring_bookings.id', '=', id)
+    .executeTakeFirst();
+  if (!row || row.venue_id !== venueId) throw notFound('Abonnement introuvable pour ce centre.');
+  const updated = await db.updateTable('recurring_bookings').set({ price_per_session_da: priceDa })
+    .where('id', '=', id).returningAll().executeTakeFirstOrThrow();
+  return { sub: publicRecurring(updated, row.field_name), previous: row.price_per_session_da };
 }

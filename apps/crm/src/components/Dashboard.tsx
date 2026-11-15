@@ -47,6 +47,9 @@ type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { ki
 interface ApiUnclosed {
   lookbackDays: number; reserved: number; honoredUnpaid: number;
   bookings: { id: string; status: 'RESERVED' | 'HONORED'; date: string; start: number; reference: string | null; name: string | null; fieldName: string }[];
+  /** P1-12 : séances d'abonnés passées (avec un prix) restées sans statut, et la plus ancienne d'abord. */
+  sessionsReserved?: number;
+  sessions?: { recurringBookingId: string; holderName: string; fieldName: string; date: string }[];
 }
 
 /* Chantier CRM — écran Dashboard (06/09/2026) : lecture réelle via
@@ -149,6 +152,17 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
           title: `${n} ${n > 1 ? 'réservations passées honorées, jamais encaissées' : 'réservation passée honorée, jamais encaissée'}`,
           big: { kind: 'value', label: String(n), tone: 'o' },
           detail: oldest ? `La plus ancienne : ${dayLabel(oldest.date)} · ${oldest.name ?? '—'}${oldest.reference ? ` · ${oldest.reference}` : ''}. À marquer « Payée » si le client a réglé.` : 'À marquer « Payée » si le client a réglé.',
+        });
+      }
+
+      if (unclosedRes && (unclosedRes.sessionsReserved ?? 0) > 0 && unclosedRes.sessions?.[0]) {
+        const first = unclosedRes.sessions[0];
+        const n = unclosedRes.sessionsReserved!;
+        unclosedActions.push({
+          id: 'unclosed-sessions', openDate: first.date, severity: 'warning',
+          title: `${n} ${n > 1 ? 'séances d’abonnés passées non clôturées' : 'séance d’abonné passée non clôturée'}`,
+          big: { kind: 'value', label: String(n), tone: 'o' },
+          detail: `La plus ancienne : ${dayLabel(first.date)} · ${first.holderName} · ${first.fieldName}. Marquez-la Payée, Honorée ou No-show dans Réservations.`,
         });
       }
 

@@ -211,6 +211,20 @@ export interface RecurringBookingsTable {
   active_from: Ts;
   active_until: TsNullable;
   status: Generated<'ACTIVE' | 'ENDED'>;
+  /** P1-12 (migration 0046) : prix d'une séance ; NULL pour un abonnement créé avant (séances hors CA). */
+  price_per_session_da: Generated<number | null>;
+}
+
+/** P1-12 (migration 0046) : statut d'une séance d'abonnement, écrit quand le centre le pose. `occurrence_date` est un type
+    `date` Postgres : toujours le LIRE en texte (`occurrence_date::text`) — sans parseur dédié, node-pg en ferait une Date
+    au minuit du fuseau du processus. */
+export interface RecurringOccurrencesTable {
+  recurring_id: string;
+  occurrence_date: string;
+  status: 'HONORED' | 'PAID' | 'NO_SHOW';
+  price_da: number;
+  set_by: string;
+  set_at: Generated<Date>;
 }
 
 export interface BookingsTable {
@@ -585,6 +599,7 @@ export interface Database {
   pricing_rules: PricingRulesTable;
   field_format_prices: FieldFormatPricesTable;
   recurring_bookings: RecurringBookingsTable;
+  recurring_occurrences: RecurringOccurrencesTable;
   bookings: BookingsTable;
   closures: ClosuresTable;
   center_staff: CenterStaffTable;

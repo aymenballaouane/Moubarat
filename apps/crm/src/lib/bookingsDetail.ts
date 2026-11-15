@@ -122,6 +122,9 @@ export interface ApiBookingRow {
 export interface ApiSubscriptionOccurrence {
   id: string; recurringBookingId: string; holderName: string;
   fieldId: string; fieldName: string; start: number; end: number;
+  /** P1-12 (15/11/2026) : la séance — son jour (sa clé), son statut (« RESERVED » tant qu'il n'est pas posé), son prix (figé
+      s'il est posé ; null : abonnement sans prix) et si son statut est enregistré. */
+  date: string; status: 'RESERVED' | 'HONORED' | 'PAID' | 'NO_SHOW'; priceDa: number | null; recorded: boolean;
 }
 
 /* --- Planning --------------------------------------------------------------- */
@@ -169,7 +172,7 @@ export function timelineBlocksFromApi(rows: readonly ApiBookingRow[], dayStart: 
     réinventé, réutilisé tel quel, style `.k-abo` déjà présent (crm.css). */
 export function subscriptionBlocksFromApi(subs: readonly ApiSubscriptionOccurrence[], dayStart: number): TimelineBlock[] {
   return subs.map((s) => ({
-    id: s.id, field: s.fieldName, kind: 'abo', status: null,
+    id: s.id, field: s.fieldName, kind: 'abo', status: s.status === 'RESERVED' ? null : s.status,
     startMin: Math.round((s.start - dayStart) / 60_000),
     durationMin: Math.round((s.end - s.start) / 60_000),
     title: s.holderName, subtitle: 'Abonnement',
@@ -204,11 +207,12 @@ export function reservationRowsFromApi(rows: readonly ApiBookingRow[], dayStart:
   }));
 }
 
-/** Ligne « abonnement » pour Réservations — jamais un `ReservationRow` : pas
-    de prix/statut/encaissement réels à montrer, une Fiche en lecture seule
-    seulement (V1, pas de séances/paiement — docs/CRM_MASTER_SPEC_V1.md §30). */
+/** Ligne « séance d'abonnement » pour Réservations — jamais un `ReservationRow` (pas de référence, d'origine, de match). P1-12
+    (15/11/2026) : la séance a un statut et un prix, et se marque comme une réservation (routes recurring-bookings/…/sessions). */
 export interface SubscriptionReservationRow {
   id: string; startMin: number; durationMin: number; holderName: string; field: string;
+  recurringBookingId: string; date: string; startsAt: number;
+  status: 'RESERVED' | 'HONORED' | 'PAID' | 'NO_SHOW'; priceDa: number | null; recorded: boolean;
 }
 
 export function subscriptionReservationRowsFromApi(
@@ -218,6 +222,8 @@ export function subscriptionReservationRowsFromApi(
     id: s.id, holderName: s.holderName, field: s.fieldName,
     startMin: Math.round((s.start - dayStart) / 60_000),
     durationMin: Math.round((s.end - s.start) / 60_000),
+    recurringBookingId: s.recurringBookingId, date: s.date, startsAt: s.start,
+    status: s.status, priceDa: s.priceDa, recorded: s.recorded,
   }));
 }
 
@@ -229,13 +235,20 @@ export interface ReservationsSummaryTotals { collectedDa: number; engagedDa: num
     promos/service.ts) : une annulation STAFF_ERROR n'ajoute rien au CA
     perdu — trouvé en vérification live (15/09/2026) que ce résumé, calculé
     ICI et non via cashReport, l'oubliait. */
-export function summaryFromApi(rows: readonly ApiBookingRow[]): ReservationsSummaryTotals {
+export function summaryFromApi(rows: readonly ApiBookingRow[], subs: readonly ApiSubscriptionOccurrence[] = []): ReservationsSummaryTotals {
   let collectedDa = 0, engagedDa = 0, lostCancelledDa = 0, lostNoShowDa = 0;
   for (const r of rows) {
     if (r.status === 'PAID') collectedDa += r.priceTotalDa;
     else if (r.status === 'CANCELLED') { if (r.cancelReason !== 'STAFF_ERROR') lostCancelledDa += r.priceTotalDa; }
     else if (r.status === 'NO_SHOW') lostNoShowDa += r.priceTotalDa;
     else engagedDa += r.priceTotalDa; // RESERVED, HONORED
+  }
+  // P1-12 (15/11/2026) : les séances d'abonnés qui ont un prix comptent comme des réservations (même règle que l'API).
+  for (const s of subs) {
+    if (s.priceDa === null) continue;
+    if (s.status === 'PAID') collectedDa += s.priceDa;
+    else if (s.status === 'NO_SHOW') lostNoShowDa += s.priceDa;
+    else engagedDa += s.priceDa;
   }
   return { collectedDa, engagedDa, lostCancelledDa, lostNoShowDa };
 }

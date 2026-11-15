@@ -51,7 +51,9 @@ export function dashboardKpisFromApi(
   rows: readonly ApiBookingRow[], subs: readonly ApiSubscriptionOccurrence[],
   openMinutesPerField: number, fieldCount: number,
 ): DashboardKpis {
-  const summary = summaryFromApi(rows);
+  // P1-12 (15/11/2026) : les séances d'abonnés avec un prix entrent dans l'encaissé, l'engagé et les no-shows (pas dans le
+  // nombre de réservations ni la part Moubarat : ce sont des créneaux réguliers, pas des ventes du jour).
+  const summary = summaryFromApi(rows, subs);
   const occupancyBookings = [
     ...rows.map((r) => ({ status: r.status, source: r.source, range: { start: r.start, end: r.end } })),
     ...subs.map((s) => ({ status: 'RESERVED' as const, source: 'WALK_IN' as const, range: { start: s.start, end: s.end } })),
@@ -67,7 +69,7 @@ export function dashboardKpisFromApi(
     occupancyPct: Math.round(occupancy * 100),
     bookingsCount: rows.length,
     moubaratSharePct: origin.moubaratPct,
-    noShows: rows.filter((r) => r.status === 'NO_SHOW').length,
+    noShows: rows.filter((r) => r.status === 'NO_SHOW').length + subs.filter((s) => s.status === 'NO_SHOW').length,
   };
 }
 

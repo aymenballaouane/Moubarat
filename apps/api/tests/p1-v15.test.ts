@@ -146,3 +146,89 @@ describe('P1-11 — « Payée » et la caisse dans le même geste', () => {
     expect(await movementsFor(b.reference)).toEqual([]);
   });
 });
+
+/* P1-12 (choix d'Aymen : prix par séance, « couche séances ») : les séances d'un abonnement ont un prix et un statut posé comme
+   une réservation ; elles entrent dans le chiffre d'affaires, la caisse et les séances non clôturées. */
+describe('P1-12 — abonnés payants : prix et statut par séance', () => {
+  let yacine = '';      // MANAGER
+  let subId = '';
+  let fieldId = '';
+  const { algiersDateOf: civil, dayStartMs: dsm } = { algiersDateOf: (ms: number) => new Date(ms + 3_600_000).toISOString().slice(0, 10), dayStartMs: (d: string) => Date.parse(`${d}T00:00:00+01:00`) };
+  const lastWeek = civil(Date.now() - 7 * DAY);
+  const twoWeeksAgo = civil(Date.now() - 14 * DAY);
+  const nextWeek = civil(Date.now() + 7 * DAY);
+  const weekday = new Date(dsm(lastWeek) + 3_600_000).getUTCDay();
+  const day = async (date: string) => (await call('GET', `/venues/${seed.venueId}/bookings?date=${date}`, nadia)).json() as {
+    subscriptions: { recurringBookingId: string; date: string; status: string; priceDa: number | null; recorded: boolean }[];
+  };
+  const mine = async (date: string) => (await day(date)).subscriptions.find((x) => x.recurringBookingId === subId);
+  const sessionStatus = (date: string, token: string, body: Record<string, unknown>) =>
+    call('POST', `/venues/${seed.venueId}/recurring-bookings/${subId}/sessions/${date}/status`, token, body);
+
+  beforeAll(async () => {
+    yacine = await loginAsPlatform(stack, seed.crmStaffEmails.yacine, seed.crmStaffPassword);
+    fieldId = (await insertTestField(stack.db, { venue_id: seed.venueId, name: 'V15-abonnés', sport: 'FOOTBALL', formats: ['5v5'], hourly_rate_da: 3000 })).id;
+    const created = await call('POST', `/venues/${seed.venueId}/recurring-bookings`, yacine, {
+      fieldId, weekday, startMin: 600, durationMin: 60, holderName: 'Équipe Mardi', activeFrom: civil(Date.now() - 21 * DAY), pricePerSessionDa: 2500,
+    });
+    expect(created.statusCode, created.body).toBe(201);
+    subId = (created.json() as { subscription: { id: string; pricePerSessionDa: number } }).subscription.id;
+  });
+
+  it('chaque séance porte son jour, son statut (« réservée » tant que rien n’est posé) et son prix', async () => {
+    expect(await mine(lastWeek)).toMatchObject({ date: lastWeek, status: 'RESERVED', priceDa: 2500, recorded: false });
+  });
+
+  it('« Payée » sur une séance passée : statut enregistré au prix figé, compté dans le chiffre encaissé (source comptoir)', async () => {
+    const before = (await call('GET', `/venues/${seed.venueId}/analytics/revenue?from=${lastWeek}&to=${lastWeek}&fieldId=${fieldId}`, yacine)).json() as { overall: { collected: number } };
+    expect(before.overall.collected).toBe(0);
+    const res = await sessionStatus(lastWeek, nadia, { status: 'PAID' });
+    expect(res.statusCode, res.body).toBe(200);
+    expect(await mine(lastWeek)).toMatchObject({ status: 'PAID', priceDa: 2500, recorded: true });
+    // Le prix change ensuite : la séance payée garde 2 500 DA.
+    expect((await call('PATCH', `/venues/${seed.venueId}/recurring-bookings/${subId}`, yacine, { pricePerSessionDa: 2800 })).statusCode).toBe(200);
+    const rev = (await call('GET', `/venues/${seed.venueId}/analytics/revenue?from=${lastWeek}&to=${lastWeek}&fieldId=${fieldId}`, yacine)).json() as { overall: { collected: number }; bySource: { WALK_IN: { collected: number } } };
+    expect(rev.overall.collected).toBe(2500);
+    expect(rev.bySource.WALK_IN.collected).toBe(2500);
+    expect(await mine(nextWeek)).toMatchObject({ status: 'RESERVED', priceDa: 2800 });
+  });
+
+  it('« No-show » sur une autre séance passée : chiffre perdu ; une séance future ne s’honore pas ; un jour sans séance : 404', async () => {
+    expect((await sessionStatus(twoWeeksAgo, nadia, { status: 'NO_SHOW' })).statusCode).toBe(200);
+    const rev = (await call('GET', `/venues/${seed.venueId}/analytics/revenue?from=${twoWeeksAgo}&to=${twoWeeksAgo}&fieldId=${fieldId}`, yacine)).json() as { overall: { lostNoShow: number } };
+    expect(rev.overall.lostNoShow).toBe(2800);
+    const early = await sessionStatus(nextWeek, nadia, { status: 'HONORED' });
+    expect([early.statusCode, (early.json() as { error: string }).error]).toEqual([400, 'BOOKING_NOT_STARTED']);
+    expect((await sessionStatus(civil(Date.now() - 8 * DAY), nadia, { status: 'PAID' })).statusCode).toBe(404);
+    expect((await sessionStatus(lastWeek, nadia, { status: 'HONORED' })).statusCode).toBe(409);   // Payée → Honorée : transition refusée par le core
+  });
+
+  it('corriger : Manager seulement, la séance redevient réservée ; tracé au Journal', async () => {
+    expect((await call('POST', `/venues/${seed.venueId}/recurring-bookings/${subId}/sessions/${twoWeeksAgo}/revert`, nadia)).statusCode).toBe(403);
+    expect((await call('POST', `/venues/${seed.venueId}/recurring-bookings/${subId}/sessions/${twoWeeksAgo}/revert`, yacine)).statusCode).toBe(200);
+    expect(await mine(twoWeeksAgo)).toMatchObject({ status: 'RESERVED', recorded: false });
+    const log = await stack.db.selectFrom('audit_log').select(['action', 'summary']).where('object_id', '=', `${subId}:${twoWeeksAgo}`).execute();
+    expect(log.map((l) => l.action).sort()).toEqual(['BOOKING_CASH_STATUS', 'BOOKING_STATUS_CORRECTED']);
+  });
+
+  it('séances passées sans statut : comptées dans les non clôturées du Dashboard', async () => {
+    const body = (await call('GET', `/venues/${seed.venueId}/bookings/unclosed`, nadia)).json() as { sessionsReserved: number; sessions: { recurringBookingId: string; date: string }[] };
+    expect(body.sessions.filter((x) => x.recurringBookingId === subId).map((x) => x.date)).toContain(twoWeeksAgo);
+    expect(body.sessionsReserved).toBeGreaterThanOrEqual(1);
+  });
+
+  it('abonnement sans prix : statut refusé (409 NO_PRICE) tant que le prix n’est pas fixé ; résilié, ses séances payées comptent encore', async () => {
+    const f2 = (await insertTestField(stack.db, { venue_id: seed.venueId, name: 'V15-sans-prix', sport: 'FOOTBALL', formats: ['5v5'], hourly_rate_da: 3000 })).id;
+    const noPrice = await call('POST', `/venues/${seed.venueId}/recurring-bookings`, yacine, {
+      fieldId: f2, weekday, startMin: 600, durationMin: 60, holderName: 'Sans Prix', activeFrom: civil(Date.now() - 21 * DAY),
+    });
+    const id2 = (noPrice.json() as { subscription: { id: string; pricePerSessionDa: number | null } }).subscription;
+    expect(id2.pricePerSessionDa).toBeNull();
+    const refused = await call('POST', `/venues/${seed.venueId}/recurring-bookings/${id2.id}/sessions/${lastWeek}/status`, nadia, { status: 'PAID' });
+    expect([refused.statusCode, (refused.json() as { error: string }).error]).toEqual([409, 'NO_PRICE']);
+
+    expect((await call('POST', `/venues/${seed.venueId}/recurring-bookings/${subId}/end`, yacine)).statusCode).toBe(200);
+    const rev = (await call('GET', `/venues/${seed.venueId}/analytics/revenue?from=${lastWeek}&to=${lastWeek}&fieldId=${fieldId}`, yacine)).json() as { overall: { collected: number } };
+    expect(rev.overall.collected).toBe(2500);
+  });
+});

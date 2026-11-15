@@ -264,14 +264,42 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
 /** Occurrence d'abonnement — Fiche en lecture seule, jamais de section
     caisse/encaissement (aucun prix/statut de paiement réel en V1, voir
     docs/CRM_MASTER_SPEC_V1.md §30). */
-function SubscriptionFiche({ row }: { row: SubscriptionReservationRow }) {
+/* P1-12 (audit stratégique du CRM, 15/11/2026, choix d'Aymen « prix par séance ») : une séance d'abonnement se marque comme une
+   réservation — « Payée » dès le jour du créneau, « Honorée » et « No-show » une fois commencée (core cashStatusOpensAt, le
+   serveur revérifie) ; un Manager corrige une séance marquée par erreur. Sans prix : rien à marquer, le prix se fixe dans
+   Abonnements. */
+function SubscriptionFiche({ row, canAct, canRevert, busy, onStatus, onPay, onRevert }: {
+  row: SubscriptionReservationRow; canAct: boolean; canRevert: boolean; busy: boolean;
+  onStatus: (status: 'HONORED' | 'NO_SHOW') => void; onPay: () => void; onRevert: () => void;
+}) {
+  const now = Date.now();
+  const outcomeOpen = now >= cashStatusOpensAt('HONORED', row.startsAt, row.startsAt);
+  const paymentOpen = now >= cashStatusOpensAt('PAID', row.startsAt, row.startsAt - row.startMin * 60_000 + 6 * 60 * 60_000);
+  const priced = row.priceDa !== null;
+  const canHonor = canAct && priced && row.status === 'RESERVED';
+  const canPay = canAct && priced && paymentOpen && (row.status === 'RESERVED' || row.status === 'HONORED');
   return (
     <div className="cm-fiche">
       <div className="cm-line"><span>Abonnement</span><b>{row.holderName}</b></div>
       <div className="cm-line"><span>Terrain · créneau</span><b>{row.field} · {hhmm(row.startMin)} → {hhmm(row.startMin + row.durationMin)} ({row.durationMin} min)</b></div>
-      <p className="cm-note" style={{ margin: '8px 0 0' }}>
-        Créneau hebdomadaire récurrent — rien à encaisser ici, à gérer depuis l'écran Abonnements.
-      </p>
+      <div className="cm-line"><span>Prix de la séance</span><b>{priced ? `${fmt(row.priceDa!)} DA` : 'Sans prix — à fixer dans Abonnements'}</b></div>
+      <div className="cm-line"><span>Statut</span>{row.status === 'RESERVED' ? <span className="mb-status mb-status--open">Abonnement</span> : <Pill status={row.status} />}</div>
+      {canHonor || canPay || (canRevert && row.recorded) ? (
+        <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {canHonor ? (
+            <>
+              <button type="button" className="mb-btn mb-btn--sm" disabled={busy || !outcomeOpen} onClick={() => onStatus('HONORED')}>{busy ? '…' : 'Marquer honorée'}</button>
+              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy || !outcomeOpen} onClick={() => onStatus('NO_SHOW')}>{busy ? '…' : 'Marquer no-show'}</button>
+            </>
+          ) : null}
+          {canPay ? <button type="button" className="mb-btn mb-btn--sm" disabled={busy} onClick={onPay}>{busy ? '…' : 'Marquer payée'}</button> : null}
+          {canRevert && row.recorded ? <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={onRevert}>{busy ? '…' : 'Corriger le statut'}</button> : null}
+        </div>
+      ) : null}
+      {canHonor && !outcomeOpen ? (
+        <p className="cm-note" style={{ margin: '8px 0 0' }}>« Honorée » et « No-show » se posent une fois la séance commencée, à partir de {hhmm(row.startMin)}.</p>
+      ) : null}
+      {!priced ? <p className="cm-note" style={{ margin: '8px 0 0' }}>Fixez le prix par séance dans l’écran Abonnements pour suivre ses paiements.</p> : null}
     </div>
   );
 }
@@ -347,7 +375,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       const dayStart = dayStartMs(date);
       setRows(reservationRowsFromApi(res.bookings, dayStart).sort((a, b) => a.startMin - b.startMin));
       setSubRows(subscriptionReservationRowsFromApi(res.subscriptions, dayStart));
-      setSummary(summaryFromApi(res.bookings));
+      setSummary(summaryFromApi(res.bookings, res.subscriptions));
       setLoad({ kind: 'ready' });
     } catch (e) {
       if (mine !== requestSeq.current) return;
@@ -383,15 +411,50 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
      payée » demande s'il faut aussi encaisser le montant dans la caisse du jour — case cochée par défaut, décochable (virement,
      paiement déjà encaissé). Le serveur écrit les deux dans la même transaction (`recordCash`) et dit ce qu'il a fait. Caisse
      fermée : un rappel, la réservation passe quand même « Payée ». Sans module Caisse : un seul clic, comme avant. */
-  const [payTarget, setPayTarget] = useState<{ row: ReservationRow; cashOpen: boolean | null; recordCash: boolean } | null>(null);
-  async function requestPay(row: ReservationRow) {
-    if (!modulesCaisse || !canCenterAct(role, 'CASH_SESSION').ok) { void setStatus(row.id, 'PAID'); return; }
-    setPayTarget({ row, cashOpen: null, recordCash: true });
+  const [payTarget, setPayTarget] = useState<{
+    key: string; label: string; amountDa: number; cashOpen: boolean | null; recordCash: boolean; pay: (recordCash: boolean | undefined) => void;
+  } | null>(null);
+  async function openPay(key: string, label: string, amountDa: number, pay: (recordCash: boolean | undefined) => void) {
+    if (!modulesCaisse || !canCenterAct(role, 'CASH_SESSION').ok) { pay(undefined); return; }
+    setPayTarget({ key, label, amountDa, cashOpen: null, recordCash: true, pay });
     try {
       const res = await apiFetch<{ session: unknown | null }>(`/venues/${venueId}/cash/sessions/current`, { token });
-      setPayTarget((t) => t && t.row.id === row.id ? { ...t, cashOpen: res.session !== null } : t);
+      setPayTarget((t) => t && t.key === key ? { ...t, cashOpen: res.session !== null } : t);
     } catch {
-      setPayTarget((t) => t && t.row.id === row.id ? { ...t, cashOpen: false } : t);
+      setPayTarget((t) => t && t.key === key ? { ...t, cashOpen: false } : t);
+    }
+  }
+  function requestPay(row: ReservationRow) {
+    void openPay(row.id, `${row.name}${row.reference ? ` · ${row.reference}` : ''}`, row.amountDa, (rc) => { void setStatus(row.id, 'PAID', undefined, rc); });
+  }
+
+  /* P1-12 : poser le statut d'une séance d'abonnement (route recurring-bookings/…/sessions/:date). */
+  async function setSessionStatus(row: SubscriptionReservationRow, status: 'HONORED' | 'PAID' | 'NO_SHOW', recordCash?: boolean) {
+    setBusyId(row.id);
+    try {
+      const res = await apiFetch<{ cashRecorded?: boolean }>(`/venues/${venueId}/recurring-bookings/${row.recurringBookingId}/sessions/${row.date}/status`, {
+        method: 'POST', token, body: { status, ...(recordCash !== undefined ? { recordCash } : {}) },
+      });
+      onToast(status === 'PAID' && recordCash
+        ? (res.cashRecorded ? 'Séance payée et encaissée en caisse.' : 'Séance payée — rien n’a été encaissé : la caisse n’est pas ouverte.')
+        : status === 'PAID' ? 'Séance marquée payée.' : status === 'HONORED' ? 'Séance marquée honorée.' : 'Séance marquée no-show.');
+      await fetchDay();
+    } catch (e) {
+      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+    } finally {
+      setBusyId(null);
+    }
+  }
+  async function revertSession(row: SubscriptionReservationRow) {
+    setBusyId(row.id);
+    try {
+      await apiFetch(`/venues/${venueId}/recurring-bookings/${row.recurringBookingId}/sessions/${row.date}/revert`, { method: 'POST', token });
+      onToast('Statut de la séance corrigé.');
+      await fetchDay();
+    } catch (e) {
+      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -699,12 +762,19 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
                     <span className="t">
                       <b>{hhmm(row.startMin)} — {row.holderName} · Abonnement</b>
                       <span className="cm-note" style={{ margin: '2px 0 0' }}>
-                        {row.field} · {hhmm(row.startMin)} → {hhmm(row.startMin + row.durationMin)}
+                        {row.field} · {hhmm(row.startMin)} → {hhmm(row.startMin + row.durationMin)}{row.priceDa !== null ? ` · ${fmt(row.priceDa)} DA` : ''}
                       </span>
                     </span>
-                    <span className="mb-status mb-status--open">Abonnement</span>
+                    {row.status === 'RESERVED' ? <span className="mb-status mb-status--open">Abonnement</span> : <Pill status={row.status} />}
                   </div>
-                  {isOpen ? <SubscriptionFiche row={row} /> : null}
+                  {isOpen ? (
+                    <SubscriptionFiche
+                      row={row} canAct={canSetCashStatus} canRevert={canRevertNoShow} busy={busyId === row.id}
+                      onStatus={(st) => { void setSessionStatus(row, st); }}
+                      onPay={() => { void openPay(row.id, `${row.holderName} · séance du ${row.date.slice(8, 10)}/${row.date.slice(5, 7)}`, row.priceDa ?? 0, (rc) => { void setSessionStatus(row, 'PAID', rc); }); }}
+                      onRevert={() => { void revertSession(row); }}
+                    />
+                  ) : null}
                 </div>
               );
             }
@@ -736,7 +806,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
                       onVerify: (id) => { void verifyPhone(id); },
                       onSetStatus: (id, status) => {
                         const r = rows.find((x) => x.id === id);
-                        if (status === 'PAID' && r) void requestPay(r); else void setStatus(id, status);
+                        if (status === 'PAID' && r) requestPay(r); else void setStatus(id, status);
                       },
                       onRequestNoShow: (r) => setNoShowTarget(r),
                       onRequestAbsent: (r, p) => setAbsentTarget({ row: r, userId: p.userId, name: p.name }),
@@ -816,7 +886,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
         title="Marquer payée ?"
         body={payTarget ? (
           <>
-            <p>« {payTarget.row.name}{payTarget.row.reference ? ` · ${payTarget.row.reference}` : ''} » — {fmt(payTarget.row.amountDa)} DA.</p>
+            <p>« {payTarget.label} » — {fmt(payTarget.amountDa)} DA.</p>
             {payTarget.cashOpen === null ? (
               <p className="cm-note" style={{ margin: '6px 0 0' }}>Vérification de la caisse du jour…</p>
             ) : payTarget.cashOpen ? (
@@ -825,7 +895,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
                   type="checkbox" checked={payTarget.recordCash}
                   onChange={(e) => setPayTarget((t) => t && { ...t, recordCash: e.target.checked })}
                 />
-                <span>Encaisser aussi {fmt(payTarget.row.amountDa)} DA dans la caisse du jour</span>
+                <span>Encaisser aussi {fmt(payTarget.amountDa)} DA dans la caisse du jour</span>
               </label>
             ) : (
               <p className="cm-note" style={{ margin: '6px 0 0' }}>
@@ -836,7 +906,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
         ) : null}
         confirmLabel="Marquer payée"
         confirmDisabled={payTarget?.cashOpen === null}
-        onConfirm={() => { const t = payTarget; setPayTarget(null); if (t) void setStatus(t.row.id, 'PAID', undefined, t.cashOpen === true && t.recordCash); }}
+        onConfirm={() => { const t = payTarget; setPayTarget(null); if (t) t.pay(t.cashOpen === true ? t.recordCash : undefined); }}
         onCancel={() => setPayTarget(null)}
       />
 

@@ -22,6 +22,8 @@ function sub(over: Partial<ApiSubscriptionOccurrence> = {}): ApiSubscriptionOccu
   return {
     id: 'sub-occ:r1', recurringBookingId: 'r1', holderName: 'FC Kahwa',
     fieldId: 'f1', fieldName: 'T1', start: DAY + 9 * 3_600_000, end: DAY + 10 * 3_600_000,
+    // P1-12 (15/11/2026) : séance sans prix ni statut posé — n'entre dans aucun montant (comportement d'avant).
+    date: '2026-09-07', status: 'RESERVED', priceDa: null, recorded: false,
     ...over,
   };
 }
