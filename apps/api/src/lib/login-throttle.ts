@@ -49,12 +49,14 @@ export function waitLabel(ms: number): string {
 }
 
 /** À appeler DANS une transaction, AVANT de regarder le compte : sérialise les essais d'une même (clé, adresse) et rend l'erreur 429 à lever si le délai court encore. */
-export async function checkLoginThrottle(trx: Db, key: string, ipHash: string, now: number): Promise<ApiError | null> {
+/** `formal` : le message vouvoie (comptes du personnel des centres, CRM — P1-10 de l'audit stratégique, 15/11/2026) ; sinon il
+    tutoie, comme toute l'app joueur. */
+export async function checkLoginThrottle(trx: Db, key: string, ipHash: string, now: number, opts: { formal?: boolean } = {}): Promise<ApiError | null> {
   await sql`SELECT pg_advisory_xact_lock(hashtext(${'login-throttle:' + key + ipHash}))`.execute(trx);
   const row = await trx.selectFrom('login_throttle').select('next_allowed_at').where('key', '=', key).where('ip_hash', '=', ipHash).executeTakeFirst();
   if (!row || row.next_allowed_at.getTime() <= now) return null;
   const remaining = row.next_allowed_at.getTime() - now;
-  return new ApiError(429, 'LOGIN_SLOWDOWN', `Trop d’essais. Réessaie dans ${waitLabel(remaining)}.`, { retryAfterSec: Math.ceil(remaining / 1000) });
+  return new ApiError(429, 'LOGIN_SLOWDOWN', `Trop d’essais. ${opts.formal ? 'Réessayez' : 'Réessaie'} dans ${waitLabel(remaining)}.`, { retryAfterSec: Math.ceil(remaining / 1000) });
 }
 
 /** Un échec de plus : compteur +1 (ou 1 si le précédent date de plus d'une heure) et nouveau délai. */

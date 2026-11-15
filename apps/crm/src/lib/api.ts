@@ -1,4 +1,5 @@
-import { GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { GENERIC_ERROR_MESSAGE } from './messages.js';
+
 /* Client HTTP minimal vers apps/api — même patron que apps/superadmin/src/lib/api.ts
    et apps/player/src/lib/api.ts (un seul point de contact réseau, jamais de gestion
    d'erreur dupliquée par écran). */
@@ -45,7 +46,7 @@ export async function apiDownload(path: string, opts: { token?: string | null } 
   try {
     res = await fetch(`${API_BASE}${path}`, { headers });
   } catch {
-    throw new ApiError(0, 'NETWORK_ERROR', 'Connexion impossible. Vérifie que l’API tourne et réessaie.');
+    throw new ApiError(0, 'NETWORK_ERROR', 'Connexion au serveur Moubarat impossible. Vérifiez votre connexion internet, puis réessayez.');
   }
 
   if (!res.ok) {
@@ -75,7 +76,7 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
       ...(opts.body !== undefined ? { body: JSON.stringify(opts.body) } : {}),
     });
   } catch {
-    throw new ApiError(0, 'NETWORK_ERROR', 'Connexion impossible. Vérifie que l’API tourne et réessaie.');
+    throw new ApiError(0, 'NETWORK_ERROR', 'Connexion au serveur Moubarat impossible. Vérifiez votre connexion internet, puis réessayez.');
   }
 
   const text = await res.text();

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { canCenterAct, CLOSURE_REASON_LABELS, type CenterRole, type ClosureReason, type MatchFormat, type Sport, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { canCenterAct, CLOSURE_REASON_LABELS, type CenterRole, type ClosureReason, type MatchFormat, type Sport } from '@moubarat/core';
 import { DAY_NAMES, WEEKDAY_ORDER } from '../data/subscriptionsDemo.js';
 import { SURFACES, EQUIPMENT_DEMO } from '../data/centreDemo.js';
 import { hhmm } from '../lib/time.js';
@@ -12,6 +12,7 @@ import {
 } from '../lib/venueDetail.js';
 import { Icon } from './Icon.js';
 import { ConfirmModal } from './ConfirmModal.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
 interface CentreProps {
   role: CenterRole;
@@ -377,7 +378,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
   async function submitAddFormat(id: string) {
     const f = data?.fields.find((x) => x.id === id);
     const draft = fmtAdd[id];
-    if (!f || !draft || !draft.format) { onToast('Choisis le format à ajouter.'); return; }
+    if (!f || !draft || !draft.format) { onToast('Choisissez le format à ajouter.'); return; }
     const rate = Math.round(Number(draft.rate));
     if (!Number.isFinite(rate) || rate <= 0) { onToast('Le tarif horaire doit être un nombre entier positif.'); return; }
     setFmtAddBusy(id);
@@ -621,7 +622,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
      côté client aujourd'hui) — affichée telle quelle, jamais juste « refusé »
      sans dire pourquoi (le gérant doit savoir quoi déplacer ou annuler). */
   async function submitAddClosure() {
-    if (!closureDate) { setClosureError('Choisis une date.'); return; }
+    if (!closureDate) { setClosureError('Choisissez une date.'); return; }
     if (!closureWholeDay && closureEndMin <= closureStartMin) {
       setClosureError('La fin doit suivre le début.'); return;
     }

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { canCenterAct, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { canCenterAct, type CenterRole } from '@moubarat/core';
 import { auditTimeLabel } from '../lib/auditDetail.js';
 import { parseDaAmount } from '../lib/amount.js';
 import { apiFetch, ApiError } from '../lib/api.js';
 import { fmt } from '../lib/format.js';
 import { Icon } from './Icon.js';
 import { ConfirmModal } from './ConfirmModal.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
 interface CaisseProps { role: CenterRole; venueId: string; token: string; onToast: (message: string) => void }
 
@@ -103,7 +104,7 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
     // MS-039 (audit final) : « 50 000 » se lit 50 000 ; une saisie vide ou illisible est refusée, jamais ouverte à 0 en silence.
     const f = parseDaAmount(floatInput);
     if (f === null) {
-      setOpenError('Saisis le fond de caisse en dinars (0 s’il n’y en a pas).');
+      setOpenError('Saisissez le fond de caisse en dinars (0 s’il n’y en a pas).');
       return;
     }
     try {
@@ -142,7 +143,7 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
     // (avant : clôturée à 0, écart fictif enregistré).
     const counted = parseDaAmount(declared);
     if (counted === null) {
-      onToast('Saisis le montant compté dans la caisse avant de clôturer.');
+      onToast('Saisissez le montant compté dans la caisse avant de clôturer.');
       return;
     }
     setCloseModal({ expected, declared: counted });

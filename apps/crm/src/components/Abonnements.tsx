@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { canCenterAct, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { canCenterAct, type CenterRole } from '@moubarat/core';
 import { DAY_NAMES, WEEKDAY_ORDER } from '../data/subscriptionsDemo.js';
 import { algiersDateOf, dayLabel, shiftDate, todayAlgiers } from '../lib/bookingsDetail.js';
 import { asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
@@ -7,6 +7,7 @@ import { apiFetch, ApiError } from '../lib/api.js';
 import { hhmm } from '../lib/time.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { Icon } from './Icon.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
 interface AbonnementsProps { role: CenterRole; venueId: string; token: string; onToast: (message: string) => void }
 
@@ -84,7 +85,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
         <div className="cm-riskrow">
           <span className="t">
             <b><Icon id="i-lock" /> Les abonnements se gèrent en Manager</b>
-            <span className="cm-note" style={{ margin: '2px 0 0' }}>Demande à un manager du centre d'y accéder.</span>
+            <span className="cm-note" style={{ margin: '2px 0 0' }}>Demandez à un manager du centre d'y accéder.</span>
           </span>
         </div>
       </section>

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CONFIDENCE_LABELS, type ReliabilityV1, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { CONFIDENCE_LABELS, type ReliabilityV1 } from '@moubarat/core';
 import { apiFetch, ApiError } from '../lib/api.js';
 import { fmt } from '../lib/format.js';
 import { hhmm } from '../lib/time.js';
 import { dateLabelLong, historyRowsFromApi, type ApiClientBookingHistoryRow, type HistoryRow } from '../lib/searchDetail.js';
 import { Pill } from './StatusPill.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
 interface ClientsProps {
   venueId: string; token: string;
@@ -218,7 +219,7 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
       <p className="cm-view-note">
         Les clients qui ont réservé sur ce centre : joueurs de l'app Moubarat, et clients du comptoir ou du téléphone
         (regroupés par numéro — une réservation saisie sans numéro n'y figure pas). Fiabilité calculée sur leur historique
-        réel. Clique une carte pour voir ses réservations.
+        réel. Cliquez sur une carte pour voir ses réservations.
       </p>
 
       <div className="cm-form">

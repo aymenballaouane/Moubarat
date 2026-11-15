@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { canCenterAct, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { canCenterAct, type CenterRole } from '@moubarat/core';
 import { apiFetch, ApiError } from '../lib/api.js';
 import { readinessBannerModel, signaledAtLabel, type ApiVenueReadiness } from '../lib/readinessView.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
 /* ONB-2 (audit pré-lancement, lot 6, 27/09/2026) — le gérant d'un centre pas encore publié ne savait ni qu'il ne
    l'était pas, ni ce qui manquait, ni comment le dire à Moubarat. Bandeau sous l'en-tête (même place que

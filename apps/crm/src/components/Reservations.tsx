@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { canCenterAct, cashStatusOpensAt, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { canCenterAct, cashStatusOpensAt, type CenterRole } from '@moubarat/core';
 import type { ReservationRow } from '../data/reservationsDemo.js';
 import { dateLabelLong, hitsCountLabel, searchHitsFromApi, type ApiBookingSearchHit, type SearchHit } from '../lib/searchDetail.js';
 import { Pill, STATUS_PILL } from './StatusPill.js';
@@ -15,6 +15,7 @@ import { fmt } from '../lib/format.js';
 import { hhmm } from '../lib/time.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { Icon } from './Icon.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
 interface ReservationsProps {
   role: CenterRole; venueId: string; token: string; onToast: (message: string) => void;
@@ -579,7 +580,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       </div>
 
       <p className="cm-view-note">
-        Le résumé de la journée, dans l'ordre chronologique. Clique une réservation pour sa fiche technique
+        Le résumé de la journée, dans l'ordre chronologique. Cliquez sur une réservation pour ouvrir sa fiche
         complète — c'est cette liste que la clôture de caisse valide chaque soir.
       </p>
 
@@ -725,10 +726,10 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
             <p>« {noShowTarget?.name}{noShowTarget?.reference ? ` · ${noShowTarget.reference}` : ''} » sera marquée no-show : {noShowTarget ? fmt(noShowTarget.amountDa) : 0} DA comptés perdus.</p>
             {noShowTarget?.source === 'MOUBARAT' || noShowTarget?.claimStatus === 'CONFIRMED' ? (
               <p className="cm-note" style={{ margin: '6px 0 0' }}>
-                <b>C’est une absence pour le joueur</b> : deux absences déclenchent une restriction (7 jours, puis 30 jours, puis blocage). Un manager pourra corriger si tu te trompes.
+                <b>C’est une absence pour le joueur</b> : deux absences déclenchent une restriction (7 jours, puis 30 jours, puis blocage). Un manager pourra corriger en cas d’erreur.
               </p>
             ) : (
-              <p className="cm-note" style={{ margin: '6px 0 0' }}>Un manager pourra corriger si tu te trompes.</p>
+              <p className="cm-note" style={{ margin: '6px 0 0' }}>Un manager pourra corriger en cas d’erreur.</p>
             )}
           </>
         }

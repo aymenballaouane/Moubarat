@@ -38,7 +38,7 @@ export function LoginScreen({ onLoggedIn }: LoginScreenProps) {
       }
       onLoggedIn(res.token);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Connexion impossible. Réessaie.');
+      setError(err instanceof ApiError ? err.message : 'Connexion impossible. Réessayez.');
       setBusy(false);
     }
   }

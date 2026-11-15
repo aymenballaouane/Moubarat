@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { canCenterAct, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { canCenterAct, type CenterRole } from '@moubarat/core';
 import { auditTimeLabel, roleLabel } from '../lib/auditDetail.js';
 import { apiFetch, ApiError } from '../lib/api.js';
 import { Icon } from './Icon.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
 interface JournalProps { role: CenterRole; venueId: string; token: string }
 

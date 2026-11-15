@@ -14,7 +14,7 @@ export function HelpModal({ support, onClose }: { support: SupportInfo; onClose:
     <div className="cm-modal-bg on" role="dialog" aria-modal="true" aria-label="Aide et support" onClick={onClose}>
       <div className="cm-modal cm-help" onClick={(e) => e.stopPropagation()}>
         <h3>Besoin d’aide ?</h3>
-        <p className="cm-note" style={{ margin: '0 0 10px' }}>Un souci avec le CRM, un accès, une réservation ? Écris-nous ou appelle-nous.</p>
+        <p className="cm-note" style={{ margin: '0 0 10px' }}>Un souci avec le CRM, un accès, une réservation ? Écrivez-nous ou appelez-nous.</p>
         <div className="cm-help__list">
           {CHANNELS.map(({ key, label }) => {
             const c = support[key];

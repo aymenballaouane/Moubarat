@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { canCenterAct, CLOSURE_REASON_LABELS, ROLE_LABELS, type CenterRole, type ClosureReason, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { canCenterAct, CLOSURE_REASON_LABELS, ROLE_LABELS, type CenterRole, type ClosureReason } from '@moubarat/core';
 import type { TimelineBlock } from '../data/planningDemo.js';
 import {
   dayLabel, shiftDate, todayAlgiers, dayStartMs, weekdayOf,
@@ -10,6 +10,7 @@ import { apiFetch, ApiError } from '../lib/api.js';
 import { hhmm } from '../lib/time.js';
 import { fmt } from '../lib/format.js';
 import { Icon } from './Icon.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
 interface PlanningProps {
   role: CenterRole; venueId: string; token: string; onToast: (message: string) => void;
@@ -282,8 +283,8 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
     const f = fieldByName.get(sel.field);
     if (!f) return;
     setFormError('');
-    if (formName.trim().length < 2) { setFormError('Indique un nom pour la réservation.'); return; }
-    if (multiFormat && !activeQuote) { setFormError('Choisis le format de la réservation.'); return; }
+    if (formName.trim().length < 2) { setFormError('Indiquez un nom pour la réservation.'); return; }
+    if (multiFormat && !activeQuote) { setFormError('Choisissez le format de la réservation.'); return; }
     setFormSubmitting(true);
     try {
       const created = await apiFetch<{ booking: { id: string; claimStatus?: 'PENDING' | null } }>('/bookings', {
@@ -665,7 +666,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
           </>
         ) : (
           <div className="row">
-            <span className="d">Clique une case libre pour créer une réservation, ou une réservation dans Réservations pour sa fiche complète. Pour changer son terrain, son heure ou sa durée : bouton « Modifier » de sa fiche.</span>
+            <span className="d">Cliquez sur une case libre pour créer une réservation ; la fiche complète d’une réservation est dans Réservations. Pour changer son terrain, son heure ou sa durée : bouton « Modifier » de sa fiche.</span>
           </div>
         )}
       </div>

@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { apiFetch, ApiError } from '../lib/api.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
-import { GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+
 /* ONB-1 (audit pré-lancement, lot 6, 27/09/2026) — « Mon compte » : changer SON mot de passe. Jusqu'ici un gérant
    gardait à vie le mot de passe temporaire dicté par Moubarat ou par son propriétaire. Le serveur exige le mot de
    passe actuel (`POST /platform/me/password`), impose 12 signes, refuse l'identique et ferme les autres sessions —

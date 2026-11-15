@@ -21,12 +21,12 @@ export function CredentialsBox({ title, email, password, onDismiss }: {
   return (
     <div className="cm-card cm-creds" role="status" data-testid="staff-credentials">
       <p className="cm-sec">{title}</p>
-      <p className="cm-note" style={{ color: 'var(--gold)' }}>Ce mot de passe ne sera plus jamais affiché. Note-le ou copie-le maintenant.</p>
+      <p className="cm-note" style={{ color: 'var(--gold)' }}>Ce mot de passe ne sera plus jamais affiché. Notez-le ou copiez-le maintenant.</p>
       <dl className="cm-creds__grid">
         <dt>Email</dt><dd className="cm-mono">{email}</dd>
         <dt>Mot de passe</dt><dd className="cm-mono" data-testid="staff-password">{password}</dd>
       </dl>
-      {copyError ? <p className="mb-field__error">Copie impossible depuis ce navigateur — sélectionne le mot de passe et copie-le à la main.</p> : null}
+      {copyError ? <p className="mb-field__error">Copie impossible depuis ce navigateur — sélectionnez le mot de passe et copiez-le à la main.</p> : null}
       <div className="cm-actions-row">
         <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void copy(); }}>
           {copied ? 'Copié' : 'Copier les identifiants'}

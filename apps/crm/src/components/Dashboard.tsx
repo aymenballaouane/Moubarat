@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-import { canCenterAct, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { canCenterAct, type CenterRole } from '@moubarat/core';
 import {
   dayLabel, shiftDate, todayAlgiers, dayStartMs, weekdayOf,
   type ApiBookingRow, type ApiSubscriptionOccurrence,
@@ -13,6 +13,7 @@ import { apiFetch, ApiError } from '../lib/api.js';
 import { fmt } from '../lib/format.js';
 import { hhmm } from '../lib/time.js';
 import { Icon } from './Icon.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
 interface DashboardProps {
   role: CenterRole; venueId: string; token: string;
@@ -103,7 +104,7 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
           title: `${a.title} — ${a.field} · ${hhmm(a.startMin)}`,
           big: { kind: 'value', label: `${a.health.score} %`, tone: a.health.band === 'RISQUE_ELEVE' ? 'r' : 'o' },
           detail: a.health.penalties.map((p) => p.label).join(' · ')
-            + (a.partial ? ' · Score partiel — fiabilité capitaine non disponible pour ton rôle.' : ''),
+            + (a.partial ? ' · Score partiel — fiabilité capitaine non disponible pour votre rôle.' : ''),
           cta: 'Contacter',
         })),
         ...phoneActions.map((a): RenderedAction => ({
@@ -111,7 +112,7 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
           severity: 'ok',
           title: `Téléphone à vérifier — ${a.label} · ${a.field} · ${hhmm(a.startMin)}`,
           big: { kind: 'status', label: 'En attente', variant: 'filling' },
-          detail: 'Le créneau est bloqué en attendant ta confirmation — clique pour ouvrir.',
+          detail: 'Le créneau est bloqué en attendant votre confirmation — cliquez pour ouvrir.',
         })),
         ...(honoredCount > 0 ? [{
           id: 'unpaid',

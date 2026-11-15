@@ -76,7 +76,7 @@ export async function registerPlatformAuthRoutes(app: FastifyInstance, { db, gua
     const ipHash = ipFingerprint(req.ip);
     const outcome = await db.transaction().execute(async (trx) => {
       const now = Date.now();
-      const slow = await checkLoginThrottle(trx, tKey, ipHash, now);
+      const slow = await checkLoginThrottle(trx, tKey, ipHash, now, { formal: true });
       if (slow) return { ok: false as const, error: slow };
       const account = await trx.selectFrom('platform_accounts').selectAll()
         .where('email', '=', email).forUpdate().executeTakeFirst();

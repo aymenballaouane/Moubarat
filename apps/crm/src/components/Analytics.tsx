@@ -7,8 +7,9 @@ import { asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
 import { apiFetch, apiDownload, ApiError } from '../lib/api.js';
 import { fmt } from '../lib/format.js';
 import { Icon } from './Icon.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
-import { GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+
 interface AnalyticsProps { venueId: string; token: string }
 
 interface CashReportApi { collected: number; engaged: number; lostCancelled: number; lostNoShow: number }

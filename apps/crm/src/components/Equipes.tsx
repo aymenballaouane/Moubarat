@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api.js';
+import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
-import { GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+
 interface EquipesProps { venueId: string; token: string }
 
 interface ApiTeam { teamId: string; name: string; crestUrl: string | null; matchesPlayed: number; activeMembers: number }
