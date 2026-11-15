@@ -6,7 +6,9 @@
 
 const DUE_SOON_DAYS = 7;
 
-export function SubscriptionBanner({ status, dueAt }: { status: 'PAID' | 'UNPAID'; dueAt: string | null }) {
+/* P0-4 (audit stratégique du CRM, 15/11/2026) : statut « Essai » (TRIAL) — l'échéance est la fin du mois d'essai. Le bandeau
+   n'apparaît qu'à 7 jours de la fin, comme pour une échéance de paiement ; aucune coupure à la fin de l'essai. */
+export function SubscriptionBanner({ status, dueAt }: { status: 'TRIAL' | 'PAID' | 'UNPAID'; dueAt: string | null }) {
   if (status === 'UNPAID') {
     return (
       <div className="cm-sub-banner cm-sub-banner--danger" role="status">
@@ -20,7 +22,9 @@ export function SubscriptionBanner({ status, dueAt }: { status: 'PAID' | 'UNPAID
       const label = new Date(dueAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
       return (
         <div className="cm-sub-banner cm-sub-banner--warn" role="status">
-          Abonnement Moubarat à renouveler avant le {label}.
+          {status === 'TRIAL'
+            ? `Votre mois d’essai Moubarat se termine le ${label} — contactez Moubarat pour continuer.`
+            : `Abonnement Moubarat à renouveler avant le ${label}.`}
         </div>
       );
     }

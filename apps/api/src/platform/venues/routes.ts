@@ -13,10 +13,19 @@ import { lastReadySignalAt, loadVenueReadiness, notReadyMessage } from '../../mo
 interface Deps { db: Db; guards: PlatformGuards; }
 
 const VENUE_STATUSES: readonly VenueStatus[] = ['PENDING', 'ACTIVE', 'REJECTED', 'SUSPENDED'];
-const SUBSCRIPTION_PLANS = ['CRM_ONLY', 'CRM_PLUS_APP'] as const;
-const SUBSCRIPTION_STATUSES = ['PAID', 'UNPAID'] as const;
+/* P0-3 (audit stratégique CRM, 15/11/2026, choix d'Aymen) : UNE grille, par taille du centre, tous sports inclus —
+   Essentiel 1 à 3 terrains, Complexe 4 à 8, Grand complexe 9 et plus (sur devis). Étiquette saisie par le superadmin :
+   aucune fonction n'en dépend. P0-4 : TRIAL = mois d'essai (l'échéance est alors la fin de l'essai). Migration 0045. */
+const SUBSCRIPTION_PLANS = ['ESSENTIEL', 'COMPLEXE', 'GRAND_COMPLEXE'] as const;
+const SUBSCRIPTION_STATUSES = ['TRIAL', 'PAID', 'UNPAID'] as const;
 type SubscriptionPlan = (typeof SUBSCRIPTION_PLANS)[number];
 type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+
+/** Le palier qui correspond à la taille du centre (terrains non archivés) — la même règle que la reprise de la migration 0045.
+    Une SUGGESTION affichée dans la console : le superadmin garde la main (un grand complexe est sur devis). */
+export function suggestedPlanFor(fieldCount: number): SubscriptionPlan {
+  return fieldCount >= 9 ? 'GRAND_COMPLEXE' : fieldCount >= 4 ? 'COMPLEXE' : 'ESSENTIEL';
+}
 
 /** Libellés du résumé de journal (lu par le gérant dans le Journal de son centre). */
 const FIELD_LABELS: Record<string, string> = {
@@ -137,6 +146,7 @@ export async function registerPlatformVenueRoutes(app: FastifyInstance, { db, gu
         bookingPrefix: v.booking_prefix,
         subscriptionPlan: v.subscription_plan, subscriptionStatus: v.subscription_status,
         subscriptionDueAt: v.subscription_due_at,
+        suggestedPlan: suggestedPlanFor(fields.filter((f) => f.status !== 'ARCHIVED').length),
         fields: fields.map((f) => ({
           id: f.id, name: f.name, sport: f.sport, formats: f.formats,
           formatPrices: formatPrices.filter((p) => p.field_id === f.id).map((p) => ({ format: p.format, hourlyRateDa: p.hourly_rate_da })),

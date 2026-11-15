@@ -13,7 +13,7 @@ interface VenueDetail {
   fields: { id: string; name: string; sport: string; formatPrices: { format: string; hourlyRateDa: number }[]; status: string }[];
   openingHours: { weekday: number; startMin: number; endMin: number }[];
   activity: { bookingCount: number; matchCount: number; staffCount: number };
-  subscriptionPlan: SubscriptionPlan; subscriptionStatus: SubscriptionStatus; subscriptionDueAt: string | null;
+  subscriptionPlan: SubscriptionPlan; subscriptionStatus: SubscriptionStatus; subscriptionDueAt: string | null; suggestedPlan: SubscriptionPlan;
   /** A9 (24/09/2026) : « prêt à publier » évalué par le serveur — mêmes points que ceux qui bloquent la validation. */
   readiness: VenueReadinessDetail;
   /** ONB-2 (27/09/2026) : dernier « Signaler que c'est prêt » du gérant (ISO), ou null. */

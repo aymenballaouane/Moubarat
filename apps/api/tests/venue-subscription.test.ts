@@ -34,10 +34,10 @@ beforeAll(async () => {
 afterAll(() => stack.teardown());
 
 describe('défauts — un centre existant (pilote compris) n’est jamais signalé impayé par la seule migration', () => {
-  it('CRM_ONLY / PAID / aucune échéance dès la création', async () => {
+  it('ESSENTIEL / PAID / aucune échéance dès la création (P0-3 : palier par taille, migration 0045)', async () => {
     const res = await stack.app.inject({ method: 'GET', url: `/platform/venues/${seed.venueId}`, headers: bearer(superToken) });
     const v = (res.json() as { venue: { subscriptionPlan: string; subscriptionStatus: string; subscriptionDueAt: string | null } }).venue;
-    expect(v).toMatchObject({ subscriptionPlan: 'CRM_ONLY', subscriptionStatus: 'PAID', subscriptionDueAt: null });
+    expect(v).toMatchObject({ subscriptionPlan: 'ESSENTIEL', subscriptionStatus: 'PAID', subscriptionDueAt: null });
   });
 
   it('visible aussi dans la liste des centres (répond au vrai besoin : qui est à jour, sans ouvrir chaque fiche)', async () => {
@@ -49,16 +49,16 @@ describe('défauts — un centre existant (pilote compris) n’est jamais signal
 
 describe('PATCH /platform/venues/:venueId/subscription — superadmin uniquement', () => {
   it('modifie plan/status/dueAt ; la valeur survit à une relecture indépendante', async () => {
-    const res = await patchSub(superToken, { plan: 'CRM_PLUS_APP', status: 'UNPAID', dueAt: '2026-10-01T00:00:00.000Z' });
+    const res = await patchSub(superToken, { plan: 'COMPLEXE', status: 'UNPAID', dueAt: '2026-10-01T00:00:00.000Z' });
     expect(res.statusCode, res.body).toBe(200);
     const v = (res.json() as { venue: { subscriptionPlan: string; subscriptionStatus: string; subscriptionDueAt: string } }).venue;
-    expect(v.subscriptionPlan).toBe('CRM_PLUS_APP');
+    expect(v.subscriptionPlan).toBe('COMPLEXE');
     expect(v.subscriptionStatus).toBe('UNPAID');
     expect(new Date(v.subscriptionDueAt).toISOString()).toBe('2026-10-01T00:00:00.000Z');
 
     const reread = await stack.app.inject({ method: 'GET', url: `/platform/venues/${seed.venueId}`, headers: bearer(superToken) });
     const reread_v = (reread.json() as { venue: { subscriptionPlan: string; subscriptionStatus: string } }).venue;
-    expect(reread_v).toMatchObject({ subscriptionPlan: 'CRM_PLUS_APP', subscriptionStatus: 'UNPAID' });
+    expect(reread_v).toMatchObject({ subscriptionPlan: 'COMPLEXE', subscriptionStatus: 'UNPAID' });
   });
 
   it('journalise (venueId posé, avant/après), jamais de montant ni de facture dans le résumé', async () => {
@@ -67,7 +67,7 @@ describe('PATCH /platform/venues/:venueId/subscription — superadmin uniquement
     const e = rows[0]!;
     expect(e.actor_role).toBe('SUPERADMIN');
     expect(e.summary).toBe('a modifié l’abonnement du centre');
-    expect(JSON.parse(e.before_val!)).toEqual({ plan: 'CRM_ONLY', status: 'PAID', dueAt: null });
+    expect(JSON.parse(e.before_val!)).toEqual({ plan: 'ESSENTIEL', status: 'PAID', dueAt: null });
     expect(JSON.parse(e.after_val!).status).toBe('UNPAID');
   });
 
@@ -123,5 +123,43 @@ describe('CRM (/platform/auth/login, /platform/auth/me) — le gérant voit l’
     // Jamais fuité côté joueur/public — GET /venues/:id ne porte AUCUN champ subscription*.
     const publicVenue = await stack.app.inject({ method: 'GET', url: `/venues/${seed.venueId}` });
     expect(publicVenue.body).not.toContain('subscription');
+  });
+});
+
+/* P0-3 et P0-4 (audit stratégique du CRM, 15/11/2026, choix d'Aymen) : une seule grille, par taille du centre (Essentiel 1-3 terrains,
+   Complexe 4-8, Grand complexe 9+) ; statut « Essai » (TRIAL) pour le mois d'essai, l'échéance étant la fin de l'essai. */
+describe('P0-3 / P0-4 — grille par taille du centre, mois d’essai', () => {
+  const detail = async () => (await stack.app.inject({ method: 'GET', url: `/platform/venues/${seed.venueId}`, headers: bearer(superToken) }))
+    .json() as { venue: { subscriptionPlan: string; subscriptionStatus: string; subscriptionDueAt: string | null; suggestedPlan: string; fields: { status: string }[] } };
+
+  it('les anciennes formules « CRM seul / CRM + app » sont refusées (400) ; les trois paliers sont acceptés', async () => {
+    for (const plan of ['CRM_ONLY', 'CRM_PLUS_APP']) expect((await patchSub(superToken, { plan })).statusCode, plan).toBe(400);
+    for (const plan of ['GRAND_COMPLEXE', 'COMPLEXE', 'ESSENTIEL']) {
+      const res = await patchSub(superToken, { plan });
+      expect([res.statusCode, (res.json() as { venue: { subscriptionPlan: string } }).venue.subscriptionPlan], plan).toEqual([200, plan]);
+    }
+  });
+
+  it('mois d’essai : TRIAL avec sa date de fin, visible du gérant (connexion CRM), journalisé', async () => {
+    const res = await patchSub(superToken, { status: 'TRIAL', dueAt: '2026-12-15T00:00:00.000Z' });
+    expect(res.statusCode, res.body).toBe(200);
+    expect((await detail()).venue).toMatchObject({ subscriptionStatus: 'TRIAL' });
+    const me = await stack.app.inject({ method: 'GET', url: '/platform/auth/me', headers: bearer(hamid) });
+    const mine = (me.json() as { centerMemberships: { venueId: string; subscriptionStatus: string; subscriptionDueAt: string }[] }).centerMemberships
+      .find((m) => m.venueId === seed.venueId)!;
+    expect(mine.subscriptionStatus).toBe('TRIAL');
+    expect(new Date(mine.subscriptionDueAt).toISOString()).toBe('2026-12-15T00:00:00.000Z');
+    expect(JSON.parse((await auditRows()).at(-1)!.after_val!).status).toBe('TRIAL');
+  });
+
+  it('palier suggéré d’après les terrains non archivés : 3 → Essentiel, 4 → Complexe ; un terrain archivé ne compte pas', async () => {
+    const before = await detail();
+    const live = before.venue.fields.filter((f) => f.status !== 'ARCHIVED').length;
+    expect(live).toBe(3);
+    expect(before.venue.suggestedPlan).toBe('ESSENTIEL');
+    const extra = await stack.db.insertInto('fields').values({ venue_id: seed.venueId, name: 'T-P03', sport: 'FOOTBALL', formats: ['5v5'], hourly_rate_da: 3000 }).returning('id').executeTakeFirstOrThrow();
+    expect((await detail()).venue.suggestedPlan).toBe('COMPLEXE');
+    await stack.db.updateTable('fields').set({ status: 'ARCHIVED' }).where('id', '=', extra.id).execute();
+    expect((await detail()).venue.suggestedPlan).toBe('ESSENTIEL');
   });
 });

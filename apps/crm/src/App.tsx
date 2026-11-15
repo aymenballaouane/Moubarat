@@ -51,7 +51,7 @@ type Theme = 'dark' | 'light';
 
 interface CenterMembership {
   venueId: string; venueName: string; role: CenterRole;
-  subscriptionStatus: 'PAID' | 'UNPAID'; subscriptionDueAt: string | null;
+  subscriptionStatus: 'TRIAL' | 'PAID' | 'UNPAID'; subscriptionDueAt: string | null;
 }
 interface MeResponse {
   account: { id: string; email: string; name: string; isSuperadmin: boolean };
@@ -85,7 +85,7 @@ export function App() {
   const [needsLegalConsent, setNeedsLegalConsent] = useState(false);
   /* Abonnement SaaS minimal (22/09/2026, C1/CE11) : saisi par le superadmin, lu ici depuis
      centerMemberships (jamais depuis GET /venues/:id, route publique) pour le bandeau. */
-  const [subscription, setSubscription] = useState<{ status: 'PAID' | 'UNPAID'; dueAt: string | null } | null>(null);
+  const [subscription, setSubscription] = useState<{ status: 'TRIAL' | 'PAID' | 'UNPAID'; dueAt: string | null } | null>(null);
   /* Aide (22/09/2026) : coordonnées de support servies par l'API — le bouton n'existe que s'il y a un canal. */
   const support = useSupport();
   const [helpOpen, setHelpOpen] = useState(false);

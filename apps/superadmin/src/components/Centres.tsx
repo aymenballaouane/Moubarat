@@ -4,6 +4,7 @@ import { CredentialsBox } from './CredentialsBox.js';
 import { PositionFields } from './PositionFields.js';
 import type { CreatePrefill } from '../lib/requests.js';
 import { publicationBadge, type VenueReadinessSummary } from '../lib/readiness.js';
+import { SUBSCRIPTION_STATUS_LABELS, subscriptionBadgeTone, type SubscriptionStatus } from './SubscriptionCard.js';
 
 export interface VenueSummary {
   id: string; name: string; wilaya: string; address: string;
@@ -16,20 +17,19 @@ export interface VenueSummary {
   readySignaledAt: string | null;
   /** Abonnement SaaS minimal (22/09/2026, C1/CE11) : visible dès la liste — « vous ne savez pas qui
       est à jour » ne se répond pas en obligeant à ouvrir chaque fiche une par une. */
-  subscriptionStatus: 'PAID' | 'UNPAID';
+  subscriptionStatus: SubscriptionStatus;
 }
 
 const STATUS_LABELS: Record<VenueSummary['status'], string> = {
   PENDING: 'En attente', ACTIVE: 'Actif', REJECTED: 'Refusé', SUSPENDED: 'Suspendu',
 };
-const SUBSCRIPTION_LABELS: Record<VenueSummary['subscriptionStatus'], string> = { PAID: 'À jour', UNPAID: 'Impayé' };
 
 export function StatusBadge({ status }: { status: VenueSummary['status'] }) {
   return <span className={`sa-badge sa-badge--${status.toLowerCase()}`}>{STATUS_LABELS[status]}</span>;
 }
 
 function SubscriptionStatusBadge({ status }: { status: VenueSummary['subscriptionStatus'] }) {
-  return <span className={`sa-badge sa-badge--${status === 'PAID' ? 'active' : 'suspended'}`}>{SUBSCRIPTION_LABELS[status]}</span>;
+  return <span className={`sa-badge sa-badge--${subscriptionBadgeTone(status)}`}>{SUBSCRIPTION_STATUS_LABELS[status]}</span>;
 }
 
 function PublicationBadge({ venue }: { venue: VenueSummary }) {

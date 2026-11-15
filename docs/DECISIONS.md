@@ -6228,3 +6228,14 @@ l'avocat ».
   écrites restent telles quelles (journal append-only). Laissé pour P1-10 (hors P0) : « Vérifie que l'API tourne » et le
   mélange tu/vous. **Non fait** : régénération du board visuel (`pnpm ui:board`) — elle réinitialise les données de démo
   locales ; vérification faite écran par écran en direct à la place.
+- **P0-3 — une seule grille, par taille du centre** (choix d'Aymen). Migration 0045 : `subscription_plan` ∈ ESSENTIEL (1-3
+  terrains) / COMPLEXE (4-8) / GRAND_COMPLEXE (9+, sur devis), tous sports inclus, défaut ESSENTIEL ; les centres existants
+  reprennent le palier de leurs terrains non archivés (aucun statut ne change). Remplace « CRM seul / CRM + app joueur »
+  (décision I5) : la formule reste une étiquette, aucune fonction n'en dépend. `GET /platform/venues/:id` sert `suggestedPlan`
+  (même règle que la reprise) ; la console l'affiche à côté de la formule. Prix et conditions : `docs/OFFRE-COMMERCIALE.md`
+  (les prix ne sont pas dans le code). À mettre à jour hors du dépôt : `_business/Offre Moubarat.docx` et la brochure.
+- **P0-4 — mois d'essai et projet de conditions** (choix d'Aymen : « projet à relire par l'avocat »). Statut d'abonnement
+  TRIAL (migration 0045) ; dans la console, « Essai » propose une fin à 30 jours ; le CRM affiche à 7 jours de la fin
+  « Votre mois d'essai Moubarat se termine le … ». Aucune coupure d'accès, comme pour un impayé. `docs/OFFRE-COMMERCIALE.md` :
+  grille, essai, paiement fractionné (proposé), mentions de facture (à vérifier par le comptable), squelette de conditions
+  générales de service B2B (à relire par l'avocat), centres fondateurs ; chaque point y est marqué décidé / proposé / à vérifier.

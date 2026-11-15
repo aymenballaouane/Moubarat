@@ -151,8 +151,9 @@ export interface VenuesTable {
       uniquement (PATCH /platform/venues/:venueId/subscription), jamais depuis le CRM — sert un bandeau
       d'avertissement côté centre, AUCUNE coupure d'accès (décision volontairement pas prise ici, voir
       DECISIONS.md). */
-  subscription_plan: Generated<'CRM_ONLY' | 'CRM_PLUS_APP'>;
-  subscription_status: Generated<'PAID' | 'UNPAID'>;
+  // P0-3 / P0-4 (audit stratégique CRM, 15/11/2026, migration 0045) : formule par taille du centre ; TRIAL = mois d'essai.
+  subscription_plan: Generated<'ESSENTIEL' | 'COMPLEXE' | 'GRAND_COMPLEXE'>;
+  subscription_status: Generated<'TRIAL' | 'PAID' | 'UNPAID'>;
   subscription_due_at: TsNullable;
 }
 
