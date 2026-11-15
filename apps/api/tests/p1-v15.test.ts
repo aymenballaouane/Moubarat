@@ -22,7 +22,7 @@ beforeAll(async () => {
 });
 afterAll(async () => { await stack.teardown(); });
 
-const call = (method: 'GET' | 'POST', url: string, token: string, payload?: Record<string, unknown>) =>
+const call = (method: 'GET' | 'POST' | 'PATCH', url: string, token: string, payload?: Record<string, unknown>) =>
   stack.app.inject({ method, url, headers: bearer(token), ...(payload ? { payload } : {}) });
 
 /** Une réservation sur un terrain neuf (aucun chevauchement possible), au statut voulu. */
