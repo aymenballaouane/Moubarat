@@ -3,7 +3,7 @@ import { dayStartMs } from '../src/lib/bookingsDetail.js';
 import type { ApiBookingRow, ApiSubscriptionOccurrence } from '../src/lib/bookingsDetail.js';
 import {
   dashboardKpisFromApi, matchHealthActionsFromApi, phoneToVerifyActionsFromApi,
-  honoredUnpaidCount, upcomingFromApi,
+  honoredUnpaidCount, upcomingFromApi, compareKpi,
 } from '../src/lib/dashboardDetail.js';
 
 const DAY = dayStartMs('2026-09-10'); // jeudi
@@ -143,5 +143,18 @@ describe('upcomingFromApi', () => {
     expect(upcoming.map((u) => u.bookingId)).toEqual(['future-resa', 'future-match']);
     expect(upcoming[1]!.playersLabel).toBe('4/10');
     expect(upcoming[0]!.title).toBe('Walid K.');
+  });
+});
+
+/* P1-8 (audit stratégique du CRM, 15/11/2026) : comparaison au même jour de la semaine passée. */
+describe('compareKpi', () => {
+  it('écart signé avec son unité et le jour de référence ; une hausse des no-shows est une mauvaise nouvelle', () => {
+    expect(compareKpi('collectedDa', 5200, 4000, 'dim. 8 nov.')).toEqual({ label: '+1 200 DA vs dim. 8 nov.', tone: 'up-good' });
+    expect(compareKpi('engagedDa', 1000, 3500, 'x')).toEqual({ label: '−2 500 DA vs x', tone: 'up-bad' });
+    expect(compareKpi('occupancyPct', 41, 40, 'x')).toEqual({ label: '+1 pt vs x', tone: 'up-good' });
+    expect(compareKpi('moubaratSharePct', 30, 35, 'x')).toEqual({ label: '−5 pts vs x', tone: 'up-bad' });
+    expect(compareKpi('noShows', 2, 0, 'x')).toEqual({ label: '+2 vs x', tone: 'up-bad' });
+    expect(compareKpi('noShows', 0, 1, 'x')).toEqual({ label: '−1 vs x', tone: 'up-good' });
+    expect(compareKpi('bookingsCount', 6, 6, 'x')).toEqual({ label: '= x', tone: 'flat' });
   });
 });

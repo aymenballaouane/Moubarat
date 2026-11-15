@@ -304,7 +304,11 @@ async function main() {
             verified = source !== 'PHONE';
           } else {
             const outcome = rnd();
-            status = outcome < 0.06 ? 'CANCELLED' : outcome < 0.10 ? 'NO_SHOW' : outcome < 0.55 ? 'PAID' : 'HONORED';
+            /* P1-8 (audit stratégique du CRM, 15/11/2026) : le Dashboard signale désormais les réservations passées honorées
+               jamais encaissées. Un vrai centre encaisse le jour même : au-delà de deux jours, une « Honorée » non payée est rare
+               (avant : 45 % de l'historique, 188 alertes sur le centre de démo). */
+            const paidShare = d < -2 ? 0.97 : 0.55;
+            status = outcome < 0.06 ? 'CANCELLED' : outcome < 0.10 ? 'NO_SHOW' : outcome < paidShare ? 'PAID' : 'HONORED';
             verified = source !== 'PHONE' || rnd() < 0.9;
           }
 

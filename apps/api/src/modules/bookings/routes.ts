@@ -774,6 +774,50 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
      (VIEW_PLANNING), mêmes champs que la liste du jour (sans le roster du match, inutile ici). Un blocage centre n'est pas
      une réservation. Aucun index dédié : la recherche parcourt les réservations DU CENTRE (quelques milliers par an) —
      mesuré acceptable pour le pilote ; à indexer (référence, trigrammes) si un centre dépasse ~100 000 lignes. */
+  /* P1-8 (audit stratégique du CRM, 15/11/2026) : le Dashboard ne regardait que le jour affiché — une réservation d'un jour
+     passé restée « Réservée » (ni honorée, ni payée, ni no-show) ou « Honorée » sans être payée ne se voyait plus nulle part,
+     et faussait le CA, le taux de no-show et la fiabilité des clients. Les réservations NON CLÔTURÉES des
+     `UNCLOSED_LOOKBACK_DAYS` derniers jours dont le créneau est FINI, hors blocages : nombre total par statut, et les plus
+     anciennes d'abord — au plus `UNCLOSED_LIST_MAX` PAR STATUT (une liste unique pouvait ne contenir que des « Honorée »),
+     chacune avec son jour d'exploitation pour l'ouvrir dans Réservations.
+     Même permission que la journée (VIEW_PLANNING). */
+  app.get<{ Params: { venueId: string } }>('/venues/:venueId/bookings/unclosed',
+    { preHandler: (req) => platformGuards.requirePlatformAuth(req) }, async (req, reply) => {
+      await platformGuards.requireCenterAction(req, req.params.venueId, 'VIEW_PLANNING');
+      const UNCLOSED_LOOKBACK_DAYS = 30;
+      const UNCLOSED_LIST_MAX = 10;
+      const now = Date.now();
+      const since = new Date(now - UNCLOSED_LOOKBACK_DAYS * 86_400_000);
+      const base = db.selectFrom('bookings')
+        .innerJoin('fields', 'fields.id', 'bookings.field_id')
+        .where('fields.venue_id', '=', req.params.venueId)
+        .where('bookings.source', '!=', 'CENTER')
+        .where('bookings.status', 'in', ['RESERVED', 'HONORED'])
+        .where(sql<boolean>`upper(bookings.time_range) <= ${new Date(now)} AND lower(bookings.time_range) >= ${since}`);
+      const oldestOf = (status: 'RESERVED' | 'HONORED') => base.select([
+        'bookings.id', 'bookings.status', 'bookings.time_range', 'bookings.reference', 'bookings.reservation_name',
+        'bookings.price_total_da', 'fields.name as field_name',
+      ]).where('bookings.status', '=', status).orderBy(sql`lower(bookings.time_range)`, 'asc').limit(UNCLOSED_LIST_MAX).execute();
+      const [counts, reservedRows, honoredRows] = await Promise.all([
+        base.select(['bookings.status', (eb) => eb.fn.countAll<string>().as('n')]).groupBy('bookings.status').execute(),
+        oldestOf('RESERVED'), oldestOf('HONORED'),
+      ]);
+      const rows = [...reservedRows, ...honoredRows];
+      const countOf = (st: string) => Number(counts.find((c) => c.status === st)?.n ?? 0);
+      return reply.send({
+        lookbackDays: UNCLOSED_LOOKBACK_DAYS,
+        reserved: countOf('RESERVED'),
+        honoredUnpaid: countOf('HONORED'),
+        bookings: rows.map((r) => {
+          const range = fromPgRange(r.time_range);
+          return {
+            id: r.id, status: r.status, date: operatingDateOf(range.start), start: range.start,
+            reference: r.reference, name: r.reservation_name, fieldName: r.field_name, priceTotalDa: r.price_total_da,
+          };
+        }),
+      });
+    });
+
   app.get<{ Params: { venueId: string }; Querystring: { q?: string; limit?: string; cursor?: string } }>(
     '/venues/:venueId/bookings/search', { preHandler: (req) => platformGuards.requirePlatformAuth(req) }, async (req, reply) => {
       const role = await platformGuards.requireCenterAction(req, req.params.venueId, 'VIEW_PLANNING');

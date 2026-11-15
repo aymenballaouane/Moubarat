@@ -333,16 +333,22 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
   }, [venueId, token]);
   const fieldByName = useMemo(() => new Map(fields.map((f) => [f.name, f])), [fields]);
 
+  /* Une lecture dépassée (jour changé entre-temps) est jetée : depuis la date partagée (P1-5), ouvrir l'écran sur un autre
+     jour lançait deux lectures, et celle du jour courant pouvait arriver après et remplacer la bonne (vu le 15/11/2026). */
+  const requestSeq = useRef(0);
   const fetchDay = useCallback(async () => {
+    const mine = ++requestSeq.current;
     setLoad({ kind: 'loading' });
     try {
       const res = await apiFetch<{ bookings: ApiBookingRow[]; subscriptions: ApiSubscriptionOccurrence[] }>(`/venues/${venueId}/bookings?date=${date}`, { token });
+      if (mine !== requestSeq.current) return;
       const dayStart = dayStartMs(date);
       setRows(reservationRowsFromApi(res.bookings, dayStart).sort((a, b) => a.startMin - b.startMin));
       setSubRows(subscriptionReservationRowsFromApi(res.subscriptions, dayStart));
       setSummary(summaryFromApi(res.bookings));
       setLoad({ kind: 'ready' });
     } catch (e) {
+      if (mine !== requestSeq.current) return;
       setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
     }
   }, [venueId, token, date]);

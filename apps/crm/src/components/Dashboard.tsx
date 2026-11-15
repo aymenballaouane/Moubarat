@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { canCenterAct, type CenterRole } from '@moubarat/core';
 import {
   dayLabel, shiftDate, todayAlgiers, dayStartMs, weekdayOf,
@@ -7,7 +7,7 @@ import {
 import { hoursFromApi, asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
 import {
   dashboardKpisFromApi, matchHealthActionsFromApi, phoneToVerifyActionsFromApi,
-  honoredUnpaidCount, upcomingFromApi, type DashboardKpis,
+  honoredUnpaidCount, upcomingFromApi, compareKpi, type DashboardKpis, type KpiComparison, type KpiKey,
 } from '../lib/dashboardDetail.js';
 import { apiFetch, ApiError } from '../lib/api.js';
 import { fmt } from '../lib/format.js';
@@ -36,10 +36,18 @@ type ActionBig =
   | { kind: 'status'; label: string; variant: 'open' | 'filling' | 'full' | 'cancelled' };
 
 interface RenderedAction {
-  id: string; bookingId?: string; severity: 'ok' | 'warning' | 'danger'; title: string; detail: string; big: ActionBig; cta?: string;
+  id: string; bookingId?: string;
+  /** Jour à ouvrir dans Réservations, s'il diffère du jour affiché (réservations non clôturées d'un jour passé). */
+  openDate?: string; severity: 'ok' | 'warning' | 'danger'; title: string; detail: string; big: ActionBig; cta?: string;
 }
 
 type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'ready' };
+
+/** GET /venues/:id/bookings/unclosed (P1-8). */
+interface ApiUnclosed {
+  lookbackDays: number; reserved: number; honoredUnpaid: number;
+  bookings: { id: string; status: 'RESERVED' | 'HONORED'; date: string; start: number; reference: string | null; name: string | null; fieldName: string }[];
+}
 
 /* Chantier CRM — écran Dashboard (06/09/2026) : lecture réelle via
    GET /venues/:venueId/bookings (+ /venues/:venueId pour horaires/terrains)
@@ -48,29 +56,51 @@ type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { ki
    /analytics/* (Manager+, trop restrictif pour un écran vu par tous les
    rôles). Détail complet des choix (dénominateurs, matchHealth, « score
    partiel ») dans lib/dashboardDetail.ts. */
+/** La ligne de comparaison sous un indicateur (P1-8). */
+function Cmp({ c }: { c: KpiComparison | undefined }) {
+  if (!c) return null;
+  return <small className={`cm-kpi__cmp cm-kpi__cmp--${c.tone}`}>{c.label}</small>;
+}
+
 export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReservation }: DashboardProps) {
   const setDay = onDayChange;
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
   const [hoursLabel, setHoursLabel] = useState('—');
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
+  const [cmp, setCmp] = useState<Partial<Record<KpiKey, KpiComparison>>>({});
   const [actions, setActions] = useState<RenderedAction[]>([]);
   const [upcoming, setUpcoming] = useState<{ id: string; time: string; title: string; playersLabel?: string; field: string; amountDa: number }[]>([]);
 
   const hasViewClients = canCenterAct(role, 'VIEW_CLIENTS').ok;
 
+  /* Une lecture dépassée (jour changé entre-temps) est jetée : depuis la date partagée (P1-5), ouvrir l'écran sur un autre
+     jour lançait deux lectures, et celle du jour courant pouvait arriver après et remplacer la bonne (vu le 15/11/2026). */
+  const requestSeq = useRef(0);
   const fetchDashboard = useCallback(async () => {
+    const mine = ++requestSeq.current;
     setLoad({ kind: 'loading' });
     try {
-      const [venueRes, bookingsRes] = await Promise.all([
+      const lastWeekDay = shiftDate(day, -7);
+      const [venueRes, bookingsRes, lastWeekRes, unclosedRes] = await Promise.all([
         apiFetch<{ venue: ApiVenueDetail }>(`/venues/${venueId}?includeArchived=1`, { token }),
         apiFetch<{ bookings: ApiBookingRow[]; subscriptions: ApiSubscriptionOccurrence[] }>(`/venues/${venueId}/bookings?date=${day}`, { token }),
+        apiFetch<{ bookings: ApiBookingRow[]; subscriptions: ApiSubscriptionOccurrence[] }>(`/venues/${venueId}/bookings?date=${lastWeekDay}`, { token }).catch(() => null),
+        apiFetch<ApiUnclosed>(`/venues/${venueId}/bookings/unclosed`, { token }).catch(() => null),
       ]);
+      if (mine !== requestSeq.current) return;
       const rows = bookingsRes.bookings;
       const subs = bookingsRes.subscriptions;
       const activeFieldCount = venueRes.venue.fields.filter((f) => asFieldStatus(f.status) === 'ACTIVE').length;
       const range = hoursFromApi(venueRes.venue.openingHours)[weekdayOf(day)] ?? null;
       setHoursLabel(range ? `Ouvert ${hhmm(range[0])} → ${hhmm(range[1])}` : 'Fermé ce jour-là');
-      setKpis(dashboardKpisFromApi(rows, subs, range ? range[1] - range[0] : 0, activeFieldCount));
+      const todayKpis = dashboardKpisFromApi(rows, subs, range ? range[1] - range[0] : 0, activeFieldCount);
+      setKpis(todayKpis);
+      // P1-8 : même jour de la semaine passée (mêmes horaires d'ouverture, par construction).
+      if (lastWeekRes) {
+        const lw = dashboardKpisFromApi(lastWeekRes.bookings, lastWeekRes.subscriptions, range ? range[1] - range[0] : 0, activeFieldCount);
+        const ref = dayLabel(lastWeekDay).toLowerCase();
+        setCmp(Object.fromEntries((Object.keys(todayKpis) as KpiKey[]).map((k) => [k, compareKpi(k, todayKpis[k], lw[k], ref)])));
+      } else setCmp({});
 
       const dayStart = dayStartMs(day);
       const now = Date.now();
@@ -97,7 +127,33 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
       const phoneActions = phoneToVerifyActionsFromApi(rows, dayStart);
       const honoredCount = honoredUnpaidCount(rows);
 
+      /* P1-8 : les jours passés restés sans issue — en tête, en rouge : ils faussent le CA, les no-shows et la fiabilité. */
+      const unclosedActions: RenderedAction[] = [];
+      const oldestReserved = unclosedRes?.bookings.find((b) => b.status === 'RESERVED');
+      if (unclosedRes && unclosedRes.reserved > 0 && oldestReserved) {
+        const oldest = oldestReserved;
+        const n = unclosedRes.reserved;
+        unclosedActions.push({
+          id: 'unclosed', bookingId: oldest.id, openDate: oldest.date, severity: 'danger',
+          title: `${n} ${n > 1 ? 'réservations passées non clôturées' : 'réservation passée non clôturée'} (${unclosedRes.lookbackDays} derniers jours)`,
+          big: { kind: 'value', label: String(n), tone: 'r' },
+          detail: `La plus ancienne : ${dayLabel(oldest.date)} · ${oldest.name ?? '—'}${oldest.reference ? ` · ${oldest.reference}` : ''} · ${oldest.fieldName}. Marquez chaque réservation Honorée, Payée ou No-show : sinon le chiffre d’affaires et les no-shows sont faux.`,
+          cta: 'Ouvrir',
+        });
+      }
+      if (unclosedRes && unclosedRes.honoredUnpaid > 0) {
+        const oldest = unclosedRes.bookings.find((b) => b.status === 'HONORED');
+        const n = unclosedRes.honoredUnpaid;
+        unclosedActions.push({
+          id: 'unclosed-unpaid', ...(oldest ? { bookingId: oldest.id, openDate: oldest.date } : {}), severity: 'warning',
+          title: `${n} ${n > 1 ? 'réservations passées honorées, jamais encaissées' : 'réservation passée honorée, jamais encaissée'}`,
+          big: { kind: 'value', label: String(n), tone: 'o' },
+          detail: oldest ? `La plus ancienne : ${dayLabel(oldest.date)} · ${oldest.name ?? '—'}${oldest.reference ? ` · ${oldest.reference}` : ''}. À marquer « Payée » si le client a réglé.` : 'À marquer « Payée » si le client a réglé.',
+        });
+      }
+
       const nextActions: RenderedAction[] = [
+        ...unclosedActions,
         ...healthActions.map((a): RenderedAction => ({
           id: `health-${a.matchId}`, bookingId: a.bookingId,
           severity: a.health.band === 'RISQUE_ELEVE' ? 'danger' : 'warning',
@@ -122,6 +178,7 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
           detail: 'À encaisser avant la clôture de caisse.',
         }] : []),
       ];
+      if (mine !== requestSeq.current) return;   // les fiabilités des organisateurs ont pu arriver après un changement de jour
       setActions(nextActions);
 
       setUpcoming(upcomingFromApi(rows, dayStart, now).map((u) => ({
@@ -130,8 +187,10 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
         field: u.field, amountDa: u.amountDa,
       })));
 
+      if (mine !== requestSeq.current) return;
       setLoad({ kind: 'ready' });
     } catch (e) {
+      if (mine !== requestSeq.current) return;
       setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
     }
   }, [venueId, token, day, hasViewClients]);
@@ -161,12 +220,13 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
       ) : (
         <>
           <div className="cm-kpis">
-            <div className="cm-kpi"><span>Encaissé</span><b>{fmt(kpis.collectedDa)}</b><i>DA</i></div>
-            <div className="cm-kpi"><span>Engagé</span><b>{fmt(kpis.engagedDa)}</b><i>DA</i></div>
-            <div className="cm-kpi"><span title="Sur les heures d'ouverture réelles">Remplissage &middot; réel</span><b>{kpis.occupancyPct}</b><i>%</i></div>
-            <div className="cm-kpi"><span>Réservations</span><b>{kpis.bookingsCount}</b></div>
-            <div className="cm-kpi"><span>Part Moubarat</span><b>{kpis.moubaratSharePct}</b><i>%</i></div>
-            <div className="cm-kpi"><span>No-shows</span><b>{kpis.noShows}</b></div>
+            <div className="cm-kpi"><span>Encaissé</span><b>{fmt(kpis.collectedDa)}</b><i>DA</i><Cmp c={cmp.collectedDa} /></div>
+            <div className="cm-kpi"><span>Engagé</span><b>{fmt(kpis.engagedDa)}</b><i>DA</i><Cmp c={cmp.engagedDa} /></div>
+            <div className="cm-kpi"><span title="Sur les heures d'ouverture réelles">Remplissage &middot; réel</span><b>{kpis.occupancyPct}</b><i>%</i><Cmp c={cmp.occupancyPct} /></div>
+            <div className="cm-kpi"><span>Réservations</span><b>{kpis.bookingsCount}</b><Cmp c={cmp.bookingsCount} /></div>
+            <div className="cm-kpi"><span>Part Moubarat</span><b>{kpis.moubaratSharePct}</b><i>%</i><Cmp c={cmp.moubaratSharePct} /></div>
+            {/* P1-8 : des no-shows, c'est de l'argent perdu — en rouge dès le premier (métrique négative). */}
+            <div className={`cm-kpi${kpis.noShows > 0 ? ' cm-kpi--bad' : ''}`}><span>No-shows</span><b>{kpis.noShows}</b><Cmp c={cmp.noShows} /></div>
           </div>
 
           <p className="cm-sec">À faire / à surveiller — chaque ligne est cliquable et dit pourquoi</p>
@@ -180,8 +240,8 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
                   className={`cm-act2${a.severity === 'danger' ? ' red' : ''}`}
                   role="button"
                   tabIndex={0}
-                  onClick={() => onOpenReservation(a.bookingId ?? null, day)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenReservation(a.bookingId ?? null, day); }}
+                  onClick={() => onOpenReservation(a.bookingId ?? null, a.openDate ?? day)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenReservation(a.bookingId ?? null, a.openDate ?? day); }}
                 >
                   <span className="l1">{a.title}</span>
                   {a.big.kind === 'value' ? (

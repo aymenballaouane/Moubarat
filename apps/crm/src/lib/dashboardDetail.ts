@@ -17,6 +17,30 @@ export interface DashboardKpis {
   bookingsCount: number; moubaratSharePct: number; noShows: number;
 }
 
+/* P1-8 (audit stratégique du CRM, 15/11/2026) : chaque indicateur du jour comparé au MÊME jour de la semaine précédente
+   (mêmes horaires, même rythme de la semaine) — un chiffre seul ne disait pas si la journée était bonne. La couleur suit le
+   sens de l'indicateur : une hausse des no-shows est ROUGE (règle de la charte : une métrique négative qui monte). */
+export type KpiKey = keyof DashboardKpis;
+export interface KpiComparison { label: string; tone: 'up-good' | 'up-bad' | 'flat' }
+
+const KPI_UNIT: Record<KpiKey, 'da' | 'pts' | 'n'> = {
+  collectedDa: 'da', engagedDa: 'da', occupancyPct: 'pts', bookingsCount: 'n', moubaratSharePct: 'pts', noShows: 'n',
+};
+/** Les indicateurs dont une HAUSSE est une mauvaise nouvelle. */
+const KPI_LOWER_IS_BETTER: ReadonlySet<KpiKey> = new Set<KpiKey>(['noShows']);
+
+/** « +1 200 DA », « −3 pts », « +2 », ou « = » — avec le jour de comparaison. Pur, sans fuseau : `refLabel` vient de l'appelant. */
+export function compareKpi(key: KpiKey, today: number, lastWeek: number, refLabel: string): KpiComparison {
+  const diff = today - lastWeek;
+  if (diff === 0) return { label: `= ${refLabel}`, tone: 'flat' };
+  const sign = diff > 0 ? '+' : '−';
+  const abs = Math.abs(diff);
+  const unit = KPI_UNIT[key];
+  const value = unit === 'da' ? `${abs.toLocaleString('fr-FR').replace(/\u202f|\u00a0/g, ' ')} DA` : unit === 'pts' ? `${abs} pt${abs > 1 ? 's' : ''}` : String(abs);
+  const better = KPI_LOWER_IS_BETTER.has(key) ? diff < 0 : diff > 0;
+  return { label: `${sign}${value} vs ${refLabel}`, tone: better ? 'up-good' : 'up-bad' };
+}
+
 /** Chantier Abonnements (06/09/2026), décision d'Aymen : un abonné occupe
     réellement le terrain, l'ignorer sous-estimerait le remplissage — surtout
     pour les centres qui ont le plus de succès. Synthétisé ICI, côté appelant,

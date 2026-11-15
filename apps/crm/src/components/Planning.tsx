@@ -105,7 +105,11 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
 
   /* P1-5 (15/11/2026) : après une création, la relecture est DISCRÈTE (`silent`) — l'ancienne remplaçait la frise par
      « Chargement… », puis la remontait défilée sur l'heure actuelle : la réservation qu'on venait de poser sortait de l'écran. */
+  /* Une lecture dépassée (jour changé entre-temps) est jetée : depuis la date partagée (P1-5), ouvrir l'écran sur un autre
+     jour lançait deux lectures, et celle du jour courant pouvait arriver après et remplacer la bonne (vu le 15/11/2026). */
+  const requestSeq = useRef(0);
   const fetchDay = useCallback(async (opts?: { silent?: boolean }) => {
+    const mine = ++requestSeq.current;
     if (!opts?.silent) setLoad({ kind: 'loading' });
     try {
       const [venueRes, bookingsRes, closuresRes] = await Promise.all([
@@ -113,6 +117,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
         apiFetch<{ bookings: ApiBookingRow[]; subscriptions: ApiSubscriptionOccurrence[] }>(`/venues/${venueId}/bookings?date=${date}`, { token }),
         apiFetch<{ closures: ClosureItem[] }>(`/venues/${venueId}/closures`, { token }),
       ]);
+      if (mine !== requestSeq.current) return;
       const allFields = venueRes.venue.fields
         .map((f) => ({ id: f.id, name: f.name, sport: f.sport, active: asFieldStatus(f.status) === 'ACTIVE' }));
       setFields(allFields);
