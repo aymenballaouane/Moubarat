@@ -342,7 +342,7 @@ export function App() {
             ) : view === 'subs' ? (
               <Abonnements role={role} venueId={venue.id} token={token} onToast={showToast} />
             ) : view === 'stats' ? (
-              <Analytics venueId={venue.id} token={token} />
+              <Analytics venueId={venue.id} venueName={venue.name} token={token} />
             ) : view === 'clients' ? (
               <Clients venueId={venue.id} token={token} onOpenReservation={(id, date) => openInReservations(id, date)} />
             ) : view === 'teams' ? (

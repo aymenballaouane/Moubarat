@@ -8,9 +8,10 @@ import { apiFetch, apiDownload, ApiError } from '../lib/api.js';
 import { fmt } from '../lib/format.js';
 import { Icon } from './Icon.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
+import { MonthlyReport } from './MonthlyReport.js';
 
 
-interface AnalyticsProps { venueId: string; token: string }
+interface AnalyticsProps { venueId: string; venueName?: string; token: string }
 
 interface CashReportApi { collected: number; engaged: number; lostCancelled: number; lostNoShow: number }
 type SourceKey = 'MOUBARAT' | 'PHONE' | 'WALK_IN';
@@ -67,7 +68,9 @@ function Delta({ pct, bad, neutral }: { pct: number | null; bad?: boolean; neutr
 
 type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'ready' };
 
-export function Analytics({ venueId, token }: AnalyticsProps) {
+export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
+  /* P1-17 (15/11/2026) : deux onglets — la vue d'ensemble (inchangée) et le rapport du mois imprimable. */
+  const [tab, setTab] = useState<'overview' | 'month'>('overview');
   const today = todayAlgiers();
   const [day, setDay] = useState(today);
 
@@ -161,8 +164,24 @@ export function Analytics({ venueId, token }: AnalyticsProps) {
 
   const trendMax = overview ? Math.max(1, ...overview.trend.map((t) => t.collectedDa)) : 1;
 
+  const tabs = (
+    <div className="cm-tabs cm-noprint" role="tablist" aria-label="Analytics">
+      <button type="button" role="tab" aria-selected={tab === 'overview'} className={tab === 'overview' ? 'on' : ''} onClick={() => setTab('overview')}>Vue d’ensemble</button>
+      <button type="button" role="tab" aria-selected={tab === 'month'} className={tab === 'month' ? 'on' : ''} onClick={() => setTab('month')}>Rapport du mois</button>
+    </div>
+  );
+  if (tab === 'month') {
+    return (
+      <section className="cm-view on">
+        {tabs}
+        <MonthlyReport venueId={venueId} venueName={venueName} token={token} />
+      </section>
+    );
+  }
+
   return (
     <section className="cm-view on">
+      {tabs}
       <div className="cm-day">
         <button className="nav" type="button" aria-label="Jour précédent" onClick={() => setDay((d) => shiftDate(d, -1))}>‹</button>
         <b>{dayLabel(day)}</b>
