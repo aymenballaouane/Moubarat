@@ -26,6 +26,7 @@ import { type AuditLogEntry } from './data/auditDemo.js';
 import { apiFetch, setUnauthorizedHandler } from './lib/api.js';
 import { loadToken, saveToken, clearToken } from './lib/session.js';
 import { BOOT_RETRY_MS, bootFailureAction } from './lib/bootSession.js';
+import { todayAlgiers } from './lib/bookingsDetail.js';
 
 type ViewId = 'dash' | 'plan' | 'resa' | 'subs' | 'stats' | 'clients' | 'teams' | 'staff' | 'caisse' | 'audit' | 'conf';
 
@@ -114,6 +115,8 @@ export function App() {
   }
 
   const [view, setView] = useState<ViewId>('dash');
+  /** P1-5 (15/11/2026) : un seul jour affiché pour Dashboard, Planning et Réservations. */
+  const [day, setDay] = useState(todayAlgiers());
   const [theme, setTheme] = useState<Theme>('dark');
   // Caisse hors navigation par defaut (demande d'Aymen, prototype ligne 1342 —
   // "MODULES = { caisse: false }") : `false` ici n'est qu'une valeur de
@@ -305,17 +308,17 @@ export function App() {
           <main className="cm-main">
             {view === 'dash' ? (
               <Dashboard
-                role={role} venueId={venue.id} token={token}
+                role={role} venueId={venue.id} token={token} day={day} onDayChange={setDay}
                 onOpenReservation={openInReservations}
               />
             ) : view === 'plan' ? (
               <Planning
-                role={role} venueId={venue.id} token={token} onToast={showToast}
+                role={role} venueId={venue.id} token={token} onToast={showToast} day={day} onDayChange={setDay}
                 openRequest={planningOpen} onOpenReservation={openInReservations}
               />
             ) : view === 'resa' ? (
               <Reservations
-                role={role} venueId={venue.id} token={token} onToast={showToast}
+                role={role} venueId={venue.id} token={token} onToast={showToast} day={day} onDayChange={setDay}
                 openRequest={resaOpen} onOpenPlanning={openInPlanning}
               />
             ) : view === 'subs' ? (

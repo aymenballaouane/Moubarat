@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { canCenterAct, cashStatusOpensAt, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
 import type { ReservationRow } from '../data/reservationsDemo.js';
 import { dateLabelLong, hitsCountLabel, searchHitsFromApi, type ApiBookingSearchHit, type SearchHit } from '../lib/searchDetail.js';
@@ -18,6 +18,9 @@ import { Icon } from './Icon.js';
 
 interface ReservationsProps {
   role: CenterRole; venueId: string; token: string; onToast: (message: string) => void;
+  /** P1-5 (audit stratégique du CRM, 15/11/2026) : le jour affiché est PARTAGÉ entre Dashboard, Planning et Réservations
+      (App.tsx) — passer d'un écran à l'autre gardait jusqu'ici chacun sa date. */
+  day: string; onDayChange: Dispatch<SetStateAction<string>>;
   /** Navigation depuis Planning ou Dashboard (16/09/2026, signalé par Aymen
       — cliquer une résa dans Planning, ou une ligne du Dashboard, ne
       faisait RIEN jusqu'ici). `nonce` force la resynchronisation même sur
@@ -281,8 +284,9 @@ type ReservationListItem =
    deux écrans pour l'instant). Le résumé du jour est dérivé des mêmes
    lignes (summaryFromApi), jamais un second appel — Analytics est une
    permission différente (MANAGER+), hors de portée de cet écran. */
-export function Reservations({ role, venueId, token, onToast, openRequest, onOpenPlanning }: ReservationsProps) {
-  const [date, setDate] = useState(todayAlgiers());
+export function Reservations({ role, venueId, token, onToast, day, onDayChange, openRequest, onOpenPlanning }: ReservationsProps) {
+  const date = day;
+  const setDate = onDayChange;
   const [openId, setOpenId] = useState<string | null>(null);
 
   // Navigation depuis Planning — se cale sur la date ET ouvre directement

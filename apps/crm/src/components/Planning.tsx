@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { canCenterAct, CLOSURE_REASON_LABELS, type CenterRole, type ClosureReason, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
 import type { TimelineBlock } from '../data/planningDemo.js';
 import {
@@ -13,6 +13,9 @@ import { Icon } from './Icon.js';
 
 interface PlanningProps {
   role: CenterRole; venueId: string; token: string; onToast: (message: string) => void;
+  /** P1-5 (audit stratégique du CRM, 15/11/2026) : le jour affiché est PARTAGÉ entre Dashboard, Planning et Réservations
+      (App.tsx) — passer d'un écran à l'autre gardait jusqu'ici chacun sa date. */
+  day: string; onDayChange: Dispatch<SetStateAction<string>>;
   /** Navigation depuis un autre écran (16/09/2026, signalé par Aymen — le
       clic sur une résa existante ici ne faisait RIEN jusqu'ici, un vrai
       bug). `nonce` force la resynchronisation même sur une redemande
@@ -77,12 +80,13 @@ interface DayField { id: string; name: string; sport: string; active: boolean }
    que si `blocks` en contient au moins un pour ce jour précis. Les boutons
    de filtre par terrain, eux, ne listent que les terrains ACTIFS — inutile
    de proposer de basculer un terrain qui n'existe plus. */
-export function Planning({ role, venueId, token, onToast, openRequest, onOpenReservation }: PlanningProps) {
+export function Planning({ role, venueId, token, onToast, day, onDayChange, openRequest, onOpenReservation }: PlanningProps) {
   const canCreate = canCenterAct(role, 'CREATE_BOOKING').ok;
 
   const [zoom, setZoom] = useState<'x' | 'c'>('x');
   const [sport, setSport] = useState<(typeof SPORTS)[number]>('ALL');
-  const [date, setDate] = useState(todayAlgiers());
+  const date = day;
+  const setDate = onDayChange;
   const [fieldFilter, setFieldFilter] = useState<Record<string, boolean>>({});
   const [fields, setFields] = useState<DayField[]>([]);
   const [openRange, setOpenRange] = useState<[number, number] | null>(null);
@@ -98,8 +102,10 @@ export function Planning({ role, venueId, token, onToast, openRequest, onOpenRes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openRequest?.nonce]);
 
-  const fetchDay = useCallback(async () => {
-    setLoad({ kind: 'loading' });
+  /* P1-5 (15/11/2026) : après une création, la relecture est DISCRÈTE (`silent`) — l'ancienne remplaçait la frise par
+     « Chargement… », puis la remontait défilée sur l'heure actuelle : la réservation qu'on venait de poser sortait de l'écran. */
+  const fetchDay = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoad({ kind: 'loading' });
     try {
       const [venueRes, bookingsRes, closuresRes] = await Promise.all([
         apiFetch<{ venue: ApiVenueDetail }>(`/venues/${venueId}?includeArchived=1`, { token }),
@@ -292,7 +298,7 @@ export function Planning({ role, venueId, token, onToast, openRequest, onOpenRes
       /* Règle 21 : le numéro saisi est celui d'un compte joueur — il vient de recevoir « C'est bien toi ? ». */
       onToast(created.booking.claimStatus === 'PENDING' ? 'Réservation créée. Ce numéro est celui d’un joueur Moubarat : il est prévenu et doit confirmer.' : 'Réservation créée.');
       setSel(null);
-      void fetchDay();
+      void fetchDay({ silent: true });
     } catch (e) {
       setFormError(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
     } finally {

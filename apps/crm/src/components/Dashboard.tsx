@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { canCenterAct, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
 import {
   dayLabel, shiftDate, todayAlgiers, dayStartMs, weekdayOf,
@@ -16,6 +16,9 @@ import { Icon } from './Icon.js';
 
 interface DashboardProps {
   role: CenterRole; venueId: string; token: string;
+  /** P1-5 (audit stratégique du CRM, 15/11/2026) : le jour affiché est PARTAGÉ entre Dashboard, Planning et Réservations
+      (App.tsx) — passer d'un écran à l'autre gardait jusqu'ici chacun sa date. */
+  day: string; onDayChange: Dispatch<SetStateAction<string>>;
   /** Navigation vers la fiche Réservations correspondante (16/09/2026,
       signalé par Aymen — onOpenAction/onOpenSlot étaient deux stubs
       console.info, même bug que Planning/Réservations la veille).
@@ -44,8 +47,8 @@ type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { ki
    /analytics/* (Manager+, trop restrictif pour un écran vu par tous les
    rôles). Détail complet des choix (dénominateurs, matchHealth, « score
    partiel ») dans lib/dashboardDetail.ts. */
-export function Dashboard({ role, venueId, token, onOpenReservation }: DashboardProps) {
-  const [day, setDay] = useState(todayAlgiers());
+export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReservation }: DashboardProps) {
+  const setDay = onDayChange;
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
   const [hoursLabel, setHoursLabel] = useState('—');
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
