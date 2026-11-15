@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api.js';
+import { useLang, useT } from '../lib/i18n.js';
 
 interface LegalSection { heading?: string; paragraphs: string[] }
 interface LegalDocument { key: string; version: string; title: string; publishedAt: string; sections: LegalSection[] }
@@ -10,6 +11,8 @@ interface LegalDocument { key: string; version: string; title: string; published
    que côté joueur (AuthFlow.tsx, étape "profile"), affichée ici plutôt qu'à la création du compte
    puisqu'un compte CRM est créé par un tiers (superadmin/OWNER), jamais par auto-inscription. */
 export function LegalGate({ token, onAccepted }: { token: string; onAccepted: () => void }) {
+  const t = useT();
+  const lang = useLang();
   const [docs, setDocs] = useState<{ cgu: LegalDocument; confidentialite: LegalDocument } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
@@ -43,13 +46,14 @@ export function LegalGate({ token, onAccepted }: { token: string; onAccepted: ()
     <div className="cm-login">
       <div className="cm-login__card cm-login__card--wide" role="dialog" aria-modal="true">
         <p className="cm-login__eyebrow">— MOUBARAT</p>
-        <h1 className="cm-login__title">Avant de continuer</h1>
+        <h1 className="cm-login__title">{t('Avant de continuer')}</h1>
         <p className="cm-login__text">
-          Moubarat a besoin de votre accord sur ses conditions d’utilisation et sa politique de
-          confidentialité pour que ce compte continue d’accéder au CRM.
+          {t('Moubarat a besoin de votre accord sur ses conditions d’utilisation et sa politique de confidentialité pour que ce compte continue d’accéder au CRM.')}
         </p>
+        {/* P1-15 : le texte juridique n'existe qu'en français (rédigé par l'avocat) — jamais traduit ici. */}
+        {lang === 'ar' ? <p className="cm-login__text">{t('Les documents ci-dessous ne sont disponibles qu’en français.')}</p> : null}
 
-        {loadError ? <p className="mb-field__error">{loadError}</p> : null}
+        {loadError ? <p className="mb-field__error">{t(loadError)}</p> : null}
 
         {docs ? (
           <>
@@ -67,19 +71,19 @@ export function LegalGate({ token, onAccepted }: { token: string; onAccepted: ()
 
             <label className="cm-login__check">
               <input type="checkbox" checked={checked} disabled={busy} onChange={(e) => setChecked(e.target.checked)} />
-              <span>J’ai lu et j’accepte les conditions générales d’utilisation et la politique de confidentialité.</span>
+              <span>{t('J’ai lu et j’accepte les conditions générales d’utilisation et la politique de confidentialité.')}</span>
             </label>
-            {submitError ? <p className="mb-field__error">{submitError}</p> : null}
+            {submitError ? <p className="mb-field__error">{t(submitError)}</p> : null}
 
             <button
               type="button" className="mb-btn mb-btn--block" data-loading={busy ? 'true' : undefined}
               disabled={!checked || busy} onClick={() => { void submit(); }}
             >
-              Continuer
+              {t('Continuer')}
             </button>
           </>
         ) : !loadError ? (
-          <p className="cm-login__text">Chargement…</p>
+          <p className="cm-login__text">{t('Chargement…')}</p>
         ) : null}
       </div>
     </div>

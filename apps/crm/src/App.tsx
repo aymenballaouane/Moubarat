@@ -22,7 +22,7 @@ import { Centre } from './components/Centre.js';
 import { Toast } from './components/Toast.js';
 import { HelpModal } from './components/HelpModal.js';
 import { LangToggle } from './components/LangToggle.js';
-import { useLang } from './lib/i18n.js';
+import { useT } from './lib/i18n.js';
 import { hasSupport, useSupport } from './lib/support.js';
 import { type AuditLogEntry } from './data/auditDemo.js';
 import { apiFetch, setUnauthorizedHandler } from './lib/api.js';
@@ -87,8 +87,8 @@ interface ConnectedVenue { id: string; name: string; wilaya?: string; address?: 
    centre (centerMemberships[0]) : un seul centre par compte en pratique
    aujourd'hui, aucun sélecteur nécessaire (décision Aymen 03/09/2026). */
 export function App() {
-  /* P1-15 (lot A) : changer de langue re-rend tout l'écran (textes, sens de lecture, séparateurs des montants). */
-  useLang();
+  /* P1-15 (lot A) : changer de langue re-rend tout l'écran (textes, sens de lecture, séparateurs des montants). Lot B : textes. */
+  const t = useT();
   const [token, setToken] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
   /** MS-040 : le serveur ne répond pas au démarrage — la session est gardée, l'écran le dit et réessaie tout seul. */
@@ -256,8 +256,8 @@ export function App() {
       <div className="cm-login" role="status" aria-live="polite">
         <div className="cm-login__card">
           <p className="cm-login__eyebrow">— MOUBARAT</p>
-          <h1 className="cm-login__title">Serveur injoignable</h1>
-          <p className="cm-login__text">Le serveur de Moubarat ne répond pas pour l’instant (mise à jour ou panne). Ta session est gardée : nouvel essai automatique toutes les 5 secondes.</p>
+          <h1 className="cm-login__title">{t('Serveur injoignable')}</h1>
+          <p className="cm-login__text">{t('Le serveur de Moubarat ne répond pas pour l’instant (mise à jour ou panne). Votre session est gardée : nouvel essai automatique toutes les 5 secondes.')}</p>
         </div>
       </div>
     ) : null;
@@ -301,15 +301,15 @@ export function App() {
             <button
               type="button"
               className="mb-btn mb-btn--ghost mb-btn--sm"
-              onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+              onClick={() => setTheme((th) => (th === 'dark' ? 'light' : 'dark'))}
             >
-              {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+              {theme === 'dark' ? t('Mode clair') : t('Mode sombre')}
             </button>
             {/* P1-16 (15/11/2026) : l'Aide porte aussi la liste de démarrage et les premiers pas — toujours présente. */}
-            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setHelpOpen(true)}>Aide</button>
-            <i>Connecté : {accountName}</i>
-            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setAccountOpen(true)}>Mon compte</button>
-            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={logout}>Déconnexion</button>
+            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setHelpOpen(true)}>{t('Aide')}</button>
+            <i>{t('Connecté : {name}', { name: accountName ?? '' })}</i>
+            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setAccountOpen(true)}>{t('Mon compte')}</button>
+            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={logout}>{t('Déconnexion')}</button>
           </div>
         </div>
 
@@ -323,7 +323,7 @@ export function App() {
                 onClick={() => setView(item.id)}
               >
                 <Icon id={item.icon} />
-                {item.label}
+                {t(item.label)}
                 {item.badge ? <span className="cnt">{item.badge}</span> : null}
               </button>
             ))}

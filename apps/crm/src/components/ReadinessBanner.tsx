@@ -3,6 +3,7 @@ import { canCenterAct, type CenterRole } from '@moubarat/core';
 import { apiFetch, ApiError } from '../lib/api.js';
 import { readinessBannerModel, signaledAtLabel, type ApiVenueReadiness } from '../lib/readinessView.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
+import { useLang, useT } from '../lib/i18n.js';
 
 /* ONB-2 (audit pré-lancement, lot 6, 27/09/2026) — le gérant d'un centre pas encore publié ne savait ni qu'il ne
    l'était pas, ni ce qui manquait, ni comment le dire à Moubarat. Bandeau sous l'en-tête (même place que
@@ -21,6 +22,8 @@ export function ReadinessBanner({ venueId, token, role, refreshKey, onOpenCentre
   const [data, setData] = useState<ApiVenueReadiness | null>(null);
   const [busy, setBusy] = useState(false);
   const canSignal = canCenterAct(role, 'EDIT_PROFILE').ok;
+  const t = useT();
+  const lang = useLang();
 
   const load = useCallback(() => {
     apiFetch<ApiVenueReadiness>(`/venues/${venueId}/readiness`, { token })
@@ -45,21 +48,21 @@ export function ReadinessBanner({ venueId, token, role, refreshKey, onOpenCentre
   }
 
   if (!data) return null;
-  const m = readinessBannerModel(data, Date.now());
+  const m = readinessBannerModel(data, Date.now(), t);
   if (m.kind === 'none') return null;
 
-  const openCentre = <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={onOpenCentre}>Ouvrir l’écran Centre</button>;
+  const openCentre = <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={onOpenCentre}>{t('Ouvrir l’écran Centre')}</button>;
 
   if (m.kind === 'suspended') {
-    return <div className="cm-sub-banner cm-sub-banner--danger" role="status">Centre suspendu par Moubarat — il n’apparaît plus dans l’app joueur. Contactez Moubarat (bouton Aide).</div>;
+    return <div className="cm-sub-banner cm-sub-banner--danger" role="status">{t('Centre suspendu par Moubarat — il n’apparaît plus dans l’app joueur. Contactez Moubarat (bouton Aide).')}</div>;
   }
   if (m.kind === 'rejected') {
-    return <div className="cm-sub-banner cm-sub-banner--danger" role="status">Ce centre n’a pas été retenu par Moubarat. Contactez Moubarat (bouton Aide).</div>;
+    return <div className="cm-sub-banner cm-sub-banner--danger" role="status">{t('Ce centre n’a pas été retenu par Moubarat. Contactez Moubarat (bouton Aide).')}</div>;
   }
   if (m.kind === 'active-incomplete') {
     return (
       <div className="cm-sub-banner cm-sub-banner--danger cm-sub-banner--rich" role="status">
-        <span>Votre centre a <b>disparu de l’app joueur</b> — il manque : {m.missing.join(' ; ')}.</span>
+        <span>{t('Votre centre a disparu de l’app joueur — il manque : {liste}.', { liste: m.missing.join(' ; ') })}</span>
         {openCentre}
       </div>
     );
@@ -68,8 +71,8 @@ export function ReadinessBanner({ venueId, token, role, refreshKey, onOpenCentre
     return (
       <div className="cm-sub-banner cm-sub-banner--warn cm-sub-banner--rich" role="status">
         <span>
-          Votre centre n’est pas encore publié dans l’app joueur. Avant de le signaler prêt, il manque : <b>{m.missing.join(' ; ')}</b>.
-          {m.advice.length > 0 ? ` Recommandé : ${m.advice.join(' ; ')}.` : ''}
+          {t('Votre centre n’est pas encore publié dans l’app joueur. Avant de le signaler prêt, il manque : {liste}.', { liste: m.missing.join(' ; ') })}
+          {m.advice.length > 0 ? ` ${t('Recommandé : {liste}.', { liste: m.advice.join(' ; ') })}` : ''}
         </span>
         {openCentre}
       </div>
@@ -79,13 +82,13 @@ export function ReadinessBanner({ venueId, token, role, refreshKey, onOpenCentre
   return (
     <div className="cm-sub-banner cm-sub-banner--warn cm-sub-banner--rich" role="status">
       <span>
-        Votre centre est complet et attend la validation de Moubarat.
-        {m.signaledAt ? ` Signalé prêt ${signaledAtLabel(m.signaledAt)}.` : ''}
-        {m.advice.length > 0 ? ` Recommandé : ${m.advice.join(' ; ')}.` : ''}
+        {t('Votre centre est complet et attend la validation de Moubarat.')}
+        {m.signaledAt ? ` ${t('Signalé prêt {quand}.', { quand: signaledAtLabel(m.signaledAt, lang) })}` : ''}
+        {m.advice.length > 0 ? ` ${t('Recommandé : {liste}.', { liste: m.advice.join(' ; ') })}` : ''}
       </span>
       {canSignal && m.canSignalAgain ? (
         <button type="button" className="mb-btn mb-btn--sm" disabled={busy} onClick={() => { void signal(); }}>
-          {busy ? 'Envoi…' : m.signaledAt ? 'Signaler à nouveau' : 'Signaler que c’est prêt'}
+          {busy ? t('Envoi…') : m.signaledAt ? t('Signaler à nouveau') : t('Signaler que c’est prêt')}
         </button>
       ) : null}
     </div>

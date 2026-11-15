@@ -32,9 +32,9 @@ export type ReadinessBannerModel =
     le serveur reste l'autorité. */
 export const READY_SIGNAL_COOLDOWN_MS = 24 * 3_600_000;
 
-export function readinessBannerModel(r: ApiVenueReadiness, nowMs: number): ReadinessBannerModel {
-  const missing = r.readiness.checks.filter((c) => c.blocking && !c.ok).map((c) => c.missing ?? c.label);
-  const advice = r.readiness.checks.filter((c) => !c.blocking && !c.ok).map((c) => c.missing ?? c.label);
+export function readinessBannerModel(r: ApiVenueReadiness, nowMs: number, t: (key: string, vars?: Record<string, string | number>) => string = (k) => k): ReadinessBannerModel {
+  const missing = r.readiness.checks.filter((c) => c.blocking && !c.ok).map((c) => readinessText(c, t, 'missing'));
+  const advice = r.readiness.checks.filter((c) => !c.blocking && !c.ok).map((c) => readinessText(c, t, 'missing'));
   if (r.status === 'SUSPENDED') return { kind: 'suspended' };
   if (r.status === 'REJECTED') return { kind: 'rejected' };
   if (r.status === 'ACTIVE') return r.readiness.ready ? { kind: 'none' } : { kind: 'active-incomplete', missing };
@@ -45,9 +45,23 @@ export function readinessBannerModel(r: ApiVenueReadiness, nowMs: number): Readi
 }
 
 /** « le 27 septembre 2026 à 18:40 » — jamais `toLocaleString` seul (fuseau du navigateur) : Alger = UTC+1 fixe. */
-export function signaledAtLabel(iso: string): string {
+export function signaledAtLabel(iso: string, lang: 'fr' | 'ar' = 'fr'): string {
   const t = Date.parse(iso) + 3_600_000;
   const d = new Date(t);
+  if (lang === 'ar') {
+    // P1-15 : « 27 سبتمبر 2026 على 18:40 » — mois arabes du Maghreb (Intl, ar-DZ), chiffres 0-9.
+    const day = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12)).toLocaleDateString('ar-DZ-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    return `${day} ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+  }
   const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
   return `le ${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()} à ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+}
+
+/** P1-15 (lot B) : le texte d'un point « prêt à publier » dans la langue de l'écran. Le serveur sert du français ; la liste des
+    terrains sans tarif (« tarif manquant : T1, T2 ») est reprise telle quelle dans la phrase traduite. */
+export function readinessText(c: ReadinessCheck, t: (key: string, vars?: Record<string, string | number>) => string, which: 'label' | 'missing'): string {
+  if (which === 'label' || !c.missing) return t(c.label);
+  const prefix = 'tarif manquant : ';
+  if (c.code === 'FIELD_PRICES' && c.missing.startsWith(prefix)) return t('tarif manquant : {terrains}', { terrains: c.missing.slice(prefix.length) });
+  return t(c.missing);
 }

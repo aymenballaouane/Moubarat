@@ -14,6 +14,8 @@ const warned = new Set<string>();
 
 export function translate(key: string, lang: Lang): string {
   if (lang === 'fr') return key;
+  // Déjà en arabe (texte traduit puis transmis, ex. un message d'écran affiché par Toast) : tel quel, sans avertissement.
+  if (/[\u0600-\u06FF]/.test(key)) return key;
   const found = TEXTES[key];
   if (found === undefined) {
     if (import.meta.env.DEV && !warned.has(key)) {
@@ -30,10 +32,20 @@ export function useLang(): Lang {
   return useSyncExternalStore(subscribeLang, getLang, getLang);
 }
 
-/** `t('texte français exact')` → l'arabe si la langue active est l'arabe, sinon le français. */
-export function useT(): (key: string) => string {
+/** Valeurs insérées dans un texte : `{n}`, `{date}`… — la clé garde l'emplacement, l'arabe le place où sa phrase le veut. */
+export type TVars = Record<string, string | number>;
+
+export function fill(text: string, vars?: TVars): string {
+  if (!vars) return text;
+  return text.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+}
+
+export type TFn = (key: string, vars?: TVars) => string;
+
+/** `t('texte français exact', { n: 3 })` → l'arabe si la langue active est l'arabe, sinon le français ; `{n}` remplacé. */
+export function useT(): TFn {
   const lang = useLang();
-  return (key: string) => translate(key, lang);
+  return (key: string, vars?: TVars) => fill(translate(key, lang), vars);
 }
 
 /** Les paramètres régionaux des formats (dates, nombres) — chiffres 0-9 en arabe (`-u-nu-latn`). */

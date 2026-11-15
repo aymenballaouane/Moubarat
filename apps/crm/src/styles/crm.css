@@ -60,7 +60,7 @@ body.mb {
 .cm-login__sports legend { width: 100%; padding: 0; margin-bottom: 6px; }
 .cm-login__check { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-b3); color: var(--text-2); cursor: pointer; }
 .cm-login__check input { margin-top: 3px; accent-color: var(--primary); }
-.cm-login__trap { position: absolute; inset-inline-start: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.cm-login__trap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } /* P1-15 : masqué sans décalage — un -10000px poussait le piège à 10 000 px à droite en arabe */
 @media (max-width: 520px) { .cm-login__grid { grid-template-columns: 1fr; } .cm-login__card { padding: 24px 18px; } }
 
 /* Consentement CGU/confidentialité (22/09/2026, écran LegalGate) — aucun prototype gelé ne couvre cet

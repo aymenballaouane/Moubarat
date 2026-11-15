@@ -6310,3 +6310,10 @@ références et champs numériques lus de gauche à droite ; frise figée `dir="
 en arabe « 2 850 DA » s'affichait « 850 2 » — les montants prennent une espace insécable en arabe (`fmt`), inchangés en français.
 **Reste pour le lot C** : les petites phrases mêlant texte et nombres (comparaisons du Dashboard, dates) seront traduites et
 leurs nombres isolés.
+- **Lot B (15/11/2026)** : l'entrée et le cadre passent par `t()` — connexion, demande de référencement (avec son propre bouton
+  FR / عربي), conditions (le texte juridique lui-même reste en français, signalé en arabe), écran « serveur injoignable » (passé
+  au vouvoiement au passage), en-tête, menu, bandeaux d'abonnement et « prêt à publier » (libellés servis par l'API traduits
+  côté CRM, `readinessText`), Aide, Mon compte, identifiants générés. `Toast` et `ConfirmModal` traduisent ce qu'on leur passe
+  (clé = français exact) ; `t(clé, { n })` insère les valeurs. 131 traductions provisoires ; un test échoue si une clé utilisée
+  n'a pas de traduction (`tests/i18n-keys.ts`). Pour les nombres variables, tournure neutre (« عدد … : n ») : l'accord du nom
+  arabe dépend du nombre. Corrigé : le piège à robots du formulaire public partait à 10 000 px à droite en arabe.

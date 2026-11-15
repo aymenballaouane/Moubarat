@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api.js';
 import { LangToggle } from './LangToggle.js';
+import { useT } from '../lib/i18n.js';
 
 interface CenterMembership { venueId: string; venueName: string; role: string }
 interface LoginResponse {
@@ -18,6 +19,7 @@ interface LoginScreenProps {
    un compte CRM est un platform_account sans is_superadmin, rattaché à un
    centre via center_staff). Aucun rôle simulé, aucun centre codé en dur. */
 export function LoginScreen({ onLoggedIn }: LoginScreenProps) {
+  const t = useT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -50,27 +52,27 @@ export function LoginScreen({ onLoggedIn }: LoginScreenProps) {
         {/* P1-15 (lot A) : la langue se choisit dès la connexion (réglage du poste). */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}><LangToggle /></div>
         <p className="cm-login__eyebrow">— MOUBARAT</p>
-        <h1 className="cm-login__title">Espace centre</h1>
+        <h1 className="cm-login__title">{t('Espace centre')}</h1>
         <label className="mb-field">
-          <span className="mb-field__label">Email</span>
+          <span className="mb-field__label">{t('Email')}</span>
           <input
             className="mb-field__control" type="email" autoComplete="username" required
             value={email} onChange={(e) => setEmail(e.target.value)} disabled={busy}
           />
         </label>
         <label className="mb-field">
-          <span className="mb-field__label">Mot de passe</span>
+          <span className="mb-field__label">{t('Mot de passe')}</span>
           <input
             className="mb-field__control" type="password" autoComplete="current-password" required
             value={password} onChange={(e) => setPassword(e.target.value)} disabled={busy}
           />
         </label>
-        {error ? <p className="mb-field__error">{error}</p> : null}
+        {error ? <p className="mb-field__error">{t(error)}</p> : null}
         <button type="submit" className="mb-btn mb-btn--block" disabled={busy}>
-          {busy ? 'Connexion…' : 'Se connecter'}
+          {busy ? t('Connexion…') : t('Se connecter')}
         </button>
         {/* Un centre qui n'a pas encore de compte : demande publique, examinée par la plateforme. */}
-        <a className="cm-login__link" href="#/rejoindre">Vous êtes un centre ? Faire une demande</a>
+        <a className="cm-login__link" href="#/rejoindre">{t('Vous êtes un centre ? Faire une demande')}</a>
       </form>
     </div>
   );

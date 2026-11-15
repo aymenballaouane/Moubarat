@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api.js';
+import { useT } from '../lib/i18n.js';
+import { LangToggle } from './LangToggle.js';
 
 /* Formulaire PUBLIC « Référencer mon centre » (20/09/2026, demande d'Aymen) — accessible SANS compte,
    depuis l'écran de connexion (#/rejoindre, lien partageable). La demande atterrit dans la console
@@ -15,6 +17,7 @@ const SPORTS = [
 const EMPTY = { name: '', wilaya: '', address: '', contactName: '', contactPhone: '', contactEmail: '', fieldsCount: '', message: '' };
 
 export function RequestScreen() {
+  const t = useT();
   const [form, setForm] = useState(EMPTY);
   const [sports, setSports] = useState<string[]>([]);
   const [consent, setConsent] = useState(false);
@@ -58,9 +61,9 @@ export function RequestScreen() {
       <div className="cm-login">
         <div className="cm-login__card cm-login__card--wide" role="status">
           <p className="cm-login__eyebrow">— MOUBARAT</p>
-          <h1 className="cm-login__title">Demande reçue</h1>
-          <p className="cm-login__text">Merci. Nous étudions votre demande et revenons vers vous très bientôt, au téléphone ou par email.</p>
-          <a className="mb-btn mb-btn--secondary mb-btn--block" href="#">Retour à la connexion</a>
+          <h1 className="cm-login__title">{t('Demande reçue')}</h1>
+          <p className="cm-login__text">{t('Merci. Nous étudions votre demande et revenons vers vous très bientôt, au téléphone ou par email.')}</p>
+          <a className="mb-btn mb-btn--secondary mb-btn--block" href="#">{t('Retour à la connexion')}</a>
         </div>
       </div>
     );
@@ -69,57 +72,58 @@ export function RequestScreen() {
   return (
     <div className="cm-login">
       <form className="cm-login__card cm-login__card--wide" onSubmit={(e) => { void submit(e); }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}><LangToggle /></div>
         <p className="cm-login__eyebrow">— MOUBARAT</p>
-        <h1 className="cm-login__title">Référencer mon centre</h1>
-        <p className="cm-login__text">Vous gérez un centre sportif ? Dites-nous qui vous êtes : nous étudions chaque demande et vous recontactons.</p>
+        <h1 className="cm-login__title">{t('Référencer mon centre')}</h1>
+        <p className="cm-login__text">{t('Vous gérez un centre sportif ? Dites-nous qui vous êtes : nous étudions chaque demande et vous recontactons.')}</p>
 
         <div className="cm-login__grid">
           <label className="mb-field cm-login__full">
-            <span className="mb-field__label">Nom du centre</span>
+            <span className="mb-field__label">{t('Nom du centre')}</span>
             <input className="mb-field__control" required minLength={2} maxLength={80} value={form.name} onChange={set('name')} disabled={busy} />
           </label>
           <label className="mb-field">
-            <span className="mb-field__label">Wilaya</span>
+            <span className="mb-field__label">{t('Wilaya')}</span>
             <input className="mb-field__control" required minLength={2} maxLength={40} value={form.wilaya} onChange={set('wilaya')} disabled={busy} />
           </label>
           <label className="mb-field">
-            <span className="mb-field__label">Nombre de terrains (optionnel)</span>
+            <span className="mb-field__label">{t('Nombre de terrains (optionnel)')}</span>
             <input className="mb-field__control" type="number" min={1} max={100} inputMode="numeric" value={form.fieldsCount} onChange={set('fieldsCount')} disabled={busy} />
           </label>
           <label className="mb-field cm-login__full">
-            <span className="mb-field__label">Adresse</span>
+            <span className="mb-field__label">{t('Adresse')}</span>
             <input className="mb-field__control" required minLength={5} maxLength={200} value={form.address} onChange={set('address')} disabled={busy} />
           </label>
         </div>
 
         <fieldset className="cm-login__sports">
-          <legend className="mb-field__label">Sports pratiqués</legend>
+          <legend className="mb-field__label">{t('Sports pratiqués')}</legend>
           {SPORTS.map((s) => (
             <label key={s.value} className="cm-login__check">
               <input
                 type="checkbox" checked={sports.includes(s.value)} disabled={busy}
                 onChange={(e) => setSports((cur) => (e.target.checked ? [...cur, s.value] : cur.filter((x) => x !== s.value)))}
               />
-              <span>{s.label}</span>
+              <span>{t(s.label)}</span>
             </label>
           ))}
         </fieldset>
 
         <div className="cm-login__grid">
           <label className="mb-field">
-            <span className="mb-field__label">Votre nom</span>
+            <span className="mb-field__label">{t('Votre nom')}</span>
             <input className="mb-field__control" required minLength={2} maxLength={80} autoComplete="name" value={form.contactName} onChange={set('contactName')} disabled={busy} />
           </label>
           <label className="mb-field">
-            <span className="mb-field__label">Téléphone</span>
+            <span className="mb-field__label">{t('Téléphone')}</span>
             <input className="mb-field__control" required type="tel" autoComplete="tel" maxLength={25} placeholder="05 50 12 34 56" value={form.contactPhone} onChange={set('contactPhone')} disabled={busy} />
           </label>
           <label className="mb-field cm-login__full">
-            <span className="mb-field__label">Email</span>
+            <span className="mb-field__label">{t('Email')}</span>
             <input className="mb-field__control" required type="email" autoComplete="email" maxLength={254} value={form.contactEmail} onChange={set('contactEmail')} disabled={busy} />
           </label>
           <label className="mb-field cm-login__full">
-            <span className="mb-field__label">Message (optionnel)</span>
+            <span className="mb-field__label">{t('Message (optionnel)')}</span>
             <textarea className="mb-field__control" rows={3} maxLength={500} value={form.message} onChange={set('message')} disabled={busy} />
           </label>
         </div>
@@ -131,12 +135,12 @@ export function RequestScreen() {
 
         <label className="cm-login__check">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} disabled={busy} />
-          <span>J’accepte d’être recontacté(e) au sujet de cette demande, et que mes coordonnées soient conservées à cette fin.</span>
+          <span>{t('J’accepte d’être recontacté au sujet de cette demande, et que mes coordonnées soient conservées à cette fin.')}</span>
         </label>
 
-        {error ? <p className="mb-field__error" role="alert">{error}</p> : null}
-        <button type="submit" className="mb-btn mb-btn--block" disabled={busy}>{busy ? 'Envoi…' : 'Envoyer ma demande'}</button>
-        <a className="cm-login__link" href="#">← Retour à la connexion</a>
+        {error ? <p className="mb-field__error" role="alert">{t(error)}</p> : null}
+        <button type="submit" className="mb-btn mb-btn--block" disabled={busy}>{busy ? t('Envoi…') : t('Envoyer ma demande')}</button>
+        <a className="cm-login__link" href="#">{t('Retour à la connexion')}</a>
       </form>
     </div>
   );

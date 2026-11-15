@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import type { SupportInfo } from '../lib/support.js';
 import { hasSupport } from '../lib/support.js';
 import { apiFetch } from '../lib/api.js';
-import type { ApiVenueReadiness } from '../lib/readinessView.js';
+import { readinessText, type ApiVenueReadiness } from '../lib/readinessView.js';
+import { useT } from '../lib/i18n.js';
 
 /* Aide (audit produit C2/FA15, 22/09/2026) : les canaux pour joindre Moubarat depuis le CRM — un gérant bloqué
    au comptoir doit savoir qui appeler. Les canaux viennent de l'API ; un canal non renseigné n'apparaît pas.
@@ -29,6 +30,7 @@ const FIRST_STEPS: { title: string; text: string }[] = [
 export function HelpModal({ support, venueId, token, onClose }: {
   support: SupportInfo | null | undefined; venueId: string; token: string; onClose: () => void;
 }) {
+  const t = useT();
   const [readiness, setReadiness] = useState<ApiVenueReadiness | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -39,20 +41,20 @@ export function HelpModal({ support, venueId, token, onClose }: {
   }, [venueId, token]);
 
   return (
-    <div className="cm-modal-bg on" role="dialog" aria-modal="true" aria-label="Aide et support" onClick={onClose}>
+    <div className="cm-modal-bg on" role="dialog" aria-modal="true" aria-label={t('Aide et support')} onClick={onClose}>
       <div className="cm-modal cm-help" onClick={(e) => e.stopPropagation()}>
-        <h3>Besoin d’aide ?</h3>
+        <h3>{t('Besoin d’aide ?')}</h3>
 
         {hasSupport(support) ? (
           <>
-            <p className="cm-note" style={{ margin: '0 0 10px' }}>Un souci avec le CRM, un accès, une réservation ? Écrivez-nous ou appelez-nous.</p>
+            <p className="cm-note" style={{ margin: '0 0 10px' }}>{t('Un souci avec le CRM, un accès, une réservation ? Écrivez-nous ou appelez-nous.')}</p>
             <div className="cm-help__list">
               {CHANNELS.map(({ key, label }) => {
                 const c = support[key];
                 if (!c) return null;
                 return (
                   <a key={key} className="cm-toprow" href={c.href} {...(key === 'whatsapp' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
-                    <span className="n">{label}</span>
+                    <span className="n">{t(label)}</span>
                     <span className="v">{c.display}</span>
                   </a>
                 );
@@ -63,34 +65,34 @@ export function HelpModal({ support, venueId, token, onClose }: {
 
         {readiness ? (
           <>
-            <p className="cm-sec" style={{ marginTop: 16 }}>Liste de démarrage du centre</p>
+            <p className="cm-sec" style={{ marginTop: 16 }}>{t('Liste de démarrage du centre')}</p>
             <ul className="cm-help__checks">
               {readiness.readiness.checks.map((c) => (
                 <li key={c.code}>
                   <span className={`mb-status mb-status--${c.ok ? 'open' : c.blocking ? 'filling' : 'full'}`}>
-                    {c.ok ? 'Fait' : c.blocking ? 'À faire' : 'Conseillé'}
+                    {c.ok ? t('Fait') : c.blocking ? t('À faire') : t('Conseillé')}
                   </span>
-                  <span>{c.ok ? c.label : (c.missing ?? c.label)}</span>
+                  <span>{readinessText(c, t, c.ok ? 'label' : 'missing')}</span>
                 </li>
               ))}
             </ul>
             <p className="cm-note" style={{ margin: '6px 0 0' }}>
               {readiness.status === 'ACTIVE'
-                ? (readiness.readiness.ready ? 'Votre centre est publié dans l’app joueur.' : 'Votre centre est publié, mais un point manque : il n’apparaît plus dans l’app joueur tant qu’il n’est pas réglé.')
-                : (readiness.readiness.ready ? 'Tout est prêt : signalez-le à Moubarat depuis le bandeau en haut de l’écran.' : 'Les points « À faire » sont nécessaires avant la publication dans l’app joueur.')}
+                ? (readiness.readiness.ready ? t('Votre centre est publié dans l’app joueur.') : t('Votre centre est publié, mais un point manque : il n’apparaît plus dans l’app joueur tant qu’il n’est pas réglé.'))
+                : (readiness.readiness.ready ? t('Tout est prêt : signalez-le à Moubarat depuis le bandeau en haut de l’écran.') : t('Les points « À faire » sont nécessaires avant la publication dans l’app joueur.'))}
             </p>
           </>
         ) : null}
 
-        <p className="cm-sec" style={{ marginTop: 16 }}>Premiers pas</p>
+        <p className="cm-sec" style={{ marginTop: 16 }}>{t('Premiers pas')}</p>
         <ol className="cm-help__steps">
           {FIRST_STEPS.map((s) => (
-            <li key={s.title}><b>{s.title}</b> — {s.text}</li>
+            <li key={s.title}><b>{t(s.title)}</b> — {t(s.text)}</li>
           ))}
         </ol>
 
         <div className="acts">
-          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={onClose}>Fermer</button>
+          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={onClose}>{t('Fermer')}</button>
         </div>
       </div>
     </div>
