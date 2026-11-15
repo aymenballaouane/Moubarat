@@ -8,7 +8,13 @@ import { phoneSearchPatterns } from '../../lib/phone-search.js';
 import { operatingDateOf } from '../../lib/algiers.js';
 
 export interface ClientSummary {
-  userId: string;
+  /** P0-2 (audit stratégique CRM, 15/11/2026, choix d'Aymen « regrouper par numéro ») : deux sortes de clients.
+      APP — un compte joueur (`userId`) ; COUNTER — un client du comptoir ou du téléphone, saisi par le centre, sans compte
+      Moubarat : toutes ses réservations portent le MÊME numéro (`userId` null). `clientKey` identifie la carte dans les
+      deux cas : l'identifiant du compte, ou `tel:` suivi du numéro sans indicatif (`tel:555123456`). */
+  clientKey: string;
+  kind: 'APP' | 'COUNTER';
+  userId: string | null;
   name: string;
   phone: string;
   bookingsCount: number;
@@ -88,7 +94,11 @@ async function loadClientBookingRows(db: Db, venueId: string, userIds?: string |
     gelé, intouché) ni `cancellationKind`. Ce n'est pas l'erreur du client :
     un total gonflé par une faute qui n'est pas la sienne ne serait pas plus
     honnête qu'une pénalité injustifiée. */
-function summarize(userId: string, name: string, phone: string, allRows: ClientBookingRow[]): ClientSummary {
+type ScoredRow = Pick<ClientBookingRow, 'status' | 'price_total_da' | 'time_range' | 'cancelled_at' | 'cancel_reason'>;
+type ClientIdentity = Pick<ClientSummary, 'clientKey' | 'kind' | 'userId'>;
+const appIdentity = (userId: string): ClientIdentity => ({ clientKey: userId, kind: 'APP', userId });
+
+function summarize(who: ClientIdentity, name: string, phone: string, allRows: readonly ScoredRow[]): ClientSummary {
   const rows = allRows.filter((r) => !(r.status === 'CANCELLED' && r.cancel_reason === 'STAFF_ERROR'));
   let honored = 0, paid = 0, cancelledEarly = 0, cancelledLate = 0, noShow = 0, totalSpentDa = 0;
   for (const r of rows) {
@@ -103,10 +113,62 @@ function summarize(userId: string, name: string, phone: string, allRows: ClientB
     }
   }
   return {
-    userId, name, phone, bookingsCount: rows.length, totalSpentDa,
+    ...who, name, phone, bookingsCount: rows.length, totalSpentDa,
     honored, paid, cancelledEarly, cancelledLate, noShow,
     reliability: clientReliabilityV1({ honored, paid, cancelledEarly, cancelledLate, noShow }),
   };
+}
+
+/* --- Clients du comptoir et du téléphone (P0-2, audit stratégique CRM, 15/11/2026 — choix d'Aymen : « regrouper par numéro ») ---
+   Une réservation Comptoir ou Téléphone saisie au CRM porte le compte du MEMBRE DU PERSONNEL qui l'a posée (`by_user_id`), et le
+   client n'existe que par le texte saisi : `reservation_name` et `customer_phone` (texte libre : « 0555 12 34 56 »,
+   « +213 555… »). Sans compte, aucun client à afficher : l'écran Clients ne montrait que les joueurs de l'app.
+   Règle : toutes les réservations Comptoir/Téléphone du centre qui portent le MÊME numéro forment UN client du centre — le
+   numéro réduit à ses chiffres, sans indicatif ni zéro initial (`0555 12 34 56` = `+213555123456` = `555123456`). Une
+   réservation sans numéro (ou de moins de 8 chiffres) reste hors du fichier : rien ne dit à qui elle appartient. Le nom et le
+   numéro affichés sont ceux de la réservation la plus récente. Fiabilité : EXACTEMENT la même règle que pour un joueur
+   (`summarize`, core `clientReliabilityV1`) — même exclusion des erreurs de saisie du centre. Une réservation rattachée puis
+   confirmée par un joueur (« C'est moi », règle 21) passe à son compte (`by_user_id`) et quitte ce regroupement d'elle-même.
+   Aucune table, aucune migration : le regroupement se calcule à la lecture. */
+
+/** Le numéro d'une réservation réduit à sa forme de regroupement (SQL) : chiffres seuls, sans 00213 / 213 / 0 initial. */
+const COUNTER_KEY = sql`(CASE
+  WHEN regexp_replace(b.customer_phone, '\\D', '', 'g') LIKE '00213%' THEN substr(regexp_replace(b.customer_phone, '\\D', '', 'g'), 6)
+  WHEN regexp_replace(b.customer_phone, '\\D', '', 'g') LIKE '213%' THEN substr(regexp_replace(b.customer_phone, '\\D', '', 'g'), 4)
+  WHEN regexp_replace(b.customer_phone, '\\D', '', 'g') LIKE '0%' THEN substr(regexp_replace(b.customer_phone, '\\D', '', 'g'), 2)
+  ELSE regexp_replace(b.customer_phone, '\\D', '', 'g') END)`;
+
+/** Les réservations qui comptent pour un client du comptoir (alias `b` sur bookings, `f` sur fields). */
+const counterScope = (venueId: string) => sql`f.venue_id = ${venueId}::uuid
+  AND b.source IN ('WALK_IN', 'PHONE')
+  AND EXISTS (SELECT 1 FROM platform_accounts pa WHERE pa.id = b.by_user_id)
+  AND b.customer_phone IS NOT NULL
+  AND length(${COUNTER_KEY}) >= 8`;
+
+/** `tel:555123456` → `555123456` ; `null` si la clé n'est pas celle d'un client du comptoir. */
+export function counterPhoneKey(clientKey: string): string | null {
+  const m = /^tel:(\d{8,12})$/.exec(clientKey);
+  return m ? m[1]! : null;
+}
+
+interface CounterRow extends ScoredRow { pk: string; reservation_name: string | null; customer_phone: string }
+
+async function loadCounterRows(db: Db, venueId: string, keys: readonly string[]): Promise<CounterRow[]> {
+  if (keys.length === 0) return [];
+  const res = await sql<CounterRow>`
+    SELECT ${COUNTER_KEY} AS pk, b.reservation_name, b.customer_phone, b.status, b.price_total_da, b.time_range,
+           b.cancelled_at, b.cancel_reason
+    FROM bookings b JOIN fields f ON f.id = b.field_id
+    WHERE ${counterScope(venueId)} AND ${COUNTER_KEY} = ANY(${[...keys]}::text[])
+    ORDER BY lower(b.time_range) DESC, b.id DESC`.execute(db);
+  return res.rows;
+}
+
+function summarizeCounter(pk: string, rows: readonly CounterRow[]): ClientSummary {
+  // Lignes triées de la plus récente à la plus ancienne : le nom et le numéro affichés sont les derniers saisis.
+  const latest = rows[0]!;
+  const name = rows.find((r) => r.reservation_name && r.reservation_name.trim() !== '')?.reservation_name?.trim() ?? 'Client du comptoir';
+  return summarize({ clientKey: `tel:${pk}`, kind: 'COUNTER', userId: null }, name, latest.customer_phone.trim(), rows);
 }
 
 export type ClientSort = 'bookings' | 'spent';
@@ -114,15 +176,15 @@ export type ClientSort = 'bookings' | 'spent';
 /** Liste des clients du centre, PAGINÉE (mise à l'échelle L3, 25/09/2026 — avant : TOUTES les réservations du centre
     chargées et agrégées en JavaScript, 255 ms et 2,1 Mo pour un centre de 9 500 clients, sans aucune borne).
     Deux temps, pour que la règle de fiabilité reste UNE SEULE, celle du core :
-    1. une agrégation SQL par joueur (nombre de réservations retenues, dépense) sert UNIQUEMENT à ordonner et à borner
-       la page — mêmes exclusions que le détail (`loadClientBookingRows`) : blocages/comptoir/téléphone-staff écartés,
-       annulations STAFF_ERROR ne comptent pas ;
-    2. seules les lignes des joueurs de la page sont chargées, et `summarize` (core : `clientReliabilityV1`,
+    1. une agrégation SQL par client (nombre de réservations retenues, dépense) sert UNIQUEMENT à ordonner et à borner
+       la page — mêmes exclusions que le détail : blocages écartés, annulations STAFF_ERROR ne comptent pas ;
+    2. seules les lignes des clients de la page sont chargées, et `summarize` (core : `clientReliabilityV1`,
        `cancellationKind`) en tire le résumé — jamais une pénalité recalculée en SQL.
-    Tri : `bookings` (les habitués d'abord — historique) ou `spent` (dépense décroissante, pour « Top clients »),
-    départagé par identifiant. Curseur : [métrique, id]. `q` : nom, sans accents ni casse — OU numéro de téléphone dès
-    4 chiffres (CRM-3, 27/09/2026 : l'accueil connaît le numéro qui appelle, pas toujours l'orthographe du nom ;
-    `users.phone` est en E.164, la saisie nationale est déclinée — lib/phone-search.ts). */
+    P0-2 (15/11/2026) : deux sources dans la même liste, triées ensemble — les joueurs de l'app (par compte) et les clients
+    du comptoir et du téléphone (par numéro, voir plus haut). Tri : `bookings` (les habitués d'abord) ou `spent` (dépense
+    décroissante, pour « Top clients »), départagé par la clé de la carte (`clientKey`, ordre binaire — pour un joueur,
+    le même ordre que son identifiant). Curseur : [métrique, clientKey]. `q` : nom, sans accents ni casse — OU numéro de
+    téléphone dès 4 chiffres (CRM-3, 27/09/2026), pour les deux sources. */
 export async function listClients(
   db: Db, venueId: string,
   opts: { limit: number; cursor: readonly CursorValue[] | null; q?: string; sort?: ClientSort },
@@ -131,24 +193,24 @@ export async function listClients(
   const metric = sort === 'spent' ? sql`COALESCE(sum(b.price_total_da) FILTER (WHERE b.status = 'PAID'), 0)` : sql`count(*) FILTER (WHERE NOT (b.status = 'CANCELLED' AND b.cancel_reason = 'STAFF_ERROR'))`;
   const nameRe = opts.q ? accentInsensitiveRegex(opts.q) : null;
   const phones = opts.q ? phoneSearchPatterns(opts.q) : null;
-  const textMatch = nameRe
+  const appMatch = nameRe
     ? (phones
       ? sql`(u.name ~* ${nameRe} OR regexp_replace(u.phone, '\\D', '', 'g') LIKE ANY(${phones}::text[]))`
       : sql`u.name ~* ${nameRe}`)
+    : null;
+  // Comptoir : un nom saisi sur l'une de ses réservations, ou son numéro (écrit national ou international).
+  const counterMatch = nameRe
+    ? (phones
+      ? sql`bool_or(coalesce(b.reservation_name, '') ~* ${nameRe} OR ('0' || ${COUNTER_KEY}) LIKE ANY(${phones}::text[]) OR ('213' || ${COUNTER_KEY}) LIKE ANY(${phones}::text[]))`
+      : sql`bool_or(coalesce(b.reservation_name, '') ~* ${nameRe})`)
     : null;
 
   // Agrégat par joueur du centre d'abord (aucune jointure sur `users` : le nom ne sert qu'à filtrer), PUIS jointure
   // sur les seuls joueurs agrégés pour la recherche par nom et le curseur — mesuré le 25/09/2026 (100 000 joueurs,
   // centre de 9 500 réservations) : 755 ms quand la recherche par nom précédait l'agrégat (le planificateur
   // évaluait `translate(name)` sur les 100 000 joueurs), 136 ms quand elle le suit.
-  const where = [
-    ...(textMatch ? [textMatch] : []),
-    ...(opts.cursor
-      ? [sql`(agg.metric < ${opts.cursor[0]}::bigint OR (agg.metric = ${opts.cursor[0]}::bigint AND agg.user_id > ${opts.cursor[1]}::uuid))`]
-      : []),
-  ];
-  const res = await sql<{ user_id: string; metric: number }>`
-    WITH agg AS (
+  const res = await sql<{ ckey: string; kind: 'APP' | 'COUNTER'; metric: number }>`
+    WITH app AS (
       SELECT b.by_user_id AS user_id, (${metric})::bigint AS metric
       FROM bookings b
       JOIN fields f ON f.id = b.field_id
@@ -156,32 +218,62 @@ export async function listClients(
         AND b.source NOT IN ('CENTER', 'WALK_IN')
         AND NOT EXISTS (SELECT 1 FROM platform_accounts pa WHERE pa.id = b.by_user_id)
       GROUP BY b.by_user_id
+    ), counter AS (
+      SELECT 'tel:' || ${COUNTER_KEY} AS ckey, (${metric})::bigint AS metric
+      FROM bookings b
+      JOIN fields f ON f.id = b.field_id
+      WHERE ${counterScope(venueId)}
+      GROUP BY ${COUNTER_KEY}
+      ${counterMatch ? sql`HAVING ${counterMatch}` : sql``}
+    ), every_client AS (
+      SELECT app.user_id::text AS ckey, 'APP' AS kind, app.metric FROM app
+      ${appMatch ? sql`JOIN users u ON u.id = app.user_id WHERE ${appMatch}` : sql``}
+      UNION ALL
+      SELECT counter.ckey, 'COUNTER' AS kind, counter.metric FROM counter
     )
-    SELECT agg.user_id, agg.metric FROM agg
-    ${nameRe ? sql`JOIN users u ON u.id = agg.user_id` : sql``}
-    ${where.length > 0 ? sql`WHERE ${sql.join(where, sql` AND `)}` : sql``}
-    ORDER BY agg.metric DESC, agg.user_id ASC
+    SELECT ckey, kind, metric FROM every_client
+    ${opts.cursor
+      ? sql`WHERE (metric < ${opts.cursor[0]}::bigint OR (metric = ${opts.cursor[0]}::bigint AND ckey COLLATE "C" > ${opts.cursor[1]}::text COLLATE "C"))`
+      : sql``}
+    ORDER BY metric DESC, ckey COLLATE "C" ASC
     LIMIT ${opts.limit + 1}`.execute(db);
-  const ranked = res.rows.map((r) => ({ userId: r.user_id, metric: Number(r.metric) }));
+  const ranked = res.rows.map((r) => ({ key: r.ckey, kind: r.kind, metric: Number(r.metric) }));
   const pageRows = ranked.slice(0, opts.limit);
   const nextCursor = ranked.length > opts.limit
-    ? encodeCursor([pageRows[pageRows.length - 1]!.metric, pageRows[pageRows.length - 1]!.userId])
+    ? encodeCursor([pageRows[pageRows.length - 1]!.metric, pageRows[pageRows.length - 1]!.key])
     : null;
 
-  const rows = await loadClientBookingRows(db, venueId, pageRows.map((r) => r.userId));
+  const appIds = pageRows.filter((r) => r.kind === 'APP').map((r) => r.key);
+  const counterKeys = pageRows.filter((r) => r.kind === 'COUNTER').map((r) => r.key.slice(4));
+  const [appRows, counterRows] = await Promise.all([
+    loadClientBookingRows(db, venueId, appIds),
+    loadCounterRows(db, venueId, counterKeys),
+  ]);
   const byUser = new Map<string, ClientBookingRow[]>();
-  for (const r of rows) byUser.set(r.user_id, [...(byUser.get(r.user_id) ?? []), r]);
-  const clients = pageRows.flatMap(({ userId }) => {
-    const rs = byUser.get(userId);
-    return rs ? [summarize(userId, rs[0]!.name, rs[0]!.phone, rs)] : [];
+  for (const r of appRows) byUser.set(r.user_id, [...(byUser.get(r.user_id) ?? []), r]);
+  const byPhone = new Map<string, CounterRow[]>();
+  for (const r of counterRows) byPhone.set(r.pk, [...(byPhone.get(r.pk) ?? []), r]);
+  const clients = pageRows.flatMap(({ key, kind }) => {
+    if (kind === 'COUNTER') {
+      const rs = byPhone.get(key.slice(4));
+      return rs ? [summarizeCounter(key.slice(4), rs)] : [];
+    }
+    const rs = byUser.get(key);
+    return rs ? [summarize(appIdentity(key), rs[0]!.name, rs[0]!.phone, rs)] : [];
   });
   return { clients, nextCursor };
+}
+
+/** P0-2 : la carte d'un client du comptoir (`pk` = numéro réduit), ou `null` s'il n'a aucune réservation retenue sur ce centre. */
+export async function loadCounterClient(db: Db, venueId: string, pk: string): Promise<ClientSummary | null> {
+  const rows = await loadCounterRows(db, venueId, [pk]);
+  return rows.length === 0 ? null : summarizeCounter(pk, rows);
 }
 
 export async function loadClient(db: Db, venueId: string, userId: string): Promise<ClientSummary | null> {
   const rows = await loadClientBookingRows(db, venueId, userId);
   if (rows.length === 0) return null;
-  return summarize(userId, rows[0]!.name, rows[0]!.phone, rows);
+  return summarize(appIdentity(userId), rows[0]!.name, rows[0]!.phone, rows);
 }
 
 /** Une ligne de l'historique d'un client sur ce centre (CRM-3). `date` = jour d'EXPLOITATION (BUG-9) : celui que le
@@ -222,6 +314,36 @@ export async function listClientBookings(
   }
   const rows = await q.execute();
   const page = pageOf(rows, opts.limit, (r) => [r.start_cursor, r.id]);
+  return {
+    bookings: page.items.map((r) => {
+      const range = fromPgRange(r.time_range);
+      return {
+        id: r.id, date: operatingDateOf(range.start), start: range.start, end: range.end,
+        status: r.status, source: r.source, reference: r.reference, fieldName: r.field_name,
+        priceTotalDa: r.price_total_da, cancelReason: r.cancel_reason, matchId: r.match_id,
+      };
+    }),
+    nextCursor: page.nextCursor,
+  };
+}
+
+/** P0-2 (15/11/2026) : l'historique d'un client du COMPTOIR (`pk` = son numéro réduit, voir `COUNTER_KEY`) — même forme et
+    même pagination que `listClientBookings`, même périmètre que son score (`counterScope`). */
+export async function listCounterClientBookings(
+  db: Db, venueId: string, pk: string, opts: { limit: number; cursor: readonly CursorValue[] | null },
+): Promise<{ bookings: ClientBookingHistoryRow[]; nextCursor: string | null }> {
+  const res = await sql<{
+    id: string; time_range: string; status: string; source: string; reference: string | null; price_total_da: number;
+    cancel_reason: string | null; match_id: string | null; field_name: string; start_cursor: string;
+  }>`
+    SELECT b.id, b.time_range, b.status, b.source, b.reference, b.price_total_da, b.cancel_reason, b.match_id,
+           f.name AS field_name, ${isoMicros(sql`lower(b.time_range)`)} AS start_cursor
+    FROM bookings b JOIN fields f ON f.id = b.field_id
+    WHERE ${counterScope(venueId)} AND ${COUNTER_KEY} = ${pk}
+      ${opts.cursor ? sql`AND (lower(b.time_range), b.id) < (${opts.cursor[0]}::timestamptz, ${opts.cursor[1]}::uuid)` : sql``}
+    ORDER BY lower(b.time_range) DESC, b.id DESC
+    LIMIT ${opts.limit + 1}`.execute(db);
+  const page = pageOf(res.rows, opts.limit, (r) => [r.start_cursor, r.id]);
   return {
     bookings: page.items.map((r) => {
       const range = fromPgRange(r.time_range);

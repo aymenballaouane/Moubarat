@@ -3,9 +3,11 @@ import type { Db } from '../../db/client.js';
 import type { PlatformGuards } from '../../auth/platform-guards.js';
 import { badRequest, notFound } from '../../lib/http.js';
 import { decodeCursor, pageLimit } from '../../lib/cursor.js';
-import { listClientBookings, listClients, listTeamsAtVenue, loadClient, type ClientSort } from './service.js';
+import { counterPhoneKey, listClientBookings, listClients, listCounterClientBookings, listTeamsAtVenue, loadClient, loadCounterClient, type ClientSort } from './service.js';
 
 interface Deps { db: Db; guards: PlatformGuards; }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function registerClientRoutes(app: FastifyInstance, { db, guards }: Deps): Promise<void> {
 
@@ -21,7 +23,8 @@ export async function registerClientRoutes(app: FastifyInstance, { db, guards }:
     { preHandler: (req) => guards.requirePlatformAuth(req) }, async (req, reply) => {
       await guards.requireCenterAction(req, req.params.venueId, 'VIEW_CLIENTS');
       const limit = pageLimit(req.query.limit, { def: 50, max: 200 });
-      const cursor = decodeCursor(req.query.cursor, ['int', 'uuid']);
+      // P0-2 (15/11/2026) : le départage est la clé de la carte (`clientKey`) — un identifiant de compte OU `tel:<numéro>`.
+      const cursor = decodeCursor(req.query.cursor, ['int', 'text']);
       const sort = req.query.sort ?? 'bookings';
       if (sort !== 'bookings' && sort !== 'spent') throw badRequest('Tri invalide : bookings ou spent.');
       const q = (req.query.q ?? '').trim();
@@ -33,7 +36,12 @@ export async function registerClientRoutes(app: FastifyInstance, { db, guards }:
   app.get<{ Params: { venueId: string; userId: string } }>('/venues/:venueId/clients/:userId',
     { preHandler: (req) => guards.requirePlatformAuth(req) }, async (req, reply) => {
       await guards.requireCenterAction(req, req.params.venueId, 'VIEW_CLIENTS');
-      const client = await loadClient(db, req.params.venueId, req.params.userId);
+      // P0-2 : `:userId` est la clé de la carte (compte joueur, ou `tel:<numéro>` pour un client du comptoir).
+      const pk = counterPhoneKey(req.params.userId);
+      if (pk === null && !UUID.test(req.params.userId)) throw notFound('Aucune réservation de ce client sur ce centre.');
+      const client = pk !== null
+        ? await loadCounterClient(db, req.params.venueId, pk)
+        : await loadClient(db, req.params.venueId, req.params.userId);
       if (!client) throw notFound('Aucune réservation de ce client sur ce centre.');
       return reply.send({ client });
     });
@@ -48,6 +56,11 @@ export async function registerClientRoutes(app: FastifyInstance, { db, guards }:
       await guards.requireCenterAction(req, req.params.venueId, 'VIEW_CLIENTS');
       const limit = pageLimit(req.query.limit, { def: 20, max: 100 });
       const cursor = decodeCursor(req.query.cursor, ['iso', 'uuid']);
+      /* P0-2 (15/11/2026) : `:userId` est la clé de la carte — un compte joueur, ou `tel:<numéro>` pour un client du comptoir
+         et du téléphone (regroupé par numéro, service.ts). Toute autre valeur : 404, jamais une erreur de base. */
+      const pk = counterPhoneKey(req.params.userId);
+      if (pk !== null) return reply.send(await listCounterClientBookings(db, req.params.venueId, pk, { limit, cursor }));
+      if (!UUID.test(req.params.userId)) throw notFound('Client introuvable sur ce centre.');
       const page = await listClientBookings(db, req.params.venueId, req.params.userId, { limit, cursor });
       return reply.send(page);
     });

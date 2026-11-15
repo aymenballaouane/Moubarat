@@ -224,6 +224,15 @@ async function main() {
     })));
     const playerIds = playerRows.map((p) => p.id);
 
+    /* Clients du comptoir et du téléphone (P0-2, audit stratégique CRM, 15/11/2026) : l'écran Clients les regroupe désormais
+       par numéro. Avant, chaque réservation Comptoir/Téléphone tirait un nom et un numéro neufs — 600 « clients » d'une seule
+       réservation, rien de crédible. Ici, 120 habitués (nom + numéro fixes, générateur séparé pour ne pas déplacer le reste du
+       tirage plus qu'il ne faut), choisis avec un biais vers les premiers : les plus fidèles reviennent une à deux fois par
+       semaine sur 70 jours (une quinzaine de réservations), la plupart quelques fois. */
+    const rndRegulars = mulberry32(20261115);
+    const counterRegulars = Array.from({ length: 120 }, () => ({ name: nameFor(rndRegulars), phone: phoneFor(rndRegulars) }));
+    const pickRegular = () => counterRegulars[Math.min(counterRegulars.length - 1, Math.floor(Math.pow(rnd(), 1.25) * counterRegulars.length))]!;
+
     /* Code promo — créé AVANT l'historique de réservations (pas après,
        contrairement à la version précédente de ce script) : il faut son id
        pour l'appliquer réellement à quelques résas ci-dessous, sinon l'écran
@@ -281,7 +290,8 @@ async function main() {
           const isMoubarat = rnd() < 0.2 + 0.45 * growth;
           const source = isMoubarat ? 'MOUBARAT' : (rnd() < 0.75 ? 'WALK_IN' : 'PHONE');
           const byUserId = isMoubarat ? playerIds[Math.floor(rnd() * playerIds.length)]! : accountId;
-          const name = isMoubarat ? '' : nameFor(rnd);
+          const regular = isMoubarat ? null : pickRegular();
+          const name = regular?.name ?? '';
 
           const endMin = slot.startMin + slot.durationMin;
           const rate = isPeak(slot.startMin, weekday) ? f.peakRate : f.baseRate;
@@ -308,7 +318,7 @@ async function main() {
           // Téléphone (Lot 3) : texte libre, uniquement pour une résa créée
           // par le staff (Comptoir/Téléphone) — jamais pour MOUBARAT, qui a
           // déjà son propre compte (même règle qu'en production).
-          const customerPhone = isMoubarat ? null : phoneFor(rnd);
+          const customerPhone = regular?.phone ?? null;
 
           // Promo BIENVENUE10 (16/09/2026) : appliquée à quelques résas
           // RÉELLEMENT éligibles (même fenêtre que promoApplies — hors

@@ -6202,3 +6202,17 @@ l'avocat ».
   `claim.test.ts` « plus d'actualité » (PAID retiré de la liste) ; +2 tests core (183). Laissé tel quel, sans effet pratique :
   les plafonds de la règle 23 (`checkBookingLimits`) ne comptent que les « Réservée » — une réservation payée le jour même ne
   compte plus dans « 2 par jour » ; corriger demanderait une 3e règle du core.
+- **P0-2 — clients du comptoir et du téléphone dans Clients** (choix d'Aymen : « regrouper par numéro » ; la « fiche centre »
+  modifiable, écartée le 06/09, reste écartée). Toutes les réservations Comptoir/Téléphone saisies par le personnel d'un centre
+  qui portent le même numéro forment un client du centre : numéro réduit à ses chiffres, sans 00213 / 213 / 0 initial
+  (`0661 23 45 67` = `+213 661 234 567`) ; moins de 8 chiffres ou aucun numéro : hors du fichier. Nom et numéro affichés = ceux
+  de la réservation la plus récente. Fiabilité : la même règle du core que pour un joueur, même exclusion des erreurs de saisie.
+  Aucune table ni migration (calcul à la lecture, `modules/clients/service.ts`). **Contrat de `GET /venues/:id/clients`
+  changé** : chaque carte a `clientKey` (identifiant du compte, ou `tel:<chiffres>`) et `kind` (`APP` / `COUNTER`) ; `userId`
+  devient `null` pour un client du comptoir ; le curseur départage par `clientKey` (anciens curseurs refusés, 400 — sans effet :
+  seul le CRM les utilise, page par page). Fiche et historique acceptent `tel:<chiffres>` à la place de l'identifiant ; une
+  clé ni identifiant ni numéro → 404 (avant : erreur 500 de la base). Le même numéro peut aussi être celui d'un joueur de l'app :
+  deux cartes (joueur et comptoir) tant qu'il n'a pas répondu « C'est moi » (règle 21). Centre de démo : 120 habitués du
+  comptoir qui reviennent (au plus 19 réservations en 70 jours) au lieu d'un numéro neuf à chaque réservation — prend effet
+  au prochain `pnpm demo:seed` (pas relancé ici : il régénère le centre de démo). Corrigé au passage : l'historique d'une carte
+  affichait « Aucune réservation » le temps d'un rendu avant son chargement.

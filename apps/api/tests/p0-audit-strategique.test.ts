@@ -29,13 +29,17 @@ const call = (method: 'GET' | 'POST', url: string, token: string, payload?: Reco
   stack.app.inject({ method, url, headers: bearer(token), ...(payload ? { payload } : {}) });
 const errorOf = (res: { json: () => unknown }) => (res.json() as { error: string }).error;
 
-async function booking(start: number, over: { byUserId?: string; claimedUserId?: string; phone?: string } = {}): Promise<string> {
+async function booking(start: number, over: {
+  byUserId?: string; claimedUserId?: string; phone?: string; name?: string; source?: 'WALK_IN' | 'PHONE';
+  status?: 'RESERVED' | 'PAID' | 'NO_SHOW' | 'CANCELLED'; cancelReason?: 'STAFF_ERROR' | 'CLIENT'; venueId?: string;
+} = {}): Promise<string> {
   const ref = `P01-${++n}-${Math.floor(Math.random() * 1e6)}`;
   // Un terrain neuf par réservation : aucune autre (seed ou test voisin) ne peut chevaucher ce créneau.
-  const fieldId = (await insertTestField(stack.db, { venue_id: seed.venueId, name: `P0-1 ${n}`, sport: 'FOOTBALL', formats: ['5v5'], hourly_rate_da: 3000 })).id;
+  const fieldId = (await insertTestField(stack.db, { venue_id: over.venueId ?? seed.venueId, name: `P0-1 ${n}`, sport: 'FOOTBALL', formats: ['5v5'], hourly_rate_da: 3000 })).id;
   const row = await stack.db.insertInto('bookings').values({
-    field_id: fieldId, time_range: toPgRange({ start, end: start + 60 * MIN }), source: 'WALK_IN', verified_by_center: true,
-    by_user_id: over.byUserId ?? seed.crmStaff.nadia, reservation_name: 'Client P0-1', reference: ref, price_total_da: 3000, format: '5v5' as never,
+    field_id: fieldId, time_range: toPgRange({ start, end: start + 60 * MIN }), source: over.source ?? 'WALK_IN', verified_by_center: true, status: over.status ?? 'RESERVED',
+    ...(over.status === 'CANCELLED' ? { cancelled_at: new Date(start - DAY), cancel_reason: over.cancelReason ?? 'CLIENT' } : {}),
+    by_user_id: over.byUserId ?? seed.crmStaff.nadia, reservation_name: over.name ?? 'Client P0-1', reference: ref, price_total_da: 3000, format: '5v5' as never,
     ...(over.phone ? { customer_phone: over.phone } : {}),
     ...(over.claimedUserId ? { claimed_user_id: over.claimedUserId, claim_status: 'PENDING' as const } : {}),
   }).returning('id').executeTakeFirstOrThrow();
@@ -116,5 +120,77 @@ describe('P0-1 — « Payée » le jour même', () => {
     expect(confirm.statusCode, confirm.body).toBe(200);
     const row = await stack.db.selectFrom('bookings').select(['by_user_id', 'claim_status', 'status']).where('id', '=', id).executeTakeFirstOrThrow();
     expect(row).toEqual({ by_user_id: u.id, claim_status: 'CONFIRMED', status: 'PAID' });
+  });
+});
+
+/* P0-2 (audit stratégique CRM, 15/11/2026, choix d'Aymen « regrouper par numéro ») : les clients du comptoir et du téléphone, sans
+   compte Moubarat, apparaissent dans Clients — toutes les réservations Comptoir/Téléphone du centre au même numéro forment un client. */
+describe('P0-2 — clients du comptoir et du téléphone, regroupés par numéro', () => {
+  type Card = { clientKey: string; kind: string; userId: string | null; name: string; phone: string; bookingsCount: number; totalSpentDa: number; paid: number; noShow: number };
+  const list = async (qs: string) => (await call('GET', `/venues/${seed.venueId}/clients${qs}`, nadia)).json() as { clients: Card[]; nextCursor: string | null };
+  const KEY = 'tel:661234567';
+
+  beforeAll(async () => {
+    const past = Date.now() - 20 * DAY;
+    // Trois écritures du MÊME numéro (nationale espacée, internationale, avec tirets), comptoir et téléphone.
+    await booking(past, { phone: '0661 23 45 67', name: 'Rachid Comptoir', status: 'PAID' });
+    await booking(past + DAY, { phone: '+213 661 234 567', name: 'Rachid Comptoir', source: 'PHONE', status: 'NO_SHOW' });
+    await booking(past + 2 * DAY, { phone: '06-61-23-45-67', name: 'Rachid B.', status: 'PAID' });
+    // Erreur de saisie du centre : listée dans l'historique, hors du compte et du score.
+    await booking(past + 3 * DAY, { phone: '0661234567', name: 'Rachid B.', status: 'CANCELLED', cancelReason: 'STAFF_ERROR' });
+    // Sans numéro, ou numéro trop court : hors du fichier.
+    await booking(past + 4 * DAY, { name: 'Sans Numéro' });
+    await booking(past + 5 * DAY, { phone: '1234', name: 'Numéro Court' });
+    // Même numéro dans un AUTRE centre : jamais compté ici.
+    await booking(past, { phone: '0661234567', name: 'Autre Centre', venueId: seed.alwaysOpen.venueId, byUserId: seed.crmStaff.nadia, status: 'PAID' });
+  });
+
+  it('une seule carte pour les trois écritures du numéro : 3 réservations, 2 payées, 1 no-show ; nom et numéro de la plus récente', async () => {
+    const { clients } = await list('?limit=200');
+    const card = clients.find((c) => c.clientKey === KEY)!;
+    expect(card).toMatchObject({ kind: 'COUNTER', userId: null, name: 'Rachid B.', bookingsCount: 3, paid: 2, noShow: 1, totalSpentDa: 6000 });
+    expect(card.phone).toBe('0661234567');
+    expect(clients.filter((c) => c.kind === 'COUNTER' && /Sans Numéro|Numéro Court|Autre Centre/.test(c.name))).toHaveLength(0);
+    // Les joueurs de l'app sont toujours là, avec leur compte.
+    expect(clients.some((c) => c.kind === 'APP' && c.userId === c.clientKey)).toBe(true);
+  });
+
+  it('trouvée par son nom (sans accents) et par son numéro, en écriture nationale ou internationale', async () => {
+    for (const q of ['rachid comptoir', '0661234567', '+213661234567', '61 23 45']) {
+      expect((await list(`?q=${encodeURIComponent(q)}`)).clients.map((c) => c.clientKey), q).toContain(KEY);
+    }
+    expect((await list('?q=zzzzzz')).clients).toEqual([]);
+  });
+
+  it('la fiche et l’historique : la même carte que la liste ; les 4 réservations du numéro, l’erreur de saisie comprise, rien d’autre', async () => {
+    const card = (await list('?q=0661234567')).clients.find((c) => c.clientKey === KEY)!;
+    const one = await call('GET', `/venues/${seed.venueId}/clients/${encodeURIComponent(KEY)}`, nadia);
+    expect((one.json() as { client: Card }).client).toEqual(card);
+    const hist = await call('GET', `/venues/${seed.venueId}/clients/${encodeURIComponent(KEY)}/bookings`, nadia);
+    expect(hist.statusCode, hist.body).toBe(200);
+    const rows = (hist.json() as { bookings: Array<{ status: string; cancelReason: string | null; source: string }> }).bookings;
+    expect(rows.map((r) => r.status)).toEqual(['CANCELLED', 'PAID', 'NO_SHOW', 'PAID']);   // la plus récente d'abord
+    expect(rows[0]!.cancelReason).toBe('STAFF_ERROR');
+    // Une clé inconnue ou mal formée : 404 ou liste vide, jamais une erreur de base.
+    expect((await call('GET', `/venues/${seed.venueId}/clients/n-importe-quoi/bookings`, nadia)).statusCode).toBe(404);
+    expect((await call('GET', `/venues/${seed.venueId}/clients/${encodeURIComponent('tel:699999999')}/bookings`, nadia)).json()).toEqual({ bookings: [], nextCursor: null });
+  });
+
+  it('pages de 1 : joueurs et clients du comptoir mêlés, sans trou ni doublon, dans l’ordre (réservations décroissantes, puis clé)', async () => {
+    const all = (await list('?limit=200')).clients.map((c) => c.clientKey);
+    const walked: string[] = [];
+    let cursor: string | null = null;
+    do {
+      const page = await list(`?limit=1${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`);
+      walked.push(...page.clients.map((c) => c.clientKey));
+      cursor = page.nextCursor;
+    } while (cursor !== null && walked.length < 500);
+    expect(walked).toEqual(all);
+    expect(new Set(walked).size).toBe(walked.length);
+  });
+
+  it('un compte qui n’a pas VIEW_CLIENTS (Staff) ne voit pas cette liste', async () => {
+    const amine = await loginAsPlatform(stack, seed.crmStaffEmails.amine, seed.crmStaffPassword);
+    expect((await call('GET', `/venues/${seed.venueId}/clients`, amine)).statusCode).toBe(403);
   });
 });

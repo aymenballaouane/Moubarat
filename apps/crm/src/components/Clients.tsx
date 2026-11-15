@@ -13,8 +13,11 @@ interface ClientsProps {
   onOpenReservation: (bookingId: string, date: string) => void;
 }
 
+/** P0-2 (audit stratégique CRM, 15/11/2026) : un joueur de l'app (APP, `userId`) ou un client du comptoir et du téléphone
+    (COUNTER, sans compte : ses réservations au même numéro, regroupées par l'API). `clientKey` identifie la carte dans les
+    deux cas et sert aux routes de fiche et d'historique. */
 interface ApiClient {
-  userId: string; name: string; phone: string; bookingsCount: number; totalSpentDa: number;
+  clientKey: string; kind: 'APP' | 'COUNTER'; userId: string | null; name: string; phone: string; bookingsCount: number; totalSpentDa: number;
   reliability: ReliabilityV1;
   honored: number; paid: number; cancelledEarly: number; cancelledLate: number; noShow: number;
 }
@@ -48,9 +51,10 @@ function ClientCard({ c, open, onOpen }: { c: ApiClient; open: boolean; onOpen: 
         <b style={{ color: 'var(--text)' }}>{c.name}</b>
         {pill ? <span className={`mb-status mb-status--${pill.variant}`}>{pill.label}</span> : <span className="mb-status mb-status--open">Nouveau</span>}
       </div>
-      {c.phone ? (
-        <div className="cm-note" style={{ margin: '0 0 6px' }}>
-          <a href={`tel:${c.phone.replace(/\s/g, '')}`} style={{ color: 'var(--gold)' }} onClick={(e) => e.stopPropagation()}>{c.phone}</a>
+      {c.phone || c.kind === 'COUNTER' ? (
+        <div className="cm-note" style={{ margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {c.phone ? <a href={`tel:${c.phone.replace(/\s/g, '')}`} style={{ color: 'var(--gold)' }} onClick={(e) => e.stopPropagation()}>{c.phone}</a> : null}
+          {c.kind === 'COUNTER' ? <span className="cm-src" title="Sans compte Moubarat : ses réservations au comptoir et par téléphone, regroupées par numéro">Comptoir · téléphone</span> : null}
         </div>
       ) : null}
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--text)' }}>
@@ -70,12 +74,10 @@ function ClientCard({ c, open, onOpen }: { c: ApiClient; open: boolean; onOpen: 
 type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'ready' };
 
 /* Chantier CRM — Clients + Équipes (06/09/2026) : lecture réelle via
-   GET /venues/:venueId/clients — plus jamais CLIENTS_DEMO. Le concept
-   « fiche centre » (client sans compte, créé par le comptoir) a été
-   abandonné : le modèle serveur n'a aucune identité comptoir au-delà du
-   texte libre `reservation_name` sur une résa WALK_IN (voir
-   modules/clients/service.ts) — rien à afficher, rien à créer ici. Décision
-   d'Aymen (06/09) : reporté en V2, comme Abonnements. Le téléphone, lui,
+   GET /venues/:venueId/clients — plus jamais CLIENTS_DEMO. P0-2 (audit stratégique, 15/11/2026, choix d'Aymen
+   « regrouper par numéro ») : les clients du comptoir et du téléphone, sans compte, y figurent désormais — l'API
+   regroupe leurs réservations par numéro (modules/clients/service.ts) ; aucune fiche à créer ni à modifier ici (la
+   « fiche centre » modifiable, notes comprises, reste écartée). Le téléphone, lui,
    reste affiché : cette route expose bien `users.phone` (ClientSummary.phone,
    modules/clients/service.ts) — rien à voir avec Réservations, où aucune
    route n'expose le téléphone à un compte centre.
@@ -147,8 +149,8 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
       const res = await apiFetch<{ clients: ApiClient[]; nextCursor: string | null }>(clientsUrl(`&cursor=${encodeURIComponent(nextCursor)}`), { token });
       if (mine !== request.current) return; // la recherche a changé entre-temps
       setClients((cur) => {
-        const known = new Set(cur.map((c) => c.userId));
-        return [...cur, ...res.clients.filter((c) => !known.has(c.userId))];
+        const known = new Set(cur.map((c) => c.clientKey));
+        return [...cur, ...res.clients.filter((c) => !known.has(c.clientKey))];
       });
       setNextCursor(res.nextCursor);
     } catch (e) {
@@ -163,8 +165,11 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [historyCursor, setHistoryCursor] = useState<string | null>(null);
   const [historyLoad, setHistoryLoad] = useState<LoadState>({ kind: 'ready' });
+  /** La carte dont l'historique affiché est chargé : tant qu'il ne s'agit pas de la carte ouverte, « Chargement… » — jamais un
+      « Aucune réservation » le temps d'un rendu, avant que la lecture ne parte (vu en vérification de P0-2, 15/11/2026). */
+  const [historyOf, setHistoryOf] = useState<string | null>(null);
   const [historyMore, setHistoryMore] = useState<{ loading: boolean; error: string | null }>({ loading: false, error: null });
-  const historyUrl = (userId: string, extra: string) => `/venues/${venueId}/clients/${userId}/bookings?limit=20${extra}`;
+  const historyUrl = (clientKey: string, extra: string) => `/venues/${venueId}/clients/${encodeURIComponent(clientKey)}/bookings?limit=20${extra}`;
 
   useEffect(() => {
     if (!openClient) return;
@@ -173,10 +178,11 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
     setHistory([]);
     setHistoryCursor(null);
     setHistoryMore({ loading: false, error: null });
-    apiFetch<{ bookings: ApiClientBookingHistoryRow[]; nextCursor: string | null }>(historyUrl(openClient.userId, ''), { token })
+    apiFetch<{ bookings: ApiClientBookingHistoryRow[]; nextCursor: string | null }>(historyUrl(openClient.clientKey, ''), { token })
       .then((res) => {
         if (cancelled) return;
         setHistory(historyRowsFromApi(res.bookings));
+        setHistoryOf(openClient.clientKey);
         setHistoryCursor(res.nextCursor);
         setHistoryLoad({ kind: 'ready' });
       })
@@ -186,14 +192,14 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
       });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openClient?.userId, venueId, token]);
+  }, [openClient?.clientKey, venueId, token]);
 
   async function loadMoreHistory() {
     if (!openClient || historyCursor === null || historyMore.loading) return;
-    const userId = openClient.userId;
+    const clientKey = openClient.clientKey;
     setHistoryMore({ loading: true, error: null });
     try {
-      const res = await apiFetch<{ bookings: ApiClientBookingHistoryRow[]; nextCursor: string | null }>(historyUrl(userId, `&cursor=${encodeURIComponent(historyCursor)}`), { token });
+      const res = await apiFetch<{ bookings: ApiClientBookingHistoryRow[]; nextCursor: string | null }>(historyUrl(clientKey, `&cursor=${encodeURIComponent(historyCursor)}`), { token });
       setHistory((cur) => {
         const known = new Set(cur.map((h) => h.id));
         return [...cur, ...historyRowsFromApi(res.bookings).filter((h) => !known.has(h.id))];
@@ -210,8 +216,9 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
   return (
     <section className="cm-view on">
       <p className="cm-view-note">
-        Les clients ayant réservé sur ce centre via l'app Moubarat ou par téléphone — fiabilité pondérée
-        calculée sur leur historique réel. Clique une carte pour voir ses réservations.
+        Les clients qui ont réservé sur ce centre : joueurs de l'app Moubarat, et clients du comptoir ou du téléphone
+        (regroupés par numéro — une réservation saisie sans numéro n'y figure pas). Fiabilité calculée sur leur historique
+        réel. Clique une carte pour voir ses réservations.
       </p>
 
       <div className="cm-form">
@@ -241,8 +248,8 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
             <div className="cm-clients">
               {filtered.map((c) => (
                 <ClientCard
-                  key={c.userId} c={c} open={openClient?.userId === c.userId}
-                  onOpen={() => setOpenClient((cur) => (cur?.userId === c.userId ? null : c))}
+                  key={c.clientKey} c={c} open={openClient?.clientKey === c.clientKey}
+                  onOpen={() => setOpenClient((cur) => (cur?.clientKey === c.clientKey ? null : c))}
                 />
               ))}
             </div>
@@ -254,7 +261,7 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
                 <p className="cm-sec" style={{ margin: 0 }}>Historique — {openClient.name}</p>
                 <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setOpenClient(null)}>Fermer</button>
               </div>
-              {historyLoad.kind === 'loading' ? (
+              {historyLoad.kind === 'loading' || (historyLoad.kind === 'ready' && historyOf !== openClient.clientKey) ? (
                 <p className="cf-state">Chargement de l'historique…</p>
               ) : historyLoad.kind === 'error' ? (
                 <p className="cf-state" role="alert">{historyLoad.message}</p>
@@ -300,7 +307,7 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
             <div className="cm-card" style={{ marginTop: 14 }}>
               <p className="cm-sec">Top clients — dépense totale</p>
               {topClients.map((t, i) => (
-                <div className="cm-toprow" key={t.userId}>
+                <div className="cm-toprow" key={t.clientKey}>
                   <span className="rk">{i + 1}</span>
                   <span className="n">{t.name}</span>
                   <span className="v">{fmt(t.totalSpentDa)} DA</span>
