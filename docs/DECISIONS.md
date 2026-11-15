@@ -6239,3 +6239,30 @@ l'avocat ».
   « Votre mois d'essai Moubarat se termine le … ». Aucune coupure d'accès, comme pour un impayé. `docs/OFFRE-COMMERCIALE.md` :
   grille, essai, paiement fractionné (proposé), mentions de facture (à vérifier par le comptable), squelette de conditions
   générales de service B2B (à relire par l'avocat), centres fondateurs ; chaque point y est marqué décidé / proposé / à vérifier.
+
+### Audit stratégique du CRM — correctifs P1 « avant les fondateurs » (15/11/2026, GO d'Aymen « go pour corriger les P1 »)
+
+Choix d'Aymen du même jour : les 11 P1 « fondateurs » d'abord (les 6 P1 de la V1.5 — abonnés payants, caisse liée à « Payée »,
+planning en temps réel, CRM en arabe, rapport mensuel, alertes du Dashboard — restent à faire, lot par lot) ; Staff gardé en
+lecture seule ; tarifs « Enregistrer + confirmation » sans date d'effet ; « vous » partout dans le CRM. P1-2 était déjà réglé
+par P0-2. Un commit par point, chacun vérifié en direct sur le centre de démo (comptes jetables Réception et Staff pour le menu).
+
+- **P1-1, P1-7, P1-9 — Personnel** : le texte d'aide disait qu'un email existant serait rattaché (refusé depuis P0-4b) ; il dit
+  ce qui se passe vraiment. Ce que chaque rôle peut faire (résumé de `CENTER_PERMISSIONS`, jamais une règle) : légende, sous le
+  choix à la création, dans la confirmation d'un changement de rôle. Colonne Rôle à largeur minimale (était tronquée).
+- **P1-4, P1-9 — Réservations** : « Honorée » et « No-show » grisés avant le début du créneau, avec l'heure d'ouverture (au lieu
+  d'une confirmation suivie d'un refus) ; boutons de motif d'annulation stylés (44 px, `aria-pressed`).
+- **P1-3 — Tarifs** : un champ de tarif est un brouillon ; « Enregistrer » ouvre une confirmation « ancien → nouveau prix »,
+  valable pour les réservations créées ensuite. Plus d'enregistrement en quittant le champ.
+- **P1-5 — Date** : un seul jour pour Dashboard, Planning et Réservations (tenu par App.tsx) ; après une création, le Planning
+  se relit sans se recharger et garde sa position — la réservation créée reste à l'écran.
+- **P1-6, P1-14 — Menu par rôle** : chaque entrée porte la permission du core qu'exige la lecture de son écran côté API.
+  Réception : Dashboard, Planning, Réservations, Clients, Caisse ; Staff : Planning seul ; Réglages (Personnel, Centre) : Manager
+  et propriétaire. Équipes retiré du menu (toujours vide, défis désactivés). `BLOCK_SLOT` n'étant branché nulle part, la
+  Réception ne se voit plus promettre de « bloquer un créneau » ; le Staff ne se voit plus promettre un « pointage ».
+- **P1-10 — Registre** : le CRM vouvoie partout ; il a son propre message d'erreur générique (`lib/messages.ts`) — celui du core,
+  partagé avec l'app joueur, reste au « tu », core inchangé. « Vérifie que l'API tourne » → message pour un gérant. API : le
+  ralentissement de connexion vouvoie pour un compte du personnel (`checkLoginThrottle(…, { formal: true })`).
+- **P1-16 — Démarrage** : le bouton Aide est toujours là ; il montre la liste de démarrage (points « prêt à publier » lus sur
+  `GET /venues/:id/readiness`) et six premiers pas. **Reste ouvert** : « mot de passe oublié » du personnel, en attente de la clé
+  Resend d'Aymen. **Non fait** : régénération du board visuel (`pnpm ui:board`, réinitialise les données de démo locales).
