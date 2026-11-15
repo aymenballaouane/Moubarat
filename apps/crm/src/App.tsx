@@ -34,12 +34,12 @@ interface NavItem { id: ViewId; label: string; icon: string; badge?: number }
 const NAV_ITEMS: NavItem[] = [
   { id: 'dash', label: 'Dashboard', icon: 'i-home' },
   { id: 'plan', label: 'Planning', icon: 'i-cal' },
-  { id: 'resa', label: 'Reservations', icon: 'i-cash' },
+  { id: 'resa', label: 'Réservations', icon: 'i-cash' },
   { id: 'subs', label: 'Abonnements', icon: 'i-clock' },
   { id: 'stats', label: 'Analytics', icon: 'i-grid' },
   { id: 'clients', label: 'Clients', icon: 'i-users' },
-  { id: 'teams', label: 'Equipes', icon: 'i-shirt' },
-  // Personnel du centre (22/09/2026) — icône DISTINCTE d'« Equipes » ci-dessus, qui désigne les équipes de
+  { id: 'teams', label: 'Équipes', icon: 'i-shirt' },
+  // Personnel du centre (22/09/2026) — icône DISTINCTE d'« Équipes » ci-dessus, qui désigne les équipes de
   // joueurs, pas le personnel CRM : collision de sens à éviter dans la nav.
   { id: 'staff', label: 'Personnel', icon: 'i-shield' },
   { id: 'caisse', label: 'Caisse', icon: 'i-check' },
@@ -280,7 +280,7 @@ export function App() {
             {hasSupport(support) ? (
               <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setHelpOpen(true)}>Aide</button>
             ) : null}
-            <i>Connecte : {accountName}</i>
+            <i>Connecté : {accountName}</i>
             <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setAccountOpen(true)}>Mon compte</button>
             <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={logout}>Déconnexion</button>
           </div>

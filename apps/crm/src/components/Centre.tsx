@@ -38,6 +38,9 @@ interface CentreProps {
 const HOUR_STEP_OPTIONS: number[] = [];
 for (let m = 0; m <= 1500; m += 30) HOUR_STEP_OPTIONS.push(m);
 
+/** « 1 bande copiée », « 3 bandes copiées » — pluriel accordé, jamais « (s) » (P0-5, 15/11/2026). */
+function bandsLabel(n: number): string { return n > 1 ? `${n} bandes copiées` : `${n} bande copiée`; }
+
 /** Les pas de 30 min, plus la valeur réelle si elle tombe entre deux — un
     horaire servi par le serveur doit toujours être affichable tel quel. */
 function hourOptions(current: number): number[] {
@@ -160,7 +163,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
   function setIndoor(id: string, indoor: boolean) {
     const f = data?.fields.find((x) => x.id === id);
     if (!f || f.indoor === indoor) return;
-    void patchField(id, { indoor }, { indoor }, `a modifié le terrain ${f.name} · env : ${f.indoor ? 'Indoor' : 'Outdoor'} → ${indoor ? 'Indoor' : 'Outdoor'}`);
+    void patchField(id, { indoor }, { indoor }, `a modifié le terrain ${f.name} · ${f.indoor ? 'intérieur' : 'extérieur'} → ${indoor ? 'intérieur' : 'extérieur'}`);
   }
 
   function setSurface(id: string, surface: string) {
@@ -389,8 +392,8 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       } : x)) }));
       setFmtAdd((m) => { const next = { ...m }; delete next[id]; return next; });
       onAudit(`a ajouté le format ${formatLabel(formatPrice.format)} (${formatPrice.hourlyRateDa} DA/h) au terrain ${f.name}`
-        + (draft.copyFrom ? ` — ${pricingRules.length} bande(s) copiée(s) depuis ${formatLabel(draft.copyFrom)}` : ' — sans bande (tarif plat)'));
-      onToast(draft.copyFrom ? `Format ajouté — ${pricingRules.length} bande(s) copiée(s), à régler ci-dessous.` : 'Format ajouté (tarif plat, sans bande).');
+        + (draft.copyFrom ? ` — ${bandsLabel(pricingRules.length)} depuis ${formatLabel(draft.copyFrom)}` : ' — sans bande (tarif plat)'));
+      onToast(draft.copyFrom ? `Format ajouté — ${bandsLabel(pricingRules.length)}, à régler ci-dessous.` : 'Format ajouté (tarif plat, sans bande).');
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
     } finally {
@@ -709,8 +712,8 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
                   {/* Lecture seule (16/09/2026) : les formats se règlent avec leur prix,
                       dans la carte Tarifs — un format n'existe que s'il a un tarif. */}
                   <span className="cf-fmt-ro" title="Formats et tarifs : carte Tarifs ci-dessous">{formatsLabel(f.formats)}</span>
-                  <select className="mb-field__control" value={f.indoor ? 'Indoor' : 'Outdoor'} disabled={lockedFields} onChange={(e) => setIndoor(f.id, e.target.value === 'Indoor')}>
-                    <option>Outdoor</option><option>Indoor</option>
+                  <select className="mb-field__control" aria-label={`Couverture de ${f.name}`} value={f.indoor ? 'INDOOR' : 'OUTDOOR'} disabled={lockedFields} onChange={(e) => setIndoor(f.id, e.target.value === 'INDOOR')}>
+                    <option value="OUTDOOR">Extérieur</option><option value="INDOOR">Intérieur</option>
                   </select>
                   <select className="mb-field__control" value={f.surface} disabled={lockedFields} onChange={(e) => setSurface(f.id, e.target.value)}>
                     {f.surface === '' ? <option value="">—</option> : null}
@@ -742,15 +745,18 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
           <div className="cm-card cf-sec">
             <p className="cm-sec">Photos du centre</p>
             <div className="cf-photos">
-              <div>+ Photo d'ambiance<br />(upload V1.5)</div>
-              <div>+ Terrains<br />(upload V1.5)</div>
-              <div>+ Vestiaires<br />(upload V1.5)</div>
-              <div>+ Vue extérieure<br />(upload V1.5)</div>
+              <div>Photo d'ambiance</div>
+              <div>Terrains</div>
+              <div>Vestiaires</div>
+              <div>Vue extérieure</div>
             </div>
+            <p className="cm-note" style={{ margin: '8px 0 0' }}>
+              L'ajout de photos arrive bientôt. En attendant, l'app affiche le logo Moubarat sur la fiche du centre.
+            </p>
           </div>
 
           <div className="cm-card cf-sec">
-            <p className="cm-sec">Tarifs — le moteur les applique partout (création, déplacement, abonnements)</p>
+            <p className="cm-sec">Tarifs — appliqués partout : création, modification, abonnements</p>
             {/* Décision Aymen 04/09 : regroupés PAR TERRAIN (chaque terrain a son
                 prix de base et ses bandes), jamais un seul terrain affiché. */}
             {visibleFields.length === 0 ? <p className="cf-state">Aucun terrain, donc aucun tarif.</p> : null}
@@ -862,7 +868,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       {data ? (
         <>
           <div className="cm-card cf-sec">
-            <p className="cm-sec">Horaires d'ouverture — le planning et l'occupation les LISENT en direct</p>
+            <p className="cm-sec">Horaires d'ouverture — le planning et le remplissage s'y règlent aussitôt</p>
             {Object.keys(data.hours).length === 0 ? (
               <p className="cf-state"><span className="mb-status mb-status--filling">Horaires non renseignés</span></p>
             ) : null}

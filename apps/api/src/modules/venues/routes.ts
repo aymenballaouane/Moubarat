@@ -4,11 +4,19 @@ import type { Db } from '../../db/client.js';
 import type { PlatformGuards } from '../../auth/platform-guards.js';
 import { writeAudit } from '../../audit/log.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
+import { hhmm } from '../../lib/algiers.js';
 import { parseVenuePhone } from '../../lib/validate.js';
 import { archiveRefusalMessage, findFieldCommitments, findFormatBookings, formatRefusalMessage } from './archive-guard.js';
 import { findHoursConflicts, hoursRefusalMessage, loadVenueHours } from './hours-guard.js';
 import { VENUE_RATING_MIN_COUNT, ratingSummaryFor, ratingSummaryForMany } from '../results/service.js';
 import { READY_SIGNAL_COOLDOWN_MS, evaluateReadiness, lastReadySignalAt, loadVenueReadiness, notReadyMessage } from './readiness.js';
+
+/* P0-5 (audit stratégique CRM, 15/11/2026) : le Journal du centre se lit en français — jamais un nom de colonne (« cash_module_enabled »),
+   un numéro de jour (« jour 4 ») ou des minutes (« plage 480-1500 »). Jours : 0 = dimanche, comme `opening_hours.weekday`. */
+const WEEKDAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] as const;
+const VENUE_FIELD_LABELS: Record<string, string> = {
+  address: 'adresse', description: 'description', equipments: 'équipements', cash_module_enabled: 'module Caisse', phone: 'téléphone',
+};
 
 interface Deps { db: Db; guards: PlatformGuards; }
 
@@ -303,7 +311,10 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
     await writeAudit(db, {
       venueId: req.params.venueId, actorId: req.platformAuth!.accountId, actorRole: role,
       action: 'CENTER_UPDATED', objectType: 'venue', objectId: row.id,
-      summary: `a modifié la fiche du centre (${Object.keys(patch).join(', ')})`,
+      // P0-5 (audit stratégique CRM, 15/11/2026) : le Journal écrivait les noms de colonnes (« cash_module_enabled »).
+      summary: patch.cash_module_enabled !== undefined && Object.keys(patch).length === 1
+        ? `${patch.cash_module_enabled ? 'a activé' : 'a désactivé'} le module Caisse`
+        : `a modifié la fiche du centre (${Object.keys(patch).map((k) => VENUE_FIELD_LABELS[k] ?? k).join(', ')})`,
       before: JSON.stringify({
         address: before.address, description: before.description, equipments: before.equipments,
         cashModuleEnabled: before.cash_module_enabled, phone: before.phone,
@@ -672,7 +683,7 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
       await writeAudit(db, {
         venueId: req.params.venueId, actorId: req.platformAuth!.accountId, actorRole: role,
         action: 'CENTER_UPDATED', objectType: 'opening_hours', objectId: `${req.params.venueId}-${weekday}`,
-        summary: `a modifié les horaires du jour ${weekday}`,
+        summary: `a modifié les horaires du ${WEEKDAY_NAMES[weekday]} : ${hhmm(startMin)} → ${hhmm(endMin)}`,
         ...(before ? { before: `${before.start_min}-${before.end_min}` } : {}),
         after: `${startMin}-${endMin}`,
       });
@@ -713,7 +724,7 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
       await writeAudit(db, {
         venueId: req.params.venueId, actorId: req.platformAuth!.accountId, actorRole: role,
         action: 'CENTER_UPDATED', objectType: 'opening_hours', objectId: `${req.params.venueId}-${weekday}`,
-        summary: `a fermé le jour ${weekday} (plage ${before.start_min}-${before.end_min} supprimée)`,
+        summary: `a fermé le ${WEEKDAY_NAMES[weekday]} (ouverture ${hhmm(before.start_min)} → ${hhmm(before.end_min)} supprimée)`,
         before: `${before.start_min}-${before.end_min}`,
       });
       return reply.code(204).send();

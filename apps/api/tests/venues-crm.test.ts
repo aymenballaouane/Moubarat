@@ -204,7 +204,7 @@ describe('CRM Auth V1 — Terrains/Horaires/Tarifs via une vraie connexion CRM',
     const audit = await stack.db.selectFrom('audit_log').selectAll()
       .where('object_id', '=', seed.venueId).where('action', '=', 'CENTER_UPDATED')
       .orderBy('at', 'desc').limit(1).executeTakeFirstOrThrow();
-    expect(audit.summary).toContain('cash_module_enabled');
+    expect(audit.summary).toBe('a activé le module Caisse'); // P0-5 (15/11/2026) : en clair, plus le nom de colonne
 
     // Restauré tout de suite — base partagée par les autres tests de ce fichier.
     const restore = await stack.app.inject({
@@ -334,7 +334,9 @@ describe('CRM Auth V1 — Terrains/Horaires/Tarifs via une vraie connexion CRM',
       .where('venue_id', '=', venueId).where('object_type', '=', 'opening_hours')
       .orderBy('at', 'desc').execute();
     expect(audit.length).toBeGreaterThanOrEqual(2); // fermeture (DELETE) + réouverture (PUT)
-    expect(audit[0]!.summary).toContain('modifié les horaires du jour 4'); // la plus récente = réouverture
+    // P0-5 (15/11/2026) : le jour et les heures en clair, plus « jour 4 ».
+    expect(audit[0]!.summary).toBe('a modifié les horaires du jeudi : 08:00 → 01:00 (+1)'); // la plus récente = réouverture
+    expect(audit[1]!.summary).toMatch(/^a fermé le jeudi \(ouverture \d{2}:\d{2} → .+ supprimée\)$/);
     expect(audit[0]!.actor_id).toBe(seed.crmStaff.hamid);
     expect(audit[0]!.actor_role).toBe('MANAGER');
   });

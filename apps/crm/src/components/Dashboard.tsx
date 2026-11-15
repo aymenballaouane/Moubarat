@@ -137,7 +137,7 @@ export function Dashboard({ role, venueId, token, onOpenReservation }: Dashboard
   return (
     <section className="cm-view on">
       <div className="cm-day">
-        <button className="nav" type="button" aria-label="Jour precedent" onClick={() => setDay((d) => shiftDate(d, -1))}>
+        <button className="nav" type="button" aria-label="Jour précédent" onClick={() => setDay((d) => shiftDate(d, -1))}>
           <Icon id="i-back" />
         </button>
         <b>{dayLabel(day)}</b>
@@ -157,18 +157,18 @@ export function Dashboard({ role, venueId, token, onOpenReservation }: Dashboard
       ) : (
         <>
           <div className="cm-kpis">
-            <div className="cm-kpi"><span>Encaisse</span><b>{fmt(kpis.collectedDa)}</b><i>DA</i></div>
-            <div className="cm-kpi"><span>Engage</span><b>{fmt(kpis.engagedDa)}</b><i>DA</i></div>
-            <div className="cm-kpi"><span title="Sur les heures d'ouverture reelles">Remplissage &middot; reel</span><b>{kpis.occupancyPct}</b><i>%</i></div>
-            <div className="cm-kpi"><span>Reservations</span><b>{kpis.bookingsCount}</b></div>
+            <div className="cm-kpi"><span>Encaissé</span><b>{fmt(kpis.collectedDa)}</b><i>DA</i></div>
+            <div className="cm-kpi"><span>Engagé</span><b>{fmt(kpis.engagedDa)}</b><i>DA</i></div>
+            <div className="cm-kpi"><span title="Sur les heures d'ouverture réelles">Remplissage &middot; réel</span><b>{kpis.occupancyPct}</b><i>%</i></div>
+            <div className="cm-kpi"><span>Réservations</span><b>{kpis.bookingsCount}</b></div>
             <div className="cm-kpi"><span>Part Moubarat</span><b>{kpis.moubaratSharePct}</b><i>%</i></div>
             <div className="cm-kpi"><span>No-shows</span><b>{kpis.noShows}</b></div>
           </div>
 
-          <p className="cm-sec">A faire / a surveiller — chaque ligne est cliquable et dit pourquoi</p>
+          <p className="cm-sec">À faire / à surveiller — chaque ligne est cliquable et dit pourquoi</p>
           <div>
             {actions.length === 0 ? (
-              <p className="cm-note">Rien a surveiller — journee saine.</p>
+              <p className="cm-note">Rien à surveiller — journée saine.</p>
             ) : (
               actions.map((a) => (
                 <div
@@ -198,7 +198,7 @@ export function Dashboard({ role, venueId, token, onOpenReservation }: Dashboard
           <div className="cm-next">
             {upcoming.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', cursor: 'default' }}>
-                <span>Plus rien au planning — journee terminee ou libre.</span>
+                <span>Plus rien au planning — journée terminée ou libre.</span>
               </div>
             ) : (
               upcoming.map((u) => (

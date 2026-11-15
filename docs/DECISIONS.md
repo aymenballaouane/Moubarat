@@ -6216,3 +6216,15 @@ l'avocat ».
   comptoir qui reviennent (au plus 19 réservations en 70 jours) au lieu d'un numéro neuf à chaque réservation — prend effet
   au prochain `pnpm demo:seed` (pas relancé ici : il régénère le centre de démo). Corrigé au passage : l'historique d'une carte
   affichait « Aucune réservation » le temps d'un rendu avant son chargement.
+- **P0-5 — libellés visibles** (GO d'Aymen ; une partie venait du prototype gelé, qui n'est PAS modifié : écart assumé, le CRM
+  s'en écarte sur ces textes seulement). Accents rétablis (menu « Réservations », « Équipes » ; Dashboard « Encaissé »,
+  « Engagé », « Remplissage · réel », « À faire / à surveiller », « journée » ; « Connecté » ; « Jour précédent »). Anglais et
+  mentions internes retirés : « Financial center » → « Chiffre d'affaires », « (§25) », « l'insight propose l'action »,
+  « Outdoor/Indoor » → « Extérieur/Intérieur », « (upload V1.5) » → note « L'ajout de photos arrive bientôt… logo Moubarat »,
+  « Un abonnement V1… arrivent en V1.5 », « Déplacer/redimensionner arrivent dans une étape séparée », « les LISENT »,
+  « le moteur les applique ». Pluriels accordés au lieu de « (s) » (bandes copiées ; refus de fermeture, API). Journal : l'API
+  écrivait des noms de colonnes et des minutes — « a modifié la fiche du centre (cash_module_enabled) » → « a activé le module
+  Caisse », « horaires du jour 4 » → « horaires du jeudi : 08:00 → 01:00 (+1) », « plage 480-1500 » → heures ; les lignes déjà
+  écrites restent telles quelles (journal append-only). Laissé pour P1-10 (hors P0) : « Vérifie que l'API tourne » et le
+  mélange tu/vous. **Non fait** : régénération du board visuel (`pnpm ui:board`) — elle réinitialise les données de démo
+  locales ; vérification faite écran par écran en direct à la place.

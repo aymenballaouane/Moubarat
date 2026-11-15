@@ -416,10 +416,10 @@ export function Planning({ role, venueId, token, onToast, openRequest, onOpenRes
       <div className="pl-bar">
         <div className="grp">
           <button type="button" className="on">Jour</button>
-          <button type="button" disabled title="Vue semaine — a venir">Semaine</button>
+          <button type="button" disabled title="Vue semaine — à venir">Semaine</button>
         </div>
         <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setDate(todayAlgiers())}>Aujourd'hui</button>
-        <button type="button" className="nav mb-btn mb-btn--ghost mb-btn--sm" style={{ minWidth: 34 }} aria-label="Jour precedent" onClick={() => setDate((d) => shiftDate(d, -1))}>‹</button>
+        <button type="button" className="nav mb-btn mb-btn--ghost mb-btn--sm" style={{ minWidth: 34 }} aria-label="Jour précédent" onClick={() => setDate((d) => shiftDate(d, -1))}>‹</button>
         <b style={{
           fontFamily: 'var(--font-display)', fontSize: 'var(--fs-d4)', color: 'var(--text)',
           textTransform: 'uppercase', minWidth: 150, textAlign: 'center',
@@ -659,7 +659,7 @@ export function Planning({ role, venueId, token, onToast, openRequest, onOpenRes
           </>
         ) : (
           <div className="row">
-            <span className="d">Clique une case libre pour créer une réservation, ou une réservation dans Réservations pour sa fiche complète. Déplacer/redimensionner arrivent dans une étape séparée.</span>
+            <span className="d">Clique une case libre pour créer une réservation, ou une réservation dans Réservations pour sa fiche complète. Pour changer son terrain, son heure ou sa durée : bouton « Modifier » de sa fiche.</span>
           </div>
         )}
       </div>

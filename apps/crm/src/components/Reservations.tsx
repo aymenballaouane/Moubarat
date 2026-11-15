@@ -550,7 +550,7 @@ export function Reservations({ role, venueId, token, onToast, openRequest, onOpe
   return (
     <section className="cm-view on">
       <div className="cm-day">
-        <button className="nav" type="button" aria-label="Jour precedent" onClick={() => setDate((d) => shiftDate(d, -1))}>‹</button>
+        <button className="nav" type="button" aria-label="Jour précédent" onClick={() => setDate((d) => shiftDate(d, -1))}>‹</button>
         <b>{dayLabel(date)}</b>
         <button className="nav" type="button" aria-label="Jour suivant" onClick={() => setDate((d) => shiftDate(d, 1))}>›</button>
         {/* CRM-2 (27/09/2026) : « Aller à une date », même contrôle que le prototype gelé (barre du Planning, #pl-date) ;

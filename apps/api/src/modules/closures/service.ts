@@ -169,7 +169,10 @@ export async function createClosure(db: Db, p: CreateClosureInput): Promise<Clos
   const conflicts = await findConflicts(db, fieldIds, range);
   if (conflicts.length > 0) {
     throw new ApiError(409, 'SLOT_TAKEN',
-      `${conflicts.length} réservation(s) ou abonnement(s) occupent déjà ce créneau — à déplacer ou annuler avant de fermer.`,
+      // P0-5 (15/11/2026) : pluriel accordé, jamais « (s) » (charte).
+      conflicts.length > 1
+        ? `${conflicts.length} réservations ou abonnements occupent déjà ce créneau — à déplacer ou annuler avant de fermer.`
+        : '1 réservation ou abonnement occupe déjà ce créneau — à déplacer ou annuler avant de fermer.',
       { conflicts });
   }
 

@@ -163,7 +163,7 @@ export function Analytics({ venueId, token }: AnalyticsProps) {
   return (
     <section className="cm-view on">
       <div className="cm-day">
-        <button className="nav" type="button" aria-label="Jour precedent" onClick={() => setDay((d) => shiftDate(d, -1))}>‹</button>
+        <button className="nav" type="button" aria-label="Jour précédent" onClick={() => setDay((d) => shiftDate(d, -1))}>‹</button>
         <b>{dayLabel(day)}</b>
         <button className="nav" type="button" aria-label="Jour suivant" onClick={() => setDay((d) => shiftDate(d, 1))}>›</button>
       </div>
@@ -177,7 +177,7 @@ export function Analytics({ venueId, token }: AnalyticsProps) {
         <div className="cm-card cf-sec"><p className="cf-state">Chargement des statistiques…</p></div>
       ) : (
         <>
-          <p className="cm-sec">Financial center — 7 derniers jours vs 7 précédents · 30 vs 30 (dérivé de l'historique)</p>
+          <p className="cm-sec">Chiffre d'affaires — 7 derniers jours comparés aux 7 précédents · 30 jours comparés aux 30 précédents</p>
           <div className="cm-fin">
             <div className="cm-kpi">
               <span>CA encaissé · aujourd’hui</span><b>{fmt(overview.today.collected)}</b><i>DA</i>
@@ -252,7 +252,7 @@ export function Analytics({ venueId, token }: AnalyticsProps) {
             })}
           </div>
 
-          <p className="cm-sec">CA par terrain — 7 derniers jours · l'insight propose l'action</p>
+          <p className="cm-sec">CA par terrain — 7 derniers jours</p>
           <div>
             {overview.fields.map((f) => {
               const cash = overview.curr7.byField[f.id] ?? ZERO_CASH;
@@ -277,7 +277,7 @@ export function Analytics({ venueId, token }: AnalyticsProps) {
             })}
           </div>
 
-          <p className="cm-sec" style={{ marginTop: 14 }}>Origine des réservations — 7 derniers jours (§25)</p>
+          <p className="cm-sec" style={{ marginTop: 14 }}>Origine des réservations — 7 derniers jours</p>
           <div className="cm-bars">
             {[
               { label: 'Moubarat', pct: overview.origin7.moubaratPct, low: false },

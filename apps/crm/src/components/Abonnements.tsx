@@ -129,8 +129,8 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
   return (
     <section className="cm-view on">
       <p className="cm-view-note">
-        Un abonnement V1 = un créneau hebdomadaire daté (du / jusqu'au), projeté dans le planning sans dupliquer
-        de réservations. Les formules multi-séances et le paiement récurrent arrivent en V1.5.
+        Un abonnement réserve le même créneau chaque semaine, d'une date à une autre, et s'affiche dans le planning.
+        Le prix et le paiement de chaque séance ne se suivent pas encore ici.
       </p>
 
       <div className="cm-form">
