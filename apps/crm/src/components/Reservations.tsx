@@ -95,6 +95,10 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
   const busy = actions.busyId === row.id;
   const canVerify = row.source === 'PHONE' && !row.verified && row.status === 'RESERVED' && actions.canConfirmExternal;
   const canHonorOrNoShow = row.status === 'RESERVED' && actions.canSetCashStatus;
+  /* P1-4 (audit stratégique du CRM, 15/11/2026) : « Honorée » et « No-show » étaient proposés avant l'heure, puis refusés par
+     le serveur après une confirmation alarmante (« 3 250 DA comptés perdus »). Avant le début du créneau (core
+     cashStatusOpensAt), les boutons restent visibles mais grisés, avec l'heure à partir de laquelle ils s'ouvrent. */
+  const outcomeOpen = row.startsAt === undefined || Date.now() >= cashStatusOpensAt('HONORED', row.startsAt, row.startsAt);
   /* P0-1 (audit stratégique CRM, 15/11/2026, GO d'Aymen) : « Payée » directement depuis « Réservée », dès le début du jour
      d'exploitation du créneau (core cashStatusOpensAt) — le client qui paie en arrivant. `startMin` compte depuis le minuit civil
      du jour affiché : le jour d'exploitation commence 6 h plus tard (06:00, apps/api/src/lib/algiers.ts). */
@@ -196,10 +200,10 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
           ) : null}
           {canHonorOrNoShow ? (
             <>
-              <button type="button" className="mb-btn mb-btn--sm" disabled={busy} onClick={() => actions.onSetStatus(row.id, 'HONORED')}>
+              <button type="button" className="mb-btn mb-btn--sm" disabled={busy || !outcomeOpen} onClick={() => actions.onSetStatus(row.id, 'HONORED')}>
                 {busy ? '…' : 'Marquer honorée'}
               </button>
-              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={() => actions.onRequestNoShow(row)}>
+              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy || !outcomeOpen} onClick={() => actions.onRequestNoShow(row)}>
                 {busy ? '…' : 'Marquer no-show'}
               </button>
             </>
@@ -234,6 +238,11 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
           Encaisser ici (mouvement de caisse) et marquer une réservation « Payée » sont deux actions séparées, sans
           lien automatique entre elles. Pour que la caisse ET le suivi des réservations soient à jour, il faut faire
           les deux — l'une ne déclenche jamais l'autre.
+        </p>
+      ) : null}
+      {canHonorOrNoShow && !outcomeOpen ? (
+        <p className="cm-note" style={{ margin: '8px 0 0' }}>
+          « Honorée » et « No-show » se posent une fois le créneau commencé, à partir de {hhmm(row.startMin)}.
         </p>
       ) : null}
       {modifyReason ? <p className="cm-note" style={{ margin: '8px 0 0' }}>{modifyReason}</p> : null}
@@ -778,15 +787,15 @@ export function Reservations({ role, venueId, token, onToast, openRequest, onOpe
               <p className="cm-note" style={{ margin: '6px 0 0' }}>Le client sera prévenu dans l’app.</p>
             ) : null}
             <p className="cm-note" style={{ margin: '10px 0 6px' }}>Motif — obligatoire, ça compte pour le CA perdu et la fiabilité du client</p>
-            <div className="grp" style={{ display: 'inline-flex' }}>
+            <div className="cm-choice" role="group" aria-label="Motif d’annulation">
               <button
-                type="button" className={cancelTarget?.reason === 'CLIENT' ? 'on' : ''}
+                type="button" className={cancelTarget?.reason === 'CLIENT' ? 'on' : ''} aria-pressed={cancelTarget?.reason === 'CLIENT'}
                 onClick={() => setCancelTarget((t) => t && { ...t, reason: 'CLIENT' })}
               >
                 Le client a annulé
               </button>
               <button
-                type="button" className={cancelTarget?.reason === 'STAFF_ERROR' ? 'on' : ''}
+                type="button" className={cancelTarget?.reason === 'STAFF_ERROR' ? 'on' : ''} aria-pressed={cancelTarget?.reason === 'STAFF_ERROR'}
                 onClick={() => setCancelTarget((t) => t && { ...t, reason: 'STAFF_ERROR' })}
               >
                 Erreur de saisie du centre

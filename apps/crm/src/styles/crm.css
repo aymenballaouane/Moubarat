@@ -268,6 +268,15 @@ body.mb {
 .cm-actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
 /* P1-9 / P1-7 (15/11/2026) : la colonne Rôle était tronquée (« Pr », « Ma ») — largeur minimale du sélecteur ; légende des rôles. */
 .cm-role-select { min-width: 150px; }
+/* P1-9 (15/11/2026) : choix exclusif en boutons (motif d'annulation) — cible tactile ≥ 44 px, sélection en rouge marque. */
+.cm-choice { display: flex; gap: 8px; flex-wrap: wrap; }
+.cm-choice button {
+  min-height: 44px; padding: 8px 14px; border-radius: var(--r-2); background: var(--ink-2); border: 1px solid var(--line);
+  color: var(--text-2); font-family: var(--font-body); font-size: var(--fs-b3); cursor: pointer;
+}
+.cm-choice button:hover { border-color: var(--line-strong); color: var(--text); }
+.cm-choice button.on { background: var(--primary-wash); border-color: var(--primary-line); color: var(--text); }
+.cm-choice button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .cm-roles { display: grid; gap: 8px; margin: 0; }
 .cm-roles div { display: grid; grid-template-columns: 120px 1fr; gap: 12px; }
 .cm-roles dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text); }
