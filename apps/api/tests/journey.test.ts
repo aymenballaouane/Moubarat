@@ -439,12 +439,15 @@ describe('chemin téléphone + CRM : alerte, confirmation, cycle cash', () => {
     expect(audit[0]!.actor_role).toBe('RECEPTION');
   });
 
-  it('cycle cash : RESERVED → HONORED → PAID ; jamais RESERVED → PAID direct ; le Staff ne touche pas à l’argent', async () => {
+  /* P0-1 (audit stratégique CRM, 15/11/2026, GO d'Aymen) : RESERVED → PAID direct est désormais permis, mais seulement à partir du
+     jour du créneau — cette réservation est au moins deux jours plus loin : refusée (400 PAYMENT_NOT_OPEN, avant : 409 de la table
+     du core). Le cas « payée le jour même » est couvert par p0-audit-strategique.test.ts. */
+  it('cycle cash : RESERVED → HONORED → PAID ; jamais « Payée » avant le jour du créneau ; le Staff ne touche pas à l’argent', async () => {
     const direct = await stack.app.inject({
       method: 'POST', url: `/bookings/${phoneBookingId}/status`, headers: bearer(nadiaToken),
       payload: { status: 'PAID' },
     });
-    expect(direct.statusCode).toBe(409);
+    expect([direct.statusCode, (direct.json() as { error: string }).error]).toEqual([400, 'PAYMENT_NOT_OPEN']);
 
     const staffTry = await stack.app.inject({
       method: 'POST', url: `/bookings/${phoneBookingId}/status`, headers: bearer(amineToken),

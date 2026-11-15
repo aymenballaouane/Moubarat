@@ -15,7 +15,7 @@ export const MATCH_TRANSITIONS: Record<MatchStatus, readonly MatchStatus[]> = {
 };
 
 export const BOOKING_TRANSITIONS: Record<BookingStatus, readonly BookingStatus[]> = {
-  RESERVED:  ['HONORED', 'NO_SHOW', 'CANCELLED'],
+  RESERVED:  ['HONORED', 'NO_SHOW', 'CANCELLED', 'PAID'],   // P0-1 (audit stratégique CRM, 15/11/2026, GO d'Aymen) : payée en arrivant, sans passer par « Honorée »
   HONORED:   ['PAID'],
   NO_SHOW:   [],
   PAID:      [],

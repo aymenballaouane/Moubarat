@@ -27,7 +27,7 @@ export async function attachClaim(trx: Db, row: BookingRow, now: number): Promis
 export async function sweepClaimReminders(trx: Db, now: number): Promise<number> {
   const rows = await trx.selectFrom('bookings')
     .select(['id', 'claimed_user_id', 'time_range'])
-    .where('claim_status', '=', 'PENDING').where('claim_reminded_at', 'is', null).where('status', '=', 'RESERVED')
+    .where('claim_status', '=', 'PENDING').where('claim_reminded_at', 'is', null).where('status', 'in', ['RESERVED', 'PAID'])
     .where('claimed_user_id', 'is not', null)
     .execute();
   let sent = 0;

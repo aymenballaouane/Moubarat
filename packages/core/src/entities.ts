@@ -97,7 +97,7 @@ export interface Slot {
 
 /* --- Réservation — écosystème cash (audit H2) ----------------------------- */
 
-/** RESERVED → HONORED → PAID · RESERVED → NO_SHOW · RESERVED → CANCELLED.
+/** RESERVED → HONORED → PAID · RESERVED → PAID (P0-1, 15/11/2026 : le client paie en arrivant) · RESERVED → NO_SHOW · RESERVED → CANCELLED.
     Sans ces états, ni le taux de no-show ni le revenu réel ne sont mesurables —
     or c'est exactement ce que la tarification SaaS promet de mesurer. */
 export type BookingStatus = 'RESERVED' | 'HONORED' | 'NO_SHOW' | 'PAID' | 'CANCELLED';

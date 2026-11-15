@@ -65,7 +65,8 @@ export function buildUpcoming(matches: readonly MatchEntry[], reservations: read
   }
   for (const r of reservations) {
     const b = r.booking;
-    if (b.status !== 'RESERVED' || b.range.start <= ctx.now) continue;
+    // P0-1 (15/11/2026) : payée le jour même en arrivant au centre, elle est toujours à venir — la carte reste jusqu'au début.
+    if ((b.status !== 'RESERVED' && b.status !== 'PAID') || b.range.start <= ctx.now) continue;
     if (b.matchId !== undefined && liveMatchIds.has(b.matchId)) continue;      // la carte du match suffit
     const info = ctx.fieldInfo(b.fieldId);
     const formats = fieldFormatList(info?.field.formats as never);

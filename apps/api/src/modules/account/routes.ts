@@ -161,7 +161,7 @@ export async function registerAccountRoutes(app: FastifyInstance, { db, guards, 
 
       const upcomingBookings = await trx.selectFrom('bookings')
         .select(trx.fn.countAll<string>().as('n'))
-        .where('by_user_id', '=', userId).where('status', '=', 'RESERVED')
+        .where('by_user_id', '=', userId).where('status', 'in', ['RESERVED', 'PAID'])   // P0-1 : payée le jour même, toujours à venir
         .where(sql<boolean>`upper(time_range) > ${now}`)
         .executeTakeFirstOrThrow();
       const upcomingOrganized = await trx.selectFrom('matches')

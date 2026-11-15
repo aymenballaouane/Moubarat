@@ -64,6 +64,14 @@ describe('buildUpcoming', () => {
     expect(cards[0]!.canCreate).toBe(false);                         // à moins de 2 h : « Voir ta réservation »
   });
 
+  it('P0-1 : une réservation payée le jour même, encore à venir, garde sa carte ; honorée ou no-show, non', () => {
+    const paid = booking('b1', { status: 'PAID', range: { start: NOW + 3 * H, end: NOW + 4.5 * H } });
+    const honored = booking('b2', { status: 'HONORED', range: { start: NOW + 3 * H, end: NOW + 4.5 * H } });
+    const cards = buildUpcoming([], [{ booking: paid }, { booking: honored }], ctx);
+    expect(cards.map((c) => c.id)).toEqual(['b:b1']);
+    expect(cards[0]!.canCreate).toBe(false);                         // payée : pas de match à créer dessus
+  });
+
   it('une réservation téléphonique non confirmée : « à confirmer », jamais « créer un match »', () => {
     const [c] = buildUpcoming([], [{ booking: booking('b1', { source: 'PHONE', verifiedByCenter: false }) }], ctx);
     expect(c!.pending).toBe(true);

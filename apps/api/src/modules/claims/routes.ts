@@ -25,7 +25,7 @@ export async function registerClaimRoutes(app: FastifyInstance, { db, guards }: 
         'bookings.reservation_name', 'fields.name as field_name', 'venues.id as venue_id', 'venues.name as venue_name',
       ])
       .where('bookings.claimed_user_id', '=', req.auth!.userId).where('bookings.claim_status', '=', 'PENDING')
-      .where('bookings.status', '=', 'RESERVED').where(sql<boolean>`upper(bookings.time_range) > now()`)
+      .where('bookings.status', 'in', ['RESERVED', 'PAID']).where(sql<boolean>`upper(bookings.time_range) > now()`)   // P0-1 (core canRespondToClaim)
       .orderBy(sql`lower(bookings.time_range)`)
       .execute();
     return reply.send({

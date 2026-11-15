@@ -5,7 +5,7 @@ import {
   // entités & états
   FORMAT_CAPACITY, MATCH_TRANSITIONS, BOOKING_TRANSITIONS, canTransition,
   // règles
-  canReserve, registerExternalBooking, canCancelBooking, setBookingStatus,
+  canReserve, registerExternalBooking, canCancelBooking, setBookingStatus, cashStatusOpensAt,
   canJoinMatch, canLeaveMatch, canOrganizerAct, derivedStatus, validateCapacity, isLockedNow,
   canSendChallenge, newChallenge, canRespond, acceptChallenge, challengeMatchTitle, isExpired,
   canReportResult, canConfirmResult, autoConfirmDue, computeOvr, explainOvr, OVR_MIN_RATED_MATCHES,
@@ -93,11 +93,22 @@ describe('réservation — source de vérité unique', () => {
     expect(booking?.verifiedByCenter).toBe(false);
     expect(notifyCenter).toBe(true);
   });
-  it('cycle cash : RESERVED → HONORED → PAID, jamais RESERVED → PAID', () => {
+  /* P0-1 (audit stratégique CRM, 15/11/2026, GO d'Aymen) : règle MODIFIÉE — « jamais RESERVED → PAID » devient « RESERVED → PAID
+     permis » (le client paie en arrivant). Même cas, assertion inversée ; le reste du test est inchangé. */
+  it('cycle cash : RESERVED → HONORED → PAID, et RESERVED → PAID directement (payée en arrivant)', () => {
     expect(setBookingStatus(mkBooking(), 'HONORED').ok).toBe(true);
-    expect(setBookingStatus(mkBooking(), 'PAID').ok).toBe(false);
+    expect(setBookingStatus(mkBooking(), 'PAID').ok).toBe(true);
     expect(setBookingStatus(mkBooking({ status: 'HONORED' }), 'PAID').ok).toBe(true);
     expect(canTransition(BOOKING_TRANSITIONS, 'NO_SHOW', 'PAID')).toBe(false);
+  });
+  it('P0-1 : « Payée » s’ouvre au début du jour d’exploitation du créneau, « Honorée » et « No-show » au début du créneau', () => {
+    const dayStart = NOW;                    // début du jour d’exploitation, fourni par l’appelant
+    const start = dayStart + 14 * H;         // créneau de 20:00 pour un jour qui commence à 06:00
+    expect(cashStatusOpensAt('PAID', start, dayStart)).toBe(dayStart);
+    expect(cashStatusOpensAt('HONORED', start, dayStart)).toBe(start);
+    expect(cashStatusOpensAt('NO_SHOW', start, dayStart)).toBe(start);
+    // Jamais plus tard que le créneau lui-même, même si l’appelant se trompe de jour.
+    expect(cashStatusOpensAt('PAID', start, start + H)).toBe(start);
   });
   it('annulation : toujours possible avant comme après H-2 (règle modifiée §18, demi-absence §19) — jamais sur une résa déjà close', () => {
     const soon = mkBooking({ range: range(NOW + H, 60) }); // moins de 2 h avant le début

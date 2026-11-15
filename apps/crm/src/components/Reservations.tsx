@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { canCenterAct, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { canCenterAct, cashStatusOpensAt, type CenterRole, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
 import type { ReservationRow } from '../data/reservationsDemo.js';
 import { dateLabelLong, hitsCountLabel, searchHitsFromApi, type ApiBookingSearchHit, type SearchHit } from '../lib/searchDetail.js';
 import { Pill, STATUS_PILL } from './StatusPill.js';
@@ -95,7 +95,12 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
   const busy = actions.busyId === row.id;
   const canVerify = row.source === 'PHONE' && !row.verified && row.status === 'RESERVED' && actions.canConfirmExternal;
   const canHonorOrNoShow = row.status === 'RESERVED' && actions.canSetCashStatus;
-  const canPay = row.status === 'HONORED' && actions.canSetCashStatus;
+  /* P0-1 (audit stratégique CRM, 15/11/2026, GO d'Aymen) : « Payée » directement depuis « Réservée », dès le début du jour
+     d'exploitation du créneau (core cashStatusOpensAt) — le client qui paie en arrivant. `startMin` compte depuis le minuit civil
+     du jour affiché : le jour d'exploitation commence 6 h plus tard (06:00, apps/api/src/lib/algiers.ts). */
+  const paymentOpen = row.startsAt !== undefined
+    && Date.now() >= cashStatusOpensAt('PAID', row.startsAt, row.startsAt - row.startMin * 60_000 + 6 * 60 * 60_000);
+  const canPay = (row.status === 'HONORED' || (row.status === 'RESERVED' && paymentOpen)) && actions.canSetCashStatus;
   const canRevert = row.status === 'NO_SHOW' && actions.canRevertNoShow;
   const canRevertCash = (row.status === 'HONORED' || row.status === 'PAID') && actions.canRevertNoShow;
   const canCancelThis = row.status === 'RESERVED' && actions.canCancel;
@@ -750,7 +755,7 @@ export function Reservations({ role, venueId, token, onToast, openRequest, onOpe
         open={revertCashTarget !== null}
         title="Corriger ce statut ?"
         body={
-          <p>« {revertCashTarget?.name}{revertCashTarget?.reference ? ` · ${revertCashTarget.reference}` : ''} » {revertCashTarget?.status === 'PAID' ? 'redevient « Honorée » (non payée)' : 'redevient « Réservée »'}. À utiliser seulement pour une erreur de saisie ; la correction est tracée au Journal. La Caisse n’est pas modifiée.</p>
+          <p>« {revertCashTarget?.name}{revertCashTarget?.reference ? ` · ${revertCashTarget.reference}` : ''} » {revertCashTarget?.status === 'PAID' && revertCashTarget.startsAt !== undefined && revertCashTarget.startsAt <= Date.now() ? 'redevient « Honorée » (non payée)' : revertCashTarget?.status === 'PAID' ? 'redevient « Réservée » (non payée)' : 'redevient « Réservée »'}. À utiliser seulement pour une erreur de saisie ; la correction est tracée au Journal. La Caisse n’est pas modifiée.</p>
         }
         confirmLabel="Corriger le statut"
         onConfirm={() => { const r = revertCashTarget; setRevertCashTarget(null); if (r) void revertCash(r.id); }}

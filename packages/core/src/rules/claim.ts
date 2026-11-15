@@ -32,13 +32,14 @@ export interface ClaimedBooking {
   claimedUserId: string | null;
 }
 
-/** Le joueur peut répondre — « C'est moi » comme « Ce n'est pas moi » — à une réservation qui lui est rattachée, encore en attente, toujours vivante et à venir. */
+/** Le joueur peut répondre — « C'est moi » comme « Ce n'est pas moi » — à une réservation qui lui est rattachée, encore en attente, toujours vivante (réservée, ou déjà payée le jour même) et à venir. */
 export function canRespondToClaim(booking: ClaimedBooking, userId: string, now: number): RuleResult {
   if (booking.claimedUserId !== userId || booking.claimStatus === null) {
     return fail('FORBIDDEN', 'Cette réservation ne t’est pas rattachée.');
   }
   if (booking.claimStatus !== 'PENDING') return fail('CLAIM_ALREADY_ANSWERED', 'Tu as déjà répondu pour cette réservation.');
-  if (booking.status !== 'RESERVED') return fail('CLAIM_CLOSED', 'Cette réservation n’est plus d’actualité.');
+  // P0-1 (15/11/2026) : payée le jour même en arrivant, elle est toujours à venir — le joueur peut encore répondre.
+  if (booking.status !== 'RESERVED' && booking.status !== 'PAID') return fail('CLAIM_CLOSED', 'Cette réservation n’est plus d’actualité.');
   if (now >= booking.start) return fail('CLAIM_CLOSED', 'Ce créneau a déjà commencé.');
   return ok;
 }

@@ -68,13 +68,23 @@ export function canCancelBooking(b: Booking, now: number): RuleResult {
   return ok;
 }
 
-/** Cycle cash : RESERVED → HONORED → PAID, ou RESERVED → NO_SHOW.
+/** Cycle cash : RESERVED → HONORED → PAID, RESERVED → PAID directement (P0-1, 15/11/2026), ou RESERVED → NO_SHOW.
     C'est ce qui rend mesurables le taux de no-show et le revenu réel du centre. */
 export function setBookingStatus(b: Booking, to: BookingStatus): RuleResult {
   if (!canTransition(BOOKING_TRANSITIONS, b.status, to)) {
     return fail('INVALID_TRANSITION', `Passage ${b.status} → ${to} impossible.`);
   }
   return ok;
+}
+
+/** À partir de quand le centre peut poser une issue sur une réservation (P0-1, audit stratégique CRM, 15/11/2026, GO d'Aymen).
+    « Honorée » et « No-show » : au début du créneau, jamais avant (une absence posée la veille sanctionnait un joueur qui
+    n'avait encore rien manqué ; une « Honorée » de la semaine prochaine ne s'annulait plus). « Payée » : dès le début du
+    JOUR D'EXPLOITATION du créneau — le client qui paie en arrivant, avant de jouer, est encaissé ; un paiement d'avance
+    (la veille ou plus tôt) reste hors du produit, décision d'Aymen (« le jour même »). Le core est sans fuseau : l'appelant
+    fournit le début du jour d'exploitation (06:00 heure d'Alger, apps/api/src/lib/algiers.ts). */
+export function cashStatusOpensAt(to: 'HONORED' | 'PAID' | 'NO_SHOW', start: number, operatingDayStart: number): number {
+  return to === 'PAID' ? Math.min(start, operatingDayStart) : start;
 }
 
 /* --- Règle 23 (refonte app joueur, 26/10/2026 — règle NOUVELLE) : plafonds de réservation par joueur -------------------------

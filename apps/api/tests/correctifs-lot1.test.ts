@@ -803,7 +803,9 @@ describe('MS-036 (suite) — un Manager corrige une « Honorée » ou « Payée 
 
     expect((await call('POST', `/bookings/${id}/revert-cash-status`, nadia)).statusCode).toBe(403);
     expect(await statusOf()).toBe('PAID');
-    const first = await call('POST', `/bookings/${id}/revert-cash-status`, yacine);
+    // P0-1 (15/11/2026) : une « Payée » se corrige en « Honorée » une fois le créneau commencé (avant, elle redevient « Réservée » —
+    // p0-audit-strategique.test.ts) : ce premier pas se fait sur le créneau commencé, le reste comme avant.
+    const first = await withBookingStarted(stack.db, id, () => call('POST', `/bookings/${id}/revert-cash-status`, yacine));
     expect([first.statusCode, (first.json() as { status: string }).status], first.body).toEqual([200, 'HONORED']);
     const second = await call('POST', `/bookings/${id}/revert-cash-status`, yacine);
     expect((second.json() as { status: string }).status).toBe('RESERVED');

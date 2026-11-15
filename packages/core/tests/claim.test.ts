@@ -39,11 +39,16 @@ describe('répondre', () => {
       expect(canRespondToClaim(booking({ claimStatus }), 'u1', NOW)).toMatchObject({ ok: false, code: 'CLAIM_ALREADY_ANSWERED' });
     }
   });
+  /* P0-1 (15/11/2026, GO d'Aymen) : « PAID » sort de cette liste — payée le jour même en arrivant, elle est encore à venir. */
   it('plus d’actualité : annulée, honorée, ou commencée', () => {
-    for (const status of ['CANCELLED', 'HONORED', 'PAID', 'NO_SHOW']) {
+    for (const status of ['CANCELLED', 'HONORED', 'NO_SHOW']) {
       expect(canRespondToClaim(booking({ status }), 'u1', NOW), status).toMatchObject({ ok: false, code: 'CLAIM_CLOSED' });
     }
     expect(canRespondToClaim(booking({ start: NOW - H }), 'u1', NOW)).toMatchObject({ ok: false, code: 'CLAIM_CLOSED' });
+  });
+  it('P0-1 : payée le jour même en arrivant, encore à venir — le joueur peut toujours répondre ; une fois commencée, non', () => {
+    expect(canRespondToClaim(booking({ status: 'PAID', start: NOW + H }), 'u1', NOW)).toEqual({ ok: true });
+    expect(canRespondToClaim(booking({ status: 'PAID', start: NOW - H }), 'u1', NOW)).toMatchObject({ ok: false, code: 'CLAIM_CLOSED' });
   });
 });
 

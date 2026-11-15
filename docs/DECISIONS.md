@@ -6183,3 +6183,22 @@ Traductions arabes PROVISOIRES ajoutées (5 textes) : à relire par un arabophon
 - **iOS 1.0.1 (build 8)** envoyée à TestFlight le 12/11/2026 au soir (étiquette `ios-v1.0.1-8`) plutôt qu'une 1.0 build 7 : la 1.0
   (build 6) en examen n'est pas relancée. La build 7 avait échoué au nettoyage des certificats sans message lisible : le script
   écrit désormais ses refus en annotations publiques et un refus de suppression n'arrête plus tout.
+
+## Audit stratégique du CRM (13-14/11/2026) — correctifs P0 (15/11/2026, GO d'Aymen « go pour corriger les 5 P0 »)
+
+Rapport hors dépôt (dossier de notes de la session d'audit, `rapport-final-audit-strategique-crm.md`). Choix d'Aymen du
+15/11/2026 : P0-1 « le jour même » ; P0-2 « regrouper par numéro » ; P0-3 « par taille de centre » ; P0-4 « projet à relire par
+l'avocat ».
+
+- **P0-1 — « Payée » le jour même** (modifie le core gelé, GO explicite). `BOOKING_TRANSITIONS` : RESERVED → PAID devient permis
+  (le client paie en arrivant, sans passer par « Honorée »). Nouvelle règle `cashStatusOpensAt` (core) : « Payée » s'ouvre au
+  début du jour d'exploitation du créneau (06:00, Alger), « Honorée » et « No-show » au début du créneau (inchangé, MS-036 et
+  audit 26/10). Avant le jour : `400 PAYMENT_NOT_OPEN`. Paiement d'avance (la veille ou plus tôt) écarté par Aymen : une
+  réservation payée d'avance passerait pour close (match, déplacement, plafonds). Conséquences traitées : une « Payée » posée
+  avant le début se corrige en « Réservée » (jamais « Honorée » avant l'heure) ; règle 21 — `canRespondToClaim` accepte une
+  réservation payée encore à venir (le joueur répond toujours « C'est moi ») ; app joueur — la carte de la réservation reste
+  dans Mes matchs jusqu'au début ; suppression de compte — une réservation payée à venir compte comme à venir. **Tests du core
+  modifiés** (même cas, assertion inversée, avec le GO) : `core.test.ts` « cycle cash » (RESERVED → PAID était refusé) et
+  `claim.test.ts` « plus d'actualité » (PAID retiré de la liste) ; +2 tests core (183). Laissé tel quel, sans effet pratique :
+  les plafonds de la règle 23 (`checkBookingLimits`) ne comptent que les « Réservée » — une réservation payée le jour même ne
+  compte plus dans « 2 par jour » ; corriger demanderait une 3e règle du core.

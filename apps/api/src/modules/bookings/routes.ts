@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import type { FastifyInstance } from 'fastify';
 import {
-  RECIPIENTS, activePlayers, cancellationKind, canCancelBooking, canCenterAct, recurringOccurrence, setBookingStatus,
+  RECIPIENTS, activePlayers, cancellationKind, canCancelBooking, canCenterAct, cashStatusOpensAt, recurringOccurrence, setBookingStatus,
   checkBookingLimits, validateDisplayName, weekdayOfDayStart, type BookingStatus,
 } from '@moubarat/core';
 import type { Db } from '../../db/client.js';
@@ -396,13 +396,21 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
         must(setBookingStatus(rowToBooking(row), to));
         /* Audit final 26/10/2026 (P1-3, CRM-1) : un « no-show » est une ABSENCE pour le joueur (règle 25) — jamais posée avant que le
            créneau ait commencé (un clic sur une réservation de la semaine prochaine sanctionnait un joueur qui n'avait encore rien manqué). */
-        if (to === 'NO_SHOW' && now < fromPgRange(row.time_range).start) {
-          throw badRequest('Le créneau n’a pas encore commencé : impossible de le marquer no-show.', 'BOOKING_NOT_STARTED');
-        }
-        /* Audit final, MS-036 (12/11/2026) : même garde pour « Honorée » (et donc « Payée », qui la suit) — une réservation de
-           la semaine prochaine marquée honorée par erreur ne pouvait plus être ni annulée ni déplacée. */
-        if ((to === 'HONORED' || to === 'PAID') && now < fromPgRange(row.time_range).start) {
-          throw badRequest('Le créneau n’a pas encore commencé : impossible de le marquer honoré ou payé.', 'BOOKING_NOT_STARTED');
+        /* Audit final, MS-036 (12/11/2026) : même garde pour « Honorée » — une réservation de la semaine prochaine marquée
+           honorée par erreur ne pouvait plus être ni annulée ni déplacée. P0-1 (audit stratégique CRM, 15/11/2026, GO d'Aymen) :
+           « Payée » s'ouvre plus tôt, au début du JOUR D'EXPLOITATION du créneau (core `cashStatusOpensAt`) — le client qui paie
+           en arrivant, avant de jouer, est encaissé, directement depuis « Réservée ». Jamais la veille ou plus tôt. */
+        if (to !== 'CANCELLED') {
+          const start = fromPgRange(row.time_range).start;
+          const opensAt = cashStatusOpensAt(to as 'HONORED' | 'NO_SHOW' | 'PAID', start, operatingDayWindow(dayStartMs(operatingDateOf(start))).start);
+          if (now < opensAt) {
+            throw badRequest(
+              to === 'NO_SHOW' ? 'Le créneau n’a pas encore commencé : impossible de le marquer no-show.'
+                : to === 'HONORED' ? 'Le créneau n’a pas encore commencé : impossible de le marquer honoré.'
+                  : 'Une réservation se marque payée le jour du créneau, pas avant.',
+              to === 'PAID' ? 'PAYMENT_NOT_OPEN' : 'BOOKING_NOT_STARTED',
+            );
+          }
         }
         await trx.updateTable('bookings')
           .set({
@@ -505,14 +513,18 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       const out = await db.transaction().execute(async (trx) => {
         const { row, venue } = await getBookingWithVenue(trx, req.params.id, { forUpdate: true });
         if (venue.id !== pre.venue.id) throw new ApiError(409, 'INVALID_TARGET', 'La réservation a changé de centre entre-temps.');
-        const back: Record<string, 'RESERVED' | 'HONORED'> = { PAID: 'HONORED', HONORED: 'RESERVED' };
+        /* P0-1 (15/11/2026) : une « Payée » posée AVANT le début du créneau (payée en arrivant) redevient « Réservée » — jamais
+           « Honorée », qu'on ne pose pas avant le début. Après le début, elle redevient « Honorée » comme avant. */
+        const paidBeforeStart = row.status === 'PAID' && Date.now() < fromPgRange(row.time_range).start;
+        const back: Record<string, 'RESERVED' | 'HONORED'> = { PAID: paidBeforeStart ? 'RESERVED' : 'HONORED', HONORED: 'RESERVED' };
         const to = back[row.status];
         if (!to) throw badRequest('Seule une réservation « Honorée » ou « Payée » se corrige ici.', 'INVALID_TRANSITION');
         await trx.updateTable('bookings').set({ status: to }).where('id', '=', row.id).execute();
+        const LABEL = { PAID: 'Payée', HONORED: 'Honorée', RESERVED: 'Réservée' } as const;
         await writeAudit(trx, {
           venueId: venue.id, actorId: req.platformAuth!.accountId, actorRole: role,
           action: 'BOOKING_STATUS_CORRECTED', objectType: 'booking', objectId: row.id,
-          summary: `a corrigé le statut de la réservation ${row.reference ?? row.id} : ${row.status === 'PAID' ? 'Payée → Honorée' : 'Honorée → Réservée'} (${row.price_total_da} DA)`,
+          summary: `a corrigé le statut de la réservation ${row.reference ?? row.id} : ${LABEL[row.status as 'PAID' | 'HONORED']} → ${LABEL[to]} (${row.price_total_da} DA)`,
           before: row.status, after: to,
         });
         return { status: to };
