@@ -266,6 +266,13 @@ body.mb {
 .cm-table td { padding: 10px; border-bottom: 1px solid var(--line); color: var(--text-2); vertical-align: middle; }
 .cm-table tr:last-child td { border-bottom: 0; }
 .cm-actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
+/* P1-9 / P1-7 (15/11/2026) : la colonne Rôle était tronquée (« Pr », « Ma ») — largeur minimale du sélecteur ; légende des rôles. */
+.cm-role-select { min-width: 150px; }
+.cm-roles { display: grid; gap: 8px; margin: 0; }
+.cm-roles div { display: grid; grid-template-columns: 120px 1fr; gap: 12px; }
+.cm-roles dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text); }
+.cm-roles dd { margin: 0; color: var(--text-2); font-size: var(--fs-b3); }
+@media (max-width: 640px) { .cm-roles div { grid-template-columns: 1fr; gap: 2px; } }
 .cm-mono { font-family: var(--font-mono); font-size: var(--fs-b3); color: var(--text); }
 .cm-creds { border-color: var(--gold); }
 .cm-creds__grid { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0 0 12px; }

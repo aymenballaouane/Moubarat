@@ -16,6 +16,16 @@ import { ConfirmModal } from './ConfirmModal.js';
 
 const CENTER_ROLES = ['OWNER', 'MANAGER', 'RECEPTION', 'STAFF'] as const;
 
+/* P1-7 (audit stratégique du CRM, 15/11/2026) : ce que chaque rôle peut faire, en clair — le propriétaire choisissait un rôle
+   sans le savoir. Résumé fidèle de la matrice du core (`CENTER_PERMISSIONS`, packages/core/src/rules/crm.ts), jamais une règle :
+   le serveur reste seul juge. P1-14 (choix d'Aymen) : Staff reste en lecture seule du planning. */
+const ROLE_DESCRIPTIONS: Record<CenterRole, string> = {
+  OWNER: 'Tout, y compris le personnel : ajouter, retirer, changer les rôles.',
+  MANAGER: 'Tout sauf le personnel : terrains, tarifs, horaires, fiche du centre, analytics, abonnements, journal, corrections de statut — et tout ce que fait la réception.',
+  RECEPTION: 'Le comptoir : créer, modifier et annuler des réservations (avec motif), confirmer les réservations par téléphone, encaisser, bloquer un créneau, caisse, fiche des clients.',
+  STAFF: 'Consultation du planning uniquement : aucune réservation, aucun encaissement.',
+};
+
 interface StaffMember {
   accountId: string; email: string; name: string; role: CenterRole;
   status: 'ACTIVE' | 'SUSPENDED'; createdAt: string; lastSeenAt: string | null; locked: boolean;
@@ -136,7 +146,10 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
       ) : pending.kind === 'reset' ? (
         <p>Un nouveau mot de passe sera généré pour {pending.member.name}. Ses sessions ouvertes seront coupées.</p>
       ) : (
-        <p>{pending.member.name} passe de {ROLE_LABELS[pending.member.role]} à {ROLE_LABELS[pending.newRole]}.</p>
+        <>
+          <p>{pending.member.name} passe de {ROLE_LABELS[pending.member.role]} à {ROLE_LABELS[pending.newRole]}.</p>
+          <p className="cm-note" style={{ margin: '6px 0 0' }}>{ROLE_LABELS[pending.newRole]} : {ROLE_DESCRIPTIONS[pending.newRole]}</p>
+        </>
       )}
       {rowError ? <p className="mb-field__error" role="alert" style={{ marginTop: 10 }}>{rowError}</p> : null}
     </>
@@ -145,7 +158,7 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
   return (
     <section className="cm-view on">
       <p className="cm-view-note">
-        Qui a accès au CRM de ce centre, et avec quel rôle. {canManage ? '' : 'Seul le propriétaire du centre peut créer, retirer ou changer un rôle.'}
+        Qui a accès au CRM de ce centre, et avec quel rôle. {canManage ? '' : 'Seul le propriétaire du centre peut ajouter, retirer ou changer un rôle.'}
       </p>
 
       {!canManage ? null : (
@@ -185,8 +198,9 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
               </select>
             </label>
           </div>
+          <p className="cm-note" style={{ margin: '8px 0 0' }}>{ROLE_LABELS[form.role]} : {ROLE_DESCRIPTIONS[form.role]}</p>
           <p className="cm-note" style={{ margin: '8px 0' }}>
-            Un mot de passe est généré et affiché une seule fois. Si l’email existe déjà, le compte est rattaché à ce centre sans changer son mot de passe.
+            Un mot de passe est généré et affiché une seule fois. Si cet email a déjà un compte Moubarat, la création est refusée — sauf pour un ancien membre de ce centre, qui retrouve son accès avec son mot de passe inchangé. Pour une personne qui travaille déjà dans un autre centre, contactez Moubarat.
           </p>
           {createError ? <p className="mb-field__error">{createError}</p> : null}
           <button type="submit" className="mb-btn mb-btn--sm" disabled={creating}>{creating ? 'Création…' : 'Créer le compte'}</button>
@@ -206,7 +220,7 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
       ) : staff.length === 0 ? (
         <p className="cm-note">Aucun membre pour l’instant.</p>
       ) : (
-        <div className="cm-card">
+        <div className="cm-card" style={{ overflowX: 'auto' }}>
           <table className="cm-table">
             <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th>Dernière connexion</th>{canManage ? <th /> : null}</tr></thead>
             <tbody>
@@ -217,7 +231,7 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
                   <td>
                     {canManage ? (
                       <select
-                        className="mb-field__control" value={s.role} disabled={busy}
+                        className="mb-field__control cm-role-select" aria-label={`Rôle de ${s.name}`} value={s.role} disabled={busy}
                         onChange={(e) => setPending({ kind: 'role', member: s, newRole: e.target.value as CenterRole })}
                       >
                         {CENTER_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
@@ -250,6 +264,15 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
           </table>
         </div>
       )}
+
+      <div className="cm-card" style={{ marginTop: 14 }}>
+        <p className="cm-sec">Ce que chaque rôle peut faire</p>
+        <dl className="cm-roles">
+          {CENTER_ROLES.map((r) => (
+            <div key={r}><dt>{ROLE_LABELS[r]}</dt><dd>{ROLE_DESCRIPTIONS[r]}</dd></div>
+          ))}
+        </dl>
+      </div>
 
       <ConfirmModal
         open={pending !== null}
