@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ROLE_LABELS, type CenterRole } from '@moubarat/core';
+import { ROLE_LABELS, canCenterAct, type CenterAction, type CenterRole } from '@moubarat/core';
 import { IconSprite } from './components/IconSprite.js';
 import { Icon } from './components/Icon.js';
 import { LoginScreen } from './components/LoginScreen.js';
@@ -30,23 +30,32 @@ import { todayAlgiers } from './lib/bookingsDetail.js';
 
 type ViewId = 'dash' | 'plan' | 'resa' | 'subs' | 'stats' | 'clients' | 'teams' | 'staff' | 'caisse' | 'audit' | 'conf';
 
-interface NavItem { id: ViewId; label: string; icon: string; badge?: number }
+/* P1-6 et P1-14 (audit stratégique du CRM, 15/11/2026) : le menu était le même pour tous les rôles — la Réception ouvrait
+   Analytics et lisait une erreur brute du serveur. Chaque entrée porte désormais la permission du core qu'exige la lecture
+   de son écran côté API (la même, jamais une règle de plus) : un rôle ne voit que les écrans qu'il peut ouvrir. Staff, en
+   lecture seule (choix d'Aymen), ne voit que le Planning. Équipes est retiré du menu : l'écran liste les équipes ayant joué
+   un défi, fonction désactivée — il restait toujours vide. Le composant reste dans le code. */
+interface NavItem { id: ViewId; label: string; icon: string; badge?: number; needs: CenterAction }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'dash', label: 'Dashboard', icon: 'i-home' },
-  { id: 'plan', label: 'Planning', icon: 'i-cal' },
-  { id: 'resa', label: 'Réservations', icon: 'i-cash' },
-  { id: 'subs', label: 'Abonnements', icon: 'i-clock' },
-  { id: 'stats', label: 'Analytics', icon: 'i-grid' },
-  { id: 'clients', label: 'Clients', icon: 'i-users' },
-  { id: 'teams', label: 'Équipes', icon: 'i-shirt' },
-  // Personnel du centre (22/09/2026) — icône DISTINCTE d'« Équipes » ci-dessus, qui désigne les équipes de
-  // joueurs, pas le personnel CRM : collision de sens à éviter dans la nav.
-  { id: 'staff', label: 'Personnel', icon: 'i-shield' },
-  { id: 'caisse', label: 'Caisse', icon: 'i-check' },
-  { id: 'audit', label: 'Journal', icon: 'i-list' },
-  { id: 'conf', label: 'Centre', icon: 'i-gear' },
+  { id: 'dash', label: 'Dashboard', icon: 'i-home', needs: 'CREATE_BOOKING' },
+  { id: 'plan', label: 'Planning', icon: 'i-cal', needs: 'VIEW_PLANNING' },
+  { id: 'resa', label: 'Réservations', icon: 'i-cash', needs: 'CREATE_BOOKING' },
+  { id: 'subs', label: 'Abonnements', icon: 'i-clock', needs: 'MANAGE_SUBSCRIPTIONS' },
+  { id: 'stats', label: 'Analytics', icon: 'i-grid', needs: 'VIEW_ANALYTICS' },
+  { id: 'clients', label: 'Clients', icon: 'i-users', needs: 'VIEW_CLIENTS' },
+  // Personnel du centre (22/09/2026) — icône distincte de celle des équipes de joueurs (i-shirt).
+  // Réglages (Personnel, Centre) : Manager et propriétaire — la Réception n'y pouvait rien modifier.
+  { id: 'staff', label: 'Personnel', icon: 'i-shield', needs: 'EDIT_PROFILE' },
+  { id: 'caisse', label: 'Caisse', icon: 'i-check', needs: 'CASH_SESSION' },
+  { id: 'audit', label: 'Journal', icon: 'i-list', needs: 'VIEW_AUDIT_LOG' },
+  { id: 'conf', label: 'Centre', icon: 'i-gear', needs: 'EDIT_PROFILE' },
 ];
+
+/** Les entrées du menu visibles pour ce rôle (et la Caisse seulement si le module est activé). */
+function navItemsFor(role: CenterRole, modulesCaisse: boolean): NavItem[] {
+  return NAV_ITEMS.filter((item) => canCenterAct(role, item.needs).ok && (item.id !== 'caisse' || modulesCaisse));
+}
 
 type Theme = 'dark' | 'light';
 
@@ -139,11 +148,21 @@ export function App() {
   // réservations honorées non encaissées ») — bascule sur Réservations sans
   // imposer de fiche précise (ajouté 16/09/2026 pour Dashboard, même stub).
   const [resaOpen, setResaOpen] = useState<{ date: string; bookingId: string | null; nonce: number } | null>(null);
+  /* P1-6 : les écrans visibles pour ce rôle ; un écran hors de cette liste n'est jamais affiché (y compris par un lien d'un
+     autre écran — ex. un Staff qui clique une réservation dans le Planning reste sur le Planning). */
+  const navItems = role ? navItemsFor(role, modulesCaisse) : [];
+  const canOpen = (id: ViewId) => navItems.some((i) => i.id === id);
+  useEffect(() => {
+    if (role && navItems.length > 0 && !canOpen(view)) setView(navItems[0]!.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, modulesCaisse, view]);
+
   function openInPlanning(date: string) {
     setPlanningOpen({ date, nonce: Date.now() });
     setView('plan');
   }
   function openInReservations(bookingId: string | null, date: string) {
+    if (!canOpen('resa')) return;
     setResaOpen({ date, bookingId, nonce: Date.now() });
     setView('resa');
   }
@@ -291,7 +310,7 @@ export function App() {
 
         <div className="cm-body">
           <nav className="cm-nav">
-            {NAV_ITEMS.filter((item) => item.id !== 'caisse' || modulesCaisse).map((item) => (
+            {navItems.map((item) => (
               <button
                 key={item.id}
                 type="button"

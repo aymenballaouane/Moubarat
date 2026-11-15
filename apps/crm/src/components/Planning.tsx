@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { canCenterAct, CLOSURE_REASON_LABELS, type CenterRole, type ClosureReason, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { canCenterAct, CLOSURE_REASON_LABELS, ROLE_LABELS, type CenterRole, type ClosureReason, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
 import type { TimelineBlock } from '../data/planningDemo.js';
 import {
   dayLabel, shiftDate, todayAlgiers, dayStartMs, weekdayOf,
@@ -551,7 +551,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
                       const m = minuteAtClientX(name, e.clientX);
                       const info = closedAtMin(name, m);
                       if (info.closed) { onToast(`Ce créneau est fermé${info.label ? ` (${info.label})` : ''}.`); return; }
-                      if (!canCreate) { onToast(`${name} · ${hhmm(m)} — libre. En ${role === 'STAFF' ? 'Staff' : role}, tu peux consulter et pointer les présences, pas créer.`); return; }
+                      if (!canCreate) { onToast(`${name} · ${hhmm(m)} — libre. Votre rôle (${ROLE_LABELS[role]}) permet de consulter le planning, pas de créer une réservation.`); return; }
                       openCreatePanel(name, m, 60);
                     }}
                   >

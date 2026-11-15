@@ -21,8 +21,8 @@ const CENTER_ROLES = ['OWNER', 'MANAGER', 'RECEPTION', 'STAFF'] as const;
    le serveur reste seul juge. P1-14 (choix d'Aymen) : Staff reste en lecture seule du planning. */
 const ROLE_DESCRIPTIONS: Record<CenterRole, string> = {
   OWNER: 'Tout, y compris le personnel : ajouter, retirer, changer les rôles.',
-  MANAGER: 'Tout sauf le personnel : terrains, tarifs, horaires, fiche du centre, analytics, abonnements, journal, corrections de statut — et tout ce que fait la réception.',
-  RECEPTION: 'Le comptoir : créer, modifier et annuler des réservations (avec motif), confirmer les réservations par téléphone, encaisser, bloquer un créneau, caisse, fiche des clients.',
+  MANAGER: 'Tout sauf le personnel : terrains, tarifs, horaires et fermetures, fiche du centre, analytics, abonnements, journal, corrections de statut — et tout ce que fait la réception.',
+  RECEPTION: 'Le comptoir : créer, modifier et annuler des réservations (avec motif), confirmer les réservations par téléphone, encaisser, caisse (si activée), fiche des clients.',
   STAFF: 'Consultation du planning uniquement : aucune réservation, aucun encaissement.',
 };
 
