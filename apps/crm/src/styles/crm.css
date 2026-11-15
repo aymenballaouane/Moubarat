@@ -387,6 +387,13 @@ body.mb {
 .cm-help a.cm-toprow:hover { background: var(--ink-4); }
 .cm-help a.cm-toprow:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .cm-help a.cm-toprow .v { flex: 0 1 auto; color: var(--text); overflow-wrap: anywhere; }
+/* P1-16 (15/11/2026) : liste de démarrage et premiers pas dans l'Aide — la fenêtre défile si l'écran est court. */
+.cm-help { max-height: calc(100vh - 48px); overflow-y: auto; }
+.cm-help__checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cm-help__checks li { display: flex; align-items: center; gap: 10px; font-size: var(--fs-b3); color: var(--text-2); }
+.cm-help__checks .mb-status { flex: 0 0 auto; min-width: 86px; justify-content: center; }
+.cm-help__steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: var(--fs-b3); color: var(--text-2); }
+.cm-help__steps b { color: var(--text); }
 .cm-toprow .rk { font-family: var(--font-display); font-size: 16px; color: var(--text-4); width: 22px; }
 .cm-toprow .n { flex: 1; color: var(--text); font-weight: 600; }
 .cm-toprow .v { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }

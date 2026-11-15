@@ -299,9 +299,8 @@ export function App() {
             >
               {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
             </button>
-            {hasSupport(support) ? (
-              <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setHelpOpen(true)}>Aide</button>
-            ) : null}
+            {/* P1-16 (15/11/2026) : l'Aide porte aussi la liste de démarrage et les premiers pas — toujours présente. */}
+            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setHelpOpen(true)}>Aide</button>
             <i>Connecté : {accountName}</i>
             <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setAccountOpen(true)}>Mon compte</button>
             <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={logout}>Déconnexion</button>
@@ -370,7 +369,7 @@ export function App() {
         </div>
       </div>
       <Toast message={toastMsg} />
-      {helpOpen && hasSupport(support) ? <HelpModal support={support} onClose={() => setHelpOpen(false)} /> : null}
+      {helpOpen ? <HelpModal support={support} venueId={venue.id} token={token} onClose={() => setHelpOpen(false)} /> : null}
       {accountOpen ? <AccountModal accountName={accountName ?? ''} token={token} onClose={() => setAccountOpen(false)} onToast={showToast} /> : null}
     </>
   );
