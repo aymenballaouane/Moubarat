@@ -11,6 +11,7 @@ import { hhmm } from '../lib/time.js';
 import { fmt } from '../lib/format.js';
 import { Icon } from './Icon.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
+import { algiersClock, useAutoRefresh } from '../lib/autoRefresh.js';
 
 interface PlanningProps {
   role: CenterRole; venueId: string; token: string; onToast: (message: string) => void;
@@ -326,6 +327,8 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
   }
 
   const [dragField, setDragField] = useState<string | null>(null);
+  /* P1-13 (15/11/2026) : relecture discrète toutes les 30 s (lib/autoRefresh.ts) — jamais pendant une création ou un glisser. */
+  const autoAt = useAutoRefresh(async () => { if (load.kind === 'ready') await fetchDay({ silent: true }); }, sel !== null || dragField !== null);
   const dragM0 = useRef(0);
   const dragMovedRef = useRef(false);
   // dragA/dragDur : LA valeur qui compte pour onUp est celle des refs,
@@ -447,6 +450,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
         <span className="hrs" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--gold)', textTransform: 'uppercase' }}>
           {openRange ? `Ouvert ${hhmm(openStartMin)} → ${hhmm(openEndMin)}` : 'Fermé ce jour-là'}
         </span>
+        {autoAt !== null ? <span className="cm-autorefresh" title="Le planning se relit seul toutes les 30 secondes">À jour · {algiersClock(autoAt)}</span> : null}
         <span style={{ flex: 1 }} />
         <div className="grp">
           {fields.filter((f) => f.active).map((f) => (

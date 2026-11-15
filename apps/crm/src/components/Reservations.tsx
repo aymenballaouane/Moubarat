@@ -16,6 +16,7 @@ import { hhmm } from '../lib/time.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { Icon } from './Icon.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
+import { algiersClock, useAutoRefresh } from '../lib/autoRefresh.js';
 
 interface ReservationsProps {
   role: CenterRole; venueId: string; token: string; onToast: (message: string) => void;
@@ -336,9 +337,9 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
   /* Une lecture dépassée (jour changé entre-temps) est jetée : depuis la date partagée (P1-5), ouvrir l'écran sur un autre
      jour lançait deux lectures, et celle du jour courant pouvait arriver après et remplacer la bonne (vu le 15/11/2026). */
   const requestSeq = useRef(0);
-  const fetchDay = useCallback(async () => {
+  const fetchDay = useCallback(async (opts?: { silent?: boolean }) => {
     const mine = ++requestSeq.current;
-    setLoad({ kind: 'loading' });
+    if (!opts?.silent) setLoad({ kind: 'loading' });
     try {
       const res = await apiFetch<{ bookings: ApiBookingRow[]; subscriptions: ApiSubscriptionOccurrence[] }>(`/venues/${venueId}/bookings?date=${date}`, { token });
       if (mine !== requestSeq.current) return;
@@ -463,6 +464,11 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
     promoDropped: boolean;
   }
   const [modifyTarget, setModifyTarget] = useState<{ id: string; label: string } | null>(null);
+  /* P1-13 (15/11/2026) : la liste se relit seule toutes les 30 s, en silence (la fiche ouverte reste ouverte) — jamais pendant
+     une confirmation ou une modification en cours. */
+  const anyDialog = cancelTarget !== null || modifyTarget !== null || noShowTarget !== null || absentTarget !== null
+    || revertTarget !== null || revertCashTarget !== null || busyId !== null;
+  const autoAt = useAutoRefresh(async () => { if (load.kind === 'ready') await fetchDay({ silent: true }); }, anyDialog);
   const [mFieldId, setMFieldId] = useState('');
   const [mStartMin, setMStartMin] = useState(0);
   const [mDurationMin, setMDurationMin] = useState(60);
@@ -585,6 +591,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
         ) : null}
       </div>
 
+      {autoAt !== null ? <p className="cm-autorefresh" style={{ margin: '0 0 6px' }} title="La liste se relit seule toutes les 30 secondes">À jour · {algiersClock(autoAt)}</p> : null}
       <p className="cm-view-note">
         Le résumé de la journée, dans l'ordre chronologique. Cliquez sur une réservation pour ouvrir sa fiche
         complète — c'est cette liste que la clôture de caisse valide chaque soir.
