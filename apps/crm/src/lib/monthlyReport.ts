@@ -3,6 +3,7 @@
    et le mois précédent — mêmes règles (core `cashReport`, erreurs de saisie du centre exclues). Que des chiffres réels : aucun
    « no-show évité » ni gain estimé, faute de mesure. Pur, testable sans réseau. */
 import { noShowRatePct, pctChange, type BookingCounts } from './analyticsDetail.js';
+import { fmt } from './format.js';
 
 export interface CashReportApi { collected: number; engaged: number; lostCancelled: number; lostNoShow: number }
 export type SourceKey = 'MOUBARAT' | 'PHONE' | 'WALK_IN';
@@ -49,7 +50,7 @@ export interface ReportLine {
   note?: string;
 }
 
-const da = (n: number) => `${n.toLocaleString('fr-FR').replace(/ | /g, ' ')} DA`;
+const da = (n: number) => `${fmt(n)} DA`;
 const played = (c: BookingCounts) => c.honored + c.paid;
 
 /** Les lignes du rapport d'un mois, comparées au mois précédent. `occupancy` : 0..1 (route occupancy). */

@@ -11,6 +11,7 @@
 
 import { occupancyRate, bookingOriginShare, matchHealth, type MatchHealth } from '@moubarat/core';
 import { summaryFromApi, type ApiBookingRow, type ApiSubscriptionOccurrence } from './bookingsDetail.js';
+import { fmt } from './format.js';
 
 export interface DashboardKpis {
   collectedDa: number; engagedDa: number; occupancyPct: number;
@@ -36,7 +37,7 @@ export function compareKpi(key: KpiKey, today: number, lastWeek: number, refLabe
   const sign = diff > 0 ? '+' : '−';
   const abs = Math.abs(diff);
   const unit = KPI_UNIT[key];
-  const value = unit === 'da' ? `${abs.toLocaleString('fr-FR').replace(/\u202f|\u00a0/g, ' ')} DA` : unit === 'pts' ? `${abs} pt${abs > 1 ? 's' : ''}` : String(abs);
+  const value = unit === 'da' ? `${fmt(abs)} DA` : unit === 'pts' ? `${abs} pt${abs > 1 ? 's' : ''}` : String(abs);
   const better = KPI_LOWER_IS_BETTER.has(key) ? diff < 0 : diff > 0;
   return { label: `${sign}${value} vs ${refLabel}`, tone: better ? 'up-good' : 'up-bad' };
 }

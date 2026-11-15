@@ -500,7 +500,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
                   Prochain créneau : <b>{naResult.label}</b> — {naResult.fieldName} — {dayLabel(naResult.date)}
                   {naResult.format !== undefined && naResult.totalDa !== undefined ? ` — dès ${fmt(naResult.totalDa)} DA en ${naResult.format}` : ''}
                   <button
-                    type="button" className="mb-btn mb-btn--sm" style={{ marginLeft: 8 }}
+                    type="button" className="mb-btn mb-btn--sm" style={{ marginInlineStart: 8 }}
                     onClick={() => bookNextAvailability(naResult)}
                   >
                     Réserver
@@ -523,7 +523,8 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
         <p className="cm-note">Le centre est fermé ce jour-là.</p>
       ) : (
         <>
-          <div ref={scrollRef} className={`tl-wrap${zoom === 'c' ? ' compact' : ''}`}>
+          {/* P1-15 (lot A) : la frise reste de gauche à droite en arabe (choix d'Aymen) — les heures avancent comme sur un tableau d'horaires. */}
+          <div ref={scrollRef} dir="ltr" className={`tl-wrap${zoom === 'c' ? ' compact' : ''}`}>
             <div className="tl-head">
               <div className="tl-fname" style={{ border: 0 }} />
               <div className="tl-hours">

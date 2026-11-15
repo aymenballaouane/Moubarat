@@ -30,7 +30,7 @@ body.mb {
 .cm-sub-banner--danger { color: var(--danger); background: var(--danger-wash); border-color: var(--danger-line); }
 .cm-sub-banner--warn { color: var(--gold); background: var(--gold-wash); border-color: rgba(242, 183, 5, .35); }
 /* ONB-2 (27/09/2026, ReadinessBanner) : texte à gauche, action à droite — même bandeau, avec un bouton. */
-.cm-sub-banner--rich { display: flex; align-items: center; justify-content: space-between; gap: 14px; text-align: left; flex-wrap: wrap; }
+.cm-sub-banner--rich { display: flex; align-items: center; justify-content: space-between; gap: 14px; text-align: start; flex-wrap: wrap; }
 .cm-sub-banner--rich > span { flex: 1; min-width: 240px; }
 .cm-sub-banner--rich b { font-weight: 600; }
 /* ONB-1 (27/09/2026, AccountModal) : un formulaire dans la modale — champs empilés, même largeur que HelpModal. */
@@ -60,7 +60,7 @@ body.mb {
 .cm-login__sports legend { width: 100%; padding: 0; margin-bottom: 6px; }
 .cm-login__check { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-b3); color: var(--text-2); cursor: pointer; }
 .cm-login__check input { margin-top: 3px; accent-color: var(--primary); }
-.cm-login__trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.cm-login__trap { position: absolute; inset-inline-start: -10000px; width: 1px; height: 1px; overflow: hidden; }
 @media (max-width: 520px) { .cm-login__grid { grid-template-columns: 1fr; } .cm-login__card { padding: 24px 18px; } }
 
 /* Consentement CGU/confidentialité (22/09/2026, écran LegalGate) — aucun prototype gelé ne couvre cet
@@ -85,22 +85,22 @@ body.mb {
   padding: 14px 18px; border-bottom: 1px solid var(--line); background: var(--ink-2);
 }
 .cm-brand b { font-family: var(--font-display); font-size: 20px; letter-spacing: .04em; color: var(--text); text-transform: uppercase; }
-.cm-brand span { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; color: var(--text-4); text-transform: uppercase; margin-left: 8px; }
+.cm-brand span { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; color: var(--text-4); text-transform: uppercase; margin-inline-start: 8px; }
 .cm-right { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .cm-right i { font-family: var(--font-mono); font-size: 10px; color: var(--text-4); font-style: normal; text-transform: uppercase; }
 
 .cm-body { display: grid; grid-template-columns: 190px 1fr; min-height: 660px; }
-.cm-nav { border-right: 1px solid var(--line); background: var(--ink-2); padding: 12px 10px; display: flex; flex-direction: column; gap: 3px; }
+.cm-nav { border-inline-end: 1px solid var(--line); background: var(--ink-2); padding: 12px 10px; display: flex; flex-direction: column; gap: 3px; }
 .cm-nav button {
   display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: var(--r-2);
-  background: transparent; border: 1px solid transparent; color: var(--text-3); font-size: var(--fs-b3); text-align: left;
+  background: transparent; border: 1px solid transparent; color: var(--text-3); font-size: var(--fs-b3); text-align: start;
   cursor: pointer; width: 100%;
 }
 .cm-nav button:hover { color: var(--text); background: var(--ink-3); }
 .cm-nav button.on { color: var(--text); background: var(--primary-wash); border-color: var(--primary-line); }
 .cm-nav .mb-ic { width: 15px; height: 15px; }
 .cm-nav .cnt {
-  margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--r-full);
+  margin-inline-start: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--r-full);
   background: var(--gold-wash); border: 1px solid rgba(242, 183, 5, .35); color: var(--gold);
   font-family: var(--font-mono); font-size: 10px; display: grid; place-items: center;
 }
@@ -125,7 +125,7 @@ body.mb {
 .cm-kpi:hover { border-color: var(--primary-line); }
 .cm-kpi span { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); margin-bottom: 5px; }
 .cm-kpi b { font-family: var(--font-display); font-size: var(--fs-d3); color: var(--text); }
-.cm-kpi i { font-family: var(--font-mono); font-size: 10px; color: var(--text-4); font-style: normal; margin-left: 3px; }
+.cm-kpi i { font-family: var(--font-mono); font-size: 10px; color: var(--text-4); font-style: normal; margin-inline-start: 3px; }
 /* P1-8 (15/11/2026) : comparaison au même jour de la semaine passée ; no-shows en rouge (métrique négative). */
 .cm-kpi__cmp { display: block; margin-top: 4px; font-family: var(--font-mono); font-size: 10px; color: var(--text-4); }
 .cm-kpi__cmp--up-good { color: var(--success); }
@@ -136,12 +136,12 @@ body.mb {
 
 .cm-act2 {
   display: grid; grid-template-columns: 1fr auto auto; gap: 4px 14px; align-items: center;
-  padding: 11px 14px; background: var(--ink-2); border: 1px solid var(--line); border-left: 3px solid var(--line-strong);
+  padding: 11px 14px; background: var(--ink-2); border: 1px solid var(--line); border-inline-start: 3px solid var(--line-strong);
   border-radius: var(--r-3); margin-bottom: 8px; cursor: pointer;
   transition: border-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
 }
 .cm-act2:hover { border-color: var(--line-strong); transform: translateY(-1px); }
-.cm-act2.red { border-color: var(--danger-line); border-left-color: var(--danger); background: linear-gradient(180deg, var(--danger-wash), var(--ink-2)); }
+.cm-act2.red { border-color: var(--danger-line); border-inline-start-color: var(--danger); background: linear-gradient(180deg, var(--danger-wash), var(--ink-2)); }
 .cm-act2 .l1 { font-size: var(--fs-b2); font-weight: 700; color: var(--text); }
 .cm-act2 .l2 { grid-column: 1; font-size: var(--fs-b3); color: var(--text-3); line-height: 1.5; }
 .cm-act2 .big { grid-row: span 2; font-family: var(--font-display); font-size: 30px; align-self: center; }
@@ -265,7 +265,7 @@ body.mb {
 .cm-form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 4px; }
 .cm-table { width: 100%; border-collapse: collapse; font-size: var(--fs-b3); }
 .cm-table th {
-  text-align: left; padding: 8px 10px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em;
+  text-align: start; padding: 8px 10px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em;
   text-transform: uppercase; color: var(--text-4); border-bottom: 1px solid var(--line);
 }
 .cm-table td { padding: 10px; border-bottom: 1px solid var(--line); color: var(--text-2); vertical-align: middle; }
@@ -304,12 +304,12 @@ body.mb {
 
 .cm-riskrow {
   display: flex; align-items: center; gap: 10px; padding: 11px 12px; background: var(--ink-2);
-  border: 1px solid var(--line); border-left: 2px solid var(--gold); border-radius: var(--r-2); margin-bottom: 8px;
+  border: 1px solid var(--line); border-inline-start: 2px solid var(--gold); border-radius: var(--r-2); margin-bottom: 8px;
   cursor: pointer;
 }
 .cm-riskrow .t { flex: 1; }
 .cm-riskrow .t b { display: block; font-size: var(--fs-b3); font-weight: 600; color: var(--text); }
-.cm-riskrow .t b .mb-ic { width: 13px; height: 13px; vertical-align: -2px; margin-right: 5px; }
+.cm-riskrow .t b .mb-ic { width: 13px; height: 13px; vertical-align: -2px; margin-inline-end: 5px; }
 
 .cm-line { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; font-size: var(--fs-b3); color: var(--text-2); }
 .cm-line span:first-child { color: var(--text-3); }
@@ -320,7 +320,7 @@ body.mb {
 }
 
 /* --- Analytics / Financial Center ----------------------------------------- */
-.cm-delta { font-family: var(--font-mono); font-size: 10px; margin-left: 6px; }
+.cm-delta { font-family: var(--font-mono); font-size: 10px; margin-inline-start: 6px; }
 .cm-delta.up { color: var(--success); }
 .cm-delta.dn { color: var(--danger); }
 .cm-fin { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
@@ -332,7 +332,7 @@ body.mb {
 .cm-bar .track { height: 10px; background: var(--ink-3); border-radius: var(--r-full); overflow: hidden; }
 .cm-bar .fill { height: 100%; background: var(--primary); border-radius: var(--r-full); }
 .cm-bar .fill.low { background: var(--gold); }
-.cm-bar > span:last-child { font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--text-3); text-align: right; }
+.cm-bar > span:last-child { font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--text-3); text-align: end; }
 
 .cm-arow {
   display: flex; gap: 10px; align-items: baseline; padding: 9px 12px; border-bottom: 1px solid var(--line);
@@ -400,7 +400,7 @@ body.mb {
 .cm-help__checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .cm-help__checks li { display: flex; align-items: center; gap: 10px; font-size: var(--fs-b3); color: var(--text-2); }
 .cm-help__checks .mb-status { flex: 0 0 auto; min-width: 86px; justify-content: center; }
-.cm-help__steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: var(--fs-b3); color: var(--text-2); }
+.cm-help__steps { margin: 0; padding-inline-start: 20px; display: grid; gap: 8px; font-size: var(--fs-b3); color: var(--text-2); }
 .cm-help__steps b { color: var(--text); }
 .cm-toprow .rk { font-family: var(--font-display); font-size: 16px; color: var(--text-4); width: 22px; }
 .cm-toprow .n { flex: 1; color: var(--text); font-weight: 600; }
@@ -466,7 +466,7 @@ body.mb {
 .cf-fmt { margin-top: 8px; padding: 6px 12px 2px; background: var(--ink); border: 1px solid var(--line); border-radius: var(--r-2); }
 .cf-fmt__head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px 0; }
 .cf-fmt__name { font-family: var(--font-display); font-size: 15px; color: var(--text); }
-.cf-fmt__head .mb-btn { margin-left: auto; }
+.cf-fmt__head .mb-btn { margin-inline-start: auto; }
 .cf-warn { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .04em; color: var(--gold); background: rgba(242, 183, 5, .12); border: 1px solid rgba(242, 183, 5, .35); padding: 3px 8px; border-radius: var(--r-full); }
 .cf-fmt-add { margin-top: 8px; border-bottom: 0; }
 .cf-fmt-ro { flex: 1 1 110px; max-width: 172px; font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
@@ -498,9 +498,9 @@ body.mb {
 .cm-tabs button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .cm-report__title { margin: 0 0 4px; font-family: var(--font-display); font-size: var(--fs-d3); color: var(--text); text-transform: uppercase; }
 .cm-report__table td { padding: 12px 10px; }
-.cm-report__table tr.is-sub td:first-child { padding-left: 26px; color: var(--text-3); }
-.cm-report__val { text-align: right; white-space: nowrap; font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); }
-.cm-report__delta { width: 90px; text-align: right; white-space: nowrap; }
+.cm-report__table tr.is-sub td:first-child { padding-inline-start: 26px; color: var(--text-3); }
+.cm-report__val { text-align: end; white-space: nowrap; font-family: var(--font-display); font-size: var(--fs-d4); color: var(--text); }
+.cm-report__delta { width: 90px; text-align: end; white-space: nowrap; }
 .cm-report__note { display: block; margin-top: 2px; font-size: 12px; color: var(--text-4); }
 .cm-day button.nav:disabled { opacity: .35; cursor: not-allowed; }
 @media print {
@@ -509,3 +509,22 @@ body.mb {
   .cm-report__sheet { border: 0 !important; box-shadow: none !important; }
   .cm-report__sheet * { color: #000 !important; border-color: #ccc !important; }
 }
+
+/* --- CRM en arabe — lot A (P1-15, 15/11/2026) ----------------------------------------------------------------------------
+   1. Polices : l'arabe passe par IBM Plex Sans Arabic (texte) et Changa (titres), DERRIÈRE les polices du design system gelé —
+      le latin ne change pas. Le design system lui-même n'est pas modifié.
+   2. Pas d'espacement entre lettres en arabe : il casserait la liaison des lettres (libellés mono et titres en capitales).
+   3. Numéros, références, e-mails et montants saisis restent lus de gauche à droite dans une page de droite à gauche.
+   4. La frise du Planning reste de gauche à droite (choix d'Aymen) : figée par `dir="ltr"` dans Planning.tsx. */
+:root {
+  --font-body: 'Barlow', 'IBM Plex Sans Arabic', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Bebas Neue', 'Changa', 'Haettenschweiler', Impact, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'IBM Plex Sans Arabic', ui-monospace, 'SF Mono', monospace;
+}
+:root[lang="ar"] body, :root[lang="ar"] body * { letter-spacing: normal !important; }
+:root[dir="rtl"] a[href^="tel:"], :root[dir="rtl"] a[href^="mailto:"], :root[dir="rtl"] .cm-mono { unicode-bidi: isolate; direction: ltr; }
+:root[dir="rtl"] input[type="tel"], :root[dir="rtl"] input[type="email"], :root[dir="rtl"] input[type="date"],
+:root[dir="rtl"] input[type="password"], :root[dir="rtl"] input[inputmode="numeric"] { direction: ltr; text-align: end; }
+:root[dir="rtl"] .tl-wrap { direction: ltr; }
+/* Bouton de langue : la même forme que « Mode clair » ; le libellé arabe a sa propre police, sans capitales forcées. */
+.cm-lang { font-family: 'IBM Plex Sans Arabic', var(--font-body); }

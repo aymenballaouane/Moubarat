@@ -6295,3 +6295,18 @@ Choix technique pris seul et annoncé : P1-13 en relecture courte (polling 30 s)
   pas encore les séances ; annuler une seule séance (absence prévenue) n'existe pas ; les séances d'un abonnement résilié
   n'apparaissent plus dans la liste du jour (elles restent dans le CA).
 - **P1-15 — CRM en arabe** : pas commencé, chantier à part (choix d'Aymen).
+
+### CRM en arabe (P1-15) — lot A : mécanisme et mise en page RTL (15/11/2026, GO d'Aymen « Oui, lot A »)
+
+Plan en cinq lots validé par Aymen (A mécanisme et RTL, B entrée et cadre, C écrans, D messages du serveur, E contrôle et liste
+à relire). Choix d'Aymen : langue **par poste** (navigateur), frise du Planning **de gauche à droite**, traductions **provisoires**
+rédigées par Claude puis relues par un arabophone, chiffres **0-9**. Lot A : `lib/lang.ts` et `lib/i18n.ts` (même mécanisme que
+l'app joueur : clé = texte français exact, repli sur le français, avertissement en développement), `src/i18n/fr-ar.json`
+(« textes » validés / « textes_provisoires »), bouton FR / عربي dans l'en-tête et sur l'écran de connexion, `lang`/`dir` posés
+avant le premier rendu. Polices IBM Plex Sans Arabic et Changa embarquées (@fontsource, sous-ensemble arabe, `unicode-range` :
+téléchargées seulement si de l'arabe s'affiche), placées derrière les polices du design system gelé — qui n'est pas modifié.
+CSS : propriétés physiques passées en propriétés logiques ; pas d'espacement entre lettres en arabe ; téléphones, e-mails,
+références et champs numériques lus de gauche à droite ; frise figée `dir="ltr"`. Défaut trouvé en vérification et corrigé :
+en arabe « 2 850 DA » s'affichait « 850 2 » — les montants prennent une espace insécable en arabe (`fmt`), inchangés en français.
+**Reste pour le lot C** : les petites phrases mêlant texte et nombres (comparaisons du Dashboard, dates) seront traduites et
+leurs nombres isolés.

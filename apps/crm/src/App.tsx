@@ -21,6 +21,8 @@ import { Journal } from './components/Journal.js';
 import { Centre } from './components/Centre.js';
 import { Toast } from './components/Toast.js';
 import { HelpModal } from './components/HelpModal.js';
+import { LangToggle } from './components/LangToggle.js';
+import { useLang } from './lib/i18n.js';
 import { hasSupport, useSupport } from './lib/support.js';
 import { type AuditLogEntry } from './data/auditDemo.js';
 import { apiFetch, setUnauthorizedHandler } from './lib/api.js';
@@ -85,6 +87,8 @@ interface ConnectedVenue { id: string; name: string; wilaya?: string; address?: 
    centre (centerMemberships[0]) : un seul centre par compte en pratique
    aujourd'hui, aucun sélecteur nécessaire (décision Aymen 03/09/2026). */
 export function App() {
+  /* P1-15 (lot A) : changer de langue re-rend tout l'écran (textes, sens de lecture, séparateurs des montants). */
+  useLang();
   const [token, setToken] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
   /** MS-040 : le serveur ne répond pas au démarrage — la session est gardée, l'écran le dit et réessaie tout seul. */
@@ -292,6 +296,8 @@ export function App() {
             <span>{[venue.wilaya, venue.address].filter((s) => s && s.trim().length > 0).join(' · ') || '—'}</span>
           </div>
           <div className="cm-right">
+            {/* P1-15 (lot A) : FR / عربي — la langue de ce poste. */}
+            <LangToggle />
             <button
               type="button"
               className="mb-btn mb-btn--ghost mb-btn--sm"

@@ -220,7 +220,7 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
               <div className="cm-mvt" key={m.id}>
                 <b className={m.kind === 'PAYOUT' ? 'out' : ''}>{m.kind === 'PAYOUT' ? '−' : '+'} {fmt(m.amountDa)} DA</b>
                 <span>{m.ref ?? m.note ?? ''}</span>
-                <span style={{ marginLeft: 'auto' }}>{m.byUserName} · {epochLabel(m.at)}</span>
+                <span style={{ marginInlineStart: 'auto' }}>{m.byUserName} · {epochLabel(m.at)}</span>
               </div>
             )) : <p className="cm-note">Aucun mouvement pour l'instant.</p>}
           </div>

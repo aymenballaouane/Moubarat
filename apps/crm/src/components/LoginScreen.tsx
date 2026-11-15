@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api.js';
+import { LangToggle } from './LangToggle.js';
 
 interface CenterMembership { venueId: string; venueName: string; role: string }
 interface LoginResponse {
@@ -46,6 +47,8 @@ export function LoginScreen({ onLoggedIn }: LoginScreenProps) {
   return (
     <div className="cm-login">
       <form className="cm-login__card" onSubmit={submit}>
+        {/* P1-15 (lot A) : la langue se choisit dès la connexion (réglage du poste). */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}><LangToggle /></div>
         <p className="cm-login__eyebrow">— MOUBARAT</p>
         <h1 className="cm-login__title">Espace centre</h1>
         <label className="mb-field">

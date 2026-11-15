@@ -1,0 +1,8 @@
+{
+  "_lisez_moi": "Traductions arabes du CRM (P1-15, audit stratégique du CRM, 15/11/2026). Clé = texte français EXACT de l'écran. « textes » : traductions validées par un arabophone. « textes_provisoires » : rédigées par Claude (choix d'Aymen), À RELIRE par un arabophone avant la mise en ligne ; une fois relue, une entrée passe dans « textes ». Chiffres : toujours 0-9.",
+  "textes": {},
+  "textes_provisoires": {
+    "Afficher le CRM en arabe": "عرض الواجهة بالعربية",
+    "Afficher le CRM en français": "عرض الواجهة بالفرنسية"
+  }
+}

@@ -240,7 +240,7 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
                   </td>
                   <td>
                     <span className={`mb-status mb-status--${s.status === 'ACTIVE' ? 'open' : 'cancelled'}`}>{s.status === 'ACTIVE' ? 'Actif' : 'Suspendu'}</span>
-                    {s.locked ? <span className="mb-status mb-status--filling" style={{ marginLeft: 6 }}>Verrouillé</span> : null}
+                    {s.locked ? <span className="mb-status mb-status--filling" style={{ marginInlineStart: 6 }}>Verrouillé</span> : null}
                   </td>
                   <td>{lastSeenLabel(s.lastSeenAt)}</td>
                   {canManage ? (
