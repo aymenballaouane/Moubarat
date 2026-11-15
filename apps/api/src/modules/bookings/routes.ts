@@ -23,6 +23,7 @@ import { assertNotRestricted, recordAbsence } from '../absences/service.js';
 import { attachClaim } from '../claims/service.js';
 import { assertPhoneVisible, describeConflict, rowToMatchPlayer, type MatchRow } from '../matches/service.js';
 import { rowToRecurringBooking } from '../recurring-bookings/service.js';
+import { applyCashMovement, loadOpenSession, rowToCashSession } from '../cash/service.js';
 
 /* CRM Auth V1 : ce module mélange deux identités — le joueur (guards, Player)
    pour créer/annuler SA réservation, et le centre (platformGuards, plateforme)
@@ -366,7 +367,7 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
 
   /* Cycle cash côté centre : RESERVED → HONORED → PAID / NO_SHOW, ou annulation (CRM-4, 27/09/2026 :
      Réception+ — avant Manager+, GO d'Aymen). Transitions gardées par la table du core, auditées, verrouillées. */
-  app.post<{ Params: { id: string }; Body: { status?: string; reason?: string } }>('/bookings/:id/status',
+  app.post<{ Params: { id: string }; Body: { status?: string; reason?: string; recordCash?: unknown } }>('/bookings/:id/status',
     { preHandler: (req) => platformGuards.requirePlatformAuth(req) }, async (req, reply) => {
       const to = String(req.body?.status ?? '') as BookingStatus;
       if (!['HONORED', 'PAID', 'NO_SHOW', 'CANCELLED'].includes(to)) {
@@ -380,6 +381,13 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       // l'autre sens). L'UI (CRM Réservations) force déjà un choix actif,
       // sans présélection — cette validation est le filet côté serveur.
       const reason = String(req.body?.reason ?? '');
+      /* P1-11 (audit stratégique du CRM, 15/11/2026, choix d'Aymen « proposer, case cochée ») : « Payée » et la caisse étaient deux
+         gestes séparés — l'un sans l'autre faussait l'écart de caisse ou le CA. `recordCash: true` (avec « Payée » seulement)
+         écrit AUSSI l'encaissement dans la caisse ouverte du centre, dans la MÊME transaction : jamais l'un sans l'autre. Sans
+         caisse ouverte, module Caisse désactivé ou rôle sans CASH_SESSION : la réservation passe « Payée », rien n'est encaissé,
+         et la réponse le dit (`cashRecorded: false`). Verrous : la réservation, puis la session (aucune route ne prend l'inverse). */
+      if (req.body?.recordCash !== undefined && typeof req.body.recordCash !== 'boolean') throw badRequest('recordCash doit être un booléen.');
+      const recordCash = req.body?.recordCash === true && to === 'PAID';
       if (to === 'CANCELLED' && reason !== 'STAFF_ERROR' && reason !== 'CLIENT') {
         throw badRequest('Motif d’annulation requis : STAFF_ERROR ou CLIENT.', 'CANCEL_REASON_REQUIRED');
       }
@@ -431,6 +439,27 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
             await recordAbsence(trx, { userId: holder.id, kind: 'FULL', source: 'CENTER', bookingId: row.id, matchId: row.match_id, declaredBy: req.platformAuth!.accountId, now });
           }
         }
+        let cashRecorded = false;
+        if (recordCash && row.price_total_da > 0 && canCenterAct(role, 'CASH_SESSION').ok) {
+          const cashOn = await trx.selectFrom('venues').select('cash_module_enabled').where('id', '=', venue.id).executeTakeFirst();
+          const session = cashOn?.cash_module_enabled ? await loadOpenSession(trx, venue.id, { forUpdate: true }) : null;
+          if (session) {
+            const movement = applyCashMovement({
+              session: rowToCashSession(session), kind: 'COLLECTION', amountDa: row.price_total_da,
+              by: req.platformAuth!.accountId, at: now, ref: row.reference ?? row.id, note: 'Réservation payée',
+            });
+            const mv = await trx.insertInto('cash_movements').values({
+              session_id: movement.sessionId, kind: movement.kind, amount_da: movement.amountDa,
+              by_user_id: movement.byUserId, ref: movement.ref ?? null, note: movement.note ?? null,
+            }).returning('id').executeTakeFirstOrThrow();
+            await writeAudit(trx, {
+              venueId: venue.id, actorId: req.platformAuth!.accountId, actorRole: role,
+              action: 'CASH_MOVEMENT', objectType: 'cash_movement', objectId: mv.id,
+              summary: `a encaissé ${row.price_total_da} DA en caisse — réservation ${row.reference ?? row.id} payée`,
+            });
+            cashRecorded = true;
+          }
+        }
         let cascade: LinkedMatchCancelled | null = null;
         let bookerNotified = false;
         if (to === 'CANCELLED') {
@@ -448,13 +477,14 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
             ? (reason === 'STAFF_ERROR'
               ? `a annulé la réservation ${row.reference ?? row.id} (erreur de saisie du centre — ${row.price_total_da} DA, non compté en CA perdu)${cascadeSummary}`
               : `a annulé la réservation ${row.reference ?? row.id} (client — ${row.price_total_da} DA retirés du CA engagé)${cascadeSummary}`)
-            : `a passé ${row.reference ?? row.id} en « ${CASH_STATUS_LABEL[to] ?? to} » (${row.price_total_da} DA)`,
+            : `a passé ${row.reference ?? row.id} en « ${CASH_STATUS_LABEL[to] ?? to} » (${row.price_total_da} DA)${cashRecorded ? ' — encaissé en caisse' : ''}`,
           before: row.status, after: to,
         });
-        return { cascade, bookerNotified };
+        return { cascade, bookerNotified, cashRecorded };
       }));
       return reply.send({
         ok: true, status: to,
+        ...(to === 'PAID' ? { cashRecorded: outcome.cashRecorded } : {}),
         ...(to === 'CANCELLED' ? {
           matchCancelled: outcome.cascade !== null,
           matchTitle: outcome.cascade?.title ?? null,

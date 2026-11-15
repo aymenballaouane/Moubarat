@@ -275,6 +275,9 @@ body.mb {
 .cm-role-select { min-width: 150px; }
 /* P1-9 (15/11/2026) : choix exclusif en boutons (motif d'annulation) — cible tactile ≥ 44 px, sélection en rouge marque. */
 .cm-choice { display: flex; gap: 8px; flex-wrap: wrap; }
+/* P1-11 (15/11/2026) : case à cocher d'une confirmation — cible ≥ 44 px. */
+.cm-check { display: flex; align-items: center; gap: 10px; min-height: 44px; margin: 8px 0 0; color: var(--text); font-size: var(--fs-b3); cursor: pointer; }
+.cm-check input { width: 18px; height: 18px; accent-color: var(--primary); }
 .cm-choice button {
   min-height: 44px; padding: 8px 14px; border-radius: var(--r-2); background: var(--ink-2); border: 1px solid var(--line);
   color: var(--text-2); font-family: var(--font-body); font-size: var(--fs-b3); cursor: pointer;

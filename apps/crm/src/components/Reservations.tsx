@@ -30,6 +30,8 @@ interface ReservationsProps {
       agrégée (pas de fiche précise à imposer), jamais le cas pour Planning. */
   openRequest?: { date: string; bookingId: string | null; nonce: number } | null;
   onOpenPlanning: (date: string) => void;
+  /** P1-11 : module Caisse activé pour ce centre (venues.cash_module_enabled). */
+  modulesCaisse?: boolean;
 }
 
 /* Audit 09/09/2026 (K6) : l'écran ne savait qu'afficher — aucune des deux
@@ -240,9 +242,8 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
       ) : null}
       {canPay ? (
         <p className="cm-note" style={{ margin: '8px 0 0' }}>
-          Encaisser ici (mouvement de caisse) et marquer une réservation « Payée » sont deux actions séparées, sans
-          lien automatique entre elles. Pour que la caisse ET le suivi des réservations soient à jour, il faut faire
-          les deux — l'une ne déclenche jamais l'autre.
+          Avec le module Caisse, « Marquer payée » propose d’encaisser le même montant dans la caisse du jour ; sans lui,
+          « Payée » ne touche pas à la caisse.
         </p>
       ) : null}
       {canHonorOrNoShow && !outcomeOpen ? (
@@ -286,7 +287,7 @@ type ReservationListItem =
    deux écrans pour l'instant). Le résumé du jour est dérivé des mêmes
    lignes (summaryFromApi), jamais un second appel — Analytics est une
    permission différente (MANAGER+), hors de portée de cet écran. */
-export function Reservations({ role, venueId, token, onToast, day, onDayChange, openRequest, onOpenPlanning }: ReservationsProps) {
+export function Reservations({ role, venueId, token, onToast, day, onDayChange, openRequest, onOpenPlanning, modulesCaisse = false }: ReservationsProps) {
   const date = day;
   const setDate = onDayChange;
   const [openId, setOpenId] = useState<string | null>(null);
@@ -378,15 +379,33 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
     }
   }
 
-  async function setStatus(id: string, status: 'HONORED' | 'PAID' | 'NO_SHOW' | 'CANCELLED', reason?: 'STAFF_ERROR' | 'CLIENT') {
+  /* P1-11 (audit stratégique du CRM, 15/11/2026, choix d'Aymen « proposer, case cochée ») : avec le module Caisse, « Marquer
+     payée » demande s'il faut aussi encaisser le montant dans la caisse du jour — case cochée par défaut, décochable (virement,
+     paiement déjà encaissé). Le serveur écrit les deux dans la même transaction (`recordCash`) et dit ce qu'il a fait. Caisse
+     fermée : un rappel, la réservation passe quand même « Payée ». Sans module Caisse : un seul clic, comme avant. */
+  const [payTarget, setPayTarget] = useState<{ row: ReservationRow; cashOpen: boolean | null; recordCash: boolean } | null>(null);
+  async function requestPay(row: ReservationRow) {
+    if (!modulesCaisse || !canCenterAct(role, 'CASH_SESSION').ok) { void setStatus(row.id, 'PAID'); return; }
+    setPayTarget({ row, cashOpen: null, recordCash: true });
+    try {
+      const res = await apiFetch<{ session: unknown | null }>(`/venues/${venueId}/cash/sessions/current`, { token });
+      setPayTarget((t) => t && t.row.id === row.id ? { ...t, cashOpen: res.session !== null } : t);
+    } catch {
+      setPayTarget((t) => t && t.row.id === row.id ? { ...t, cashOpen: false } : t);
+    }
+  }
+
+  async function setStatus(id: string, status: 'HONORED' | 'PAID' | 'NO_SHOW' | 'CANCELLED', reason?: 'STAFF_ERROR' | 'CLIENT', recordCash?: boolean) {
     setBusyId(id);
     try {
       // BUG-1 (26/09/2026) : le serveur dit ce qu'il a réellement fait de la cascade — le toast le répète, jamais
       // une phrase générique qui affirmerait plus (ou moins) que ce qui s'est passé.
-      const res = await apiFetch<{ status: string; matchCancelled?: boolean; matchTitle?: string | null; notifiedPlayers?: number }>(
-        `/bookings/${id}/status`, { method: 'POST', token, body: { status, ...(reason ? { reason } : {}) } },
+      const res = await apiFetch<{ status: string; matchCancelled?: boolean; matchTitle?: string | null; notifiedPlayers?: number; cashRecorded?: boolean }>(
+        `/bookings/${id}/status`, { method: 'POST', token, body: { status, ...(reason ? { reason } : {}), ...(recordCash !== undefined ? { recordCash } : {}) } },
       );
-      onToast(status === 'CANCELLED' ? cancelledToast(res) : STATUS_TOAST[status]);
+      onToast(status === 'CANCELLED' ? cancelledToast(res)
+        : status === 'PAID' && recordCash ? (res.cashRecorded ? 'Réservation payée et encaissée en caisse.' : 'Réservation payée — rien n’a été encaissé : la caisse n’est pas ouverte.')
+          : STATUS_TOAST[status]);
       await fetchDay();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -467,7 +486,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
   /* P1-13 (15/11/2026) : la liste se relit seule toutes les 30 s, en silence (la fiche ouverte reste ouverte) — jamais pendant
      une confirmation ou une modification en cours. */
   const anyDialog = cancelTarget !== null || modifyTarget !== null || noShowTarget !== null || absentTarget !== null
-    || revertTarget !== null || revertCashTarget !== null || busyId !== null;
+    || revertTarget !== null || revertCashTarget !== null || busyId !== null || payTarget !== null;
   const autoAt = useAutoRefresh(async () => { if (load.kind === 'ready') await fetchDay({ silent: true }); }, anyDialog);
   const [mFieldId, setMFieldId] = useState('');
   const [mStartMin, setMStartMin] = useState(0);
@@ -715,7 +734,10 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
                     actions={{
                       canConfirmExternal, canSetCashStatus, canCancel, canModify, canRevertNoShow, busyId,
                       onVerify: (id) => { void verifyPhone(id); },
-                      onSetStatus: (id, status) => { void setStatus(id, status); },
+                      onSetStatus: (id, status) => {
+                        const r = rows.find((x) => x.id === id);
+                        if (status === 'PAID' && r) void requestPay(r); else void setStatus(id, status);
+                      },
                       onRequestNoShow: (r) => setNoShowTarget(r),
                       onRequestAbsent: (r, p) => setAbsentTarget({ row: r, userId: p.userId, name: p.name }),
                       onRequestRevertNoShow: (r) => setRevertTarget(r),
@@ -787,6 +809,35 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
         confirmLabel="Corriger le statut"
         onConfirm={() => { const r = revertCashTarget; setRevertCashTarget(null); if (r) void revertCash(r.id); }}
         onCancel={() => setRevertCashTarget(null)}
+      />
+
+      <ConfirmModal
+        open={payTarget !== null}
+        title="Marquer payée ?"
+        body={payTarget ? (
+          <>
+            <p>« {payTarget.row.name}{payTarget.row.reference ? ` · ${payTarget.row.reference}` : ''} » — {fmt(payTarget.row.amountDa)} DA.</p>
+            {payTarget.cashOpen === null ? (
+              <p className="cm-note" style={{ margin: '6px 0 0' }}>Vérification de la caisse du jour…</p>
+            ) : payTarget.cashOpen ? (
+              <label className="cm-check">
+                <input
+                  type="checkbox" checked={payTarget.recordCash}
+                  onChange={(e) => setPayTarget((t) => t && { ...t, recordCash: e.target.checked })}
+                />
+                <span>Encaisser aussi {fmt(payTarget.row.amountDa)} DA dans la caisse du jour</span>
+              </label>
+            ) : (
+              <p className="cm-note" style={{ margin: '6px 0 0' }}>
+                La caisse du jour n’est pas ouverte : rien ne sera encaissé. Pensez à saisir cet encaissement dans Caisse.
+              </p>
+            )}
+          </>
+        ) : null}
+        confirmLabel="Marquer payée"
+        confirmDisabled={payTarget?.cashOpen === null}
+        onConfirm={() => { const t = payTarget; setPayTarget(null); if (t) void setStatus(t.row.id, 'PAID', undefined, t.cashOpen === true && t.recordCash); }}
+        onCancel={() => setPayTarget(null)}
       />
 
       <ConfirmModal

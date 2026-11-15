@@ -87,3 +87,62 @@ describe('P1-8 — réservations passées non clôturées (Dashboard)', () => {
     expect((await stack.app.inject({ method: 'GET', url: `/venues/${seed.venueId}/bookings/unclosed` })).statusCode).toBe(401);
   });
 });
+
+describe('P1-11 — « Payée » et la caisse dans le même geste', () => {
+  /** Un créneau plus tard dans le jour d'exploitation en cours (« Payée » s'y ouvre déjà, P0-1). */
+  async function laterTodayBooking(): Promise<{ id: string; reference: string }> {
+    const { operatingDayWindow, dayStartMs } = await import('../src/lib/algiers.js');
+    const end = operatingDayWindow(dayStartMs(operatingDateOf(Date.now()))).end;
+    const start = Math.min(Date.now() + 10 * MIN, end - 2 * MIN);
+    const id = await booking(start, 'RESERVED');
+    const r = await stack.db.selectFrom('bookings').select('reference').where('id', '=', id).executeTakeFirstOrThrow();
+    return { id, reference: r.reference! };
+  }
+  const movementsFor = (ref: string) => stack.db.selectFrom('cash_movements').select(['kind', 'amount_da', 'ref', 'note']).where('ref', '=', ref).execute();
+  let sessionId = '';
+
+  beforeAll(async () => {
+    await stack.db.updateTable('venues').set({ cash_module_enabled: true }).where('id', '=', seed.venueId).execute();
+    const open = await call('POST', `/venues/${seed.venueId}/cash/sessions`, nadia, { openingFloatDa: 5000 });
+    expect(open.statusCode, open.body).toBeLessThan(300);
+    sessionId = (open.json() as { session: { id: string } }).session.id;
+  });
+
+  it('caisse ouverte, case cochée : la réservation passe « Payée » ET l’encaissement est écrit (même montant, sa référence), tracé', async () => {
+    const b = await laterTodayBooking();
+    const res = await call('POST', `/bookings/${b.id}/status`, nadia, { status: 'PAID', recordCash: true });
+    expect([res.statusCode, (res.json() as { cashRecorded: boolean }).cashRecorded], res.body).toEqual([200, true]);
+    expect(await movementsFor(b.reference)).toEqual([{ kind: 'COLLECTION', amount_da: 3000, ref: b.reference, note: 'Réservation payée' }]);
+    const logs = (await stack.db.selectFrom('audit_log').select(['action', 'summary']).where('venue_id', '=', seed.venueId)
+      .where('summary', 'like', `%${b.reference}%`).execute()).map((l) => `${l.action}:${l.summary}`);
+    expect(logs).toContain(`CASH_MOVEMENT:a encaissé 3000 DA en caisse — réservation ${b.reference} payée`);
+    expect(logs.some((l) => l.startsWith('BOOKING_CASH_STATUS:') && l.endsWith('— encaissé en caisse'))).toBe(true);
+    const current = await call('GET', `/venues/${seed.venueId}/cash/sessions/current`, nadia);
+    expect((current.json() as { expectedDa: number }).expectedDa).toBeGreaterThanOrEqual(8000);
+  });
+
+  it('case décochée (paiement par virement…) : « Payée » seulement, rien en caisse', async () => {
+    const b = await laterTodayBooking();
+    const res = await call('POST', `/bookings/${b.id}/status`, nadia, { status: 'PAID', recordCash: false });
+    expect([res.statusCode, (res.json() as { cashRecorded: boolean }).cashRecorded]).toEqual([200, false]);
+    expect(await movementsFor(b.reference)).toEqual([]);
+  });
+
+  it('recordCash ignoré pour un autre statut, refusé s’il n’est pas un booléen', async () => {
+    const b = await laterTodayBooking();
+    expect((await call('POST', `/bookings/${b.id}/status`, nadia, { status: 'PAID', recordCash: 'oui' })).statusCode).toBe(400);
+    const cancel = await call('POST', `/bookings/${b.id}/status`, nadia, { status: 'CANCELLED', reason: 'CLIENT', recordCash: true });
+    expect(cancel.statusCode, cancel.body).toBe(200);
+    expect(await movementsFor(b.reference)).toEqual([]);
+  });
+
+  it('caisse fermée : la réservation passe quand même « Payée », sans encaissement, et la réponse le dit', async () => {
+    const close = await call('POST', `/venues/${seed.venueId}/cash/sessions/${sessionId}/close`, nadia, { declaredClosingDa: 8000 });
+    expect(close.statusCode, close.body).toBeLessThan(300);
+    const b = await laterTodayBooking();
+    const res = await call('POST', `/bookings/${b.id}/status`, nadia, { status: 'PAID', recordCash: true });
+    expect([res.statusCode, (res.json() as { cashRecorded: boolean }).cashRecorded]).toEqual([200, false]);
+    expect((await stack.db.selectFrom('bookings').select('status').where('id', '=', b.id).executeTakeFirstOrThrow()).status).toBe('PAID');
+    expect(await movementsFor(b.reference)).toEqual([]);
+  });
+});

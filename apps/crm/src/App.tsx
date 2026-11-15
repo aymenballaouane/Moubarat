@@ -337,7 +337,7 @@ export function App() {
             ) : view === 'resa' ? (
               <Reservations
                 role={role} venueId={venue.id} token={token} onToast={showToast} day={day} onDayChange={setDay}
-                openRequest={resaOpen} onOpenPlanning={openInPlanning}
+                openRequest={resaOpen} onOpenPlanning={openInPlanning} modulesCaisse={modulesCaisse}
               />
             ) : view === 'subs' ? (
               <Abonnements role={role} venueId={venue.id} token={token} onToast={showToast} />
