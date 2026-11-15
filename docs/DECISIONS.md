@@ -6266,3 +6266,32 @@ par P0-2. Un commit par point, chacun vérifié en direct sur le centre de démo
 - **P1-16 — Démarrage** : le bouton Aide est toujours là ; il montre la liste de démarrage (points « prêt à publier » lus sur
   `GET /venues/:id/readiness`) et six premiers pas. **Reste ouvert** : « mot de passe oublié » du personnel, en attente de la clé
   Resend d'Aymen. **Non fait** : régénération du board visuel (`pnpm ui:board`, réinitialise les données de démo locales).
+
+### Audit stratégique du CRM — P1 de la V1.5 (15/11/2026, GO d'Aymen « go pour les P1 de la V1.5 »)
+
+Choix d'Aymen du même jour : abonnés « prix par séance » ; caisse « proposer, case cochée » ; rapport « écran imprimable » ;
+CRM en arabe « après les 5 autres » (chantier à part, pas commencé). P1-12 : architecture « couche séances » (GO sur plan).
+Choix technique pris seul et annoncé : P1-13 en relecture courte (polling 30 s), pas de canal temps réel.
+
+- **P1-8 — Dashboard** : `GET /venues/:id/bookings/unclosed` (VIEW_PLANNING) — réservations des 30 derniers jours au créneau
+  fini restées « Réservée » ou « Honorée » sans paiement, et séances d'abonnés passées sans statut ; alertes en tête du
+  Dashboard, un clic ouvre la plus ancienne à son jour. Indicateurs comparés au même jour de la semaine passée (`compareKpi`) ;
+  no-shows en rouge. Corrigé au passage : avec la date partagée (P1-5), une lecture dépassée pouvait écraser la bonne
+  (Dashboard, Planning, Réservations) — jetée désormais. Démo : au-delà de deux jours, une « Honorée » est presque toujours
+  payée (avant : 188 alertes irréalistes) — au prochain `pnpm demo:seed`.
+- **P1-13 — Mise à jour automatique** : Planning et liste des réservations se relisent en silence toutes les 30 s
+  (`lib/autoRefresh.ts`), onglet visible seulement, jamais pendant une saisie ; « À jour · HH:MM ».
+- **P1-11 — Caisse** : `POST /bookings/:id/status` accepte `recordCash` ; « Payée » et l'encaissement dans la caisse ouverte
+  sont écrits dans la même transaction (`modules/cash/collect.ts`, partagé avec les séances). CRM : confirmation avec la case
+  « Encaisser aussi … » cochée ; caisse fermée : rappel.
+- **P1-17 — Rapport du mois** : onglet d'Analytics composé des routes existantes (`lib/monthlyReport.ts`) — encaissé, part de
+  l'app, réservations jouées, remplissage, no-shows et pertes, reste à encaisser, comparé au mois précédent ; imprimable.
+  Que des chiffres réels. **Non vérifié** : le rendu d'impression lui-même (fenêtre d'impression du navigateur).
+- **P1-12 — Abonnés payants** : migration 0046 (additive) — prix par séance sur l'abonnement, table `recurring_occurrences`
+  (statut d'une séance quand il est posé, prix figé). Une séance se marque comme une réservation (mêmes règles du core),
+  avec encaissement en caisse et correction par un Manager. Les séances avec prix entrent dans le CA (`/analytics/revenue`,
+  `/trends`, source comptoir), le résumé du jour, le Dashboard, les non clôturées ; une séance payée compte même après
+  résiliation. Le schéma gelé et le moteur de disponibilité ne changent pas. **Hors périmètre** : l'export Excel ne contient
+  pas encore les séances ; annuler une seule séance (absence prévenue) n'existe pas ; les séances d'un abonnement résilié
+  n'apparaissent plus dans la liste du jour (elles restent dans le CA).
+- **P1-15 — CRM en arabe** : pas commencé, chantier à part (choix d'Aymen).
