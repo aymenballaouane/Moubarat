@@ -347,11 +347,10 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
   /* 16/09/2026 (demande d'Aymen) — le tarif de base est PAR FORMAT
      (field_format_prices) : `PATCH /fields/:id/formats/:format`, EDIT_PRICING,
      même patron optimiste + rollback. */
-  async function commitFormatPrice(id: string, format: MatchFormat, raw: string) {
+  async function commitFormatPrice(id: string, format: MatchFormat, v: number) {
     const f = data?.fields.find((x) => x.id === id);
     const p = f?.formatPrices.find((x) => x.format === format);
     if (!f || !p) return;
-    const v = Math.max(0, Math.round(Number(raw) || 0));
     if (v === p.hourlyRateDa) return;
     const previous = f.formatPrices;
     const withPrice = (prices: FieldRow['formatPrices'], value: number) => prices.map((x) => (x.format === format ? { ...x, hourlyRateDa: value } : x));
@@ -402,6 +401,59 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
   }
 
   const [removeFormatTarget, setRemoveFormatTarget] = useState<{ fieldId: string; fieldName: string; format: MatchFormat } | null>(null);
+
+  /* P1-3 (audit stratégique du CRM, 15/11/2026, choix d'Aymen « Enregistrer + confirmation ») : un tarif s'enregistrait dès
+     qu'on quittait le champ, sans rien demander — une faute de frappe changeait le prix de toutes les nouvelles réservations.
+     Le champ est maintenant un brouillon ; « Enregistrer » n'apparaît que s'il diffère du tarif enregistré, et une fenêtre
+     montre l'ancien et le nouveau prix avant d'écrire. Les réservations déjà prises gardent leur prix (inchangé côté serveur). */
+  const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
+  const [pendingPrice, setPendingPrice] = useState<{
+    key: string; label: string; from: number; to: number; save: () => Promise<void>;
+  } | null>(null);
+  const draftOf = (key: string, saved: number) => priceDrafts[key] ?? String(saved);
+  const setDraft = (key: string, value: string) => setPriceDrafts((m) => ({ ...m, [key]: value }));
+  const clearDraft = (key: string) => setPriceDrafts((m) => { const next = { ...m }; delete next[key]; return next; });
+  /** Un tarif saisi valide : un entier de DA strictement positif, sinon `null`. */
+  const parseRate = (raw: string): number | null => (/^\s*\d+\s*$/.test(raw) && Number(raw) > 0 ? Number(raw) : null);
+  function requestPrice(key: string, label: string, from: number, save: (v: number) => Promise<void>) {
+    const to = parseRate(draftOf(key, from));
+    if (to === null || to === from) return;
+    setPendingPrice({ key, label, from, to, save: () => save(to) });
+  }
+  async function confirmPrice() {
+    const p = pendingPrice;
+    if (!p) return;
+    setPendingPrice(null);
+    await p.save();
+    clearDraft(p.key);
+  }
+
+  /** Le champ d'un tarif, avec « Enregistrer » / « Annuler » dès qu'il diffère du tarif enregistré. */
+  function PriceInput({ priceKey, saved, ariaLabel, label, save }: {
+    priceKey: string; saved: number; ariaLabel: string; label: string; save: (v: number) => Promise<void>;
+  }) {
+    const draft = draftOf(priceKey, saved);
+    const dirty = draft.trim() !== String(saved);
+    const valid = parseRate(draft) !== null;
+    return (
+      <>
+        <input
+          className="mb-field__control" value={draft} style={{ maxWidth: 100 }} inputMode="numeric" aria-label={ariaLabel}
+          aria-invalid={dirty && !valid} disabled={lockedPricing}
+          onChange={(e) => setDraft(priceKey, e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); requestPrice(priceKey, label, saved, save); } if (e.key === 'Escape') clearDraft(priceKey); }}
+        />
+        <span className="cm-note">DA / h</span>
+        {dirty ? (
+          <span className="cm-actions-row">
+            <button type="button" className="mb-btn mb-btn--sm" disabled={!valid} onClick={() => requestPrice(priceKey, label, saved, save)}>Enregistrer</button>
+            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => clearDraft(priceKey)}>Annuler</button>
+            {!valid ? <span className="mb-field__error" role="alert">Un montant entier en DA, supérieur à 0.</span> : null}
+          </span>
+        ) : null}
+      </>
+    );
+  }
   async function confirmRemoveFormat() {
     const t = removeFormatTarget;
     setRemoveFormatTarget(null);
@@ -418,11 +470,10 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
     }
   }
 
-  async function commitRuleRate(id: string, ruleId: string, raw: string) {
+  async function commitRuleRate(id: string, ruleId: string, v: number) {
     const f = data?.fields.find((x) => x.id === id);
     const r = f?.rules.find((x) => x.id === ruleId);
     if (!f || !r) return;
-    const v = Math.max(0, Math.round(Number(raw) || 0));
     if (v === r.rateDaPerHour) return;
     const previousRules = f.rules;
     setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === id ? { ...x, rules: x.rules.map((y) => (y.id === ruleId ? { ...y, rateDaPerHour: v } : y)) } : x)) }));
@@ -794,23 +845,23 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
                         <div className="cf-row">
                           <span className="fn" style={{ minWidth: 150 }}>Prix de base</span>
                           <span className="cm-note" style={{ flex: 1 }}>Toutes heures sans règle</span>
-                          <input
-                            key={`base-${f.id}-${p.format}-${p.hourlyRateDa}`} className="mb-field__control" defaultValue={p.hourlyRateDa} style={{ maxWidth: 100 }}
-                            aria-label={`Prix de base ${formatLabel(p.format)} ${f.name}`}
-                            disabled={lockedPricing} onBlur={(e) => { void commitFormatPrice(f.id, p.format, e.target.value); }}
-                          />
-                          <span className="cm-note">DA / h</span>
+                          {PriceInput({
+                            priceKey: `base:${f.id}:${p.format}`, saved: p.hourlyRateDa,
+                            ariaLabel: `Prix de base ${formatLabel(p.format)} ${f.name}`,
+                            label: `Prix de base ${formatLabel(p.format)} — ${f.name}`,
+                            save: (v) => commitFormatPrice(f.id, p.format, v),
+                          })}
                         </div>
                         {f.rules.filter((r) => r.format === p.format).map((r) => (
                           <div className="cf-row" key={r.id}>
                             <span className="fn" style={{ minWidth: 150 }}>{r.label}</span>
                             <span className="cm-note" style={{ flex: 1 }}>{ruleScopeNote(r.weekdays, DAY_NAMES)} · {hhmm(r.startMin)} → {hhmm(r.endMin)}</span>
-                            <input
-                              key={`rule-${r.id}-${r.rateDaPerHour}`} className="mb-field__control" defaultValue={r.rateDaPerHour} style={{ maxWidth: 100 }}
-                              aria-label={`${r.label} ${formatLabel(p.format)} ${f.name}`}
-                              disabled={lockedPricing} onBlur={(e) => { void commitRuleRate(f.id, r.id, e.target.value); }}
-                            />
-                            <span className="cm-note">DA / h</span>
+                            {PriceInput({
+                              priceKey: `rule:${r.id}`, saved: r.rateDaPerHour,
+                              ariaLabel: `${r.label} ${formatLabel(p.format)} ${f.name}`,
+                              label: `« ${r.label} » ${formatLabel(p.format)} — ${f.name}`,
+                              save: (v) => commitRuleRate(f.id, r.id, v),
+                            })}
                           </div>
                         ))}
                       </div>
@@ -954,6 +1005,22 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
           </div>
         </>
       ) : null}
+
+      <ConfirmModal
+        open={pendingPrice !== null}
+        title="Changer ce tarif ?"
+        body={pendingPrice ? (
+          <>
+            <p>{pendingPrice.label} : <b>{pendingPrice.from.toLocaleString('fr-FR')} → {pendingPrice.to.toLocaleString('fr-FR')} DA / h</b>.</p>
+            <p className="cm-note" style={{ margin: '6px 0 0' }}>
+              Le nouveau tarif s’applique aux réservations créées à partir de maintenant. Les réservations déjà prises gardent leur prix.
+            </p>
+          </>
+        ) : null}
+        confirmLabel="Enregistrer le tarif"
+        onConfirm={() => { void confirmPrice(); }}
+        onCancel={() => setPendingPrice(null)}
+      />
 
       <ConfirmModal
         open={removeFormatTarget !== null}
