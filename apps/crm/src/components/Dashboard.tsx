@@ -186,7 +186,7 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
         ...healthActions.map((a): RenderedAction => ({
           id: `health-${a.matchId}`, bookingId: a.bookingId,
           severity: a.health.band === 'RISQUE_ELEVE' ? 'danger' : 'warning',
-          title: `${a.title} — ${a.field} · ${ltr(hhmm(a.startMin))}`,
+          title: `${bidi(a.title)} — ${a.field} · ${ltr(hhmm(a.startMin))}`,
           big: { kind: 'value', label: `${a.health.score} %`, tone: a.health.band === 'RISQUE_ELEVE' ? 'r' : 'o' },
           detail: a.health.penalties.map((p) => healthPenaltyText(p.label, t)).join(' · ')
             + (a.partial ? ` · ${t('Score partiel — fiabilité capitaine non disponible pour votre rôle.')}` : ''),
@@ -213,7 +213,7 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
       setActions(nextActions);
 
       setUpcoming(upcomingFromApi(rows, dayStart, now).map((u) => ({
-        id: u.bookingId, time: hhmm(u.startMin), title: u.title,
+        id: u.bookingId, time: hhmm(u.startMin), title: bidi(u.title),
         ...(u.playersLabel ? { playersLabel: u.playersLabel } : {}),
         field: u.field, amountDa: u.amountDa,
       })));

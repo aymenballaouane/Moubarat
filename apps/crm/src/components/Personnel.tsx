@@ -111,13 +111,13 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
     try {
       if (pending.kind === 'remove') {
         await apiFetch(`/venues/${venueId}/staff/${pending.member.accountId}`, { method: 'DELETE', token });
-        onToast(t('{nom} retiré de l’équipe.', { nom: pending.member.name }));
+        onToast(t('{nom} retiré de l’équipe.', { nom: bidi(pending.member.name) }));
       } else if (pending.kind === 'reset') {
         const res = await apiFetch<{ temporaryPassword: string }>(`/venues/${venueId}/staff/${pending.member.accountId}/reset-password`, { method: 'POST', token });
         setCreds({ email: pending.member.email, password: res.temporaryPassword, kind: 'reset' });
       } else {
         await apiFetch(`/venues/${venueId}/staff/${pending.member.accountId}`, { method: 'PATCH', token, body: { role: pending.newRole } });
-        onToast(t('Rôle de {nom} : {role}.', { nom: pending.member.name, role: roleName(pending.newRole) }));
+        onToast(t('Rôle de {nom} : {role}.', { nom: bidi(pending.member.name), role: roleName(pending.newRole) }));
       }
       setPending(null);
       load();
@@ -132,7 +132,7 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
     setBusy(true); setRowError(null);
     try {
       await apiFetch(`/venues/${venueId}/staff/${member.accountId}/unlock`, { method: 'POST', token });
-      onToast(t('{nom} déverrouillé — mot de passe inchangé.', { nom: member.name }));
+      onToast(t('{nom} déverrouillé — mot de passe inchangé.', { nom: bidi(member.name) }));
       load();
     } catch (err) {
       setRowError(err instanceof ApiError ? err.message : t('Déverrouillage impossible.'));
@@ -150,12 +150,12 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
   const modalBody = pending ? (
     <>
       {pending.kind === 'remove' ? (
-        <p>{t('{nom} n’aura plus accès au CRM de ce centre. Son compte reste utilisable pour tout autre centre auquel il serait rattaché.', { nom: pending.member.name })}</p>
+        <p>{t('{nom} n’aura plus accès au CRM de ce centre. Son compte reste utilisable pour tout autre centre auquel il serait rattaché.', { nom: bidi(pending.member.name) })}</p>
       ) : pending.kind === 'reset' ? (
-        <p>{t('Un nouveau mot de passe sera généré pour {nom}. Ses sessions ouvertes seront coupées.', { nom: pending.member.name })}</p>
+        <p>{t('Un nouveau mot de passe sera généré pour {nom}. Ses sessions ouvertes seront coupées.', { nom: bidi(pending.member.name) })}</p>
       ) : (
         <>
-          <p>{t('{nom} passe de {avant} à {apres}.', { nom: pending.member.name, avant: roleName(pending.member.role), apres: roleName(pending.newRole) })}</p>
+          <p>{t('{nom} passe de {avant} à {apres}.', { nom: bidi(pending.member.name), avant: roleName(pending.member.role), apres: roleName(pending.newRole) })}</p>
           <p className="cm-note" style={{ margin: '6px 0 0' }}>{roleName(pending.newRole)} : {t(ROLE_DESCRIPTIONS[pending.newRole])}</p>
         </>
       )}

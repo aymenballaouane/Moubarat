@@ -522,6 +522,11 @@ body.mb {
   --font-mono: 'IBM Plex Mono', 'IBM Plex Sans Arabic', ui-monospace, 'SF Mono', monospace;
 }
 :root[lang="ar"] body, :root[lang="ar"] body * { letter-spacing: normal !important; }
+/* P1-15 (lot E) : en arabe, les petites étiquettes « mono » prenaient l'espace de IBM Plex Mono (une chasse fixe, très large)
+   entre des mots arabes — « حجوزات   اليوم ». Leur pile passe à l'arabe puis à Barlow (espace normale) ; les DONNÉES en
+   mono (références, téléphones, montants : .cm-mono) gardent IBM Plex Mono. Le français ne change pas. */
+:root[lang="ar"] { --font-mono: 'IBM Plex Sans Arabic', 'Barlow', 'Inter', system-ui, sans-serif; }
+:root[lang="ar"] .cm-mono { font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; }
 :root[dir="rtl"] a[href^="tel:"], :root[dir="rtl"] a[href^="mailto:"], :root[dir="rtl"] .cm-mono { unicode-bidi: isolate; direction: ltr; }
 :root[dir="rtl"] input[type="tel"], :root[dir="rtl"] input[type="email"], :root[dir="rtl"] input[type="date"],
 :root[dir="rtl"] input[type="password"], :root[dir="rtl"] input[inputmode="numeric"] { direction: ltr; text-align: end; }

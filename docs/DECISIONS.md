@@ -6341,3 +6341,15 @@ leurs nombres isolés.
   d'abord », « Annulez la réservation… », « Choisissez au moins un jour »). Un seul utilitaire `errorText(e)` remplace les
   55 « e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE » des écrans (le message générique, lui, n'était pas traduit à
   l'écran). Limite connue : un message déjà affiché reste dans la langue où il est arrivé jusqu'à la prochaine action.
+- **Lot E (16/11/2026, GO d'Aymen « Oui, lot E »)** : contrôle final et liste à relire. `docs/traductions-crm-a-relire.md`
+  (921 textes : 707 des écrans, 182 messages du serveur, 32 morceaux insérés), rangés par écran, avec en tête 16 choix de
+  vocabulaire à trancher d'abord (statuts, « séance », « comptoir »…) et une colonne « Correction » ; régénéré par
+  `pnpm --filter @moubarat/crm traductions:relire` (une traduction relue, passée dans « textes », en sort). Deux garde-fous de
+  plus : aucune traduction orpheline (texte disparu du code ou du serveur), et toutes les clés passées par variable dans une
+  seule liste (`tests/i18n-via-variable.json`). Corrigé en contrôle : les petites étiquettes « mono » avaient en arabe l'espace
+  de IBM Plex Mono, très large, entre les mots — leur pile passe à l'arabe puis Barlow en arabe seulement, les données
+  (`.cm-mono` : références, téléphones) restent en mono ; les noms des cartes « heures à venir » du Dashboard et des messages
+  de Personnel sont isolés comme les autres (`bidi`). Vérifié en direct : dix écrans en arabe sans nom mal isolé ni erreur,
+  mode clair, écran de connexion. **Reste hors code** : la relecture par un arabophone (le document est prêt à être envoyé) ;
+  le board visuel (`pnpm ui:board`) n'a pas été relancé sur les lots A à E (il régénère les données de démo — à faire avec
+  l'accord d'Aymen).

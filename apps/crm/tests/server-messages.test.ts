@@ -13,6 +13,11 @@ describe('messages du serveur', () => {
     expect(missing).toEqual([]);
   });
 
+  it('aucune traduction orpheline (message disparu ou reformulé côté serveur : retirer ou mettre à jour sa traduction)', () => {
+    const keys = serverMessageKeys();
+    expect(Object.keys(DICT).filter((k) => !keys.has(k))).toEqual([]);
+  });
+
   it('aucune traduction vide', () => {
     for (const [fr, ar] of Object.entries({ ...DICT, ...D.fragments })) expect(ar.trim(), fr).not.toBe('');
   });
