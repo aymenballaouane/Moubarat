@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CONFIDENCE_LABELS, type ReliabilityV1 } from '@moubarat/core';
 import { apiFetch, ApiError } from '../lib/api.js';
-import { fmt } from '../lib/format.js';
+import { da } from '../lib/format.js';
 import { hhmm } from '../lib/time.js';
 import { dateLabelLong, historyRowsFromApi, type ApiClientBookingHistoryRow, type HistoryRow } from '../lib/searchDetail.js';
 import { Pill } from './StatusPill.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
+import { ltr, useT, bidi } from '../lib/i18n.js';
 
 interface ClientsProps {
   venueId: string; token: string;
@@ -32,41 +33,44 @@ const BAND_PILL: Record<NonNullable<ReliabilityV1['band']>, { variant: string; l
 
 const SOURCE_LABEL: Record<HistoryRow['source'], string> = { MOUBARAT: 'App Moubarat', PHONE: 'Téléphone', WALK_IN: 'Comptoir' };
 
-function pluriel(n: number, singular: string, plural: string): string {
-  return `${n} ${n > 1 ? plural : singular}`;
+/** P1-15 (lot C) : même règle qu'avant (« 0 résa », « 1 résa », « 2 résas ») — `one`/`many` sont déjà traduits. */
+function pluriel(n: number, one: string, many: string): string {
+  return n > 1 ? many : one;
 }
 
 function ClientCard({ c, open, onOpen }: { c: ApiClient; open: boolean; onOpen: () => void }) {
+  const t = useT();
   const rel = c.reliability;
   const pill = rel.visible && rel.band ? BAND_PILL[rel.band] : null;
+  const honored = c.honored + c.paid;
 
   return (
     <div
       className={`cm-card cm-card--pick${open ? ' is-open' : ''}`}
       role="button" tabIndex={0} aria-expanded={open}
-      title={open ? 'Fermer l’historique' : 'Voir l’historique des réservations'}
+      title={open ? t('Fermer l’historique') : t('Voir l’historique des réservations')}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <b style={{ color: 'var(--text)' }}>{c.name}</b>
-        {pill ? <span className={`mb-status mb-status--${pill.variant}`}>{pill.label}</span> : <span className="mb-status mb-status--open">Nouveau</span>}
+        <b style={{ color: 'var(--text)' }}>{bidi(c.name)}</b>
+        {pill ? <span className={`mb-status mb-status--${pill.variant}`}>{t(pill.label)}</span> : <span className="mb-status mb-status--open">{t('Nouveau')}</span>}
       </div>
       {c.phone || c.kind === 'COUNTER' ? (
         <div className="cm-note" style={{ margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {c.phone ? <a href={`tel:${c.phone.replace(/\s/g, '')}`} style={{ color: 'var(--gold)' }} onClick={(e) => e.stopPropagation()}>{c.phone}</a> : null}
-          {c.kind === 'COUNTER' ? <span className="cm-src" title="Sans compte Moubarat : ses réservations au comptoir et par téléphone, regroupées par numéro">Comptoir · téléphone</span> : null}
+          {c.kind === 'COUNTER' ? <span className="cm-src" title={t('Sans compte Moubarat : ses réservations au comptoir et par téléphone, regroupées par numéro')}>{t('Comptoir · téléphone')}</span> : null}
         </div>
       ) : null}
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--text)' }}>
         {rel.visible ? rel.score : '—'}{' '}
         <i style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-4)', fontStyle: 'normal' }}>
-          / 100 · {rel.visible && rel.confidence ? CONFIDENCE_LABELS[rel.confidence] : ''}
+          / 100 · {rel.visible && rel.confidence ? t(CONFIDENCE_LABELS[rel.confidence]) : ''}
         </i>
       </div>
       <div className="cm-note">
-        {pluriel(c.bookingsCount, 'résa', 'résas')} · {pluriel(c.honored + c.paid, 'honorée', 'honorées')} ·{' '}
-        {pluriel(c.cancelledEarly, 'annulée tôt', 'annulées tôt')} · {pluriel(c.cancelledLate, 'tardive', 'tardives')} · {c.noShow} no-show
+        {pluriel(c.bookingsCount, t('{n} résa', { n: c.bookingsCount }), t('{n} résas', { n: c.bookingsCount }))} · {pluriel(honored, t('{n} honorée', { n: honored }), t('{n} honorées', { n: honored }))} ·{' '}
+        {pluriel(c.cancelledEarly, t('{n} annulée tôt', { n: c.cancelledEarly }), t('{n} annulées tôt', { n: c.cancelledEarly }))} · {pluriel(c.cancelledLate, t('{n} tardive', { n: c.cancelledLate }), t('{n} tardives', { n: c.cancelledLate }))} · {t('{n} no-show', { n: c.noShow })}
       </div>
     </div>
   );
@@ -91,6 +95,7 @@ type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { ki
    même route, `q`), et une carte cliquée ouvre l'historique réel des réservations du client sur ce centre
    (GET /venues/:id/clients/:userId/bookings, paginé), chaque ligne menant à sa fiche dans Réservations. */
 export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
+  const t = useT();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [clients, setClients] = useState<ApiClient[]>([]);
@@ -107,8 +112,8 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
      accents ni casse, 300 ms après la dernière frappe), et « Top clients » a sa propre lecture triée par dépense
      (`sort=spent&limit=5`) : il ne dépend plus de la liste affichée, qui n'est plus complète. */
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timer);
   }, [search]);
 
   const clientsUrl = (extra: string) => `/venues/${venueId}/clients?limit=50${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ''}${extra}`;
@@ -217,16 +222,14 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
   return (
     <section className="cm-view on">
       <p className="cm-view-note">
-        Les clients qui ont réservé sur ce centre : joueurs de l'app Moubarat, et clients du comptoir ou du téléphone
-        (regroupés par numéro — une réservation saisie sans numéro n'y figure pas). Fiabilité calculée sur leur historique
-        réel. Cliquez sur une carte pour voir ses réservations.
+        {t('Les clients qui ont réservé sur ce centre : joueurs de l\'app Moubarat, et clients du comptoir ou du téléphone (regroupés par numéro — une réservation saisie sans numéro n\'y figure pas). Fiabilité calculée sur leur historique réel. Cliquez sur une carte pour voir ses réservations.')}
       </p>
 
       <div className="cm-form">
         <input
           className="mb-field__control cm-search"
-          placeholder="Rechercher un client (nom ou téléphone)…"
-          aria-label="Rechercher un client par nom ou téléphone"
+          placeholder={t('Rechercher un client (nom ou téléphone)…')}
+          aria-label={t('Rechercher un client par nom ou téléphone')}
           style={{ margin: 0 }}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -236,15 +239,15 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
       {load.kind === 'error' ? (
         <div className="cm-card cf-sec">
           <p className="cf-state">{load.message}</p>
-          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchClients(); }}>Réessayer</button>
+          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchClients(); }}>{t('Réessayer')}</button>
         </div>
       ) : load.kind === 'loading' ? (
-        <div className="cm-card cf-sec"><p className="cf-state">Chargement des clients…</p></div>
+        <div className="cm-card cf-sec"><p className="cf-state">{t('Chargement des clients…')}</p></div>
       ) : (
         <>
-          <p className="cm-sec">Fiabilité pondérée + confiance — visible du centre uniquement</p>
+          <p className="cm-sec">{t('Fiabilité pondérée + confiance — visible du centre uniquement')}</p>
           {filtered.length === 0 ? (
-            <p className="cm-note">Aucun client.</p>
+            <p className="cm-note">{t('Aucun client.')}</p>
           ) : (
             <div className="cm-clients">
               {filtered.map((c) => (
@@ -259,26 +262,26 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
           {openClient ? (
             <div className="cm-card" style={{ marginTop: 14 }} aria-live="polite">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <p className="cm-sec" style={{ margin: 0 }}>Historique — {openClient.name}</p>
-                <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setOpenClient(null)}>Fermer</button>
+                <p className="cm-sec" style={{ margin: 0 }}>{t('Historique — {name}', { name: openClient.name })}</p>
+                <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setOpenClient(null)}>{t('Fermer')}</button>
               </div>
               {historyLoad.kind === 'loading' || (historyLoad.kind === 'ready' && historyOf !== openClient.clientKey) ? (
-                <p className="cf-state">Chargement de l'historique…</p>
+                <p className="cf-state">{t('Chargement de l\'historique…')}</p>
               ) : historyLoad.kind === 'error' ? (
                 <p className="cf-state" role="alert">{historyLoad.message}</p>
               ) : history.length === 0 ? (
-                <p className="cm-note" style={{ margin: 0 }}>Aucune réservation sur ce centre.</p>
+                <p className="cm-note" style={{ margin: 0 }}>{t('Aucune réservation sur ce centre.')}</p>
               ) : history.map((h) => (
                 <div
-                  key={h.id} className="cm-riskrow" role="button" tabIndex={0} title="Ouvrir dans Réservations"
+                  key={h.id} className="cm-riskrow" role="button" tabIndex={0} title={t('Ouvrir dans Réservations')}
                   onClick={() => onOpenReservation(h.id, h.date)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenReservation(h.id, h.date); } }}
                 >
                   <span className="t">
-                    <b>{dateLabelLong(h.date)} · {hhmm(h.startMin)} → {hhmm(h.startMin + h.durationMin)}</b>
+                    <b>{dateLabelLong(h.date)} · {ltr(`${hhmm(h.startMin)} → ${hhmm(h.startMin + h.durationMin)}`)}</b>
                     <span className="cm-note" style={{ margin: '2px 0 0' }}>
-                      {h.field}{h.reference ? ` · ${h.reference}` : ''} · {SOURCE_LABEL[h.source]} · {fmt(h.amountDa)} DA
-                      {h.cancelReason === 'STAFF_ERROR' ? ' · erreur de saisie du centre (hors score)' : ''}
+                      {h.field}{h.reference ? ` · ${ltr(h.reference)}` : ''} · {t(SOURCE_LABEL[h.source])} · {da(h.amountDa)}
+                      {h.cancelReason === 'STAFF_ERROR' ? ` · ${t('erreur de saisie du centre (hors score)')}` : ''}
                     </span>
                   </span>
                   <Pill status={h.status} />
@@ -287,7 +290,7 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
               {historyCursor !== null ? (
                 <div className="cm-more" style={{ margin: '8px 0 0' }}>
                   <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={historyMore.loading} onClick={() => { void loadMoreHistory(); }}>
-                    {historyMore.loading ? 'Chargement…' : 'Afficher plus'}
+                    {historyMore.loading ? t('Chargement…') : t('Afficher plus')}
                   </button>
                   {historyMore.error ? <p className="cf-state" role="alert">{historyMore.error}</p> : null}
                 </div>
@@ -298,7 +301,7 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
           {nextCursor !== null ? (
             <div className="cm-more">
               <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={loadingMore} onClick={() => { void loadMore(); }}>
-                {loadingMore ? 'Chargement…' : 'Afficher plus'}
+                {loadingMore ? t('Chargement…') : t('Afficher plus')}
               </button>
               {moreError ? <p className="cf-state" role="alert">{moreError}</p> : null}
             </div>
@@ -306,12 +309,12 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
 
           {topClients.length > 0 ? (
             <div className="cm-card" style={{ marginTop: 14 }}>
-              <p className="cm-sec">Top clients — dépense totale</p>
-              {topClients.map((t, i) => (
-                <div className="cm-toprow" key={t.clientKey}>
+              <p className="cm-sec">{t('Top clients — dépense totale')}</p>
+              {topClients.map((c, i) => (
+                <div className="cm-toprow" key={c.clientKey}>
                   <span className="rk">{i + 1}</span>
-                  <span className="n">{t.name}</span>
-                  <span className="v">{fmt(t.totalSpentDa)} DA</span>
+                  <span className="n">{bidi(c.name)}</span>
+                  <span className="v">{da(c.totalSpentDa)}</span>
                 </div>
               ))}
             </div>

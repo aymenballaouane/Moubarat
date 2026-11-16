@@ -5,7 +5,8 @@ import {
 } from '../lib/analyticsDetail.js';
 import { asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
 import { apiFetch, apiDownload, ApiError } from '../lib/api.js';
-import { fmt } from '../lib/format.js';
+import { da, fmt } from '../lib/format.js';
+import { useT } from '../lib/i18n.js';
 import { Icon } from './Icon.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { MonthlyReport } from './MonthlyReport.js';
@@ -69,6 +70,7 @@ function Delta({ pct, bad, neutral }: { pct: number | null; bad?: boolean; neutr
 type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'ready' };
 
 export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
+  const t = useT();
   /* P1-17 (15/11/2026) : deux onglets — la vue d'ensemble (inchangée) et le rapport du mois imprimable. */
   const [tab, setTab] = useState<'overview' | 'month'>('overview');
   const today = todayAlgiers();
@@ -91,7 +93,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
   const runExport = useCallback(async () => {
     setExportError(null);
     if (exportRangeTooLong(exportFrom, exportTo)) {
-      setExportError('La plage ne peut pas dépasser 12 mois.');
+      setExportError(t('La plage ne peut pas dépasser 12 mois.'));
       return;
     }
     setExportBusy(true);
@@ -109,7 +111,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
     } finally {
       setExportBusy(false);
     }
-  }, [venueId, token, exportFrom, exportTo]);
+  }, [venueId, token, exportFrom, exportTo, t]);
 
   const fetchOverview = useCallback(async () => {
     setOverviewLoad({ kind: 'loading' });
@@ -165,9 +167,9 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
   const trendMax = overview ? Math.max(1, ...overview.trend.map((t) => t.collectedDa)) : 1;
 
   const tabs = (
-    <div className="cm-tabs cm-noprint" role="tablist" aria-label="Analytics">
-      <button type="button" role="tab" aria-selected={tab === 'overview'} className={tab === 'overview' ? 'on' : ''} onClick={() => setTab('overview')}>Vue d’ensemble</button>
-      <button type="button" role="tab" aria-selected={tab === 'month'} className={tab === 'month' ? 'on' : ''} onClick={() => setTab('month')}>Rapport du mois</button>
+    <div className="cm-tabs cm-noprint" role="tablist" aria-label={t('Analytics')}>
+      <button type="button" role="tab" aria-selected={tab === 'overview'} className={tab === 'overview' ? 'on' : ''} onClick={() => setTab('overview')}>{t('Vue d’ensemble')}</button>
+      <button type="button" role="tab" aria-selected={tab === 'month'} className={tab === 'month' ? 'on' : ''} onClick={() => setTab('month')}>{t('Rapport du mois')}</button>
     </div>
   );
   if (tab === 'month') {
@@ -183,38 +185,38 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
     <section className="cm-view on">
       {tabs}
       <div className="cm-day">
-        <button className="nav" type="button" aria-label="Jour précédent" onClick={() => setDay((d) => shiftDate(d, -1))}>‹</button>
+        <button className="nav" type="button" aria-label={t('Jour précédent')} onClick={() => setDay((d) => shiftDate(d, -1))}>‹</button>
         <b>{dayLabel(day)}</b>
-        <button className="nav" type="button" aria-label="Jour suivant" onClick={() => setDay((d) => shiftDate(d, 1))}>›</button>
+        <button className="nav" type="button" aria-label={t('Jour suivant')} onClick={() => setDay((d) => shiftDate(d, 1))}>›</button>
       </div>
 
       {overviewLoad.kind === 'error' ? (
         <div className="cm-card cf-sec">
           <p className="cf-state">{overviewLoad.message}</p>
-          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchOverview(); }}>Réessayer</button>
+          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchOverview(); }}>{t('Réessayer')}</button>
         </div>
       ) : overviewLoad.kind === 'loading' || !overview ? (
-        <div className="cm-card cf-sec"><p className="cf-state">Chargement des statistiques…</p></div>
+        <div className="cm-card cf-sec"><p className="cf-state">{t('Chargement des statistiques…')}</p></div>
       ) : (
         <>
-          <p className="cm-sec">Chiffre d'affaires — 7 derniers jours comparés aux 7 précédents · 30 jours comparés aux 30 précédents</p>
+          <p className="cm-sec">{t('Chiffre d\'affaires — 7 derniers jours comparés aux 7 précédents · 30 jours comparés aux 30 précédents')}</p>
           <div className="cm-fin">
             <div className="cm-kpi">
-              <span>CA encaissé · aujourd’hui</span><b>{fmt(overview.today.collected)}</b><i>DA</i>
+              <span>{t('CA encaissé · aujourd’hui')}</span><b>{fmt(overview.today.collected)}</b><i>{t('DA')}</i>
             </div>
             <div className="cm-kpi">
-              <span>CA · 7 jours (hebdo)</span><b>{fmt(overview.curr7.overall.collected)}</b><i>DA</i>
+              <span>{t('CA · 7 jours (hebdo)')}</span><b>{fmt(overview.curr7.overall.collected)}</b><i>{t('DA')}</i>
               <Delta pct={pctChange(overview.curr7.overall.collected, overview.prev7.overall.collected)} />
             </div>
             <div className="cm-kpi">
-              <span>CA · 30 jours (mensuel)</span><b>{fmt(overview.curr30.collected)}</b><i>DA</i>
+              <span>{t('CA · 30 jours (mensuel)')}</span><b>{fmt(overview.curr30.collected)}</b><i>{t('DA')}</i>
               <Delta pct={pctChange(overview.curr30.collected, overview.prev30.collected)} />
             </div>
             <div className="cm-kpi">
-              <span>CA perdu annulations · 7 j</span><b>{fmt(overview.curr7.overall.lostCancelled)}</b><i>DA</i>
+              <span>{t('CA perdu annulations · 7 j')}</span><b>{fmt(overview.curr7.overall.lostCancelled)}</b><i>{t('DA')}</i>
             </div>
             <div className="cm-kpi">
-              <span>CA perdu no-shows · 7 j</span><b>{fmt(overview.curr7.overall.lostNoShow)}</b><i>DA</i>
+              <span>{t('CA perdu no-shows · 7 j')}</span><b>{fmt(overview.curr7.overall.lostNoShow)}</b><i>{t('DA')}</i>
               <Delta pct={pctChange(overview.curr7.overall.lostNoShow, overview.prev7.overall.lostNoShow)} bad />
             </div>
             {(() => {
@@ -225,14 +227,14 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
               return (
                 <>
                   <div className="cm-kpi">
-                    <span>Taux de no-show · 7 j</span><b>{noShowRate ?? '—'}</b><i>%</i>
+                    <span>{t('Taux de no-show · 7 j')}</span><b>{noShowRate ?? '—'}</b><i>%</i>
                     {noShowRate !== null ? <Delta pct={pctChange(noShowRate, noShowRatePrev ?? 0)} bad /> : null}
                   </div>
                   <div className="cm-kpi">
-                    <span>Taux de remplissage · 7 j</span><b>{Math.round(overview.occ7.overall * 100)}</b><i>%</i>
+                    <span>{t('Taux de remplissage · 7 j')}</span><b>{Math.round(overview.occ7.overall * 100)}</b><i>%</i>
                   </div>
                   <div className="cm-kpi">
-                    <span>Panier moyen · 7 j</span><b>{fmt(panier ?? 0)}</b><i>DA</i>
+                    <span>{t('Panier moyen · 7 j')}</span><b>{fmt(panier ?? 0)}</b><i>{t('DA')}</i>
                     {panier !== null ? <Delta pct={pctChange(panier, panierPrev ?? 0)} /> : null}
                   </div>
                 </>
@@ -240,24 +242,24 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
             })()}
           </div>
 
-          <p className="cm-sec">Tendance — CA encaissé · 14 derniers jours</p>
+          <p className="cm-sec">{t('Tendance — CA encaissé · 14 derniers jours')}</p>
           <div className="cm-trend">
-            {overview.trend.map((t) => (
+            {overview.trend.map((p) => (
               <b
-                key={t.date}
-                className={t.date === today ? 'today' : ''}
-                style={{ height: `${Math.max(4, Math.round((t.collectedDa / trendMax) * 100))}%` }}
-                data-v={`${dayLabel(t.date)} · ${fmt(t.collectedDa)} DA`}
+                key={p.date}
+                className={p.date === today ? 'today' : ''}
+                style={{ height: `${Math.max(4, Math.round((p.collectedDa / trendMax) * 100))}%` }}
+                data-v={`${dayLabel(p.date)} · ${da(p.collectedDa)}`}
               />
             ))}
           </div>
 
-          <p className="cm-sec">Remplissage par terrain — {dayLabel(day).toLowerCase()}, sur les heures réelles</p>
+          <p className="cm-sec">{t('Remplissage par terrain — {jour}, sur les heures réelles', { jour: dayLabel(day).toLowerCase() })}</p>
           <div className="cm-bars">
             {dayOccLoad.kind === 'error' ? (
               <p className="cm-note">{dayOccLoad.message}</p>
             ) : dayOccLoad.kind === 'loading' || !dayOcc ? (
-              <p className="cm-note">Chargement…</p>
+              <p className="cm-note">{t('Chargement…')}</p>
             ) : overview.fields.map((f) => {
               const pct = Math.round((dayOcc.byField[f.id] ?? 0) * 100);
               return (
@@ -272,7 +274,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
             })}
           </div>
 
-          <p className="cm-sec">CA par terrain — 7 derniers jours</p>
+          <p className="cm-sec">{t('CA par terrain — 7 derniers jours')}</p>
           <div>
             {overview.fields.map((f) => {
               const cash = overview.curr7.byField[f.id] ?? ZERO_CASH;
@@ -282,14 +284,14 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
               return (
                 <div className="cm-arow" key={f.id}>
                   <b style={{ fontFamily: 'var(--font-display)', fontSize: 15 }}>{f.name}</b>
-                  <span>CA <b>{fmt(cash.collected)} DA</b></span>
-                  <span>Occupation <b>{occPct} %</b></span>
-                  <span>Revenu / h d'ouverture <b>{fmt(perHour ?? 0)} DA/h</b></span>
-                  <span>No-shows <b>{counts7.noShow}</b></span>
+                  <span>{t('CA')} <b>{da(cash.collected)}</b></span>
+                  <span>{t('Occupation')} <b>{occPct} %</b></span>
+                  <span>{t('Revenu / h d\'ouverture')} <b>{t('{montant} DA/h', { montant: fmt(perHour ?? 0) })}</b></span>
+                  <span>{t('No-shows')} <b>{counts7.noShow}</b></span>
                   {occPct < 30 ? (
                     <span className="cm-insight" data-ins={f.name}>
                       <Icon id="i-bulb" />
-                      Sous-performe — créer une promotion ?
+                      {t('Sous-performe — créer une promotion ?')}
                     </span>
                   ) : null}
                 </div>
@@ -297,7 +299,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
             })}
           </div>
 
-          <p className="cm-sec" style={{ marginTop: 14 }}>Origine des réservations — 7 derniers jours</p>
+          <p className="cm-sec" style={{ marginTop: 14 }}>{t('Origine des réservations — 7 derniers jours')}</p>
           <div className="cm-bars">
             {[
               { label: 'Moubarat', pct: overview.origin7.moubaratPct, low: false },
@@ -305,7 +307,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
               { label: 'Comptoir', pct: overview.origin7.walkInPct, low: true },
             ].map((o) => (
               <div className="cm-bar" key={o.label}>
-                <span style={{ fontSize: 12 }}>{o.label}</span>
+                <span style={{ fontSize: 12 }}>{t(o.label)}</span>
                 <span className="track">
                   <span className={`fill${o.low ? ' low' : ''}`} style={{ width: `${o.pct}%` }} />
                 </span>
@@ -314,19 +316,19 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
             ))}
           </div>
 
-          <p className="cm-sec" style={{ marginTop: 14 }}>Export — preuve fiscale et sauvegarde manuelle</p>
+          <p className="cm-sec" style={{ marginTop: 14 }}>{t('Export — preuve fiscale et sauvegarde manuelle')}</p>
           <div className="cm-card">
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <label className="mb-field">
-                <span className="mb-field__label">Du</span>
+                <span className="mb-field__label">{t('Du')}</span>
                 <input type="date" className="mb-field__control" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} />
               </label>
               <label className="mb-field">
-                <span className="mb-field__label">Au</span>
+                <span className="mb-field__label">{t('Au')}</span>
                 <input type="date" className="mb-field__control" value={exportTo} onChange={(e) => setExportTo(e.target.value)} />
               </label>
               <button type="button" className="mb-btn mb-btn--sm" disabled={exportBusy} onClick={() => { void runExport(); }}>
-                {exportBusy ? 'Export…' : 'Télécharger (.xlsx)'}
+                {exportBusy ? t('Export…') : t('Télécharger (.xlsx)')}
               </button>
             </div>
             {exportError ? <p className="cm-note" style={{ color: 'var(--danger)' }}>{exportError}</p> : null}

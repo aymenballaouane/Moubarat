@@ -7,10 +7,11 @@ import {
 import { hoursFromApi, asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
 import {
   dashboardKpisFromApi, matchHealthActionsFromApi, phoneToVerifyActionsFromApi,
-  honoredUnpaidCount, upcomingFromApi, compareKpi, type DashboardKpis, type KpiComparison, type KpiKey,
+  honoredUnpaidCount, upcomingFromApi, compareKpi, healthPenaltyText, type DashboardKpis, type KpiComparison, type KpiKey,
 } from '../lib/dashboardDetail.js';
 import { apiFetch, ApiError } from '../lib/api.js';
-import { fmt } from '../lib/format.js';
+import { fmt, da } from '../lib/format.js';
+import { ltr, useLang, useT, bidi } from '../lib/i18n.js';
 import { hhmm } from '../lib/time.js';
 import { Icon } from './Icon.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
@@ -75,12 +76,19 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
   const [upcoming, setUpcoming] = useState<{ id: string; time: string; title: string; playersLabel?: string; field: string; amountDa: number }[]>([]);
 
   const hasViewClients = canCenterAct(role, 'VIEW_CLIENTS').ok;
+  /* P1-15 (lot C) : les textes des alertes sont fabriqués au chargement — la langue entre dans les dépendances de la lecture
+     (changer de langue relit l'écran), `t` passe par une référence (useT rend une nouvelle fonction à chaque rendu). */
+  const t = useT();
+  const lang = useLang();
+  const tRef = useRef(t);
+  tRef.current = t;
 
   /* Une lecture dépassée (jour changé entre-temps) est jetée : depuis la date partagée (P1-5), ouvrir l'écran sur un autre
      jour lançait deux lectures, et celle du jour courant pouvait arriver après et remplacer la bonne (vu le 15/11/2026). */
   const requestSeq = useRef(0);
   const fetchDashboard = useCallback(async () => {
     const mine = ++requestSeq.current;
+    const t = tRef.current;
     setLoad({ kind: 'loading' });
     try {
       const lastWeekDay = shiftDate(day, -7);
@@ -95,14 +103,14 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
       const subs = bookingsRes.subscriptions;
       const activeFieldCount = venueRes.venue.fields.filter((f) => asFieldStatus(f.status) === 'ACTIVE').length;
       const range = hoursFromApi(venueRes.venue.openingHours)[weekdayOf(day)] ?? null;
-      setHoursLabel(range ? `Ouvert ${hhmm(range[0])} → ${hhmm(range[1])}` : 'Fermé ce jour-là');
+      setHoursLabel(range ? t('Ouvert {plage}', { plage: ltr(`${hhmm(range[0])} → ${hhmm(range[1])}`) }) : t('Fermé ce jour-là'));
       const todayKpis = dashboardKpisFromApi(rows, subs, range ? range[1] - range[0] : 0, activeFieldCount);
       setKpis(todayKpis);
       // P1-8 : même jour de la semaine passée (mêmes horaires d'ouverture, par construction).
       if (lastWeekRes) {
         const lw = dashboardKpisFromApi(lastWeekRes.bookings, lastWeekRes.subscriptions, range ? range[1] - range[0] : 0, activeFieldCount);
         const ref = dayLabel(lastWeekDay).toLowerCase();
-        setCmp(Object.fromEntries((Object.keys(todayKpis) as KpiKey[]).map((k) => [k, compareKpi(k, todayKpis[k], lw[k], ref)])));
+        setCmp(Object.fromEntries((Object.keys(todayKpis) as KpiKey[]).map((k) => [k, compareKpi(k, todayKpis[k], lw[k], ref, t)])));
       } else setCmp({});
 
       const dayStart = dayStartMs(day);
@@ -138,10 +146,14 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
         const n = unclosedRes.reserved;
         unclosedActions.push({
           id: 'unclosed', bookingId: oldest.id, openDate: oldest.date, severity: 'danger',
-          title: `${n} ${n > 1 ? 'réservations passées non clôturées' : 'réservation passée non clôturée'} (${unclosedRes.lookbackDays} derniers jours)`,
+          title: n > 1
+            ? t('{n} réservations passées non clôturées ({jours} derniers jours)', { n, jours: unclosedRes.lookbackDays })
+            : t('{n} réservation passée non clôturée ({jours} derniers jours)', { n, jours: unclosedRes.lookbackDays }),
           big: { kind: 'value', label: String(n), tone: 'r' },
-          detail: `La plus ancienne : ${dayLabel(oldest.date)} · ${oldest.name ?? '—'}${oldest.reference ? ` · ${oldest.reference}` : ''} · ${oldest.fieldName}. Marquez chaque réservation Honorée, Payée ou No-show : sinon le chiffre d’affaires et les no-shows sont faux.`,
-          cta: 'Ouvrir',
+          detail: t('La plus ancienne : {quoi}. Marquez chaque réservation Honorée, Payée ou No-show : sinon le chiffre d’affaires et les no-shows sont faux.', {
+            quoi: `${dayLabel(oldest.date)} · ${bidi(oldest.name ?? '—')}${oldest.reference ? ` · ${ltr(oldest.reference)}` : ''} · ${oldest.fieldName}`,
+          }),
+          cta: t('Ouvrir'),
         });
       }
       if (unclosedRes && unclosedRes.honoredUnpaid > 0) {
@@ -149,9 +161,13 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
         const n = unclosedRes.honoredUnpaid;
         unclosedActions.push({
           id: 'unclosed-unpaid', ...(oldest ? { bookingId: oldest.id, openDate: oldest.date } : {}), severity: 'warning',
-          title: `${n} ${n > 1 ? 'réservations passées honorées, jamais encaissées' : 'réservation passée honorée, jamais encaissée'}`,
+          title: n > 1 ? t('{n} réservations passées honorées, jamais encaissées', { n }) : t('{n} réservation passée honorée, jamais encaissée', { n }),
           big: { kind: 'value', label: String(n), tone: 'o' },
-          detail: oldest ? `La plus ancienne : ${dayLabel(oldest.date)} · ${oldest.name ?? '—'}${oldest.reference ? ` · ${oldest.reference}` : ''}. À marquer « Payée » si le client a réglé.` : 'À marquer « Payée » si le client a réglé.',
+          detail: oldest
+            ? t('La plus ancienne : {quoi}. À marquer « Payée » si le client a réglé.', {
+              quoi: `${dayLabel(oldest.date)} · ${bidi(oldest.name ?? '—')}${oldest.reference ? ` · ${ltr(oldest.reference)}` : ''}`,
+            })
+            : t('À marquer « Payée » si le client a réglé.'),
         });
       }
 
@@ -160,9 +176,9 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
         const n = unclosedRes.sessionsReserved!;
         unclosedActions.push({
           id: 'unclosed-sessions', openDate: first.date, severity: 'warning',
-          title: `${n} ${n > 1 ? 'séances d’abonnés passées non clôturées' : 'séance d’abonné passée non clôturée'}`,
+          title: n > 1 ? t('{n} séances d’abonnés passées non clôturées', { n }) : t('{n} séance d’abonné passée non clôturée', { n }),
           big: { kind: 'value', label: String(n), tone: 'o' },
-          detail: `La plus ancienne : ${dayLabel(first.date)} · ${first.holderName} · ${first.fieldName}. Marquez-la Payée, Honorée ou No-show dans Réservations.`,
+          detail: t('La plus ancienne : {quoi}. Marquez-la Payée, Honorée ou No-show dans Réservations.', { quoi: `${dayLabel(first.date)} · ${bidi(first.holderName)} · ${first.fieldName}` }),
         });
       }
 
@@ -171,25 +187,27 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
         ...healthActions.map((a): RenderedAction => ({
           id: `health-${a.matchId}`, bookingId: a.bookingId,
           severity: a.health.band === 'RISQUE_ELEVE' ? 'danger' : 'warning',
-          title: `${a.title} — ${a.field} · ${hhmm(a.startMin)}`,
+          title: `${a.title} — ${a.field} · ${ltr(hhmm(a.startMin))}`,
           big: { kind: 'value', label: `${a.health.score} %`, tone: a.health.band === 'RISQUE_ELEVE' ? 'r' : 'o' },
-          detail: a.health.penalties.map((p) => p.label).join(' · ')
-            + (a.partial ? ' · Score partiel — fiabilité capitaine non disponible pour votre rôle.' : ''),
-          cta: 'Contacter',
+          detail: a.health.penalties.map((p) => healthPenaltyText(p.label, t)).join(' · ')
+            + (a.partial ? ` · ${t('Score partiel — fiabilité capitaine non disponible pour votre rôle.')}` : ''),
+          cta: t('Contacter'),
         })),
         ...phoneActions.map((a): RenderedAction => ({
           id: `phone-${a.bookingId}`, bookingId: a.bookingId,
           severity: 'ok',
-          title: `Téléphone à vérifier — ${a.label} · ${a.field} · ${hhmm(a.startMin)}`,
-          big: { kind: 'status', label: 'En attente', variant: 'filling' },
-          detail: 'Le créneau est bloqué en attendant votre confirmation — cliquez pour ouvrir.',
+          title: t('Téléphone à vérifier — {quoi}', { quoi: `${bidi(a.label)} · ${a.field} · ${ltr(hhmm(a.startMin))}` }),
+          big: { kind: 'status', label: t('En attente'), variant: 'filling' },
+          detail: t('Le créneau est bloqué en attendant votre confirmation — cliquez pour ouvrir.'),
         })),
         ...(honoredCount > 0 ? [{
           id: 'unpaid',
           severity: 'ok' as const,
-          title: `${honoredCount} ${honoredCount > 1 ? 'réservations honorées non encaissées' : 'réservation honorée non encaissée'}`,
+          title: honoredCount > 1
+            ? t('{n} réservations honorées non encaissées', { n: honoredCount })
+            : t('{n} réservation honorée non encaissée', { n: honoredCount }),
           big: { kind: 'value' as const, label: String(honoredCount), tone: 'o' as const },
-          detail: 'À encaisser avant la clôture de caisse.',
+          detail: t('À encaisser avant la clôture de caisse.'),
         }] : []),
       ];
       if (mine !== requestSeq.current) return;   // les fiabilités des organisateurs ont pu arriver après un changement de jour
@@ -207,18 +225,18 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
       if (mine !== requestSeq.current) return;
       setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
     }
-  }, [venueId, token, day, hasViewClients]);
+  }, [venueId, token, day, hasViewClients, lang]);
 
   useEffect(() => { void fetchDashboard(); }, [fetchDashboard]);
 
   return (
     <section className="cm-view on">
       <div className="cm-day">
-        <button className="nav" type="button" aria-label="Jour précédent" onClick={() => setDay((d) => shiftDate(d, -1))}>
+        <button className="nav" type="button" aria-label={t('Jour précédent')} onClick={() => setDay((d) => shiftDate(d, -1))}>
           <Icon id="i-back" />
         </button>
         <b>{dayLabel(day)}</b>
-        <button className="nav" type="button" aria-label="Jour suivant" onClick={() => setDay((d) => shiftDate(d, 1))}>
+        <button className="nav" type="button" aria-label={t('Jour suivant')} onClick={() => setDay((d) => shiftDate(d, 1))}>
           <Icon id="i-arrow" />
         </button>
         <span className="hrs">{hoursLabel}</span>
@@ -227,26 +245,26 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
       {load.kind === 'error' ? (
         <div className="cm-card cf-sec">
           <p className="cf-state">{load.message}</p>
-          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchDashboard(); }}>Réessayer</button>
+          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchDashboard(); }}>{t('Réessayer')}</button>
         </div>
       ) : load.kind === 'loading' || !kpis ? (
-        <div className="cm-card cf-sec"><p className="cf-state">Chargement du tableau de bord…</p></div>
+        <div className="cm-card cf-sec"><p className="cf-state">{t('Chargement du tableau de bord…')}</p></div>
       ) : (
         <>
           <div className="cm-kpis">
-            <div className="cm-kpi"><span>Encaissé</span><b>{fmt(kpis.collectedDa)}</b><i>DA</i><Cmp c={cmp.collectedDa} /></div>
-            <div className="cm-kpi"><span>Engagé</span><b>{fmt(kpis.engagedDa)}</b><i>DA</i><Cmp c={cmp.engagedDa} /></div>
-            <div className="cm-kpi"><span title="Sur les heures d'ouverture réelles">Remplissage &middot; réel</span><b>{kpis.occupancyPct}</b><i>%</i><Cmp c={cmp.occupancyPct} /></div>
-            <div className="cm-kpi"><span>Réservations</span><b>{kpis.bookingsCount}</b><Cmp c={cmp.bookingsCount} /></div>
-            <div className="cm-kpi"><span>Part Moubarat</span><b>{kpis.moubaratSharePct}</b><i>%</i><Cmp c={cmp.moubaratSharePct} /></div>
+            <div className="cm-kpi"><span>{t('Encaissé')}</span><b>{fmt(kpis.collectedDa)}</b><i>{t('DA')}</i><Cmp c={cmp.collectedDa} /></div>
+            <div className="cm-kpi"><span>{t('Engagé')}</span><b>{fmt(kpis.engagedDa)}</b><i>{t('DA')}</i><Cmp c={cmp.engagedDa} /></div>
+            <div className="cm-kpi"><span title={t('Sur les heures d\'ouverture réelles')}>{t('Remplissage · réel')}</span><b>{kpis.occupancyPct}</b><i>%</i><Cmp c={cmp.occupancyPct} /></div>
+            <div className="cm-kpi"><span>{t('Réservations')}</span><b>{kpis.bookingsCount}</b><Cmp c={cmp.bookingsCount} /></div>
+            <div className="cm-kpi"><span>{t('Part Moubarat')}</span><b>{kpis.moubaratSharePct}</b><i>%</i><Cmp c={cmp.moubaratSharePct} /></div>
             {/* P1-8 : des no-shows, c'est de l'argent perdu — en rouge dès le premier (métrique négative). */}
-            <div className={`cm-kpi${kpis.noShows > 0 ? ' cm-kpi--bad' : ''}`}><span>No-shows</span><b>{kpis.noShows}</b><Cmp c={cmp.noShows} /></div>
+            <div className={`cm-kpi${kpis.noShows > 0 ? ' cm-kpi--bad' : ''}`}><span>{t('No-shows')}</span><b>{kpis.noShows}</b><Cmp c={cmp.noShows} /></div>
           </div>
 
-          <p className="cm-sec">À faire / à surveiller — chaque ligne est cliquable et dit pourquoi</p>
+          <p className="cm-sec">{t('À faire / à surveiller — chaque ligne est cliquable et dit pourquoi')}</p>
           <div>
             {actions.length === 0 ? (
-              <p className="cm-note">Rien à surveiller — journée saine.</p>
+              <p className="cm-note">{t('Rien à surveiller — journée saine.')}</p>
             ) : (
               actions.map((a) => (
                 <div
@@ -272,11 +290,11 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
             )}
           </div>
 
-          <p className="cm-sec" style={{ marginTop: 18 }}>Prochaines heures</p>
+          <p className="cm-sec" style={{ marginTop: 18 }}>{t('Prochaines heures')}</p>
           <div className="cm-next">
             {upcoming.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', cursor: 'default' }}>
-                <span>Plus rien au planning — journée terminée ou libre.</span>
+                <span>{t('Plus rien au planning — journée terminée ou libre.')}</span>
               </div>
             ) : (
               upcoming.map((u) => (
@@ -284,7 +302,7 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenReservation(u.id, day); }}>
                   <b>{u.time}</b>
                   <span>{u.title}{u.playersLabel ? ` · ${u.playersLabel}` : ''}</span>
-                  <i>{u.field} &middot; {fmt(u.amountDa)} DA</i>
+                  <i>{u.field} &middot; {da(u.amountDa)}</i>
                 </div>
               ))
             )}

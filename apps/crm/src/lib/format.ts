@@ -18,3 +18,8 @@ export function fmt(n: number): string {
   }
   return out;
 }
+
+/** P1-15 (lot C) : un montant avec sa devise — « 2 850 DA » en français (inchangé), « 2 850 دج » en arabe. */
+export function da(n: number): string {
+  return `${fmt(n)} ${getLang() === 'ar' ? 'دج' : 'DA'}`;
+}

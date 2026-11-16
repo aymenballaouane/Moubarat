@@ -6,6 +6,7 @@
    Fonctions sans DOM ni réseau, testées isolément (tests/venueDetail.test.ts). */
 
 import { formatLabel, SPORT_FORMATS, SPORT_LABELS, type MatchFormat, type Sport } from '@moubarat/core';
+import type { TFn } from './i18n.js';
 
 /* --- Forme servie par l'API ------------------------------------------- */
 
@@ -46,9 +47,10 @@ export const SPORT_VALUES: readonly Sport[] = ['FOOTBALL', 'PADEL', 'BASKET'];
    pour ne casser aucun des appelants existants de ce module. */
 export { formatLabel, SPORT_LABELS };
 
-/** « Simple · Double » — plusieurs formats sur un même terrain. */
-export function formatsLabel(formats: readonly string[]): string {
-  return formats.length > 0 ? formats.map(formatLabel).join(' · ') : '—';
+/** « Simple · Double » — plusieurs formats sur un même terrain. P1-15 (lot C) : `t` traduit les libellés à l'affichage
+    (« Simple », « Double ») ; les formats numériques (5v5…) restent tels quels. Sans `t` : français, inchangé. */
+export function formatsLabel(formats: readonly string[], t: TFn = (k) => k): string {
+  return formats.length > 0 ? formats.map((f) => { const l = formatLabel(f); return l === f ? f : t(l); }).join(' · ') : '—';
 }
 
 /** Formats proposables pour un sport — décision Aymen 04/09 : plus aucun
@@ -168,14 +170,15 @@ export function daysWithMultipleRanges(hours: readonly { weekday: number }[]): S
 
 /* --- Tarifs ---------------------------------------------------------------- */
 
-/** « Tous les jours », « Vendredi », ou la liste des jours (abréviations). */
-export function ruleScopeNote(weekdays: readonly number[], dayNames: readonly string[]): string {
+/** « Tous les jours », « Vendredi », ou la liste des jours (abréviations). P1-15 (lot C) : `t` optionnel pour l'arabe
+    (clés « Lun. », « Mar. »… avec leur point) ; sans `t` : français, inchangé. */
+export function ruleScopeNote(weekdays: readonly number[], dayNames: readonly string[], t: TFn = (k) => k): string {
   const days = [...new Set(weekdays)].filter((d) => d >= 0 && d <= 6);
   if (days.length === 0) return '—';
-  if (days.length === 7) return 'Tous les jours';
-  if (days.length === 1 && days[0] === 5) return 'Vendredi';
+  if (days.length === 7) return t('Tous les jours');
+  if (days.length === 1 && days[0] === 5) return t('Vendredi');
   const order = [6, 0, 1, 2, 3, 4, 5];
-  return order.filter((d) => days.includes(d)).map((d) => `${dayNames[d]}.`).join(' · ');
+  return order.filter((d) => days.includes(d)).map((d) => t(`${dayNames[d]}.`)).join(' · ');
 }
 
 /* --- Tarifs par format (16/09/2026) --------------------------------------- */

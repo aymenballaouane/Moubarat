@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { localeOf, translate } from '../src/lib/i18n.js';
+import { describe, expect, it, vi } from 'vitest';
+import { bidi, localeOf, ltr, translate } from '../src/lib/i18n.js';
+import { da } from '../src/lib/format.js';
+import { applyLang } from '../src/lib/lang.js';
 import translations from '../src/i18n/fr-ar.json';
 import { literalKeys } from './i18n-keys.js';
+import viaVariableLotC from './i18n-via-variable.json';
 
 /* CRM en arabe — lot A (P1-15, 15/11/2026) : la clé est le texte français exact ; repli sur le français si l'arabe manque. */
 describe('translate', () => {
@@ -18,7 +21,7 @@ describe('translate', () => {
 
   /* P1-15, lot B : toute clé passée à t() en littéral a sa traduction ; les textes passés par une variable (menu, Aide, « prêt à
      publier », sports, erreurs) sont listés ici à la main — un nouveau texte sans traduction fait échouer le test. Les écrans
-     du lot C ne passent pas encore par t() : ils n'entrent dans ce contrôle qu'une fois branchés. */
+     du lot C (écrans) ont leurs clés passées par variable dans i18n-via-variable.json (libellés du core, jours, sources…). */
   it('aucune clé utilisée sans traduction arabe', () => {
     const have = { ...translations.textes_provisoires, ...translations.textes } as Record<string, string>;
     const viaVariable = [
@@ -33,7 +36,7 @@ describe('translate', () => {
       'Une erreur est survenue. Réessayez.', 'Connexion au serveur Moubarat impossible. Vérifiez votre connexion internet, puis réessayez.',
       'Moubarat est prévenu : votre centre est prêt à être publié.',
     ];
-    const missing = [...literalKeys().keys(), ...viaVariable].filter((k) => !(k in have));
+    const missing = [...literalKeys().keys(), ...viaVariable, ...viaVariableLotC].filter((k) => !(k in have));
     expect(missing).toEqual([]);
   });
 
@@ -42,5 +45,20 @@ describe('translate', () => {
     for (const [fr, ar] of Object.entries({ ...translations.textes_provisoires, ...translations.textes })) {
       expect(ar.trim(), fr).not.toBe('');
     }
+  });
+
+  /* P1-15, lot C : plages horaires, noms saisis et montants dans une page arabe ; le français reste octet pour octet. */
+  it('ltr / bidi / da : inchangés en français, isolés (ou en دج) en arabe', () => {
+    vi.stubGlobal('document', { documentElement: { setAttribute: () => undefined } }); // tests sans navigateur
+    applyLang('fr');
+    expect(ltr('18:00–19:30')).toBe('18:00–19:30');
+    expect(bidi('Adel H.')).toBe('Adel H.');
+    expect(da(2850)).toBe('2 850 DA');
+    applyLang('ar');
+    expect(ltr('18:00–19:30')).toBe('⁦18:00–19:30⁩');
+    expect(bidi('Adel H.')).toBe('⁨Adel H.⁩');
+    expect(da(2850)).toBe('2 850 دج');
+    applyLang('fr');
+    vi.unstubAllGlobals();
   });
 });

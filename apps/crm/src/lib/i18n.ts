@@ -52,3 +52,17 @@ export function useT(): TFn {
 export function localeOf(lang: Lang): string {
   return lang === 'ar' ? 'ar-DZ-u-nu-latn' : 'fr-FR';
 }
+
+/** P1-15 (lot C) : une plage horaire, une date en chiffres ou une référence dans une phrase arabe. Dans une page de droite à
+    gauche, « 18:00–19:30 » s'afficherait « 19:30–18:00 » (le tiret entre deux nombres prend le sens de la phrase) : on
+    l'isole de gauche à droite (LRI … PDI, caractères invisibles). En français : texte inchangé, octet pour octet. */
+export function ltr(text: string): string {
+  return getLang() === 'ar' ? `⁦${text}⁩` : text;
+}
+
+/** P1-15 (lot C) : une donnée saisie (nom de client, d'abonné, de membre du personnel) dans une page arabe. « Adel H. »
+    s'afficherait « .Adel H » (le point final prend le sens de la page) : on l'isole avec son propre sens, déduit de sa
+    première lettre (FSI … PDI) — un nom écrit en arabe reste de droite à gauche. En français : inchangé. */
+export function bidi(text: string): string {
+  return getLang() === 'ar' ? `⁨${text}⁩` : text;
+}

@@ -4,6 +4,7 @@ import { auditTimeLabel, roleLabel } from '../lib/auditDetail.js';
 import { apiFetch, ApiError } from '../lib/api.js';
 import { Icon } from './Icon.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
+import { useT } from '../lib/i18n.js';
 
 interface JournalProps { role: CenterRole; venueId: string; token: string }
 
@@ -19,6 +20,7 @@ type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { ki
    Centre, Caisse) — cet écran ne fait plus que les lire. */
 export function Journal({ role, venueId, token }: JournalProps) {
   const canView = canCenterAct(role, 'VIEW_AUDIT_LOG').ok;
+  const t = useT();
 
   const [entries, setEntries] = useState<ApiAuditEntry[]>([]);
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
@@ -67,8 +69,8 @@ export function Journal({ role, venueId, token }: JournalProps) {
       <section className="cm-view on">
         <div className="cm-riskrow">
           <span className="t">
-            <b><Icon id="i-lock" /> Le journal d'audit se consulte en Manager</b>
-            <span className="cm-note" style={{ margin: '2px 0 0' }}>Chaque action y est déjà enregistrée — demande à un manager du centre d'y accéder.</span>
+            <b><Icon id="i-lock" /> {t('Le journal d\'audit se consulte en Manager')}</b>
+            <span className="cm-note" style={{ margin: '2px 0 0' }}>{t('Chaque action y est déjà enregistrée — demande à un manager du centre d\'y accéder.')}</span>
           </span>
         </div>
       </section>
@@ -78,30 +80,29 @@ export function Journal({ role, venueId, token }: JournalProps) {
   return (
     <section className="cm-view on">
       <p className="cm-view-note">
-        <b>À quoi sert le journal ?</b> C'est la boîte noire du centre — aucune action à faire ici, il <b>enregistre</b> tout
-        seul les gestes sensibles (création, déplacement, annulation, blocage, caisse, présence) et répond à
-        « qui a bloqué le T2 mercredi ? ». Lecture seule, par nature.
+        <b>{t('À quoi sert le journal ?')}</b> {t('C\'est la boîte noire du centre — aucune action à faire ici, il')} <b>{t('enregistre')}</b>{' '}
+        {t('tout seul les gestes sensibles (création, déplacement, annulation, blocage, caisse, présence) et répond à « qui a bloqué le T2 mercredi ? ». Lecture seule, par nature.')}
       </p>
-      <p className="cm-sec">Chaque action sensible, signée et horodatée</p>
+      <p className="cm-sec">{t('Chaque action sensible, signée et horodatée')}</p>
       {load.kind === 'error' ? (
         <div className="cm-card cf-sec">
           <p className="cf-state">{load.message}</p>
-          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchLog(); }}>Réessayer</button>
+          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchLog(); }}>{t('Réessayer')}</button>
         </div>
       ) : load.kind === 'loading' ? (
-        <div className="cm-card cf-sec"><p className="cf-state">Chargement du journal…</p></div>
+        <div className="cm-card cf-sec"><p className="cf-state">{t('Chargement du journal…')}</p></div>
       ) : entries.length === 0 ? (
-        <p className="cm-note">Aucune action sensible pour l'instant.</p>
+        <p className="cm-note">{t('Aucune action sensible pour l\'instant.')}</p>
       ) : entries.map((e) => (
         <div className="cm-mvt" key={e.id}>
-          <b>{e.actorName} · {roleLabel(e.actorRole)} · {auditTimeLabel(e.at)}</b>
+          <b>{e.actorName} · {roleLabel(e.actorRole, t)} · {auditTimeLabel(e.at, t)}</b>
           <span> — {e.summary}</span>
         </div>
       ))}
       {load.kind === 'ready' && nextCursor !== null ? (
         <div className="cm-more">
           <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={loadingMore} onClick={() => { void loadMore(); }}>
-            {loadingMore ? 'Chargement…' : 'Afficher plus'}
+            {loadingMore ? t('Chargement…') : t('Afficher plus')}
           </button>
           {moreError ? <p className="cf-state" role="alert">{moreError}</p> : null}
         </div>

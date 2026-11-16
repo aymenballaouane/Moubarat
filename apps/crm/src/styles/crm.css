@@ -526,5 +526,8 @@ body.mb {
 :root[dir="rtl"] input[type="tel"], :root[dir="rtl"] input[type="email"], :root[dir="rtl"] input[type="date"],
 :root[dir="rtl"] input[type="password"], :root[dir="rtl"] input[inputmode="numeric"] { direction: ltr; text-align: end; }
 :root[dir="rtl"] .tl-wrap { direction: ltr; }
+/* P1-15 (lot C) : un champ de texte libre suit le sens de ce qu'on y écrit (première lettre forte) — « Complexe multisport… »
+   ou « +213… » de gauche à droite, un texte arabe de droite à gauche ; un champ vide suit son exemple (placeholder). */
+:root[dir="rtl"] textarea, :root[dir="rtl"] input:not([type]), :root[dir="rtl"] input[type="text"], :root[dir="rtl"] input[type="search"] { unicode-bidi: plaintext; }
 /* Bouton de langue : la même forme que « Mode clair » ; le libellé arabe a sa propre police, sans capitales forcées. */
 .cm-lang { font-family: 'IBM Plex Sans Arabic', var(--font-body); }

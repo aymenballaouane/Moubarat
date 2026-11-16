@@ -6317,3 +6317,16 @@ leurs nombres isolés.
   (clé = français exact) ; `t(clé, { n })` insère les valeurs. 131 traductions provisoires ; un test échoue si une clé utilisée
   n'a pas de traduction (`tests/i18n-keys.ts`). Pour les nombres variables, tournure neutre (« عدد … : n ») : l'accord du nom
   arabe dépend du nombre. Corrigé : le piège à robots du formulaire public partait à 10 000 px à droite en arabe.
+- **Lot C (16/11/2026, GO d'Aymen « Oui, lot C »)** : les dix écrans passent par `t()` — Dashboard, Planning, Réservations,
+  Abonnements, Analytics (avec le rapport du mois), Clients, Personnel, Caisse, Journal, Centre, plus la pastille de statut.
+  576 traductions provisoires de plus (707 au total), à relire au lot E. Le français ne change pas d'un octet, sauf cinq
+  textes qui tutoyaient encore et passent au vouvoiement (décision « vous partout » du 15/11 : « annulez pour libérer le
+  créneau », « choisissez-en un », « Donnez un nom au terrain », « Vous pouvez consulter », « ajoutez le premier »).
+  Trois outils : `ltr()` isole de gauche à droite une plage horaire ou une référence (en arabe, « 18:00–19:30 » s'afficherait
+  « 19:30–18:00 ») ; `bidi()` isole un nom saisi avec son propre sens (« Adel H. » s'affichait « .Adel H ») ; `da()` écrit
+  « 2 850 DA » / « 2 850 دج ». Dates en arabe par Intl (mois du Maghreb, chiffres 0-9), formats français écrits à la main
+  inchangés. Les champs de texte libre suivent le sens de ce qu'on y écrit (CSS `unicode-bidi: plaintext`), le champ
+  téléphone du Planning devient `type="tel"` (son exemple s'affichait à l'envers). Restent en français, volontairement :
+  les données saisies par le centre (noms, bandes tarifaires, surfaces hors catalogue), les résumés du Journal (enregistrés
+  en français par le serveur), l'export Excel, les messages d'erreur du serveur (lot D). Les clés passées par variable
+  (libellés du core, jours, sources) sont listées dans `apps/crm/tests/i18n-via-variable.json`, contrôlées par le même test.

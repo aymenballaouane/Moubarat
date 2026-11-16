@@ -12,6 +12,7 @@
 import { occupancyRate, bookingOriginShare, matchHealth, type MatchHealth } from '@moubarat/core';
 import { summaryFromApi, type ApiBookingRow, type ApiSubscriptionOccurrence } from './bookingsDetail.js';
 import { fmt } from './format.js';
+import { fill, ltr, type TFn } from './i18n.js';
 
 export interface DashboardKpis {
   collectedDa: number; engagedDa: number; occupancyPct: number;
@@ -30,16 +31,20 @@ const KPI_UNIT: Record<KpiKey, 'da' | 'pts' | 'n'> = {
 /** Les indicateurs dont une HAUSSE est une mauvaise nouvelle. */
 const KPI_LOWER_IS_BETTER: ReadonlySet<KpiKey> = new Set<KpiKey>(['noShows']);
 
-/** « +1 200 DA », « −3 pts », « +2 », ou « = » — avec le jour de comparaison. Pur, sans fuseau : `refLabel` vient de l'appelant. */
-export function compareKpi(key: KpiKey, today: number, lastWeek: number, refLabel: string): KpiComparison {
+/** « +1 200 DA », « −3 pts », « +2 », ou « = » — avec le jour de comparaison. Pur, sans fuseau : `refLabel` vient de l'appelant.
+    P1-15 (lot C) : `t` (traduction, français par défaut) — le nombre signé est isolé de gauche à droite en arabe (`ltr`), sinon
+    le signe « − » passerait derrière le nombre. */
+export function compareKpi(key: KpiKey, today: number, lastWeek: number, refLabel: string, t: TFn = fill): KpiComparison {
   const diff = today - lastWeek;
-  if (diff === 0) return { label: `= ${refLabel}`, tone: 'flat' };
+  if (diff === 0) return { label: t('= {jour}', { jour: refLabel }), tone: 'flat' };
   const sign = diff > 0 ? '+' : '−';
   const abs = Math.abs(diff);
   const unit = KPI_UNIT[key];
-  const value = unit === 'da' ? `${fmt(abs)} DA` : unit === 'pts' ? `${abs} pt${abs > 1 ? 's' : ''}` : String(abs);
+  const value = unit === 'da' ? t('{n} DA', { n: ltr(`${sign}${fmt(abs)}`) })
+    : unit === 'pts' ? (abs > 1 ? t('{n} pts', { n: ltr(`${sign}${abs}`) }) : t('{n} pt', { n: ltr(`${sign}${abs}`) }))
+      : ltr(`${sign}${abs}`);
   const better = KPI_LOWER_IS_BETTER.has(key) ? diff < 0 : diff > 0;
-  return { label: `${sign}${value} vs ${refLabel}`, tone: better ? 'up-good' : 'up-bad' };
+  return { label: t('{valeur} vs {jour}', { valeur: value, jour: refLabel }), tone: better ? 'up-good' : 'up-bad' };
 }
 
 /** Chantier Abonnements (06/09/2026), décision d'Aymen : un abonné occupe
@@ -122,6 +127,22 @@ export function phoneToVerifyActionsFromApi(rows: readonly ApiBookingRow[], dayS
       bookingId: r.id, label: r.reservationName ?? '—', field: r.fieldName,
       startMin: Math.round((r.start - dayStart) / 60_000),
     }));
+}
+
+/** P1-15 (lot C) : une pénalité de `matchHealth` (libellé français servi par le core) dans la langue de l'écran. Un libellé
+    inconnu (nouvelle pénalité du core) reste tel quel, jamais une clé vide. */
+export function healthPenaltyText(label: string, t: TFn = fill): string {
+  if (label === 'Début dans moins de 2 h, incomplet') return t('Début dans moins de 2 h, incomplet');
+  if (label === 'Début dans moins de 6 h, incomplet') return t('Début dans moins de 6 h, incomplet');
+  let m = /^Effectif (\d+\/\d+)$/.exec(label);
+  if (m) return t('Effectif {effectif}', { effectif: m[1]! });
+  m = /^Fiabilité du capitaine (\d+)\/100$/.exec(label);
+  if (m) return t('Fiabilité du capitaine {score}/100', { score: m[1]! });
+  m = /^Fiabilité moyenne des inscrits (\d+)\/100$/.exec(label);
+  if (m) return t('Fiabilité moyenne des inscrits {score}/100', { score: m[1]! });
+  m = /^(\d+) inscrit\(s\) non confirmé\(s\)$/.exec(label);
+  if (m) return t('{n} inscrit(s) non confirmé(s)', { n: m[1]! });
+  return label;
 }
 
 export function honoredUnpaidCount(rows: readonly ApiBookingRow[]): number {

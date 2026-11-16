@@ -8,6 +8,8 @@ import { hhmm } from '../lib/time.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { Icon } from './Icon.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
+import { da } from '../lib/format.js';
+import { useLang, useT, bidi } from '../lib/i18n.js';
 
 interface AbonnementsProps { role: CenterRole; venueId: string; token: string; onToast: (message: string) => void }
 
@@ -55,6 +57,12 @@ type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { ki
    promos), donc l'écran s'aligne. */
 export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps) {
   const canEdit = canCenterAct(role, 'MANAGE_SUBSCRIPTIONS').ok;
+  const t = useT();
+  const lang = useLang();
+  /* P1-15 (lot C) : « Lun. » en français (inchangé) ; nom du jour traduit en arabe (clés « Dim. »… « Sam. »). */
+  const dayShort = (w: number): string => t(`${DAY_NAMES[w]}.`);
+  /** Montant d'une séance : français inchangé (`toLocaleString('fr-FR')` + « DA ») ; arabe via `da()` (« 4 500 دج »). */
+  const priceText = (n: number): string => (lang === 'ar' ? da(n) : `${n.toLocaleString('fr-FR')} DA`);
 
   const [fields, setFields] = useState<{ id: string; name: string }[]>([]);
   const [subs, setSubs] = useState<ApiSubscription[]>([]);
@@ -116,8 +124,8 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
       <section className="cm-view on">
         <div className="cm-riskrow">
           <span className="t">
-            <b><Icon id="i-lock" /> Les abonnements se gèrent en Manager</b>
-            <span className="cm-note" style={{ margin: '2px 0 0' }}>Demandez à un manager du centre d'y accéder.</span>
+            <b><Icon id="i-lock" /> {t('Les abonnements se gèrent en Manager')}</b>
+            <span className="cm-note" style={{ margin: '2px 0 0' }}>{t('Demandez à un manager du centre d\'y accéder.')}</span>
           </span>
         </div>
       </section>
@@ -127,7 +135,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
   async function createSubscription() {
     if (!name.trim() || !fieldId) return;
     const priceDa = parsePrice(price);
-    if (priceDa === null) { setFormError('Indiquez le prix d’une séance (un montant entier en DA).'); return; }
+    if (priceDa === null) { setFormError(t('Indiquez le prix d’une séance (un montant entier en DA).')); return; }
     setFormError(null);
     try {
       await apiFetch(`/venues/${venueId}/recurring-bookings`, {
@@ -140,7 +148,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
       });
       setName('');
       setPriceTouched(false);
-      onToast('Abonnement créé.');
+      onToast(t('Abonnement créé.'));
       await fetchAll();
     } catch (e) {
       setFormError(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -153,7 +161,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
     setConfirmTarget(null);
     try {
       await apiFetch(`/venues/${venueId}/recurring-bookings/${target.id}/end`, { method: 'POST', token });
-      onToast('Abonnement résilié.');
+      onToast(t('Abonnement résilié.'));
       await fetchAll();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -161,13 +169,13 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
   }
 
   async function confirmPrice() {
-    const t = pendingPrice;
-    if (!t) return;
+    const target = pendingPrice;
+    if (!target) return;
     setPendingPrice(null);
     try {
-      await apiFetch(`/venues/${venueId}/recurring-bookings/${t.sub.id}`, { method: 'PATCH', token, body: { pricePerSessionDa: t.to } });
+      await apiFetch(`/venues/${venueId}/recurring-bookings/${target.sub.id}`, { method: 'PATCH', token, body: { pricePerSessionDa: target.to } });
       setPriceEdit(null);
-      onToast('Prix par séance enregistré.');
+      onToast(t('Prix par séance enregistré.'));
       await fetchAll();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -179,43 +187,42 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
   return (
     <section className="cm-view on">
       <p className="cm-view-note">
-        Un abonnement réserve le même créneau chaque semaine, d'une date à une autre, et s'affiche dans le planning. Chaque
-        séance a son prix : elle se marque Payée, Honorée ou No-show dans Réservations et compte dans le chiffre d’affaires et la caisse.
+        {t('Un abonnement réserve le même créneau chaque semaine, d\'une date à une autre, et s\'affiche dans le planning. Chaque séance a son prix : elle se marque Payée, Honorée ou No-show dans Réservations et compte dans le chiffre d’affaires et la caisse.')}
       </p>
 
       <div className="cm-form">
         <label>
-          <span>Nom / entreprise</span>
+          <span>{t('Nom / entreprise')}</span>
           <input className="mb-field__control" maxLength={24} style={{ minWidth: 150 }} value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <label>
-          <span>Jour</span>
+          <span>{t('Jour')}</span>
           <select className="mb-field__control" value={weekday} onChange={(e) => { setWeekday(Number(e.target.value)); setPriceTouched(false); }}>
-            {WEEKDAY_ORDER.map((w) => <option key={w} value={w}>{DAY_NAMES[w]}.</option>)}
+            {WEEKDAY_ORDER.map((w) => <option key={w} value={w}>{dayShort(w)}</option>)}
           </select>
         </label>
         <label>
-          <span>Heure</span>
+          <span>{t('Heure')}</span>
           <select className="mb-field__control" value={startMin} onChange={(e) => { setStartMin(Number(e.target.value)); setPriceTouched(false); }}>
             {HOUR_OPTIONS.map((m) => <option key={m} value={m}>{hhmm(m)}</option>)}
           </select>
         </label>
         <label>
-          <span>Durée</span>
+          <span>{t('Durée')}</span>
           <select className="mb-field__control" value={durationMin} onChange={(e) => { setDurationMin(Number(e.target.value)); setPriceTouched(false); }}>
-            <option value={60}>60 min</option>
-            <option value={90}>90 min</option>
-            <option value={120}>120 min</option>
+            <option value={60}>{t('{n} min', { n: 60 })}</option>
+            <option value={90}>{t('{n} min', { n: 90 })}</option>
+            <option value={120}>{t('{n} min', { n: 120 })}</option>
           </select>
         </label>
         <label>
-          <span>Terrain</span>
+          <span>{t('Terrain')}</span>
           <select className="mb-field__control" value={fieldId} onChange={(e) => { setFieldId(e.target.value); setPriceTouched(false); }}>
             {fields.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
         </label>
         <label>
-          <span>Prix / séance (DA)</span>
+          <span>{t('Prix / séance (DA)')}</span>
           <input
             className="mb-field__control" inputMode="numeric" style={{ maxWidth: 110 }} value={price} placeholder="—"
             aria-invalid={price !== '' && parsePrice(price) === null}
@@ -223,56 +230,56 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
           />
         </label>
         <label>
-          <span>Fin</span>
+          <span>{t('Fin')}</span>
           <select className="mb-field__control" value={until} onChange={(e) => setUntil(e.target.value)}>
-            {UNTIL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {UNTIL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.label)}</option>)}
           </select>
         </label>
         <button type="button" className="mb-btn mb-btn--sm" onClick={() => { void createSubscription(); }} disabled={!fields.length}>
-          Créer l'abonnement
+          {t('Créer l\'abonnement')}
         </button>
       </div>
       {formError ? <p className="cm-note" style={{ color: 'var(--danger)' }}>{formError}</p> : null}
 
-      <p className="cm-sec">Abonnements actifs</p>
+      <p className="cm-sec">{t('Abonnements actifs')}</p>
       {load.kind === 'error' ? (
         <div className="cm-card cf-sec">
           <p className="cf-state">{load.message}</p>
-          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchAll(); }}>Réessayer</button>
+          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchAll(); }}>{t('Réessayer')}</button>
         </div>
       ) : load.kind === 'loading' ? (
-        <div className="cm-card cf-sec"><p className="cf-state">Chargement des abonnements…</p></div>
+        <div className="cm-card cf-sec"><p className="cf-state">{t('Chargement des abonnements…')}</p></div>
       ) : activeSubs.length === 0 ? (
-        <p className="cm-note">Aucun abonnement actif.</p>
+        <p className="cm-note">{t('Aucun abonnement actif.')}</p>
       ) : (
         activeSubs.map((r) => (
           <div className="cm-riskrow" key={r.id}>
             <span className="t">
-              <b>{r.holderName} · {DAY_NAMES[r.weekday]}. {hhmm(r.startMin)} · {r.durationMin} min · {r.fieldName}</b>
+              <b>{bidi(r.holderName)} · {dayShort(r.weekday)} {hhmm(r.startMin)} · {t('{n} min', { n: r.durationMin })} · {r.fieldName}</b>
               <span className="cm-note" style={{ margin: '2px 0 0' }}>
-                {r.pricePerSessionDa !== null ? `${r.pricePerSessionDa.toLocaleString('fr-FR')} DA la séance` : 'Sans prix — à fixer pour suivre ses paiements'}
-                {' · '}{r.activeUntilMs !== null ? `jusqu'au ${dayLabel(algiersDateOf(r.activeUntilMs))}` : 'sans date de fin'}
+                {r.pricePerSessionDa !== null ? t('{montant} la séance', { montant: priceText(r.pricePerSessionDa) }) : t('Sans prix — à fixer pour suivre ses paiements')}
+                {' · '}{r.activeUntilMs !== null ? t('jusqu\'au {date}', { date: dayLabel(algiersDateOf(r.activeUntilMs)) }) : t('sans date de fin')}
               </span>
               {priceEdit?.sub.id === r.id ? (
                 <span className="cm-actions-row" style={{ marginTop: 6 }}>
                   <input
-                    className="mb-field__control" inputMode="numeric" style={{ maxWidth: 110 }} aria-label={`Prix par séance de ${r.holderName}`}
+                    className="mb-field__control" inputMode="numeric" style={{ maxWidth: 110 }} aria-label={t('Prix par séance de {nom}', { nom: r.holderName })}
                     value={priceEdit.draft} onChange={(e) => setPriceEdit({ sub: r, draft: e.target.value })}
                   />
                   <button type="button" className="mb-btn mb-btn--sm" disabled={parsePrice(priceEdit.draft) === null || parsePrice(priceEdit.draft) === r.pricePerSessionDa}
-                    onClick={() => setPendingPrice({ sub: r, to: parsePrice(priceEdit.draft)! })}>Enregistrer</button>
-                  <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setPriceEdit(null)}>Annuler</button>
+                    onClick={() => setPendingPrice({ sub: r, to: parsePrice(priceEdit.draft)! })}>{t('Enregistrer')}</button>
+                  <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setPriceEdit(null)}>{t('Annuler')}</button>
                 </span>
               ) : null}
             </span>
-            <span className="mb-status mb-status--open">Actif</span>
+            <span className="mb-status mb-status--open">{t('Actif')}</span>
             {priceEdit?.sub.id !== r.id ? (
               <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setPriceEdit({ sub: r, draft: r.pricePerSessionDa !== null ? String(r.pricePerSessionDa) : '' })}>
-                {r.pricePerSessionDa !== null ? 'Modifier le prix' : 'Fixer le prix'}
+                {r.pricePerSessionDa !== null ? t('Modifier le prix') : t('Fixer le prix')}
               </button>
             ) : null}
             <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => setConfirmTarget(r)}>
-              Résilier
+              {t('Résilier')}
             </button>
           </div>
         ))
@@ -280,25 +287,31 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
 
       <ConfirmModal
         open={pendingPrice !== null}
-        title="Changer le prix par séance ?"
+        title={t('Changer le prix par séance ?')}
         body={pendingPrice ? (
           <>
-            <p>{pendingPrice.sub.holderName} : <b>{pendingPrice.sub.pricePerSessionDa !== null ? `${pendingPrice.sub.pricePerSessionDa.toLocaleString('fr-FR')} → ` : ''}{pendingPrice.to.toLocaleString('fr-FR')} DA la séance</b>.</p>
-            <p className="cm-note" style={{ margin: '6px 0 0' }}>Vaut pour les séances pas encore marquées. Une séance déjà payée, honorée ou no-show garde son prix.</p>
+            <p>{bidi(pendingPrice.sub.holderName)} : <b>{t('{montant} la séance', {
+              montant: pendingPrice.sub.pricePerSessionDa !== null
+                ? (lang === 'ar'
+                  ? `${da(pendingPrice.sub.pricePerSessionDa)} ← ${da(pendingPrice.to)}`
+                  : `${pendingPrice.sub.pricePerSessionDa.toLocaleString('fr-FR')} → ${priceText(pendingPrice.to)}`)
+                : priceText(pendingPrice.to),
+            })}</b>.</p>
+            <p className="cm-note" style={{ margin: '6px 0 0' }}>{t('Vaut pour les séances pas encore marquées. Une séance déjà payée, honorée ou no-show garde son prix.')}</p>
           </>
         ) : null}
-        confirmLabel="Enregistrer le prix"
+        confirmLabel={t('Enregistrer le prix')}
         onConfirm={() => { void confirmPrice(); }}
         onCancel={() => setPendingPrice(null)}
       />
 
       <ConfirmModal
         open={confirmTarget !== null}
-        title="Résilier cet abonnement ?"
+        title={t('Résilier cet abonnement ?')}
         body={confirmTarget ? (
           <>
-            <p>{confirmTarget.holderName} · {DAY_NAMES[confirmTarget.weekday]}. {hhmm(confirmTarget.startMin)} — ses occurrences futures disparaîtront du planning.</p>
-            <p>L'historique passé est conservé.</p>
+            <p>{bidi(confirmTarget.holderName)} · {dayShort(confirmTarget.weekday)} {hhmm(confirmTarget.startMin)} — {t('ses occurrences futures disparaîtront du planning.')}</p>
+            <p>{t('L\'historique passé est conservé.')}</p>
           </>
         ) : null}
         onConfirm={() => { void confirmDeactivate(); }}

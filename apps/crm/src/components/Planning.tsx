@@ -8,7 +8,8 @@ import {
 import { hoursFromApi, asFieldStatus, formatLabel, type ApiVenueDetail } from '../lib/venueDetail.js';
 import { apiFetch, ApiError } from '../lib/api.js';
 import { hhmm } from '../lib/time.js';
-import { fmt } from '../lib/format.js';
+import { da } from '../lib/format.js';
+import { ltr, useLang, useT } from '../lib/i18n.js';
 import { Icon } from './Icon.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { algiersClock, useAutoRefresh } from '../lib/autoRefresh.js';
@@ -84,6 +85,10 @@ interface DayField { id: string; name: string; sport: string; active: boolean }
    de proposer de basculer un terrain qui n'existe plus. */
 export function Planning({ role, venueId, token, onToast, day, onDayChange, openRequest, onOpenReservation }: PlanningProps) {
   const canCreate = canCenterAct(role, 'CREATE_BOOKING').ok;
+  const t = useT();
+  const lang = useLang();
+  /* P1-15 (lot C) : un format nommé (« Simple », « Double ») se traduit ; un format chiffré (« 5v5 ») reste tel quel. */
+  const formatText = (f: string) => { const l = formatLabel(f); return l === f ? f : t(l); };
 
   const [zoom, setZoom] = useState<'x' | 'c'>('x');
   const [sport, setSport] = useState<(typeof SPORTS)[number]>('ALL');
@@ -211,7 +216,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
     for (const c of closures) {
       const startMin = Math.round((c.startMs - dayStart) / 60_000);
       const endMin = Math.round((c.endMs - dayStart) / 60_000);
-      const label = `${CLOSURE_REASON_LABELS[c.reason]}${c.label ? ` — ${c.label}` : ''}`;
+      const label = `${t(CLOSURE_REASON_LABELS[c.reason])}${c.label ? ` — ${c.label}` : ''}`;
       const targetNames = c.fieldId
         ? (c.fieldName ? [c.fieldName] : [])
         : fields.map((f) => f.name);
@@ -221,7 +226,8 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
       }
     }
     return map;
-  }, [closures, fields, date]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [closures, fields, date, lang]);
 
   function closedAtMin(fieldName: string, min: number): { closed: boolean; label?: string } {
     const hit = (closuresByField.get(fieldName) ?? []).find((r) => min >= r.startMin && min < r.endMin);
@@ -289,8 +295,8 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
     const f = fieldByName.get(sel.field);
     if (!f) return;
     setFormError('');
-    if (formName.trim().length < 2) { setFormError('Indiquez un nom pour la réservation.'); return; }
-    if (multiFormat && !activeQuote) { setFormError('Choisissez le format de la réservation.'); return; }
+    if (formName.trim().length < 2) { setFormError(t('Indiquez un nom pour la réservation.')); return; }
+    if (multiFormat && !activeQuote) { setFormError(t('Choisissez le format de la réservation.')); return; }
     setFormSubmitting(true);
     try {
       const created = await apiFetch<{ booking: { id: string; claimStatus?: 'PENDING' | null } }>('/bookings', {
@@ -303,7 +309,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
         },
       });
       /* Règle 21 : le numéro saisi est celui d'un compte joueur — il vient de recevoir « C'est bien toi ? ». */
-      onToast(created.booking.claimStatus === 'PENDING' ? 'Réservation créée. Ce numéro est celui d’un joueur Moubarat : il est prévenu et doit confirmer.' : 'Réservation créée.');
+      onToast(created.booking.claimStatus === 'PENDING' ? t('Réservation créée. Ce numéro est celui d’un joueur Moubarat : il est prévenu et doit confirmer.') : t('Réservation créée.'));
       setSel(null);
       void fetchDay({ silent: true });
     } catch (e) {
@@ -361,7 +367,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
       setDragField(null);
       if (!dragMovedRef.current) return; // clic simple : onClick s'en charge
       const info = closedAtMin(fieldName, dragARef.current);
-      if (info.closed) { onToast(`Ce créneau est fermé${info.label ? ` (${info.label})` : ''}.`); return; }
+      if (info.closed) { onToast(info.label ? t('Ce créneau est fermé ({motif}).', { motif: info.label }) : t('Ce créneau est fermé.')); return; }
       openCreatePanel(fieldName, dragARef.current, dragDurRef.current);
     }
     window.addEventListener('pointermove', onMove);
@@ -430,27 +436,27 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
     <section className="cm-view on">
       <div className="pl-bar">
         <div className="grp">
-          <button type="button" className="on">Jour</button>
-          <button type="button" disabled title="Vue semaine — à venir">Semaine</button>
+          <button type="button" className="on">{t('Jour')}</button>
+          <button type="button" disabled title={t('Vue semaine — à venir')}>{t('Semaine')}</button>
         </div>
-        <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setDate(todayAlgiers())}>Aujourd'hui</button>
-        <button type="button" className="nav mb-btn mb-btn--ghost mb-btn--sm" style={{ minWidth: 34 }} aria-label="Jour précédent" onClick={() => setDate((d) => shiftDate(d, -1))}>‹</button>
+        <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setDate(todayAlgiers())}>{t('Aujourd\'hui')}</button>
+        <button type="button" className="nav mb-btn mb-btn--ghost mb-btn--sm" style={{ minWidth: 34 }} aria-label={t('Jour précédent')} onClick={() => setDate((d) => shiftDate(d, -1))}>‹</button>
         <b style={{
           fontFamily: 'var(--font-display)', fontSize: 'var(--fs-d4)', color: 'var(--text)',
           textTransform: 'uppercase', minWidth: 150, textAlign: 'center',
         }}>{dayLabel(date)}</b>
-        <button type="button" className="nav mb-btn mb-btn--ghost mb-btn--sm" style={{ minWidth: 34 }} aria-label="Jour suivant" onClick={() => setDate((d) => shiftDate(d, 1))}>›</button>
+        <button type="button" className="nav mb-btn mb-btn--ghost mb-btn--sm" style={{ minWidth: 34 }} aria-label={t('Jour suivant')} onClick={() => setDate((d) => shiftDate(d, 1))}>›</button>
         {/* CRM-2 (27/09/2026) : « Aller à une date » — présent dans le prototype gelé (crm-valide.html, #pl-date),
             jamais câblé jusqu'ici ; une valeur vide (champ effacé) est ignorée, comme dans le prototype. */}
         <input
-          type="date" className="mb-field__control" aria-label="Aller à une date" title="Aller à une date"
+          type="date" className="mb-field__control" aria-label={t('Aller à une date')} title={t('Aller à une date')}
           value={date} style={{ maxWidth: 150, margin: 0 }}
           onChange={(e) => { if (e.target.value) setDate(e.target.value); }}
         />
         <span className="hrs" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--gold)', textTransform: 'uppercase' }}>
-          {openRange ? `Ouvert ${hhmm(openStartMin)} → ${hhmm(openEndMin)}` : 'Fermé ce jour-là'}
+          {openRange ? t('Ouvert {plage}', { plage: ltr(`${hhmm(openStartMin)} → ${hhmm(openEndMin)}`) }) : t('Fermé ce jour-là')}
         </span>
-        {autoAt !== null ? <span className="cm-autorefresh" title="Le planning se relit seul toutes les 30 secondes">À jour · {algiersClock(autoAt)}</span> : null}
+        {autoAt !== null ? <span className="cm-autorefresh" title={t('Le planning se relit seul toutes les 30 secondes')}>{t('À jour · {heure}', { heure: ltr(algiersClock(autoAt)) })}</span> : null}
         <span style={{ flex: 1 }} />
         <div className="grp">
           {fields.filter((f) => f.active).map((f) => (
@@ -467,46 +473,46 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
         <div className="grp">
           {SPORTS.map((s) => (
             <button key={s} type="button" className={sport === s ? 'on' : ''} onClick={() => setSport(s)}>
-              {s === 'ALL' ? 'Tous' : s}
+              {s === 'ALL' ? t('Tous') : t(s)}
             </button>
           ))}
         </div>
         <div className="grp">
-          <button type="button" className={zoom === 'x' ? 'on' : ''} onClick={() => setZoom('x')}>Étendu</button>
-          <button type="button" className={zoom === 'c' ? 'on' : ''} onClick={() => setZoom('c')}>Compact</button>
+          <button type="button" className={zoom === 'x' ? 'on' : ''} onClick={() => setZoom('x')}>{t('Étendu')}</button>
+          <button type="button" className={zoom === 'c' ? 'on' : ''} onClick={() => setZoom('c')}>{t('Compact')}</button>
         </div>
       </div>
 
       {canCreate ? (
         <div className="pl-next">
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>
-            Prochaine dispo
+            {t('Prochaine dispo')}
           </span>
           <select className="mb-field__control" style={{ maxWidth: 120 }} value={naSport} onChange={(e) => setNaSport(e.target.value as typeof naSport)}>
-            {BOOKABLE_SPORTS.map((s) => <option key={s} value={s}>{s}</option>)}
+            {BOOKABLE_SPORTS.map((s) => <option key={s} value={s}>{t(s)}</option>)}
           </select>
           <select className="mb-field__control" style={{ maxWidth: 100 }} value={naDur} onChange={(e) => setNaDur(Number(e.target.value))}>
-            <option value={60}>60 min</option>
-            <option value={90}>90 min</option>
-            <option value={120}>120 min</option>
+            <option value={60}>{t('{n} min', { n: 60 })}</option>
+            <option value={90}>{t('{n} min', { n: 90 })}</option>
+            <option value={120}>{t('{n} min', { n: 120 })}</option>
           </select>
           <button type="button" className="mb-btn mb-btn--sm" disabled={naSearching} onClick={() => { void searchNextAvailability(); }}>
-            {naSearching ? 'Recherche…' : 'Chercher'}
+            {naSearching ? t('Recherche…') : t('Chercher')}
           </button>
           {naResult ? (
             <span className="res">
               {naResult.found ? (
                 <>
-                  Prochain créneau : <b>{naResult.label}</b> — {naResult.fieldName} — {dayLabel(naResult.date)}
-                  {naResult.format !== undefined && naResult.totalDa !== undefined ? ` — dès ${fmt(naResult.totalDa)} DA en ${naResult.format}` : ''}
+                  {t('Prochain créneau :')} <b>{ltr(naResult.label)}</b> — {naResult.fieldName} — {dayLabel(naResult.date)}
+                  {naResult.format !== undefined && naResult.totalDa !== undefined ? ` — ${t('dès {montant} en {format}', { montant: da(naResult.totalDa), format: naResult.format })}` : ''}
                   <button
                     type="button" className="mb-btn mb-btn--sm" style={{ marginInlineStart: 8 }}
                     onClick={() => bookNextAvailability(naResult)}
                   >
-                    Réserver
+                    {t('Réserver')}
                   </button>
                 </>
-              ) : 'Rien sous 8 jours pour ces critères.'}
+              ) : t('Rien sous 8 jours pour ces critères.')}
             </span>
           ) : null}
         </div>
@@ -515,12 +521,12 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
       {load.kind === 'error' ? (
         <div className="cm-card cf-sec">
           <p className="cf-state">{load.message}</p>
-          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchDay(); }}>Réessayer</button>
+          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchDay(); }}>{t('Réessayer')}</button>
         </div>
       ) : load.kind === 'loading' ? (
-        <div className="cm-card cf-sec"><p className="cf-state">Chargement du planning…</p></div>
+        <div className="cm-card cf-sec"><p className="cf-state">{t('Chargement du planning…')}</p></div>
       ) : !openRange ? (
-        <p className="cm-note">Le centre est fermé ce jour-là.</p>
+        <p className="cm-note">{t('Le centre est fermé ce jour-là.')}</p>
       ) : (
         <>
           {/* P1-15 (lot A) : la frise reste de gauche à droite en arabe (choix d'Aymen) — les heures avancent comme sur un tableau d'horaires. */}
@@ -529,7 +535,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
               <div className="tl-fname" style={{ border: 0 }} />
               <div className="tl-hours">
                 {hourTicks.map((m) => (
-                  <i key={m} style={{ left: `${pct(m)}%` }}>{hhmm(m).slice(0, 2)}h</i>
+                  <i key={m} style={{ left: `${pct(m)}%` }}>{t('{h}h', { h: hhmm(m).slice(0, 2) })}</i>
                 ))}
               </div>
             </div>
@@ -561,8 +567,8 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
                       if (dragMovedRef.current) { dragMovedRef.current = false; return; }
                       const m = minuteAtClientX(name, e.clientX);
                       const info = closedAtMin(name, m);
-                      if (info.closed) { onToast(`Ce créneau est fermé${info.label ? ` (${info.label})` : ''}.`); return; }
-                      if (!canCreate) { onToast(`${name} · ${hhmm(m)} — libre. Votre rôle (${ROLE_LABELS[role]}) permet de consulter le planning, pas de créer une réservation.`); return; }
+                      if (info.closed) { onToast(info.label ? t('Ce créneau est fermé ({motif}).', { motif: info.label }) : t('Ce créneau est fermé.')); return; }
+                      if (!canCreate) { onToast(t('{terrain} · {heure} — libre. Votre rôle ({role}) permet de consulter le planning, pas de créer une réservation.', { terrain: name, heure: ltr(hhmm(m)), role: t(ROLE_LABELS[role]) })); return; }
                       openCreatePanel(name, m, 60);
                     }}
                   >
@@ -572,7 +578,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
                       if (e <= s) return null;
                       return (
                         <div key={`closure-${i}`} className="tl-block k-closed" style={{ left: `${pct(s)}%`, width: `${((e - s) / total) * 100}%` }} title={c.label}>
-                          <b>Fermé</b><span>{c.label}</span>
+                          <b>{t('Fermé')}</b><span>{c.label}</span>
                         </div>
                       );
                     })}
@@ -584,9 +590,9 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
                     ))}
                     {dragField === name ? (
                       <div className={`tl-ghost${dragQuoteDa === 'bad' ? ' bad' : ''}`} style={{ left: `${pct(dragA)}%`, width: `${(dragDur / total) * 100}%` }}>
-                        {dragQuoteDa === 'bad' ? 'Indisponible'
+                        {dragQuoteDa === 'bad' ? t('Indisponible')
                           : dragQuoteDa === null ? `${hhmm(dragA)} → ${hhmm(dragA + dragDur)}`
-                            : `${hhmm(dragA)} → ${hhmm(dragA + dragDur)} · ${dragQuoteFrom ? 'dès ' : ''}${fmt(dragQuoteDa)} DA`}
+                            : `${hhmm(dragA)} → ${hhmm(dragA + dragDur)} · ${dragQuoteFrom ? t('dès {montant}', { montant: da(dragQuoteDa) }) : da(dragQuoteDa)}`}
                       </div>
                     ) : null}
                     {nowMin !== null ? <div className="tl-now" style={{ left: `${pct(nowMin)}%` }} /> : null}
@@ -597,14 +603,14 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
           </div>
 
           <div className="tl-legend">
-            <i><span className="tl-block k-resa sw" />Réservé</i>
-            <i><span className="tl-block k-match sw" />Match</i>
-            <i><span className="tl-block k-phone sw" />Tél. à vérifier</i>
-            <i><span className="tl-block k-abo sw" />Abonnement</i>
-            <i><span className="tl-block k-closed sw" />Fermé</i>
-            <i>✓ Honoré / Payé</i>
-            <i>✕ No-show</i>
-            <i>Ligne rouge · maintenant</i>
+            <i><span className="tl-block k-resa sw" />{t('Réservé')}</i>
+            <i><span className="tl-block k-match sw" />{t('Match')}</i>
+            <i><span className="tl-block k-phone sw" />{t('Tél. à vérifier')}</i>
+            <i><span className="tl-block k-abo sw" />{t('Abonnement')}</i>
+            <i><span className="tl-block k-closed sw" />{t('Fermé')}</i>
+            <i>✓ {t('Honoré / Payé')}</i>
+            <i>✕ {t('No-show')}</i>
+            <i>{t('Ligne rouge · maintenant')}</i>
           </div>
         </>
       )}
@@ -613,52 +619,52 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
         {sel ? (
           <>
             <div className="row">
-              <span className="d"><b>{sel.field} · {hhmm(sel.startMin)}</b> · libre — {dayLabel(date)}</span>
+              <span className="d"><b>{sel.field} · {ltr(hhmm(sel.startMin))}</b> · {t('libre')} — {dayLabel(date)}</span>
             </div>
             <div className="cm-sub">
               <label>
-                <span>Au nom de qui ?</span>
+                <span>{t('Au nom de qui ?')}</span>
                 <input className="mb-field__control" style={{ minWidth: 150 }} maxLength={40} value={formName} onChange={(e) => { setFormName(e.target.value); setFormError(''); }} />
               </label>
               <label>
-                <span>Téléphone</span>
-                <input className="mb-field__control" style={{ minWidth: 130 }} placeholder="05 50 00 00 00" maxLength={20} value={formTel} onChange={(e) => setFormTel(e.target.value)} />
+                <span>{t('Téléphone')}</span>
+                <input className="mb-field__control" type="tel" style={{ minWidth: 130 }} placeholder="05 50 00 00 00" maxLength={20} value={formTel} onChange={(e) => setFormTel(e.target.value)} />
               </label>
               <label>
-                <span>Durée</span>
+                <span>{t('Durée')}</span>
                 <select className="mb-field__control" style={{ minWidth: 96 }} value={formDur} onChange={(e) => setFormDur(Number(e.target.value))}>
-                  {[30, 60, 90, 120, 150, 180, 240, 300, 360].map((d) => <option key={d} value={d}>{d} min</option>)}
+                  {[30, 60, 90, 120, 150, 180, 240, 300, 360].map((d) => <option key={d} value={d}>{t('{n} min', { n: d })}</option>)}
                 </select>
               </label>
               <label>
-                <span>Canal</span>
+                <span>{t('Canal')}</span>
                 <select className="mb-field__control" value={formSource} onChange={(e) => setFormSource(e.target.value as 'WALK_IN' | 'PHONE')}>
-                  <option value="WALK_IN">Comptoir</option>
-                  <option value="PHONE">Téléphone</option>
+                  <option value="WALK_IN">{t('Comptoir')}</option>
+                  <option value="PHONE">{t('Téléphone')}</option>
                 </select>
               </label>
               {multiFormat ? (
-                <div className="pl-fmts" role="group" aria-label="Format de la réservation">
-                  <span className="pl-fmts__label">Format</span>
+                <div className="pl-fmts" role="group" aria-label={t('Format de la réservation')}>
+                  <span className="pl-fmts__label">{t('Format')}</span>
                   {quoteFormats.map((q) => (
                     <button
                       key={q.format} type="button" className="pl-fmt" aria-pressed={formFormat === q.format}
                       onClick={() => { setFormFormat(q.format); setFormError(''); }}
                     >
-                      <b>{formatLabel(q.format)}</b><span>{fmt(q.totalDa)} DA</span>
+                      <b>{formatText(q.format)}</b><span>{da(q.totalDa)}</span>
                     </button>
                   ))}
                 </div>
               ) : null}
               <span className="cm-quote">
-                {quote === 'loading' || quote === null ? 'Calcul du devis…'
-                  : quote === 'unavailable' ? 'Indisponible sur ce créneau (conflit, fermeture ou hors horaires).'
-                    : !activeQuote ? 'Le prix dépend du format — choisis-en un.'
+                {quote === 'loading' || quote === null ? t('Calcul du devis…')
+                  : quote === 'unavailable' ? t('Indisponible sur ce créneau (conflit, fermeture ou hors horaires).')
+                    : !activeQuote ? t('Le prix dépend du format — choisissez-en un.')
                       : (
                         <>
-                          Tarif calculé{multiFormat ? ` (${formatLabel(activeQuote.format)})` : ''} : <b>{fmt(activeQuote.totalDa)} DA</b><br />
+                          {multiFormat ? t('Tarif calculé ({format}) :', { format: formatText(activeQuote.format) }) : t('Tarif calculé :')} <b>{da(activeQuote.totalDa)}</b><br />
                           {activeQuote.bands.map((b, i) => (
-                            <span key={i}>{hhmm(b.fromMin)}→{hhmm(b.toMin)} · {fmt(Math.round(b.amountDa))} DA{i < activeQuote.bands.length - 1 ? <br /> : null}</span>
+                            <span key={i}>{ltr(`${hhmm(b.fromMin)}→${hhmm(b.toMin)}`)} · {da(Math.round(b.amountDa))}{i < activeQuote.bands.length - 1 ? <br /> : null}</span>
                           ))}
                         </>
                       )}
@@ -668,15 +674,15 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
                 disabled={formSubmitting || quote === 'unavailable' || quote === null || quote === 'loading' || !activeQuote}
                 onClick={() => { void submitCreate(); }}
               >
-                {formSubmitting ? 'Création…' : 'Créer la réservation'}
+                {formSubmitting ? t('Création…') : t('Créer la réservation')}
               </button>
-              <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setSel(null)}>Annuler</button>
+              <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setSel(null)}>{t('Annuler')}</button>
             </div>
             {formError ? <p className="mb-field__error"><Icon id="i-x" className="mb-ic--sm" />{formError}</p> : null}
           </>
         ) : (
           <div className="row">
-            <span className="d">Cliquez sur une case libre pour créer une réservation ; la fiche complète d’une réservation est dans Réservations. Pour changer son terrain, son heure ou sa durée : bouton « Modifier » de sa fiche.</span>
+            <span className="d">{t('Cliquez sur une case libre pour créer une réservation ; la fiche complète d’une réservation est dans Réservations. Pour changer son terrain, son heure ou sa durée : bouton « Modifier » de sa fiche.')}</span>
           </div>
         )}
       </div>

@@ -1,9 +1,10 @@
 import type { BookingStatus } from '../data/reservationsDemo.js';
+import { useT } from '../lib/i18n.js';
 
 /* Pastille de statut d'une réservation — UNE définition pour Réservations, la recherche (CRM-2) et l'historique d'un
    client (CRM-3, 27/09/2026). Sémantique des statuts du brief : `--open` VERT (réservé, tout va bien), `--filling` OR
    (honoré, reste à encaisser), `--joined` ROUGE MARQUE (payé — l'action est faite), `--cancelled` ROUGE danger
-   (no-show), `--expired` (annulé). */
+   (no-show), `--expired` (annulé). P1-15 (lot C) : `label` reste le français (clé de traduction), traduit à l'affichage. */
 export const STATUS_PILL: Record<BookingStatus, { variant: string; label: string }> = {
   RESERVED: { variant: 'open', label: 'Réservé' },
   HONORED: { variant: 'filling', label: 'Honoré' },
@@ -13,6 +14,7 @@ export const STATUS_PILL: Record<BookingStatus, { variant: string; label: string
 };
 
 export function Pill({ status }: { status: BookingStatus }) {
+  const t = useT();
   const p = STATUS_PILL[status];
-  return <span className={`mb-status mb-status--${p.variant}`}>{p.label}</span>;
+  return <span className={`mb-status mb-status--${p.variant}`}>{t(p.label)}</span>;
 }

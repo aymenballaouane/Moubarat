@@ -17,6 +17,8 @@ import type { TimelineBlock, TimelineBlockKind, TimelineStatus } from '../data/p
 import type { BookingSource, BookingStatus, ReservationRow } from '../data/reservationsDemo.js';
 import { hhmm } from './time.js';
 import { fmt } from './format.js';
+import { getLang } from './lang.js';
+import { ltr, translate } from './i18n.js';
 
 /* --- Dates (Alger = UTC+1 fixe, jamais d'heure d'été) --------------------- */
 
@@ -72,9 +74,19 @@ export const MONTH_NAMES = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', '
     (même format que `untilLabelFromDays`, Abonnements.tsx — jamais
     `toLocaleDateString`, rendu différent selon la locale du navigateur). */
 export function dayLabel(dateIso: string): string {
-  if (dateIso === todayAlgiers()) return "Aujourd'hui";
+  if (dateIso === todayAlgiers()) return translate("Aujourd'hui", getLang());
   const [, m, d] = dateIso.split('-').map(Number) as [number, number, number];
+  if (getLang() === 'ar') return arabicDate(dateIso, false);
   return `${DAY_NAMES_SHORT[weekdayOf(dateIso)]}. ${d} ${MONTH_NAMES[m - 1]}`;
+}
+
+/** P1-15 (CRM en arabe, lot C) : « الأربعاء 30 سبتمبر » (avec l'année si `withYear`) — Intl en UTC sur la date civile,
+    mois du Maghreb (ar-DZ), chiffres 0-9. Le français garde son format écrit à la main ci-dessus. */
+export function arabicDate(dateIso: string, withYear: boolean): string {
+  const [y, m, d] = dateIso.split('-').map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString('ar-DZ-u-nu-latn', {
+    weekday: 'long', day: 'numeric', month: 'long', ...(withYear ? { year: 'numeric' as const } : {}), timeZone: 'UTC',
+  });
 }
 
 /* --- Forme servie par l'API ------------------------------------------------ */
@@ -138,8 +150,8 @@ function blockKind(row: ApiBookingRow): TimelineBlockKind {
 const SOURCE_TAG: Record<BookingSource, string> = { MOUBARAT: 'MB', PHONE: 'TÉL', WALK_IN: 'CPT' };
 
 function sourceTag(r: ApiBookingRow): string {
-  if (r.source === 'PHONE') return r.verifiedByCenter ? 'TÉL' : 'TÉL ?';
-  return SOURCE_TAG[r.source];
+  if (r.source === 'PHONE') return translate(r.verifiedByCenter ? 'TÉL' : 'TÉL ?', getLang());
+  return translate(SOURCE_TAG[r.source], getLang());
 }
 
 function blockStatus(status: BookingStatus): TimelineStatus | null {
@@ -158,7 +170,7 @@ export function timelineBlocksFromApi(rows: readonly ApiBookingRow[], dayStart: 
     const title = kind === 'match' ? (r.match?.title ?? name) : name;
     const subtitle = kind === 'match'
       ? `${r.match?.joinedCount ?? 0}/${r.match?.capacity ?? 0}`
-      : `${sourceTag(r)} · ${hhmm(startMin)}→${hhmm(startMin + durationMin)} · ${fmt(r.priceTotalDa)}`;
+      : `${sourceTag(r)} · ${ltr(`${hhmm(startMin)}→${hhmm(startMin + durationMin)}`)} · ${fmt(r.priceTotalDa)}`;
     return {
       id: r.id, field: r.fieldName, kind, status: blockStatus(r.status),
       startMin, durationMin, title, subtitle,
@@ -175,7 +187,7 @@ export function subscriptionBlocksFromApi(subs: readonly ApiSubscriptionOccurren
     id: s.id, field: s.fieldName, kind: 'abo', status: s.status === 'RESERVED' ? null : s.status,
     startMin: Math.round((s.start - dayStart) / 60_000),
     durationMin: Math.round((s.end - s.start) / 60_000),
-    title: s.holderName, subtitle: 'Abonnement',
+    title: s.holderName, subtitle: translate('Abonnement', getLang()),
   }));
 }
 

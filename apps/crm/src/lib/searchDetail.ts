@@ -6,7 +6,9 @@
    dans Réservations pour retrouver la fiche. Aucune règle métier ici, aucun réseau — testé isolément. */
 
 import type { BookingSource, BookingStatus } from '../data/reservationsDemo.js';
-import { DAY_NAMES_SHORT, MONTH_NAMES, dayStartMs, weekdayOf } from './bookingsDetail.js';
+import { DAY_NAMES_SHORT, MONTH_NAMES, arabicDate, dayStartMs, weekdayOf } from './bookingsDetail.js';
+import { getLang } from './lang.js';
+import { fill, type TFn } from './i18n.js';
 
 export interface ApiBookingSearchHit {
   id: string; date: string; start: number; end: number; status: BookingStatus; source: BookingSource;
@@ -62,13 +64,15 @@ export function historyRowsFromApi(rows: readonly ApiClientBookingHistoryRow[]):
 /** « Mer. 30 sept. 2026 » — avec l'année, parce qu'un historique ou un résultat de recherche peut remonter loin ;
     `dayLabel` (« Aujourd'hui », sans année) reste celui de la navigation jour par jour. */
 export function dateLabelLong(dateIso: string): string {
+  if (getLang() === 'ar') return arabicDate(dateIso, true);
   const [y, m, d] = dateIso.split('-').map(Number) as [number, number, number];
   return `${DAY_NAMES_SHORT[weekdayOf(dateIso)]}. ${d} ${MONTH_NAMES[m - 1]} ${y}`;
 }
 
-/** Le libellé du nombre de résultats — pluriel accordé en JS, jamais « (s) ». */
-export function hitsCountLabel(count: number, hasMore: boolean): string {
-  if (count === 0) return 'Aucun résultat';
-  const n = `${count} ${count > 1 ? 'résultats' : 'résultat'}`;
-  return hasMore ? `${n} affichés — affinez la recherche ou affichez plus` : n;
+/** Le libellé du nombre de résultats — pluriel accordé en JS, jamais « (s) ». P1-15 (lot C) : `t` (useT de l'écran) pour
+    l'arabe ; sans `t`, le français tel quel. */
+export function hitsCountLabel(count: number, hasMore: boolean, t: TFn = (k, v) => fill(k, v)): string {
+  if (count === 0) return t('Aucun résultat');
+  const n = count > 1 ? t('{n} résultats', { n: count }) : t('{n} résultat', { n: count });
+  return hasMore ? t('{label} affichés — affinez la recherche ou affichez plus', { label: n }) : n;
 }

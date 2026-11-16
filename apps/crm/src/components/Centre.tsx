@@ -13,6 +13,7 @@ import {
 import { Icon } from './Icon.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
+import { localeOf, ltr, useLang, useT } from '../lib/i18n.js';
 
 interface CentreProps {
   role: CenterRole;
@@ -104,6 +105,18 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
   const lockedFields = !canCenterAct(role, 'EDIT_FIELDS').ok;
   const lockedPricing = !canCenterAct(role, 'EDIT_PRICING').ok;
   const lockedHours = !canCenterAct(role, 'EDIT_HOURS').ok;
+  const t = useT();
+  const lang = useLang();
+  /* P1-15 (lot C) : libellés de présentation traduits à l'affichage, jamais les valeurs envoyées au serveur ni les résumés de
+     journal (restent en français). Formats : seuls « Simple »/« Double » ont un libellé, 5v5… s'affichent tels quels. */
+  const lf = (format: string): string => { const l = formatLabel(format); return l === format ? format : t(l); };
+  /** Catalogues du prototype (surfaces, équipements) traduits ; une valeur réelle hors catalogue reste telle quelle (donnée). */
+  const surfaceText = (x: string): string => (SURFACES.includes(x) ? t(x) : x);
+  const equipText = (x: string): string => (x in EQUIPMENT_DEMO ? t(x) : x);
+  /** Erreur affichée : le message générique local est traduit, un message du serveur reste tel quel (lot D). */
+  const errText = (m: string): string => (m === GENERIC_ERROR_MESSAGE ? t(m) : m);
+  /** Flèche entre deux horaires côte à côte : la ligne se lit de droite à gauche en arabe. */
+  const arrow = lang === 'ar' ? '←' : '→';
 
   const [data, setData] = useState<CentreData | null>(null);
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
@@ -144,7 +157,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       const { field } = await apiFetch<{ field: ApiFieldWriteResult }>(`/venues/${venueId}/fields/${id}`, { method: 'PATCH', token, body });
       setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === id ? mergeFieldFromApiWrite(x, field) : x)) }));
       onAudit(summary);
-      onToast('Enregistré.');
+      onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === id ? previous : x)) }));
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -201,7 +214,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       const { field } = await apiFetch<{ field: ApiFieldWriteResult }>(`/venues/${venueId}/fields/${target.id}`, { method: 'PATCH', token, body: { status: 'ARCHIVED' } });
       setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === target.id ? mergeFieldFromApiWrite(x, field) : x)) }));
       onAudit(`a archivé le terrain ${f.name}`);
-      onToast('Enregistré.');
+      onToast(t('Enregistré.'));
       setArchiveTarget(null);
     } catch (e) {
       if (e instanceof ApiError && e.code === 'FIELD_HAS_FUTURE_BOOKINGS') {
@@ -235,10 +248,10 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
   async function submitAddField() {
     if (!data) return;
     const name = addName.trim().toUpperCase();
-    if (name.length < 2) { setAddError('Donne un nom au terrain (ex. T4).'); return; }
-    if (data.fields.some((f) => f.name.toUpperCase() === name)) { setAddError('Ce nom de terrain existe déjà.'); return; }
+    if (name.length < 2) { setAddError(t('Donnez un nom au terrain (ex. T4).')); return; }
+    if (data.fields.some((f) => f.name.toUpperCase() === name)) { setAddError(t('Ce nom de terrain existe déjà.')); return; }
     const rate = Math.round(Number(addRate));
-    if (!Number.isFinite(rate) || rate <= 0) { setAddError('Le tarif horaire doit être un nombre entier positif.'); return; }
+    if (!Number.isFinite(rate) || rate <= 0) { setAddError(t('Le tarif horaire doit être un nombre entier positif.')); return; }
 
     setAddSubmitting(true);
     try {
@@ -248,10 +261,10 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       const row = fieldRowFromApiWrite(field);
       setData((d) => d && ({ ...d, fields: [...d.fields, row] }));
       onAudit(`a ajouté le terrain ${row.name} (${SPORT_LABELS[row.sport]} ${formatLabel(addFormat)}, ${rate} DA/h)`);
-      onToast(`Terrain ${row.name} ajouté.`);
+      onToast(t('Terrain {terrain} ajouté.', { terrain: row.name }));
       setAddOpen(false);
     } catch (e) {
-      setAddError(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      setAddError(e instanceof ApiError ? e.message : t(GENERIC_ERROR_MESSAGE));
     } finally {
       setAddSubmitting(false);
     }
@@ -274,7 +287,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       });
       setData((d) => d && ({ ...d, equipment: mergeEquipment(Object.keys(EQUIPMENT_DEMO), venue.equipments) }));
       onAudit(`${on ? 'a activé' : 'a retiré'} l'équipement « ${key} » (fiche app)`);
-      onToast('Enregistré.');
+      onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, equipment: previous }));
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -289,7 +302,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
   async function commitAddress(raw: string) {
     if (!data) return;
     const address = raw.trim();
-    if (!address) { onToast('L’adresse ne peut pas être vide.'); return; }
+    if (!address) { onToast(t('L’adresse ne peut pas être vide.')); return; }
     if (address === data.address) return;
     const previous = data.address;
     setData((d) => d && ({ ...d, address }));
@@ -297,7 +310,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       const { venue } = await apiFetch<{ venue: { address: string } }>(`/venues/${venueId}`, { method: 'PATCH', token, body: { address } });
       setData((d) => d && ({ ...d, address: venue.address }));
       onAudit(`a modifié l'adresse du centre : ${previous} → ${venue.address}`);
-      onToast('Enregistré.');
+      onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, address: previous }));
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -316,7 +329,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       const { venue } = await apiFetch<{ venue: { phone: string | null } }>(`/venues/${venueId}`, { method: 'PATCH', token, body: { phone } });
       setData((d) => d && ({ ...d, phone: venue.phone ?? '' }));
       onAudit(`a modifié le téléphone du centre : ${previous || '—'} → ${venue.phone ?? '—'}`);
-      onToast('Enregistré.');
+      onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, phone: previous }));
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -333,7 +346,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       const { venue } = await apiFetch<{ venue: { description: string | null } }>(`/venues/${venueId}`, { method: 'PATCH', token, body: { description } });
       setData((d) => d && ({ ...d, description: venue.description ?? '' }));
       onAudit(`a modifié la description du centre`);
-      onToast('Enregistré.');
+      onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, description: previous }));
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -360,7 +373,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       const { formatPrice } = await apiFetch<{ formatPrice: { format: MatchFormat; hourlyRateDa: number } }>(`/venues/${venueId}/fields/${id}/formats/${format}`, { method: 'PATCH', token, body: { hourlyRateDa: v } });
       setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === id ? { ...x, formatPrices: withPrice(x.formatPrices, formatPrice.hourlyRateDa) } : x)) }));
       onAudit(`a modifié le prix de base ${formatLabel(format)} de ${f.name} : ${p.hourlyRateDa} → ${v} DA/h`);
-      onToast('Enregistré.');
+      onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === id ? { ...x, formatPrices: previous } : x)) }));
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -378,9 +391,9 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
   async function submitAddFormat(id: string) {
     const f = data?.fields.find((x) => x.id === id);
     const draft = fmtAdd[id];
-    if (!f || !draft || !draft.format) { onToast('Choisissez le format à ajouter.'); return; }
+    if (!f || !draft || !draft.format) { onToast(t('Choisissez le format à ajouter.')); return; }
     const rate = Math.round(Number(draft.rate));
-    if (!Number.isFinite(rate) || rate <= 0) { onToast('Le tarif horaire doit être un nombre entier positif.'); return; }
+    if (!Number.isFinite(rate) || rate <= 0) { onToast(t('Le tarif horaire doit être un nombre entier positif.')); return; }
     setFmtAddBusy(id);
     try {
       const { formatPrice, pricingRules } = await apiFetch<{ formatPrice: { format: MatchFormat; hourlyRateDa: number }; pricingRules: ApiPricingRule[] }>(`/venues/${venueId}/fields/${id}/formats`, {
@@ -393,7 +406,10 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       setFmtAdd((m) => { const next = { ...m }; delete next[id]; return next; });
       onAudit(`a ajouté le format ${formatLabel(formatPrice.format)} (${formatPrice.hourlyRateDa} DA/h) au terrain ${f.name}`
         + (draft.copyFrom ? ` — ${bandsLabel(pricingRules.length)} depuis ${formatLabel(draft.copyFrom)}` : ' — sans bande (tarif plat)'));
-      onToast(draft.copyFrom ? `Format ajouté — ${bandsLabel(pricingRules.length)}, à régler ci-dessous.` : 'Format ajouté (tarif plat, sans bande).');
+      const n = pricingRules.length;
+      onToast(draft.copyFrom
+        ? (n > 1 ? t('Format ajouté — {n} bandes copiées, à régler ci-dessous.', { n }) : t('Format ajouté — {n} bande copiée, à régler ci-dessous.', { n }))
+        : t('Format ajouté (tarif plat, sans bande).'));
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
     } finally {
@@ -444,28 +460,28 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
           onChange={(e) => setDraft(priceKey, e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); requestPrice(priceKey, label, saved, save); } if (e.key === 'Escape') clearDraft(priceKey); }}
         />
-        <span className="cm-note">DA / h</span>
+        <span className="cm-note">{t('DA / h')}</span>
         {dirty ? (
           <span className="cm-actions-row">
-            <button type="button" className="mb-btn mb-btn--sm" disabled={!valid} onClick={() => requestPrice(priceKey, label, saved, save)}>Enregistrer</button>
-            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => clearDraft(priceKey)}>Annuler</button>
-            {!valid ? <span className="mb-field__error" role="alert">Un montant entier en DA, supérieur à 0.</span> : null}
+            <button type="button" className="mb-btn mb-btn--sm" disabled={!valid} onClick={() => requestPrice(priceKey, label, saved, save)}>{t('Enregistrer')}</button>
+            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => clearDraft(priceKey)}>{t('Annuler')}</button>
+            {!valid ? <span className="mb-field__error" role="alert">{t('Un montant entier en DA, supérieur à 0.')}</span> : null}
           </span>
         ) : null}
       </>
     );
   }
   async function confirmRemoveFormat() {
-    const t = removeFormatTarget;
+    const target = removeFormatTarget;
     setRemoveFormatTarget(null);
-    if (!t) return;
+    if (!target) return;
     try {
-      await apiFetch(`/venues/${venueId}/fields/${t.fieldId}/formats/${t.format}`, { method: 'DELETE', token });
-      setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === t.fieldId ? {
-        ...x, formats: x.formats.filter((y) => y !== t.format), formatPrices: x.formatPrices.filter((y) => y.format !== t.format), rules: x.rules.filter((r) => r.format !== t.format),
+      await apiFetch(`/venues/${venueId}/fields/${target.fieldId}/formats/${target.format}`, { method: 'DELETE', token });
+      setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === target.fieldId ? {
+        ...x, formats: x.formats.filter((y) => y !== target.format), formatPrices: x.formatPrices.filter((y) => y.format !== target.format), rules: x.rules.filter((r) => r.format !== target.format),
       } : x)) }));
-      onAudit(`a retiré le format ${formatLabel(t.format)} du terrain ${t.fieldName}`);
-      onToast('Format retiré.');
+      onAudit(`a retiré le format ${formatLabel(target.format)} du terrain ${target.fieldName}`);
+      onToast(t('Format retiré.'));
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
     }
@@ -482,7 +498,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       const { pricingRule } = await apiFetch<{ pricingRule: ApiPricingRuleWriteResult }>(`/venues/${venueId}/pricing-rules/${ruleId}`, { method: 'PATCH', token, body: { rateDa: v } });
       setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === id ? { ...x, rules: withUpdatedRule(x.rules, pricingRule) } : x)) }));
       onAudit(`a modifié le tarif « ${r.label} » de ${f.name} : ${r.rateDaPerHour} → ${v} DA/h`);
-      onToast('Enregistré.');
+      onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === id ? { ...x, rules: previousRules } : x)) }));
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -500,7 +516,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
     try {
       await apiFetch(`/venues/${venueId}`, { method: 'PATCH', token, body: { cashModuleEnabled: checked } });
       onAudit(`${checked ? 'a activé' : 'a désactivé'} le module Caisse`);
-      onToast(`Module Caisse ${checked ? 'activé — il apparaît dans la navigation.' : 'désactivé.'}`);
+      onToast(checked ? t('Module Caisse activé — il apparaît dans la navigation.') : t('Module Caisse désactivé.'));
     } catch (e) {
       onToggleCaisse(!checked);
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -523,7 +539,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
     const cur = previous ?? DEFAULT_NEW_DAY_HOURS;
     const next: [number, number] = edge === 0 ? [value, cur[1]] : [cur[0], value];
     if (next[1] <= next[0]) {
-      onToast('La fermeture doit suivre l\'ouverture.');
+      onToast(t('La fermeture doit suivre l\'ouverture.'));
       return;
     }
     setData((d) => d && ({ ...d, hours: { ...d.hours, [weekday]: next } }));
@@ -533,7 +549,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       );
       setData((d) => d && ({ ...d, hours: { ...d.hours, [weekday]: [openingHours.startMin, openingHours.endMin] } }));
       onAudit(`a modifié les horaires du ${DAY_NAMES[weekday]}. → ${hhmm(next[0])} - ${hhmm(next[1])}`);
-      onToast('Enregistré.');
+      onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => {
         if (!d) return d;
@@ -568,7 +584,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
     try {
       await apiFetch<null>(`/venues/${venueId}/opening-hours/${weekday}?startMin=${previous[0]}`, { method: 'DELETE', token });
       onAudit(`a fermé le ${DAY_NAMES[weekday]}. (${hhmm(previous[0])} → ${hhmm(previous[1])} supprimé)`);
-      onToast('Enregistré — jour fermé.');
+      onToast(t('Enregistré — jour fermé.'));
     } catch (e) {
       setData((d) => d && ({ ...d, hours: { ...d.hours, [weekday]: previous } }));
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -622,9 +638,9 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
      côté client aujourd'hui) — affichée telle quelle, jamais juste « refusé »
      sans dire pourquoi (le gérant doit savoir quoi déplacer ou annuler). */
   async function submitAddClosure() {
-    if (!closureDate) { setClosureError('Choisissez une date.'); return; }
+    if (!closureDate) { setClosureError(t('Choisissez une date.')); return; }
     if (!closureWholeDay && closureEndMin <= closureStartMin) {
-      setClosureError('La fin doit suivre le début.'); return;
+      setClosureError(t('La fin doit suivre le début.')); return;
     }
     setClosureSubmitting(true); setClosureError(''); setClosureConflicts([]);
     try {
@@ -637,14 +653,14 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
         },
       });
       onAudit(`a fermé ${closureFieldId ? `le terrain ${data?.fields.find((f) => f.id === closureFieldId)?.name ?? ''}` : 'le centre'} le ${dayLabel(closureDate)} (${CLOSURE_REASON_LABELS[closureReason]})`);
-      onToast('Fermeture enregistrée.');
+      onToast(t('Fermeture enregistrée.'));
       setAddClosureOpen(false);
       void fetchClosures();
     } catch (e) {
       if (e instanceof ApiError && e.code === 'SLOT_TAKEN') {
         setClosureConflicts((e.details as { conflicts?: ClosureConflict[] } | undefined)?.conflicts ?? []);
       }
-      setClosureError(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      setClosureError(e instanceof ApiError ? e.message : t(GENERIC_ERROR_MESSAGE));
     } finally {
       setClosureSubmitting(false);
     }
@@ -660,7 +676,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
     try {
       await apiFetch<null>(`/venues/${venueId}/closures/${c.id}`, { method: 'DELETE', token });
       onAudit(`a retiré la fermeture ${c.fieldName ? `du terrain ${c.fieldName}` : 'du centre'} du ${dayLabel(algiersDateOf(c.startMs))}`);
-      onToast('Fermeture retirée.');
+      onToast(t('Fermeture retirée.'));
       setRemoveClosureTarget(null);
       void fetchClosures();
     } catch (e) {
@@ -682,15 +698,15 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
   return (
     <section className="cm-view on">
       <p className="cm-view-note">
-        Tout ce qui est réglé ici alimente la <b>fiche technique du centre côté app joueur</b> — celle qu'on voit avant
-        de réserver {venueName} : terrains, équipements en icônes, description, photos, horaires.
+        {t('Tout ce qui est réglé ici alimente la')} <b>{t('fiche technique du centre côté app joueur')}</b>{' '}
+        {t('— celle qu\'on voit avant de réserver {centre} : terrains, équipements en icônes, description, photos, horaires.', { centre: venueName })}
       </p>
 
       {lockedProfile ? (
         <div className="cm-riskrow" style={{ marginBottom: 12 }}>
           <span className="t">
-            <b><Icon id="i-lock" /> Le paramétrage du centre se fait en Manager</b>
-            <span className="cm-note" style={{ margin: '2px 0 0' }}>Tu peux consulter, pas modifier.</span>
+            <b><Icon id="i-lock" /> {t('Le paramétrage du centre se fait en Manager')}</b>
+            <span className="cm-note" style={{ margin: '2px 0 0' }}>{t('Vous pouvez consulter, pas modifier.')}</span>
           </span>
         </div>
       ) : null}
@@ -698,24 +714,24 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       {load.kind === 'error' ? (
         <div className="cm-riskrow" style={{ marginBottom: 12 }}>
           <span className="t">
-            <b><Icon id="i-x" /> Fiche du centre indisponible</b>
-            <span className="cm-note" style={{ margin: '2px 0 0' }}>{load.message}</span>
+            <b><Icon id="i-x" /> {t('Fiche du centre indisponible')}</b>
+            <span className="cm-note" style={{ margin: '2px 0 0' }}>{errText(load.message)}</span>
           </span>
-          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchVenue(); }}>Réessayer</button>
+          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchVenue(); }}>{t('Réessayer')}</button>
         </div>
       ) : null}
 
       {load.kind === 'loading' || !data ? (
         load.kind === 'error' ? null : (
-          <div className="cm-card cf-sec"><p className="cf-state">Chargement de la fiche du centre…</p></div>
+          <div className="cm-card cf-sec"><p className="cf-state">{t('Chargement de la fiche du centre…')}</p></div>
         )
       ) : (
         <>
           <div className="cm-card cf-sec">
-            <p className="cm-sec">Identité</p>
+            <p className="cm-sec">{t('Identité')}</p>
             <div className="cm-sub" style={{ border: 0, padding: 0, margin: 0 }}>
               <label>
-                <span>Adresse</span>
+                <span>{t('Adresse')}</span>
                 <input
                   key={`address-${data.address}`} className="mb-field__control" style={{ minWidth: 260 }}
                   defaultValue={data.address} disabled={lockedProfile}
@@ -723,12 +739,12 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
                 />
               </label>
               <a className="mb-btn mb-btn--ghost mb-btn--sm" href={`https://www.google.com/maps/search/${encodeURIComponent(data.address)}`} target="_blank" rel="noopener noreferrer">
-                Voir sur la carte ↗
+                {t('Voir sur la carte ↗')}
               </a>
             </div>
             <div className="cm-sub" style={{ border: 0, padding: 0, margin: '10px 0 0' }}>
               <label>
-                <span>Téléphone (affiché aux joueurs)</span>
+                <span>{t('Téléphone (affiché aux joueurs)')}</span>
                 <input
                   key={`phone-${data.phone}`} className="mb-field__control" style={{ minWidth: 260 }} maxLength={40}
                   defaultValue={data.phone} disabled={lockedProfile} data-testid="centre-phone"
@@ -738,7 +754,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
             </div>
             <label style={{ display: 'block', marginTop: 10 }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>
-                Description (fiche app)
+                {t('Description (fiche app)')}
               </span>
               <textarea
                 key={`description-${data.description}`} className="mb-field__control" rows={2}
@@ -750,68 +766,68 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
           </div>
 
           <div className="cm-card cf-sec">
-            <p className="cm-sec">Terrains — ajouter, régler, archiver (l'historique est toujours conservé)</p>
-            <div className="cf-head"><span className="fn0" /><span>Sport</span><span>Format</span><span>Env.</span><span>Surface</span><span>Statut</span></div>
-            {visibleFields.length === 0 ? <p className="cf-state">Aucun terrain — ajoute le premier ci-dessous.</p> : null}
+            <p className="cm-sec">{t('Terrains — ajouter, régler, archiver (l\'historique est toujours conservé)')}</p>
+            <div className="cf-head"><span className="fn0" /><span>{t('Sport')}</span><span>{t('Format')}</span><span>{t('Env.')}</span><span>{t('Surface')}</span><span>{t('Statut')}</span></div>
+            {visibleFields.length === 0 ? <p className="cf-state">{t('Aucun terrain — ajoutez le premier ci-dessous.')}</p> : null}
             {visibleFields.map((f) => {
               const surfaceOptions = f.surface && !SURFACES.includes(f.surface) ? [f.surface, ...SURFACES] : [...SURFACES];
               return (
                 <div className="cf-row" key={f.id}>
                   <span className="fn">{f.name}</span>
                   <select className="mb-field__control" value={f.sport} disabled={lockedFields} onChange={(e) => setSport(f.id, e.target.value as Sport)}>
-                    {SPORT_VALUES.map((s) => <option key={s} value={s}>{SPORT_LABELS[s]}</option>)}
+                    {SPORT_VALUES.map((s) => <option key={s} value={s}>{t(SPORT_LABELS[s])}</option>)}
                   </select>
                   {/* Lecture seule (16/09/2026) : les formats se règlent avec leur prix,
                       dans la carte Tarifs — un format n'existe que s'il a un tarif. */}
-                  <span className="cf-fmt-ro" title="Formats et tarifs : carte Tarifs ci-dessous">{formatsLabel(f.formats)}</span>
-                  <select className="mb-field__control" aria-label={`Couverture de ${f.name}`} value={f.indoor ? 'INDOOR' : 'OUTDOOR'} disabled={lockedFields} onChange={(e) => setIndoor(f.id, e.target.value === 'INDOOR')}>
-                    <option value="OUTDOOR">Extérieur</option><option value="INDOOR">Intérieur</option>
+                  <span className="cf-fmt-ro" title={t('Formats et tarifs : carte Tarifs ci-dessous')}>{formatsLabel(f.formats, t)}</span>
+                  <select className="mb-field__control" aria-label={t('Couverture de {terrain}', { terrain: f.name })} value={f.indoor ? 'INDOOR' : 'OUTDOOR'} disabled={lockedFields} onChange={(e) => setIndoor(f.id, e.target.value === 'INDOOR')}>
+                    <option value="OUTDOOR">{t('Extérieur')}</option><option value="INDOOR">{t('Intérieur')}</option>
                   </select>
                   <select className="mb-field__control" value={f.surface} disabled={lockedFields} onChange={(e) => setSurface(f.id, e.target.value)}>
                     {f.surface === '' ? <option value="">—</option> : null}
-                    {surfaceOptions.map((x) => <option key={x}>{x}</option>)}
+                    {surfaceOptions.map((x) => <option key={x} value={x}>{surfaceText(x)}</option>)}
                   </select>
                   <select className="mb-field__control" value={f.status} disabled={lockedFields} onChange={(e) => setStatus(f.id, e.target.value as FieldStatus)}>
-                    {(Object.entries(FIELD_STATUS_LABELS) as [FieldStatus, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    {(Object.entries(FIELD_STATUS_LABELS) as [FieldStatus, string][]).map(([v, l]) => <option key={v} value={v}>{t(l)}</option>)}
                   </select>
                 </div>
               );
             })}
             <div className="cm-sub">
-              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={lockedFields} onClick={openAddField}>Ajouter un terrain</button>
+              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={lockedFields} onClick={openAddField}>{t('Ajouter un terrain')}</button>
             </div>
           </div>
 
           <div className="cm-card cf-sec">
-            <p className="cm-sec">Équipements — cochés ici, traduits en icônes dans la fiche app</p>
+            <p className="cm-sec">{t('Équipements — cochés ici, traduits en icônes dans la fiche app')}</p>
             <div className="cf-eq">
               {data.equipment.map((e) => (
                 <label key={e.key} className={e.on ? 'on' : ''}>
                   <input type="checkbox" style={{ accentColor: 'var(--primary)' }} checked={e.on} disabled={lockedProfile} onChange={() => toggleEquip(e.key)} />
-                  {e.key}
+                  {equipText(e.key)}
                 </label>
               ))}
             </div>
           </div>
 
           <div className="cm-card cf-sec">
-            <p className="cm-sec">Photos du centre</p>
+            <p className="cm-sec">{t('Photos du centre')}</p>
             <div className="cf-photos">
-              <div>Photo d'ambiance</div>
-              <div>Terrains</div>
-              <div>Vestiaires</div>
-              <div>Vue extérieure</div>
+              <div>{t('Photo d\'ambiance')}</div>
+              <div>{t('Terrains')}</div>
+              <div>{t('Vestiaires')}</div>
+              <div>{t('Vue extérieure')}</div>
             </div>
             <p className="cm-note" style={{ margin: '8px 0 0' }}>
-              L'ajout de photos arrive bientôt. En attendant, l'app affiche le logo Moubarat sur la fiche du centre.
+              {t('L\'ajout de photos arrive bientôt. En attendant, l\'app affiche le logo Moubarat sur la fiche du centre.')}
             </p>
           </div>
 
           <div className="cm-card cf-sec">
-            <p className="cm-sec">Tarifs — appliqués partout : création, modification, abonnements</p>
+            <p className="cm-sec">{t('Tarifs — appliqués partout : création, modification, abonnements')}</p>
             {/* Décision Aymen 04/09 : regroupés PAR TERRAIN (chaque terrain a son
                 prix de base et ses bandes), jamais un seul terrain affiché. */}
-            {visibleFields.length === 0 ? <p className="cf-state">Aucun terrain, donc aucun tarif.</p> : null}
+            {visibleFields.length === 0 ? <p className="cf-state">{t('Aucun terrain, donc aucun tarif.')}</p> : null}
             {visibleFields.map((f) => {
               /* Formats dont la grille tarifaire (base + bandes) est IDENTIQUE — état hérité
                  de la migration tant que le manager ne les a pas différenciés : signalé,
@@ -824,43 +840,43 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
               const sourcesWithBands = f.formatPrices.map((p) => p.format).filter((fm) => f.rules.some((r) => r.format === fm));
               return (
                 <div className="cf-block" key={f.id}>
-                  <div className="cf-group"><span className="fn">{f.name}</span><span className="m">{SPORT_LABELS[f.sport]} · {formatsLabel(f.formats)}</span></div>
+                  <div className="cf-group"><span className="fn">{f.name}</span><span className="m">{t(SPORT_LABELS[f.sport])} · {formatsLabel(f.formats, t)}</span></div>
                   {f.formatPrices.map((p) => {
                     const same = peers[p.format] ?? [];
                     return (
                       <div className="cf-fmt" key={p.format}>
                         <div className="cf-fmt__head">
-                          <span className="cf-fmt__name">{formatLabel(p.format)}</span>
+                          <span className="cf-fmt__name">{lf(p.format)}</span>
                           {same.length > 0 ? (
                             <span className="cf-warn" role="status" data-testid="tariff-identical">
-                              Même tarif que {same.map(formatLabel).join(' · ')} — jamais différencié, à régler si ce format doit coûter autre chose
+                              {t('Même tarif que {formats} — jamais différencié, à régler si ce format doit coûter autre chose', { formats: same.map(lf).join(' · ') })}
                             </span>
                           ) : null}
                           <button
                             type="button" className="mb-btn mb-btn--secondary mb-btn--sm"
                             disabled={lockedPricing || f.formatPrices.length <= 1}
-                            title={f.formatPrices.length <= 1 ? 'Un terrain propose toujours au moins un format' : undefined}
+                            title={f.formatPrices.length <= 1 ? t('Un terrain propose toujours au moins un format') : undefined}
                             onClick={() => setRemoveFormatTarget({ fieldId: f.id, fieldName: f.name, format: p.format })}
-                          >Retirer</button>
+                          >{t('Retirer')}</button>
                         </div>
                         <div className="cf-row">
-                          <span className="fn" style={{ minWidth: 150 }}>Prix de base</span>
-                          <span className="cm-note" style={{ flex: 1 }}>Toutes heures sans règle</span>
+                          <span className="fn" style={{ minWidth: 150 }}>{t('Prix de base')}</span>
+                          <span className="cm-note" style={{ flex: 1 }}>{t('Toutes heures sans règle')}</span>
                           {PriceInput({
                             priceKey: `base:${f.id}:${p.format}`, saved: p.hourlyRateDa,
-                            ariaLabel: `Prix de base ${formatLabel(p.format)} ${f.name}`,
-                            label: `Prix de base ${formatLabel(p.format)} — ${f.name}`,
+                            ariaLabel: t('Prix de base {format} {terrain}', { format: lf(p.format), terrain: f.name }),
+                            label: t('Prix de base {format} — {terrain}', { format: lf(p.format), terrain: f.name }),
                             save: (v) => commitFormatPrice(f.id, p.format, v),
                           })}
                         </div>
                         {f.rules.filter((r) => r.format === p.format).map((r) => (
                           <div className="cf-row" key={r.id}>
                             <span className="fn" style={{ minWidth: 150 }}>{r.label}</span>
-                            <span className="cm-note" style={{ flex: 1 }}>{ruleScopeNote(r.weekdays, DAY_NAMES)} · {hhmm(r.startMin)} → {hhmm(r.endMin)}</span>
+                            <span className="cm-note" style={{ flex: 1 }}>{ruleScopeNote(r.weekdays, DAY_NAMES, t)} · {ltr(`${hhmm(r.startMin)} → ${hhmm(r.endMin)}`)}</span>
                             {PriceInput({
                               priceKey: `rule:${r.id}`, saved: r.rateDaPerHour,
-                              ariaLabel: `${r.label} ${formatLabel(p.format)} ${f.name}`,
-                              label: `« ${r.label} » ${formatLabel(p.format)} — ${f.name}`,
+                              ariaLabel: `${r.label} ${lf(p.format)} ${f.name}`,
+                              label: `« ${r.label} » ${lf(p.format)} — ${f.name}`,
                               save: (v) => commitRuleRate(f.id, r.id, v),
                             })}
                           </div>
@@ -870,28 +886,28 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
                   })}
                   {addable.length > 0 && !lockedPricing ? (
                     <div className="cf-row cf-fmt-add">
-                      <span className="fn" style={{ minWidth: 150 }}>Ajouter un format</span>
+                      <span className="fn" style={{ minWidth: 150 }}>{t('Ajouter un format')}</span>
                       <select
-                        className="mb-field__control" value={draft.format} aria-label={`Format à ajouter à ${f.name}`}
+                        className="mb-field__control" value={draft.format} aria-label={t('Format à ajouter à {terrain}', { terrain: f.name })}
                         onChange={(e) => setFmtAdd((m) => ({ ...m, [f.id]: { ...draft, format: e.target.value as MatchFormat | '' } }))}
                       >
-                        <option value="">Format…</option>
-                        {addable.map((x) => <option key={x} value={x}>{formatLabel(x)}</option>)}
+                        <option value="">{t('Format…')}</option>
+                        {addable.map((x) => <option key={x} value={x}>{lf(x)}</option>)}
                       </select>
                       <input
-                        className="mb-field__control" placeholder="Tarif" inputMode="numeric" style={{ maxWidth: 100 }} value={draft.rate}
-                        aria-label={`Tarif du format à ajouter à ${f.name}`}
+                        className="mb-field__control" placeholder={t('Tarif')} inputMode="numeric" style={{ maxWidth: 100 }} value={draft.rate}
+                        aria-label={t('Tarif du format à ajouter à {terrain}', { terrain: f.name })}
                         onChange={(e) => setFmtAdd((m) => ({ ...m, [f.id]: { ...draft, rate: e.target.value } }))}
                       />
-                      <span className="cm-note">DA / h</span>
+                      <span className="cm-note">{t('DA / h')}</span>
                       <select
-                        className="mb-field__control" value={draft.copyFrom} aria-label={`Bandes tarifaires du format à ajouter à ${f.name}`}
+                        className="mb-field__control" value={draft.copyFrom} aria-label={t('Bandes tarifaires du format à ajouter à {terrain}', { terrain: f.name })}
                         onChange={(e) => setFmtAdd((m) => ({ ...m, [f.id]: { ...draft, copyFrom: e.target.value as MatchFormat | '' } }))}
                       >
-                        {sourcesWithBands.map((fm) => <option key={fm} value={fm}>Bandes : copier de {formatLabel(fm)}</option>)}
-                        <option value="">Bandes : aucune (tarif plat)</option>
+                        {sourcesWithBands.map((fm) => <option key={fm} value={fm}>{t('Bandes : copier de {format}', { format: lf(fm) })}</option>)}
+                        <option value="">{t('Bandes : aucune (tarif plat)')}</option>
                       </select>
-                      <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={fmtAddBusy === f.id} onClick={() => { void submitAddFormat(f.id); }}>Ajouter</button>
+                      <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={fmtAddBusy === f.id} onClick={() => { void submitAddFormat(f.id); }}>{t('Ajouter')}</button>
                     </div>
                   ) : null}
                 </div>
@@ -908,11 +924,11 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
           répond pas (revue adverse, É1). Reste à sa place d'origine dans
           l'ordre des cartes, entre Tarifs et Horaires. */}
       <div className="cm-card cf-sec">
-        <p className="cm-sec">Modules optionnels</p>
+        <p className="cm-sec">{t('Modules optionnels')}</p>
         <div className="cf-eq" style={{ gridTemplateColumns: '1fr' }}>
           <label className={modulesCaisse ? 'on' : ''}>
             <input type="checkbox" style={{ accentColor: 'var(--primary)' }} checked={modulesCaisse} disabled={lockedProfile} onChange={(e) => toggleCaisseModule(e.target.checked)} />
-            Module Caisse — contrôle des encaissements (sessions, écart de clôture). Désactivé : « Payé » fonctionne normalement, sans traçage.
+            {t('Module Caisse — contrôle des encaissements (sessions, écart de clôture). Désactivé : « Payé » fonctionne normalement, sans traçage.')}
           </label>
         </div>
       </div>
@@ -920,9 +936,9 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       {data ? (
         <>
           <div className="cm-card cf-sec">
-            <p className="cm-sec">Horaires d'ouverture — le planning et le remplissage s'y règlent aussitôt</p>
+            <p className="cm-sec">{t('Horaires d\'ouverture — le planning et le remplissage s\'y règlent aussitôt')}</p>
             {Object.keys(data.hours).length === 0 ? (
-              <p className="cf-state"><span className="mb-status mb-status--filling">Horaires non renseignés</span></p>
+              <p className="cf-state"><span className="mb-status mb-status--filling">{t('Horaires non renseignés')}</span></p>
             ) : null}
             {WEEKDAY_ORDER.map((w) => {
               const o = data.hours[w];
@@ -942,65 +958,65 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
               const [startMin, endMin] = o ?? DEFAULT_NEW_DAY_HOURS;
               return (
                 <div className="cm-line" key={w}>
-                  <span>{DAY_NAMES[w]}.{!o ? <span className="cm-note" style={{ margin: 0, display: 'inline' }}> Fermé</span> : null}</span>
+                  <span>{t(`${DAY_NAMES[w]}.`)}{!o ? <span className="cm-note" style={{ margin: 0, display: 'inline' }}> {t('Fermé')}</span> : null}</span>
                   <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <select className="mb-field__control" value={startMin} disabled={lockedHours} onChange={(e) => { void commitHours(w, 0, Number(e.target.value)); }}>
                       {hourOptions(startMin).map((m) => <option key={m} value={m}>{hhmm(m)}</option>)}
                     </select>
-                    →
+                    {arrow}
                     <select className="mb-field__control" value={endMin} disabled={lockedHours} onChange={(e) => { void commitHours(w, 1, Number(e.target.value)); }}>
                       {hourOptions(endMin).map((m) => <option key={m} value={m}>{hhmm(m)}</option>)}
                     </select>
                     {/* Revue adverse, É1 : une deuxième plage réelle du même jour
                         (schéma gelé, PK venue/weekday/start_min) n'est jamais
                         éditée ici — jamais cachée non plus. */}
-                    {o && data.multiRangeDays.has(w) ? <span className="cm-note" style={{ margin: 0 }}>+ autre plage non éditée ici</span> : null}
+                    {o && data.multiRangeDays.has(w) ? <span className="cm-note" style={{ margin: 0 }}>{t('+ autre plage non éditée ici')}</span> : null}
                     {o ? (
                       <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" disabled={lockedHours} onClick={() => { void closeDay(w); }}>
-                        Fermer
+                        {t('Fermer')}
                       </button>
                     ) : (
                       <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={lockedHours} onClick={() => { void commitHours(w, 0, startMin); }}>
-                        Rouvrir
+                        {t('Rouvrir')}
                       </button>
                     )}
                   </span>
                 </div>
               );
             })}
-            <p className="cm-sec" style={{ marginTop: 14 }}>Fermetures exceptionnelles — jour férié, congé, maintenance</p>
+            <p className="cm-sec" style={{ marginTop: 14 }}>{t('Fermetures exceptionnelles — jour férié, congé, maintenance')}</p>
             {closuresLoad.kind === 'error' ? (
               <div className="cm-riskrow" style={{ marginBottom: 8 }}>
                 <span className="t">
-                  <b><Icon id="i-x" /> Fermetures indisponibles</b>
-                  <span className="cm-note" style={{ margin: '2px 0 0' }}>{closuresLoad.message}</span>
+                  <b><Icon id="i-x" /> {t('Fermetures indisponibles')}</b>
+                  <span className="cm-note" style={{ margin: '2px 0 0' }}>{errText(closuresLoad.message)}</span>
                 </span>
-                <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchClosures(); }}>Réessayer</button>
+                <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchClosures(); }}>{t('Réessayer')}</button>
               </div>
             ) : null}
-            {closuresLoad.kind === 'loading' ? <p className="cf-state">Chargement des fermetures…</p> : null}
+            {closuresLoad.kind === 'loading' ? <p className="cf-state">{t('Chargement des fermetures…')}</p> : null}
             {closuresLoad.kind === 'ready' && closures.length === 0 ? (
-              <p className="cf-state">Aucune fermeture exceptionnelle programmée.</p>
+              <p className="cf-state">{t('Aucune fermeture exceptionnelle programmée.')}</p>
             ) : null}
             {closures.map((c) => {
               const [startMin, endMin] = closureMinuteRange(c);
               return (
                 <div className="cm-line" key={c.id}>
                   <span>
-                    {dayLabel(algiersDateOf(c.startMs))} · {hhmm(startMin)} → {hhmm(endMin)}
+                    {dayLabel(algiersDateOf(c.startMs))} · {ltr(`${hhmm(startMin)} → ${hhmm(endMin)}`)}
                     <span className="cm-note" style={{ margin: '2px 0 0' }}>
-                      {c.fieldName ? `Terrain ${c.fieldName}` : 'Tout le centre'} · {CLOSURE_REASON_LABELS[c.reason]}{c.label ? ` — ${c.label}` : ''}
+                      {c.fieldName ? t('Terrain {terrain}', { terrain: c.fieldName }) : t('Tout le centre')} · {t(CLOSURE_REASON_LABELS[c.reason])}{c.label ? ` — ${c.label}` : ''}
                     </span>
                   </span>
                   <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" disabled={lockedHours} onClick={() => setRemoveClosureTarget(c)}>
-                    Retirer
+                    {t('Retirer')}
                   </button>
                 </div>
               );
             })}
             <div className="cm-sub">
               <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={lockedHours} onClick={openAddClosure}>
-                Fermer le centre ou un terrain
+                {t('Fermer le centre ou un terrain')}
               </button>
             </div>
           </div>
@@ -1009,54 +1025,57 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
 
       <ConfirmModal
         open={pendingPrice !== null}
-        title="Changer ce tarif ?"
+        title={t('Changer ce tarif ?')}
         body={pendingPrice ? (
           <>
-            <p>{pendingPrice.label} : <b>{pendingPrice.from.toLocaleString('fr-FR')} → {pendingPrice.to.toLocaleString('fr-FR')} DA / h</b>.</p>
+            <p>{pendingPrice.label}{lang === 'ar' ? ': ' : ' : '}<b>{ltr(`${pendingPrice.from.toLocaleString(localeOf(lang))} → ${pendingPrice.to.toLocaleString(localeOf(lang))}`)} {t('DA / h')}</b>.</p>
             <p className="cm-note" style={{ margin: '6px 0 0' }}>
-              Le nouveau tarif s’applique aux réservations créées à partir de maintenant. Les réservations déjà prises gardent leur prix.
+              {t('Le nouveau tarif s’applique aux réservations créées à partir de maintenant. Les réservations déjà prises gardent leur prix.')}
             </p>
           </>
         ) : null}
-        confirmLabel="Enregistrer le tarif"
+        confirmLabel={t('Enregistrer le tarif')}
         onConfirm={() => { void confirmPrice(); }}
         onCancel={() => setPendingPrice(null)}
       />
 
       <ConfirmModal
         open={removeFormatTarget !== null}
-        title="Retirer ce format ?"
+        title={t('Retirer ce format ?')}
         body={removeFormatTarget ? (
           <>
-            <p>Le format {formatLabel(removeFormatTarget.format)} n'est plus proposé sur {removeFormatTarget.fieldName}, et ses bandes tarifaires (heures pleines…) sont supprimées avec lui.</p>
-            <p>Les réservations déjà prises dans ce format sont conservées telles quelles.</p>
+            <p>{t('Le format {format} n\'est plus proposé sur {terrain}, et ses bandes tarifaires (heures pleines…) sont supprimées avec lui.', { format: lf(removeFormatTarget.format), terrain: removeFormatTarget.fieldName })}</p>
+            <p>{t('Les réservations déjà prises dans ce format sont conservées telles quelles.')}</p>
           </>
         ) : null}
-        confirmLabel="Retirer"
+        confirmLabel={t('Retirer')}
         onConfirm={() => { void confirmRemoveFormat(); }}
         onCancel={() => setRemoveFormatTarget(null)}
       />
 
       <ConfirmModal
         open={archiveTarget !== null}
-        title="Archiver ce terrain ?"
+        title={t('Archiver ce terrain ?')}
         body={archiveTarget ? (
           <>
-            <p>{archiveTarget.name} disparaît des réservations, du planning et de la fiche app.</p>
-            <p>L'historique est conservé — désarchivable à tout moment depuis le statut.</p>
+            <p>{t('{terrain} disparaît des réservations, du planning et de la fiche app.', { terrain: archiveTarget.name })}</p>
+            <p>{t('L\'historique est conservé — désarchivable à tout moment depuis le statut.')}</p>
             {archiveConflicts ? (
               <div className="cm-riskrow" style={{ marginTop: 10 }} role="alert" data-testid="archive-conflicts">
                 <span className="t">
-                  <b><Icon id="i-x" /> À déplacer ou annuler avant d’archiver</b>
+                  <b><Icon id="i-x" /> {t('À déplacer ou annuler avant d’archiver')}</b>
                   <span className="cm-note" style={{ display: 'block', margin: '2px 0 6px' }}>{archiveConflicts.message}</span>
                   {archiveConflicts.conflicts.map((c, i) => (
                     <span key={i} className="cm-note" style={{ display: 'block', margin: '2px 0 0' }}>
-                      {c.kind === 'BOOKING' ? 'Réservation' : 'Abonnement'} · {c.label}
+                      {c.kind === 'BOOKING' ? t('Réservation') : t('Abonnement')} · {c.label}
                     </span>
                   ))}
                   {archiveConflicts.bookings + archiveConflicts.subscriptions > archiveConflicts.conflicts.length ? (
                     <span className="cm-note" style={{ display: 'block', margin: '6px 0 0' }}>
-                      … et {archiveConflicts.bookings + archiveConflicts.subscriptions - archiveConflicts.conflicts.length} autre{archiveConflicts.bookings + archiveConflicts.subscriptions - archiveConflicts.conflicts.length > 1 ? 's' : ''}.
+                      {(() => {
+                        const n = archiveConflicts.bookings + archiveConflicts.subscriptions - archiveConflicts.conflicts.length;
+                        return n > 1 ? t('… et {n} autres.', { n }) : t('… et 1 autre.');
+                      })()}
                     </span>
                   ) : null}
                 </span>
@@ -1064,7 +1083,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
             ) : null}
           </>
         ) : null}
-        confirmLabel={archiving ? 'Archivage…' : 'Archiver'}
+        confirmLabel={archiving ? t('Archivage…') : t('Archiver')}
         confirmDisabled={archiving || archiveConflicts !== null}
         onConfirm={() => { void confirmArchive(); }}
         onCancel={() => { setArchiveTarget(null); setArchiveConflicts(null); }}
@@ -1073,31 +1092,31 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       {addOpen ? (
         <div className="cm-modal-bg on">
           <div className="cm-modal">
-            <h3>Ajouter un terrain</h3>
+            <h3>{t('Ajouter un terrain')}</h3>
             <label className="mb-field" style={{ marginBottom: 10 }}>
-              <span className="mb-field__label">Nom</span>
+              <span className="mb-field__label">{t('Nom')}</span>
               <input
                 className="mb-field__control" placeholder="T4" maxLength={6} value={addName}
                 onChange={(e) => { setAddName(e.target.value); setAddError(''); }}
               />
             </label>
             <label className="mb-field" style={{ marginBottom: 10 }}>
-              <span className="mb-field__label">Sport</span>
+              <span className="mb-field__label">{t('Sport')}</span>
               <select
                 className="mb-field__control" value={addSport}
                 onChange={(e) => { const s = e.target.value as Sport; setAddSport(s); setAddFormat(formatOptionsFor(s)[0]!); }}
               >
-                {SPORT_VALUES.map((s) => <option key={s} value={s}>{SPORT_LABELS[s]}</option>)}
+                {SPORT_VALUES.map((s) => <option key={s} value={s}>{t(SPORT_LABELS[s])}</option>)}
               </select>
             </label>
             <label className="mb-field" style={{ marginBottom: 10 }}>
-              <span className="mb-field__label">Format</span>
+              <span className="mb-field__label">{t('Format')}</span>
               <select className="mb-field__control" value={addFormat} onChange={(e) => setAddFormat(e.target.value as MatchFormat)}>
-                {formatOptionsFor(addSport).map((x) => <option key={x} value={x}>{formatLabel(x)}</option>)}
+                {formatOptionsFor(addSport).map((x) => <option key={x} value={x}>{lf(x)}</option>)}
               </select>
             </label>
             <label className="mb-field">
-              <span className="mb-field__label">Tarif horaire (DA / h)</span>
+              <span className="mb-field__label">{t('Tarif horaire (DA / h)')}</span>
               <input
                 className="mb-field__control" inputMode="numeric" placeholder="2500" value={addRate}
                 onChange={(e) => { setAddRate(e.target.value); setAddError(''); }}
@@ -1105,8 +1124,8 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
             </label>
             {addError ? <p className="mb-field__error"><Icon id="i-x" className="mb-ic--sm" />{addError}</p> : null}
             <div className="acts">
-              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={addSubmitting} onClick={() => setAddOpen(false)}>Retour</button>
-              <button type="button" className="mb-btn mb-btn--sm" disabled={addSubmitting} onClick={() => { void submitAddField(); }}>Ajouter</button>
+              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={addSubmitting} onClick={() => setAddOpen(false)}>{t('Retour')}</button>
+              <button type="button" className="mb-btn mb-btn--sm" disabled={addSubmitting} onClick={() => { void submitAddField(); }}>{t('Ajouter')}</button>
             </div>
           </div>
         </div>
@@ -1114,16 +1133,17 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
 
       <ConfirmModal
         open={removeClosureTarget !== null}
-        title="Retirer cette fermeture ?"
+        title={t('Retirer cette fermeture ?')}
         body={removeClosureTarget ? (
           <>
             <p>
-              {removeClosureTarget.fieldName ? `Le terrain ${removeClosureTarget.fieldName}` : 'Le centre'} redevient réservable
-              {' '}le {dayLabel(algiersDateOf(removeClosureTarget.startMs))}, aux horaires normalement ouverts.
+              {removeClosureTarget.fieldName
+                ? t('Le terrain {terrain} redevient réservable le {date}, aux horaires normalement ouverts.', { terrain: removeClosureTarget.fieldName, date: dayLabel(algiersDateOf(removeClosureTarget.startMs)) })
+                : t('Le centre redevient réservable le {date}, aux horaires normalement ouverts.', { date: dayLabel(algiersDateOf(removeClosureTarget.startMs)) })}
             </p>
           </>
         ) : null}
-        confirmLabel={removingClosure ? 'Retrait…' : 'Retirer'}
+        confirmLabel={removingClosure ? t('Retrait…') : t('Retirer')}
         onConfirm={confirmRemoveClosure}
         onCancel={() => setRemoveClosureTarget(null)}
       />
@@ -1131,22 +1151,22 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       {addClosureOpen ? (
         <div className="cm-modal-bg on">
           <div className="cm-modal">
-            <h3>Fermeture exceptionnelle</h3>
+            <h3>{t('Fermeture exceptionnelle')}</h3>
             <label className="mb-field" style={{ marginBottom: 10 }}>
-              <span className="mb-field__label">Terrain</span>
+              <span className="mb-field__label">{t('Terrain')}</span>
               <select className="mb-field__control" value={closureFieldId} onChange={(e) => setClosureFieldId(e.target.value)}>
-                <option value="">Tout le centre</option>
+                <option value="">{t('Tout le centre')}</option>
                 {visibleFields.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </label>
             <label className="mb-field" style={{ marginBottom: 10 }}>
-              <span className="mb-field__label">Motif</span>
+              <span className="mb-field__label">{t('Motif')}</span>
               <select className="mb-field__control" value={closureReason} onChange={(e) => setClosureReason(e.target.value as ClosureReason)}>
-                {CLOSURE_REASONS.map((r) => <option key={r} value={r}>{CLOSURE_REASON_LABELS[r]}</option>)}
+                {CLOSURE_REASONS.map((r) => <option key={r} value={r}>{t(CLOSURE_REASON_LABELS[r])}</option>)}
               </select>
             </label>
             <label className="mb-field" style={{ marginBottom: 10 }}>
-              <span className="mb-field__label">Date</span>
+              <span className="mb-field__label">{t('Date')}</span>
               <input type="date" className="mb-field__control" value={closureDate} onChange={(e) => setClosureDate(e.target.value)} />
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -1154,19 +1174,19 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
                 type="checkbox" style={{ accentColor: 'var(--primary)' }} checked={closureWholeDay}
                 onChange={(e) => setClosureWholeDay(e.target.checked)}
               />
-              <span className="cm-note" style={{ margin: 0 }}>Toute la journée (horaires réels de ce jour, queue après minuit comprise)</span>
+              <span className="cm-note" style={{ margin: 0 }}>{t('Toute la journée (horaires réels de ce jour, queue après minuit comprise)')}</span>
             </label>
             {!closureWholeDay ? (
               <div className="cm-sub" style={{ border: 0, padding: 0, margin: '0 0 10px' }}>
                 <label>
-                  <span>Début</span>
+                  <span>{t('Début')}</span>
                   <select className="mb-field__control" value={closureStartMin} onChange={(e) => setClosureStartMin(Number(e.target.value))}>
                     {hourOptions(closureStartMin).map((m) => <option key={m} value={m}>{hhmm(m)}</option>)}
                   </select>
                 </label>
-                →
+                {arrow}
                 <label>
-                  <span>Fin</span>
+                  <span>{t('Fin')}</span>
                   <select className="mb-field__control" value={closureEndMin} onChange={(e) => setClosureEndMin(Number(e.target.value))}>
                     {hourOptions(closureEndMin).map((m) => <option key={m} value={m}>{hhmm(m)}</option>)}
                   </select>
@@ -1174,9 +1194,9 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
               </div>
             ) : null}
             <label className="mb-field">
-              <span className="mb-field__label">Label (optionnel)</span>
+              <span className="mb-field__label">{t('Label (optionnel)')}</span>
               <input
-                className="mb-field__control" placeholder="Ex. Aïd el-Kebir" maxLength={80} value={closureLabel}
+                className="mb-field__control" placeholder={t('Ex. Aïd el-Kebir')} maxLength={80} value={closureLabel}
                 onChange={(e) => setClosureLabel(e.target.value)}
               />
             </label>
@@ -1184,18 +1204,18 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
             {closureConflicts.length > 0 ? (
               <div className="cm-riskrow" style={{ marginTop: 10 }}>
                 <span className="t">
-                  <b><Icon id="i-x" /> À déplacer ou annuler avant de fermer</b>
+                  <b><Icon id="i-x" /> {t('À déplacer ou annuler avant de fermer')}</b>
                   {closureConflicts.map((c, i) => (
                     <span key={i} className="cm-note" style={{ display: 'block', margin: '2px 0 0' }}>
-                      {c.fieldName} · {c.kind === 'BOOKING' ? 'Réservation' : 'Abonnement'} · {c.label}
+                      {c.fieldName} · {c.kind === 'BOOKING' ? t('Réservation') : t('Abonnement')} · {c.label}
                     </span>
                   ))}
                 </span>
               </div>
             ) : null}
             <div className="acts">
-              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={closureSubmitting} onClick={() => setAddClosureOpen(false)}>Retour</button>
-              <button type="button" className="mb-btn mb-btn--sm" disabled={closureSubmitting} onClick={() => { void submitAddClosure(); }}>Fermer</button>
+              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={closureSubmitting} onClick={() => setAddClosureOpen(false)}>{t('Retour')}</button>
+              <button type="button" className="mb-btn mb-btn--sm" disabled={closureSubmitting} onClick={() => { void submitAddClosure(); }}>{t('Fermer')}</button>
             </div>
           </div>
         </div>

@@ -11,7 +11,8 @@ import {
 } from '../lib/bookingsDetail.js';
 import { asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
 import { apiFetch, ApiError } from '../lib/api.js';
-import { fmt } from '../lib/format.js';
+import { da } from '../lib/format.js';
+import { ltr, useLang, useT, type TFn, bidi } from '../lib/i18n.js';
 import { hhmm } from '../lib/time.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { Icon } from './Icon.js';
@@ -51,13 +52,13 @@ const STATUS_TOAST: Record<'HONORED' | 'PAID' | 'NO_SHOW' | 'CANCELLED', string>
 };
 
 /** Toast d'une annulation, d'après la réponse RÉELLE du serveur (cascade BUG-1, 26/09/2026). */
-function cancelledToast(res: { matchCancelled?: boolean; matchTitle?: string | null; notifiedPlayers?: number }): string {
+function cancelledToast(res: { matchCancelled?: boolean; matchTitle?: string | null; notifiedPlayers?: number }, t: TFn): string {
   const n = res.notifiedPlayers ?? 0;
   if (res.matchCancelled) {
-    const who = n === 0 ? 'personne d’autre n’était inscrit' : n === 1 ? '1 joueur prévenu' : `${n} joueurs prévenus`;
-    return `Réservation annulée — match « ${res.matchTitle ?? ''} » annulé, ${who}.`;
+    const who = n === 0 ? t('personne d’autre n’était inscrit') : n === 1 ? t('1 joueur prévenu') : t('{n} joueurs prévenus', { n });
+    return t('Réservation annulée — match « {titre} » annulé, {qui}.', { titre: res.matchTitle ?? '', qui: who });
   }
-  return n > 0 ? 'Réservation annulée — le client est prévenu dans l’app.' : STATUS_TOAST.CANCELLED;
+  return n > 0 ? t('Réservation annulée — le client est prévenu dans l’app.') : t(STATUS_TOAST.CANCELLED);
 }
 
 /* Règle 21 : le numéro saisi est celui d'un joueur Moubarat — où en est sa réponse « C'est bien toi ? ». */
@@ -70,15 +71,26 @@ const SOURCE_LABEL: Record<ReservationRow['source'], string> = { MOUBARAT: 'Moub
 const SOURCE_FULL_LABEL: Record<ReservationRow['source'], string> = { MOUBARAT: 'App Moubarat', PHONE: 'Téléphone', WALK_IN: 'Comptoir' };
 
 function SrcChip({ row }: { row: Pick<ReservationRow, 'source' | 'verified'> }) {
-  const label = SOURCE_LABEL[row.source] + (row.source === 'PHONE' ? (row.verified ? ' · vérifiée' : ' · à vérifier') : '');
+  const t = useT();
+  const label = row.source === 'PHONE' ? (row.verified ? t('Tél. · vérifiée') : t('Tél. · à vérifier')) : t(SOURCE_LABEL[row.source]);
   return <span className={`cm-src${row.verified ? ' ok' : ''}`}>{label}</span>;
 }
 
-function encaissementLabel(row: ReservationRow): string {
-  if (row.status === 'PAID') return `${fmt(row.amountDa)} DA — encaissé`;
-  if (row.status === 'NO_SHOW') return `0 DA — no-show (${fmt(row.amountDa)} DA perdus)`;
-  if (row.status === 'CANCELLED') return '0 DA — annulée';
-  return `0 DA sur ${fmt(row.amountDa)} DA — à encaisser`;
+function encaissementLabel(row: ReservationRow, t: TFn): string {
+  if (row.status === 'PAID') return t('{montant} — encaissé', { montant: da(row.amountDa) });
+  if (row.status === 'NO_SHOW') return t('0 DA — no-show ({montant} perdus)', { montant: da(row.amountDa) });
+  if (row.status === 'CANCELLED') return t('0 DA — annulée');
+  return t('0 DA sur {montant} — à encaisser', { montant: da(row.amountDa) });
+}
+
+/** « Nom · GAS-001061 » — la référence isolée de gauche à droite en arabe (ltr), inchangée en français. */
+function nameRef(row: { name: string; reference?: string }): string {
+  return `${bidi(row.name)}${row.reference ? ` · ${ltr(row.reference)}` : ''}`;
+}
+
+/** « 18:00 → 19:30 » — plage isolée de gauche à droite en arabe (ltr), inchangée en français. */
+function range(startMin: number, durationMin: number): string {
+  return ltr(`${hhmm(startMin)} → ${hhmm(startMin + durationMin)}`);
 }
 
 interface FicheActions {
@@ -98,7 +110,8 @@ interface FicheActions {
 }
 
 function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPlanning: (id: string) => void; actions: FicheActions }) {
-  const srcLabel = SOURCE_FULL_LABEL[row.source] + (row.source === 'PHONE' ? (row.verified ? ' (vérifiée)' : ' (à vérifier)') : '');
+  const t = useT();
+  const srcLabel = row.source === 'PHONE' ? (row.verified ? t('Téléphone (vérifiée)') : t('Téléphone (à vérifier)')) : t(SOURCE_FULL_LABEL[row.source]);
   const busy = actions.busyId === row.id;
   const canVerify = row.source === 'PHONE' && !row.verified && row.status === 'RESERVED' && actions.canConfirmExternal;
   const canHonorOrNoShow = row.status === 'RESERVED' && actions.canSetCashStatus;
@@ -132,47 +145,47 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
   // c'est une question de permission du rôle (même silence que les autres
   // boutons de cette fiche dans ce cas, rien de nouveau à expliquer là).
   const modifyReason = !actions.canModify ? null
-    : row.status !== 'RESERVED' ? `Déjà ${STATUS_PILL[row.status].label.toLowerCase()}, non modifiable`
-      : liveMatch ? 'Match créé, non modifiable — annule pour libérer le créneau (le match s’annule avec elle, les inscrits sont prévenus)'
+    : row.status !== 'RESERVED' ? t(`Déjà ${STATUS_PILL[row.status].label.toLowerCase()}, non modifiable`)
+      : liveMatch ? t('Match créé, non modifiable — annulez pour libérer le créneau (le match s’annule avec elle, les inscrits sont prévenus)')
         : null;
   return (
     <div className="cm-fiche">
-      <div className="cm-line"><span>Réservation</span><b>{row.name}{row.reference ? ` · ${row.reference}` : ''}</b></div>
-      <div className="cm-line"><span>Origine</span><b>{srcLabel}</b></div>
+      <div className="cm-line"><span>{t('Réservation')}</span><b>{nameRef(row)}</b></div>
+      <div className="cm-line"><span>{t('Origine')}</span><b>{srcLabel}</b></div>
       {row.customerPhone ? (
         <div className="cm-line">
-          <span>Téléphone</span>
+          <span>{t('Téléphone')}</span>
           <b><a href={`tel:${row.customerPhone.replace(/\s/g, '')}`} style={{ color: 'var(--gold)' }}>{row.customerPhone}</a></b>
         </div>
       ) : null}
       {row.claimStatus ? (
         <div className="cm-line">
-          <span>Joueur Moubarat</span>
-          <b>{CLAIM_LABEL[row.claimStatus]}</b>
+          <span>{t('Joueur Moubarat')}</span>
+          <b>{t(CLAIM_LABEL[row.claimStatus])}</b>
         </div>
       ) : null}
-      <div className="cm-line"><span>Terrain · créneau</span><b>{row.field} · {hhmm(row.startMin)} → {hhmm(row.startMin + row.durationMin)} ({row.durationMin} min)</b></div>
-      <div className="cm-line"><span>Montant · encaissement</span><b>{encaissementLabel(row)}</b></div>
-      <div className="cm-line"><span>Statut</span><Pill status={row.status} /></div>
+      <div className="cm-line"><span>{t('Terrain · créneau')}</span><b>{row.field} · {range(row.startMin, row.durationMin)} {t('({n} min)', { n: row.durationMin })}</b></div>
+      <div className="cm-line"><span>{t('Montant · encaissement')}</span><b>{encaissementLabel(row, t)}</b></div>
+      <div className="cm-line"><span>{t('Statut')}</span><Pill status={row.status} /></div>
       {row.match && liveMatch ? (
         <>
           <div className="cm-line">
-            <span>Match</span>
-            <b>{row.match.title} · {row.match.joined}/{row.match.capacity} inscrits</b>
+            <span>{t('Match')}</span>
+            <b>{row.match.title} · {t('{joined}/{capacity} inscrits', { joined: row.match.joined, capacity: row.match.capacity })}</b>
           </div>
           <div className="cm-line">
-            <span>Joueurs (profils Moubarat)</span>
-            <b>{row.match.players.length === 0 ? '—' : row.match.players.map((p) => p.name).join(' · ')}</b>
+            <span>{t('Joueurs (profils Moubarat)')}</span>
+            <b>{row.match.players.length === 0 ? '—' : row.match.players.map((p) => bidi(p.name)).join(' · ')}</b>
           </div>
           {/* Règle 25 : un inscrit qui n'est pas venu. Seulement une fois le créneau commencé (le serveur refuse avant) ; une absence compte pour la
               fiabilité du joueur et, à deux, déclenche une restriction. L'organisateur peut aussi la déclarer depuis l'app : la seconde déclaration est ignorée. */}
           {actions.canSetCashStatus && row.match.id && row.startsAt !== undefined && row.startsAt <= Date.now() && row.status !== 'CANCELLED' && row.match.players.length > 0 ? (
             <div className="cm-line">
-              <span>Joueur absent ?</span>
+              <span>{t('Joueur absent ?')}</span>
               <b style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                 {row.match.players.map((p) => (
                   <button key={p.userId} type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={() => actions.onRequestAbsent(row, p)}>
-                    {p.name} · absent
+                    {t('{nom} · absent', { nom: bidi(p.name) })}
                   </button>
                 ))}
               </b>
@@ -181,80 +194,79 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
         </>
       ) : row.match ? (
         <div className="cm-line">
-          <span>Match</span>
+          <span>{t('Match')}</span>
           {/* Résa annulée : le match l'a été avec elle (cascade) — ou avant elle par l'organisateur ; dans les deux cas les
               inscrits ont été prévenus. Résa vivante + match annulé : seul l'organisateur a pu le faire (la cascade
               n'annule un match qu'avec sa réservation). Trouvé en vérification live : la première version disait
               « par son organisateur » même après une annulation du centre. */}
           <b>{row.status === 'CANCELLED'
-            ? `« ${row.match.title} » annulé — la réservation aussi ; les inscrits ont été prévenus dans l’app`
-            : `« ${row.match.title} » annulé par son organisateur — la réservation reste valable et se gère comme une réservation ordinaire`}</b>
+            ? t('« {titre} » annulé — la réservation aussi ; les inscrits ont été prévenus dans l’app', { titre: row.match.title })
+            : t('« {titre} » annulé par son organisateur — la réservation reste valable et se gère comme une réservation ordinaire', { titre: row.match.title })}</b>
         </div>
       ) : row.source === 'MOUBARAT' ? (
-        <div className="cm-line"><span>Profil</span><b>Compte App Moubarat — fiche dans Clients</b></div>
+        <div className="cm-line"><span>{t('Profil')}</span><b>{t('Compte App Moubarat — fiche dans Clients')}</b></div>
       ) : null}
       {canVerify || canHonorOrNoShow || canPay || canCancelThis || canModifyThis || canRevert || canRevertCash ? (
         <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {canModifyThis ? (
             <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={() => actions.onRequestModify(row)}>
-              Modifier
+              {t('Modifier')}
             </button>
           ) : null}
           {canVerify ? (
             <button type="button" className="mb-btn mb-btn--sm" disabled={busy} onClick={() => actions.onVerify(row.id)}>
-              {busy ? '…' : 'Confirmer la réservation téléphonique'}
+              {busy ? '…' : t('Confirmer la réservation téléphonique')}
             </button>
           ) : null}
           {canHonorOrNoShow ? (
             <>
               <button type="button" className="mb-btn mb-btn--sm" disabled={busy || !outcomeOpen} onClick={() => actions.onSetStatus(row.id, 'HONORED')}>
-                {busy ? '…' : 'Marquer honorée'}
+                {busy ? '…' : t('Marquer honorée')}
               </button>
               <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy || !outcomeOpen} onClick={() => actions.onRequestNoShow(row)}>
-                {busy ? '…' : 'Marquer no-show'}
+                {busy ? '…' : t('Marquer no-show')}
               </button>
             </>
           ) : null}
           {canRevert ? (
             <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={() => actions.onRequestRevertNoShow(row)}>
-              {busy ? '…' : 'Annuler le no-show'}
+              {busy ? '…' : t('Annuler le no-show')}
             </button>
           ) : null}
           {canRevertCash ? (
             <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={() => actions.onRequestRevertCash(row)}>
-              {busy ? '…' : 'Corriger le statut'}
+              {busy ? '…' : t('Corriger le statut')}
             </button>
           ) : null}
           {canPay ? (
             <button type="button" className="mb-btn mb-btn--sm" disabled={busy} onClick={() => actions.onSetStatus(row.id, 'PAID')}>
-              {busy ? '…' : 'Marquer payée'}
+              {busy ? '…' : t('Marquer payée')}
             </button>
           ) : null}
           {canCancelThis ? (
             <button
               type="button" className="mb-btn mb-btn--danger mb-btn--sm" disabled={busy}
-              onClick={() => actions.onRequestCancel(row.id, `${row.name}${row.reference ? ` · ${row.reference}` : ''}`)}
+              onClick={() => actions.onRequestCancel(row.id, nameRef(row))}
             >
-              Annuler
+              {t('Annuler')}
             </button>
           ) : null}
         </div>
       ) : null}
       {canPay ? (
         <p className="cm-note" style={{ margin: '8px 0 0' }}>
-          Avec le module Caisse, « Marquer payée » propose d’encaisser le même montant dans la caisse du jour ; sans lui,
-          « Payée » ne touche pas à la caisse.
+          {t('Avec le module Caisse, « Marquer payée » propose d’encaisser le même montant dans la caisse du jour ; sans lui, « Payée » ne touche pas à la caisse.')}
         </p>
       ) : null}
       {canHonorOrNoShow && !outcomeOpen ? (
         <p className="cm-note" style={{ margin: '8px 0 0' }}>
-          « Honorée » et « No-show » se posent une fois le créneau commencé, à partir de {hhmm(row.startMin)}.
+          {t('« Honorée » et « No-show » se posent une fois le créneau commencé, à partir de {heure}.', { heure: ltr(hhmm(row.startMin)) })}
         </p>
       ) : null}
       {modifyReason ? <p className="cm-note" style={{ margin: '8px 0 0' }}>{modifyReason}</p> : null}
       <div style={{ marginTop: 8 }}>
         <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => onOpenPlanning(row.id)}>
-          Ouvrir dans le planning
+          {t('Ouvrir dans le planning')}
         </button>
       </div>
     </div>
@@ -272,6 +284,7 @@ function SubscriptionFiche({ row, canAct, canRevert, busy, onStatus, onPay, onRe
   row: SubscriptionReservationRow; canAct: boolean; canRevert: boolean; busy: boolean;
   onStatus: (status: 'HONORED' | 'NO_SHOW') => void; onPay: () => void; onRevert: () => void;
 }) {
+  const t = useT();
   const now = Date.now();
   const outcomeOpen = now >= cashStatusOpensAt('HONORED', row.startsAt, row.startsAt);
   const paymentOpen = now >= cashStatusOpensAt('PAID', row.startsAt, row.startsAt - row.startMin * 60_000 + 6 * 60 * 60_000);
@@ -280,26 +293,26 @@ function SubscriptionFiche({ row, canAct, canRevert, busy, onStatus, onPay, onRe
   const canPay = canAct && priced && paymentOpen && (row.status === 'RESERVED' || row.status === 'HONORED');
   return (
     <div className="cm-fiche">
-      <div className="cm-line"><span>Abonnement</span><b>{row.holderName}</b></div>
-      <div className="cm-line"><span>Terrain · créneau</span><b>{row.field} · {hhmm(row.startMin)} → {hhmm(row.startMin + row.durationMin)} ({row.durationMin} min)</b></div>
-      <div className="cm-line"><span>Prix de la séance</span><b>{priced ? `${fmt(row.priceDa!)} DA` : 'Sans prix — à fixer dans Abonnements'}</b></div>
-      <div className="cm-line"><span>Statut</span>{row.status === 'RESERVED' ? <span className="mb-status mb-status--open">Abonnement</span> : <Pill status={row.status} />}</div>
+      <div className="cm-line"><span>{t('Abonnement')}</span><b>{bidi(row.holderName)}</b></div>
+      <div className="cm-line"><span>{t('Terrain · créneau')}</span><b>{row.field} · {range(row.startMin, row.durationMin)} {t('({n} min)', { n: row.durationMin })}</b></div>
+      <div className="cm-line"><span>{t('Prix de la séance')}</span><b>{priced ? da(row.priceDa!) : t('Sans prix — à fixer dans Abonnements')}</b></div>
+      <div className="cm-line"><span>{t('Statut')}</span>{row.status === 'RESERVED' ? <span className="mb-status mb-status--open">{t('Abonnement')}</span> : <Pill status={row.status} />}</div>
       {canHonor || canPay || (canRevert && row.recorded) ? (
         <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {canHonor ? (
             <>
-              <button type="button" className="mb-btn mb-btn--sm" disabled={busy || !outcomeOpen} onClick={() => onStatus('HONORED')}>{busy ? '…' : 'Marquer honorée'}</button>
-              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy || !outcomeOpen} onClick={() => onStatus('NO_SHOW')}>{busy ? '…' : 'Marquer no-show'}</button>
+              <button type="button" className="mb-btn mb-btn--sm" disabled={busy || !outcomeOpen} onClick={() => onStatus('HONORED')}>{busy ? '…' : t('Marquer honorée')}</button>
+              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy || !outcomeOpen} onClick={() => onStatus('NO_SHOW')}>{busy ? '…' : t('Marquer no-show')}</button>
             </>
           ) : null}
-          {canPay ? <button type="button" className="mb-btn mb-btn--sm" disabled={busy} onClick={onPay}>{busy ? '…' : 'Marquer payée'}</button> : null}
-          {canRevert && row.recorded ? <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={onRevert}>{busy ? '…' : 'Corriger le statut'}</button> : null}
+          {canPay ? <button type="button" className="mb-btn mb-btn--sm" disabled={busy} onClick={onPay}>{busy ? '…' : t('Marquer payée')}</button> : null}
+          {canRevert && row.recorded ? <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={busy} onClick={onRevert}>{busy ? '…' : t('Corriger le statut')}</button> : null}
         </div>
       ) : null}
       {canHonor && !outcomeOpen ? (
-        <p className="cm-note" style={{ margin: '8px 0 0' }}>« Honorée » et « No-show » se posent une fois la séance commencée, à partir de {hhmm(row.startMin)}.</p>
+        <p className="cm-note" style={{ margin: '8px 0 0' }}>{t('« Honorée » et « No-show » se posent une fois la séance commencée, à partir de {heure}.', { heure: ltr(hhmm(row.startMin)) })}</p>
       ) : null}
-      {!priced ? <p className="cm-note" style={{ margin: '8px 0 0' }}>Fixez le prix par séance dans l’écran Abonnements pour suivre ses paiements.</p> : null}
+      {!priced ? <p className="cm-note" style={{ margin: '8px 0 0' }}>{t('Fixez le prix par séance dans l’écran Abonnements pour suivre ses paiements.')}</p> : null}
     </div>
   );
 }
@@ -316,6 +329,8 @@ type ReservationListItem =
    lignes (summaryFromApi), jamais un second appel — Analytics est une
    permission différente (MANAGER+), hors de portée de cet écran. */
 export function Reservations({ role, venueId, token, onToast, day, onDayChange, openRequest, onOpenPlanning, modulesCaisse = false }: ReservationsProps) {
+  const t = useT();
+  const lang = useLang();
   const date = day;
   const setDate = onDayChange;
   const [openId, setOpenId] = useState<string | null>(null);
@@ -398,7 +413,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
     setBusyId(id);
     try {
       await apiFetch(`/bookings/${id}/verify`, { method: 'POST', token });
-      onToast('Réservation téléphonique confirmée.');
+      onToast(t('Réservation téléphonique confirmée.'));
       await fetchDay();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -425,7 +440,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
     }
   }
   function requestPay(row: ReservationRow) {
-    void openPay(row.id, `${row.name}${row.reference ? ` · ${row.reference}` : ''}`, row.amountDa, (rc) => { void setStatus(row.id, 'PAID', undefined, rc); });
+    void openPay(row.id, nameRef(row), row.amountDa, (rc) => { void setStatus(row.id, 'PAID', undefined, rc); });
   }
 
   /* P1-12 : poser le statut d'une séance d'abonnement (route recurring-bookings/…/sessions/:date). */
@@ -436,8 +451,8 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
         method: 'POST', token, body: { status, ...(recordCash !== undefined ? { recordCash } : {}) },
       });
       onToast(status === 'PAID' && recordCash
-        ? (res.cashRecorded ? 'Séance payée et encaissée en caisse.' : 'Séance payée — rien n’a été encaissé : la caisse n’est pas ouverte.')
-        : status === 'PAID' ? 'Séance marquée payée.' : status === 'HONORED' ? 'Séance marquée honorée.' : 'Séance marquée no-show.');
+        ? (res.cashRecorded ? t('Séance payée et encaissée en caisse.') : t('Séance payée — rien n’a été encaissé : la caisse n’est pas ouverte.'))
+        : status === 'PAID' ? t('Séance marquée payée.') : status === 'HONORED' ? t('Séance marquée honorée.') : t('Séance marquée no-show.'));
       await fetchDay();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -449,7 +464,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
     setBusyId(row.id);
     try {
       await apiFetch(`/venues/${venueId}/recurring-bookings/${row.recurringBookingId}/sessions/${row.date}/revert`, { method: 'POST', token });
-      onToast('Statut de la séance corrigé.');
+      onToast(t('Statut de la séance corrigé.'));
       await fetchDay();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -466,9 +481,9 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       const res = await apiFetch<{ status: string; matchCancelled?: boolean; matchTitle?: string | null; notifiedPlayers?: number; cashRecorded?: boolean }>(
         `/bookings/${id}/status`, { method: 'POST', token, body: { status, ...(reason ? { reason } : {}), ...(recordCash !== undefined ? { recordCash } : {}) } },
       );
-      onToast(status === 'CANCELLED' ? cancelledToast(res)
-        : status === 'PAID' && recordCash ? (res.cashRecorded ? 'Réservation payée et encaissée en caisse.' : 'Réservation payée — rien n’a été encaissé : la caisse n’est pas ouverte.')
-          : STATUS_TOAST[status]);
+      onToast(status === 'CANCELLED' ? cancelledToast(res, t)
+        : status === 'PAID' && recordCash ? (res.cashRecorded ? t('Réservation payée et encaissée en caisse.') : t('Réservation payée — rien n’a été encaissé : la caisse n’est pas ouverte.'))
+          : t(STATUS_TOAST[status]));
       await fetchDay();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -483,7 +498,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
     setBusyId(id);
     try {
       const res = await apiFetch<{ absenceRemoved?: boolean }>(`/bookings/${id}/revert-no-show`, { method: 'POST', token });
-      onToast(res.absenceRemoved ? 'No-show annulé — l’absence du joueur est effacée.' : 'No-show annulé.');
+      onToast(res.absenceRemoved ? t('No-show annulé — l’absence du joueur est effacée.') : t('No-show annulé.'));
       await fetchDay();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -498,7 +513,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
     setBusyId(id);
     try {
       const res = await apiFetch<{ status: 'RESERVED' | 'HONORED' }>(`/bookings/${id}/revert-cash-status`, { method: 'POST', token });
-      onToast(res.status === 'HONORED' ? 'Statut corrigé : Honorée.' : 'Statut corrigé : Réservée.');
+      onToast(res.status === 'HONORED' ? t('Statut corrigé : Honorée.') : t('Statut corrigé : Réservée.'));
       await fetchDay();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -516,9 +531,9 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       const res = await apiFetch<{ recorded: boolean; restricted: boolean }>(
         `/venues/${venueId}/matches/${matchId}/players/${target.userId}/absence`, { method: 'POST', token },
       );
-      onToast(!res.recorded ? `${target.name} était déjà déclaré absent.`
-        : res.restricted ? `Absence enregistrée — ${target.name} est maintenant restreint (il ne peut plus rejoindre de match ni réserver pour un temps).`
-          : 'Absence enregistrée.');
+      onToast(!res.recorded ? t('{nom} était déjà déclaré absent.', { nom: target.name })
+        : res.restricted ? t('Absence enregistrée — {nom} est maintenant restreint (il ne peut plus rejoindre de match ni réserver pour un temps).', { nom: target.name })
+          : t('Absence enregistrée.'));
       await fetchDay();
     } catch (e) {
       onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
@@ -558,7 +573,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
   const [mSubmitting, setMSubmitting] = useState(false);
 
   function openModify(row: ReservationRow) {
-    setModifyTarget({ id: row.id, label: `${row.name}${row.reference ? ` · ${row.reference}` : ''}` });
+    setModifyTarget({ id: row.id, label: nameRef(row) });
     setMFieldId(fieldByName.get(row.field)?.id ?? '');
     setMStartMin(row.startMin);
     setMDurationMin(row.durationMin);
@@ -583,7 +598,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       await apiFetch(`/bookings/${modifyTarget.id}/reschedule`, {
         method: 'POST', token, body: { fieldId: mFieldId, date, startMin: mStartMin, durationMin: mDurationMin },
       });
-      onToast('Réservation modifiée.');
+      onToast(t('Réservation modifiée.'));
       setModifyTarget(null);
       await fetchDay();
     } catch (e) {
@@ -606,8 +621,8 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
   const [hitsMore, setHitsMore] = useState<{ loading: boolean; error: string | null }>({ loading: false, error: null });
   const searchRequest = useRef(0);
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(search.trim()), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebounced(search.trim()), 300);
+    return () => clearTimeout(timer);
   }, [search]);
   const searchUrl = (q: string, extra: string) => `/venues/${venueId}/bookings/search?q=${encodeURIComponent(q)}&limit=30${extra}`;
   useEffect(() => {
@@ -658,36 +673,35 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
   return (
     <section className="cm-view on">
       <div className="cm-day">
-        <button className="nav" type="button" aria-label="Jour précédent" onClick={() => setDate((d) => shiftDate(d, -1))}>‹</button>
+        <button className="nav" type="button" aria-label={t('Jour précédent')} onClick={() => setDate((d) => shiftDate(d, -1))}>‹</button>
         <b>{dayLabel(date)}</b>
-        <button className="nav" type="button" aria-label="Jour suivant" onClick={() => setDate((d) => shiftDate(d, 1))}>›</button>
+        <button className="nav" type="button" aria-label={t('Jour suivant')} onClick={() => setDate((d) => shiftDate(d, 1))}>›</button>
         {/* CRM-2 (27/09/2026) : « Aller à une date », même contrôle que le prototype gelé (barre du Planning, #pl-date) ;
             une valeur vide est ignorée. « Aujourd'hui » ramène d'un saut lointain, comme au Planning. */}
         <input
-          type="date" className="mb-field__control" aria-label="Aller à une date" title="Aller à une date"
+          type="date" className="mb-field__control" aria-label={t('Aller à une date')} title={t('Aller à une date')}
           value={date} style={{ maxWidth: 150, margin: 0 }}
           onChange={(e) => { if (e.target.value) setDate(e.target.value); }}
         />
         {date !== todayAlgiers() ? (
-          <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setDate(todayAlgiers())}>Aujourd'hui</button>
+          <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setDate(todayAlgiers())}>{t('Aujourd\'hui')}</button>
         ) : null}
       </div>
 
-      {autoAt !== null ? <p className="cm-autorefresh" style={{ margin: '0 0 6px' }} title="La liste se relit seule toutes les 30 secondes">À jour · {algiersClock(autoAt)}</p> : null}
+      {autoAt !== null ? <p className="cm-autorefresh" style={{ margin: '0 0 6px' }} title={t('La liste se relit seule toutes les 30 secondes')}>{t('À jour · {heure}', { heure: ltr(algiersClock(autoAt)) })}</p> : null}
       <p className="cm-view-note">
-        Le résumé de la journée, dans l'ordre chronologique. Cliquez sur une réservation pour ouvrir sa fiche
-        complète — c'est cette liste que la clôture de caisse valide chaque soir.
+        {t('Le résumé de la journée, dans l\'ordre chronologique. Cliquez sur une réservation pour ouvrir sa fiche complète — c\'est cette liste que la clôture de caisse valide chaque soir.')}
       </p>
 
       <div className="cm-form" style={{ alignItems: 'center' }}>
         <input
           className="mb-field__control cm-search" style={{ margin: 0 }}
-          placeholder="Retrouver une réservation (référence, nom, téléphone)…"
-          aria-label="Retrouver une réservation par référence, nom ou téléphone"
+          placeholder={t('Retrouver une réservation (référence, nom, téléphone)…')}
+          aria-label={t('Retrouver une réservation par référence, nom ou téléphone')}
           value={search} onChange={(e) => setSearch(e.target.value)}
         />
-        {searchLoad.kind === 'loading' ? <span className="cm-note" style={{ margin: 0 }}>Recherche…</span>
-          : hits !== null && searchLoad.kind === 'ready' ? <span className="cm-note" style={{ margin: 0 }}>{hitsCountLabel(hits.length, hitsCursor !== null)}</span>
+        {searchLoad.kind === 'loading' ? <span className="cm-note" style={{ margin: 0 }}>{t('Recherche…')}</span>
+          : hits !== null && searchLoad.kind === 'ready' ? <span className="cm-note" style={{ margin: 0 }}>{hitsCountLabel(hits.length, hitsCursor !== null, t)}</span>
             : null}
       </div>
 
@@ -696,18 +710,18 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
           {searchLoad.kind === 'error' ? (
             <p className="cf-state" role="alert">{searchLoad.message}</p>
           ) : hits.length === 0 && searchLoad.kind === 'ready' ? (
-            <p className="cm-note" style={{ margin: 0 }}>Aucune réservation ne correspond à « {debounced} ».</p>
+            <p className="cm-note" style={{ margin: 0 }}>{t('Aucune réservation ne correspond à « {recherche} ».', { recherche: debounced })}</p>
           ) : hits.map((h) => (
             <div
-              key={h.id} className="cm-riskrow" role="button" tabIndex={0} title="Ouvrir sa fiche"
+              key={h.id} className="cm-riskrow" role="button" tabIndex={0} title={t('Ouvrir sa fiche')}
               onClick={() => openHit(h)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openHit(h); } }}
             >
               <span className="t">
-                <b>{h.name}{h.reference ? ` · ${h.reference}` : ''}</b>
+                <b>{nameRef(h)}</b>
                 <span className="cm-note" style={{ margin: '2px 0 0' }}>
-                  {dateLabelLong(h.date)} · {hhmm(h.startMin)} → {hhmm(h.startMin + h.durationMin)} · {h.field} · {fmt(h.amountDa)} DA
-                  {h.customerPhone ? ` · ${h.customerPhone}` : ''}
+                  {dateLabelLong(h.date)} · {range(h.startMin, h.durationMin)} · {h.field} · {da(h.amountDa)}
+                  {h.customerPhone ? ` · ${ltr(h.customerPhone)}` : ''}
                 </span>
               </span>
               <SrcChip row={h} />
@@ -717,7 +731,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
           {hitsCursor !== null ? (
             <div className="cm-more" style={{ margin: '8px 0 0' }}>
               <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={hitsMore.loading} onClick={() => { void loadMoreHits(); }}>
-                {hitsMore.loading ? 'Chargement…' : 'Afficher plus'}
+                {hitsMore.loading ? t('Chargement…') : t('Afficher plus')}
               </button>
               {hitsMore.error ? <p className="cf-state" role="alert">{hitsMore.error}</p> : null}
             </div>
@@ -728,23 +742,23 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       {load.kind === 'error' ? (
         <div className="cm-card cf-sec">
           <p className="cf-state">{load.message}</p>
-          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchDay(); }}>Réessayer</button>
+          <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => { void fetchDay(); }}>{t('Réessayer')}</button>
         </div>
       ) : null}
 
       {load.kind === 'loading' ? (
-        <div className="cm-card cf-sec"><p className="cf-state">Chargement des réservations…</p></div>
+        <div className="cm-card cf-sec"><p className="cf-state">{t('Chargement des réservations…')}</p></div>
       ) : load.kind === 'ready' ? (
         <>
           <div className="cm-form" style={{ gap: 16 }}>
-            <span className="cm-note">Encaissé <b style={{ color: 'var(--text)' }}>{fmt(summary.collectedDa)} DA</b></span>
-            <span className="cm-note">Engagé <b style={{ color: 'var(--text)' }}>{fmt(summary.engagedDa)} DA</b></span>
-            <span className="cm-note">Perdu annulations <b style={{ color: 'var(--text)' }}>{fmt(summary.lostCancelledDa)} DA</b></span>
-            <span className="cm-note">Perdu no-show <b style={{ color: 'var(--text)' }}>{fmt(summary.lostNoShowDa)} DA</b></span>
+            <span className="cm-note">{t('Encaissé')} <b style={{ color: 'var(--text)' }}>{da(summary.collectedDa)}</b></span>
+            <span className="cm-note">{t('Engagé')} <b style={{ color: 'var(--text)' }}>{da(summary.engagedDa)}</b></span>
+            <span className="cm-note">{t('Perdu annulations')} <b style={{ color: 'var(--text)' }}>{da(summary.lostCancelledDa)}</b></span>
+            <span className="cm-note">{t('Perdu no-show')} <b style={{ color: 'var(--text)' }}>{da(summary.lostNoShowDa)}</b></span>
           </div>
 
           {items.length === 0 ? (
-            <p className="cm-note">Aucune réservation ce jour-là.</p>
+            <p className="cm-note">{t('Aucune réservation ce jour-là.')}</p>
           ) : items.map((item) => {
             const isOpen = openId === item.id;
             if (item.kind === 'subscription') {
@@ -760,18 +774,18 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpenId(isOpen ? null : item.id); }}
                   >
                     <span className="t">
-                      <b>{hhmm(row.startMin)} — {row.holderName} · Abonnement</b>
+                      <b>{ltr(hhmm(row.startMin))} — {bidi(row.holderName)} · {t('Abonnement')}</b>
                       <span className="cm-note" style={{ margin: '2px 0 0' }}>
-                        {row.field} · {hhmm(row.startMin)} → {hhmm(row.startMin + row.durationMin)}{row.priceDa !== null ? ` · ${fmt(row.priceDa)} DA` : ''}
+                        {row.field} · {range(row.startMin, row.durationMin)}{row.priceDa !== null ? ` · ${da(row.priceDa)}` : ''}
                       </span>
                     </span>
-                    {row.status === 'RESERVED' ? <span className="mb-status mb-status--open">Abonnement</span> : <Pill status={row.status} />}
+                    {row.status === 'RESERVED' ? <span className="mb-status mb-status--open">{t('Abonnement')}</span> : <Pill status={row.status} />}
                   </div>
                   {isOpen ? (
                     <SubscriptionFiche
                       row={row} canAct={canSetCashStatus} canRevert={canRevertNoShow} busy={busyId === row.id}
                       onStatus={(st) => { void setSessionStatus(row, st); }}
-                      onPay={() => { void openPay(row.id, `${row.holderName} · séance du ${row.date.slice(8, 10)}/${row.date.slice(5, 7)}`, row.priceDa ?? 0, (rc) => { void setSessionStatus(row, 'PAID', rc); }); }}
+                      onPay={() => { void openPay(row.id, `${bidi(row.holderName)} · ${t('séance du {date}', { date: ltr(`${row.date.slice(8, 10)}/${row.date.slice(5, 7)}`) })}`, row.priceDa ?? 0, (rc) => { void setSessionStatus(row, 'PAID', rc); }); }}
                       onRevert={() => { void revertSession(row); }}
                     />
                   ) : null}
@@ -790,9 +804,9 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpenId(isOpen ? null : item.id); }}
                 >
                   <span className="t">
-                    <b>{hhmm(row.startMin)} — {row.name}{row.reference ? ` · ${row.reference}` : ''}</b>
+                    <b>{ltr(hhmm(row.startMin))} — {nameRef(row)}</b>
                     <span className="cm-note" style={{ margin: '2px 0 0' }}>
-                      {row.field} · {hhmm(row.startMin)} → {hhmm(row.startMin + row.durationMin)} · {fmt(row.amountDa)} DA
+                      {row.field} · {range(row.startMin, row.durationMin)} · {da(row.amountDa)}
                     </span>
                   </span>
                   <SrcChip row={row} />
@@ -825,86 +839,93 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
 
       <ConfirmModal
         open={noShowTarget !== null}
-        title="Marquer cette réservation no-show ?"
+        title={t('Marquer cette réservation no-show ?')}
         body={
           <>
-            <p>« {noShowTarget?.name}{noShowTarget?.reference ? ` · ${noShowTarget.reference}` : ''} » sera marquée no-show : {noShowTarget ? fmt(noShowTarget.amountDa) : 0} DA comptés perdus.</p>
+            <p>{t('« {label} » sera marquée no-show : {montant} comptés perdus.', { label: noShowTarget ? nameRef(noShowTarget) : '', montant: da(noShowTarget ? noShowTarget.amountDa : 0) })}</p>
             {noShowTarget?.source === 'MOUBARAT' || noShowTarget?.claimStatus === 'CONFIRMED' ? (
               <p className="cm-note" style={{ margin: '6px 0 0' }}>
-                <b>C’est une absence pour le joueur</b> : deux absences déclenchent une restriction (7 jours, puis 30 jours, puis blocage). Un manager pourra corriger en cas d’erreur.
+                <b>{t('C’est une absence pour le joueur')}</b> {t(': deux absences déclenchent une restriction (7 jours, puis 30 jours, puis blocage). Un manager pourra corriger en cas d’erreur.')}
               </p>
             ) : (
-              <p className="cm-note" style={{ margin: '6px 0 0' }}>Un manager pourra corriger en cas d’erreur.</p>
+              <p className="cm-note" style={{ margin: '6px 0 0' }}>{t('Un manager pourra corriger en cas d’erreur.')}</p>
             )}
           </>
         }
-        confirmLabel="Marquer no-show"
+        confirmLabel={t('Marquer no-show')}
         onConfirm={() => { const r = noShowTarget; setNoShowTarget(null); if (r) void setStatus(r.id, 'NO_SHOW'); }}
         onCancel={() => setNoShowTarget(null)}
       />
 
       <ConfirmModal
         open={absentTarget !== null}
-        title="Déclarer ce joueur absent ?"
+        title={t('Déclarer ce joueur absent ?')}
         body={
           <>
-            <p>« {absentTarget?.name} » sera déclaré absent du match « {absentTarget?.row.match?.title} ».</p>
+            <p>{t('« {nom} » sera déclaré absent du match « {match} ».', { nom: absentTarget?.name ?? '', match: absentTarget?.row.match?.title ?? '' })}</p>
             <p className="cm-note" style={{ margin: '6px 0 0' }}>
-              <b>Une absence compte pour la fiabilité du joueur</b> : deux absences déclenchent une restriction (7 jours, puis 30 jours, puis blocage levé par le support Moubarat). Cette déclaration ne s’annule pas ici : en cas d’erreur, le support peut lever la restriction.
+              <b>{t('Une absence compte pour la fiabilité du joueur')}</b> {t(': deux absences déclenchent une restriction (7 jours, puis 30 jours, puis blocage levé par le support Moubarat). Cette déclaration ne s’annule pas ici : en cas d’erreur, le support peut lever la restriction.')}
             </p>
           </>
         }
-        confirmLabel="Déclarer absent"
+        confirmLabel={t('Déclarer absent')}
         onConfirm={() => { const t = absentTarget; setAbsentTarget(null); if (t) void declareAbsent(t); }}
         onCancel={() => setAbsentTarget(null)}
       />
 
       <ConfirmModal
         open={revertTarget !== null}
-        title="Annuler ce no-show ?"
+        title={t('Annuler ce no-show ?')}
         body={
-          <p>« {revertTarget?.name}{revertTarget?.reference ? ` · ${revertTarget.reference}` : ''} » redevient « Réservée ». Si le joueur avait été compté absent, son absence est effacée et la restriction qu’elle avait déclenchée est levée.</p>
+          <p>{t('« {label} » redevient « Réservée ». Si le joueur avait été compté absent, son absence est effacée et la restriction qu’elle avait déclenchée est levée.', { label: revertTarget ? nameRef(revertTarget) : '' })}</p>
         }
-        confirmLabel="Annuler le no-show"
+        confirmLabel={t('Annuler le no-show')}
         onConfirm={() => { const r = revertTarget; setRevertTarget(null); if (r) void revertNoShow(r.id); }}
         onCancel={() => setRevertTarget(null)}
       />
 
       <ConfirmModal
         open={revertCashTarget !== null}
-        title="Corriger ce statut ?"
+        title={t('Corriger ce statut ?')}
         body={
-          <p>« {revertCashTarget?.name}{revertCashTarget?.reference ? ` · ${revertCashTarget.reference}` : ''} » {revertCashTarget?.status === 'PAID' && revertCashTarget.startsAt !== undefined && revertCashTarget.startsAt <= Date.now() ? 'redevient « Honorée » (non payée)' : revertCashTarget?.status === 'PAID' ? 'redevient « Réservée » (non payée)' : 'redevient « Réservée »'}. À utiliser seulement pour une erreur de saisie ; la correction est tracée au Journal. La Caisse n’est pas modifiée.</p>
+          <p>{(() => {
+            const label = revertCashTarget ? nameRef(revertCashTarget) : '';
+            return revertCashTarget?.status === 'PAID' && revertCashTarget.startsAt !== undefined && revertCashTarget.startsAt <= Date.now()
+              ? t('« {label} » redevient « Honorée » (non payée). À utiliser seulement pour une erreur de saisie ; la correction est tracée au Journal. La Caisse n’est pas modifiée.', { label })
+              : revertCashTarget?.status === 'PAID'
+                ? t('« {label} » redevient « Réservée » (non payée). À utiliser seulement pour une erreur de saisie ; la correction est tracée au Journal. La Caisse n’est pas modifiée.', { label })
+                : t('« {label} » redevient « Réservée ». À utiliser seulement pour une erreur de saisie ; la correction est tracée au Journal. La Caisse n’est pas modifiée.', { label });
+          })()}</p>
         }
-        confirmLabel="Corriger le statut"
+        confirmLabel={t('Corriger le statut')}
         onConfirm={() => { const r = revertCashTarget; setRevertCashTarget(null); if (r) void revertCash(r.id); }}
         onCancel={() => setRevertCashTarget(null)}
       />
 
       <ConfirmModal
         open={payTarget !== null}
-        title="Marquer payée ?"
+        title={t('Marquer payée ?')}
         body={payTarget ? (
           <>
-            <p>« {payTarget.label} » — {fmt(payTarget.amountDa)} DA.</p>
+            <p>{t('« {label} » — {montant}.', { label: payTarget.label, montant: da(payTarget.amountDa) })}</p>
             {payTarget.cashOpen === null ? (
-              <p className="cm-note" style={{ margin: '6px 0 0' }}>Vérification de la caisse du jour…</p>
+              <p className="cm-note" style={{ margin: '6px 0 0' }}>{t('Vérification de la caisse du jour…')}</p>
             ) : payTarget.cashOpen ? (
               <label className="cm-check">
                 <input
                   type="checkbox" checked={payTarget.recordCash}
                   onChange={(e) => setPayTarget((t) => t && { ...t, recordCash: e.target.checked })}
                 />
-                <span>Encaisser aussi {fmt(payTarget.amountDa)} DA dans la caisse du jour</span>
+                <span>{t('Encaisser aussi {montant} dans la caisse du jour', { montant: da(payTarget.amountDa) })}</span>
               </label>
             ) : (
               <p className="cm-note" style={{ margin: '6px 0 0' }}>
-                La caisse du jour n’est pas ouverte : rien ne sera encaissé. Pensez à saisir cet encaissement dans Caisse.
+                {t('La caisse du jour n’est pas ouverte : rien ne sera encaissé. Pensez à saisir cet encaissement dans Caisse.')}
               </p>
             )}
           </>
         ) : null}
-        confirmLabel="Marquer payée"
+        confirmLabel={t('Marquer payée')}
         confirmDisabled={payTarget?.cashOpen === null}
         onConfirm={() => { const t = payTarget; setPayTarget(null); if (t) t.pay(t.cashOpen === true ? t.recordCash : undefined); }}
         onCancel={() => setPayTarget(null)}
@@ -912,37 +933,39 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
 
       <ConfirmModal
         open={cancelTarget !== null}
-        title="Annuler cette réservation ?"
+        title={t('Annuler cette réservation ?')}
         body={
           <>
-            <p>« {cancelTarget?.label} » sera marquée annulée. Le créneau redevient disponible.</p>
+            <p>{t('« {label} » sera marquée annulée. Le créneau redevient disponible.', { label: cancelTarget?.label ?? '' })}</p>
             {/* BUG-1 (26/09/2026) : ce que la cascade fera VRAIMENT — le match vivant est annulé avec la résa et ses
                 inscrits prévenus ; sans match, un client App est prévenu. Rien d'affirmé pour une résa Comptoir. */}
             {cancelLiveMatch ? (
               <p className="cm-note" style={{ margin: '6px 0 0' }}>
-                <b>Le match « {cancelLiveMatch.title} » ({cancelLiveMatch.joined} {cancelLiveMatch.joined > 1 ? 'inscrits' : 'inscrit'}) sera annulé avec elle</b> — les joueurs inscrits sont prévenus dans l’app.
+                <b>{cancelLiveMatch.joined > 1
+                  ? t('Le match « {titre} » ({n} inscrits) sera annulé avec elle', { titre: cancelLiveMatch.title, n: cancelLiveMatch.joined })
+                  : t('Le match « {titre} » ({n} inscrit) sera annulé avec elle', { titre: cancelLiveMatch.title, n: cancelLiveMatch.joined })}</b> {t('— les joueurs inscrits sont prévenus dans l’app.')}
               </p>
             ) : cancelRow?.source === 'MOUBARAT' ? (
-              <p className="cm-note" style={{ margin: '6px 0 0' }}>Le client sera prévenu dans l’app.</p>
+              <p className="cm-note" style={{ margin: '6px 0 0' }}>{t('Le client sera prévenu dans l’app.')}</p>
             ) : null}
-            <p className="cm-note" style={{ margin: '10px 0 6px' }}>Motif — obligatoire, ça compte pour le CA perdu et la fiabilité du client</p>
-            <div className="cm-choice" role="group" aria-label="Motif d’annulation">
+            <p className="cm-note" style={{ margin: '10px 0 6px' }}>{t('Motif — obligatoire, ça compte pour le CA perdu et la fiabilité du client')}</p>
+            <div className="cm-choice" role="group" aria-label={t('Motif d’annulation')}>
               <button
                 type="button" className={cancelTarget?.reason === 'CLIENT' ? 'on' : ''} aria-pressed={cancelTarget?.reason === 'CLIENT'}
                 onClick={() => setCancelTarget((t) => t && { ...t, reason: 'CLIENT' })}
               >
-                Le client a annulé
+                {t('Le client a annulé')}
               </button>
               <button
                 type="button" className={cancelTarget?.reason === 'STAFF_ERROR' ? 'on' : ''} aria-pressed={cancelTarget?.reason === 'STAFF_ERROR'}
                 onClick={() => setCancelTarget((t) => t && { ...t, reason: 'STAFF_ERROR' })}
               >
-                Erreur de saisie du centre
+                {t('Erreur de saisie du centre')}
               </button>
             </div>
           </>
         }
-        confirmLabel="Annuler la réservation"
+        confirmLabel={t('Annuler la réservation')}
         confirmDisabled={!cancelTarget?.reason}
         onConfirm={confirmCancel}
         onCancel={() => setCancelTarget(null)}
@@ -950,45 +973,45 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
 
       <ConfirmModal
         open={modifyTarget !== null}
-        title="Modifier la réservation"
+        title={t('Modifier la réservation')}
         body={
           <>
             <p className="cm-note" style={{ margin: '0 0 8px' }}>« {modifyTarget?.label} »</p>
             <div className="cm-sub" style={{ border: 0, padding: 0, margin: '0 0 8px' }}>
               <label>
-                <span>Terrain</span>
+                <span>{t('Terrain')}</span>
                 <select className="mb-field__control" value={mFieldId} onChange={(e) => setMFieldId(e.target.value)}>
                   {fields.filter((f) => f.active).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
                 </select>
               </label>
               <label>
-                <span>Heure</span>
+                <span>{t('Heure')}</span>
                 <select className="mb-field__control" value={mStartMin} onChange={(e) => setMStartMin(Number(e.target.value))}>
                   {Array.from({ length: 96 }, (_, i) => i * 30).map((m) => <option key={m} value={m}>{hhmm(m)}</option>)}
                 </select>
               </label>
               <label>
-                <span>Durée</span>
+                <span>{t('Durée')}</span>
                 <select className="mb-field__control" value={mDurationMin} onChange={(e) => setMDurationMin(Number(e.target.value))}>
-                  {[30, 60, 90, 120, 150, 180, 240, 300, 360].map((d) => <option key={d} value={d}>{d} min</option>)}
+                  {[30, 60, 90, 120, 150, 180, 240, 300, 360].map((d) => <option key={d} value={d}>{t('{n} min', { n: d })}</option>)}
                 </select>
               </label>
             </div>
             {mPreview === 'loading' || mPreview === null ? (
-              <p className="cm-note">Calcul du devis…</p>
+              <p className="cm-note">{t('Calcul du devis…')}</p>
             ) : 'error' in mPreview ? (
               <p className="mb-field__error"><Icon id="i-x" className="mb-ic--sm" />{mPreview.error}</p>
             ) : (
               <p className="cm-note">
-                {mPreview.old.fieldName} {hhmm(Math.round((mPreview.old.start - dayStartMs(date)) / 60_000))} → {mPreview.new.fieldName}{' '}
-                {hhmm(Math.round((mPreview.new.start - dayStartMs(date)) / 60_000))}<br />
-                Nouveau prix : <b>{fmt(mPreview.new.totalDa)} DA</b>
-                {mPreview.promoDropped ? ' — remise perdue sur ce créneau (code non éligible)' : null}
+                {mPreview.old.fieldName} {ltr(hhmm(Math.round((mPreview.old.start - dayStartMs(date)) / 60_000)))} {lang === 'ar' ? '←' : '→'} {mPreview.new.fieldName}{' '}
+                {ltr(hhmm(Math.round((mPreview.new.start - dayStartMs(date)) / 60_000)))}<br />
+                {t('Nouveau prix :')} <b>{da(mPreview.new.totalDa)}</b>
+                {mPreview.promoDropped ? ` ${t('— remise perdue sur ce créneau (code non éligible)')}` : null}
               </p>
             )}
           </>
         }
-        confirmLabel={mSubmitting ? 'Modification…' : 'Confirmer'}
+        confirmLabel={mSubmitting ? t('Modification…') : t('Confirmer')}
         confirmDisabled={mSubmitting || !modifyPreviewReady}
         onConfirm={() => { void submitModify(); }}
         onCancel={() => setModifyTarget(null)}

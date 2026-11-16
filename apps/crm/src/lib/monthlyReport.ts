@@ -3,7 +3,9 @@
    et le mois précédent — mêmes règles (core `cashReport`, erreurs de saisie du centre exclues). Que des chiffres réels : aucun
    « no-show évité » ni gain estimé, faute de mesure. Pur, testable sans réseau. */
 import { noShowRatePct, pctChange, type BookingCounts } from './analyticsDetail.js';
-import { fmt } from './format.js';
+import { da } from './format.js';
+import { fill, localeOf, type TFn } from './i18n.js';
+import type { Lang } from './lang.js';
 
 export interface CashReportApi { collected: number; engaged: number; lostCancelled: number; lostNoShow: number }
 export type SourceKey = 'MOUBARAT' | 'PHONE' | 'WALK_IN';
@@ -15,9 +17,12 @@ export interface RevenueReportApi {
 
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
-/** « 2026-11 » → « novembre 2026 ». */
-export function monthLabel(ym: string): string {
+/** « 2026-11 » → « novembre 2026 » (arabe, P1-15 : « نوفمبر 2026 » — mois du Maghreb via Intl, chiffres 0-9). */
+export function monthLabel(ym: string, lang: Lang = 'fr'): string {
   const [y, m] = ym.split('-').map(Number) as [number, number];
+  if (lang === 'ar') {
+    return new Date(Date.UTC(y, m - 1, 1, 12)).toLocaleDateString(localeOf('ar'), { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  }
   return `${MONTHS[m - 1]} ${y}`;
 }
 
@@ -50,38 +55,39 @@ export interface ReportLine {
   note?: string;
 }
 
-const da = (n: number) => `${fmt(n)} DA`;
 const played = (c: BookingCounts) => c.honored + c.paid;
 
-/** Les lignes du rapport d'un mois, comparées au mois précédent. `occupancy` : 0..1 (route occupancy). */
+/** Les lignes du rapport d'un mois, comparées au mois précédent. `occupancy` : 0..1 (route occupancy). `t` (P1-15) : les
+    libellés dans la langue de l'écran — sans `t`, le français. */
 export function buildMonthlyReport(
-  curr: RevenueReportApi, prev: RevenueReportApi, occ: { curr: number; prev: number },
+  curr: RevenueReportApi, prev: RevenueReportApi, occ: { curr: number; prev: number }, t: TFn = fill,
 ): ReportLine[] {
   const appCurr = curr.bySource.MOUBARAT;
   const appPrev = prev.bySource.MOUBARAT;
   const appShare = curr.overall.collected > 0 ? Math.round((appCurr.collected / curr.overall.collected) * 100) : null;
   const nsCurr = noShowRatePct(curr.counts.overall);
   return [
-    { key: 'collected', label: 'Chiffre d’affaires encaissé', value: da(curr.overall.collected), deltaPct: pctChange(curr.overall.collected, prev.overall.collected), lowerIsBetter: false },
+    { key: 'collected', label: t('Chiffre d’affaires encaissé'), value: da(curr.overall.collected), deltaPct: pctChange(curr.overall.collected, prev.overall.collected), lowerIsBetter: false },
     {
-      key: 'app', label: 'dont réservations venues de l’app Moubarat', value: da(appCurr.collected),
+      key: 'app', label: t('dont réservations venues de l’app Moubarat'), value: da(appCurr.collected),
       deltaPct: pctChange(appCurr.collected, appPrev.collected), lowerIsBetter: false,
-      ...(appShare !== null ? { note: `${appShare} % du chiffre encaissé` } : {}),
+      ...(appShare !== null ? { note: t('{pct} % du chiffre encaissé', { pct: appShare }) } : {}),
     },
-    { key: 'played', label: 'Réservations jouées (honorées ou payées)', value: String(played(curr.counts.overall)), deltaPct: pctChange(played(curr.counts.overall), played(prev.counts.overall)), lowerIsBetter: false },
+    { key: 'played', label: t('Réservations jouées (honorées ou payées)'), value: String(played(curr.counts.overall)), deltaPct: pctChange(played(curr.counts.overall), played(prev.counts.overall)), lowerIsBetter: false },
     {
-      key: 'appPlayed', label: 'dont via l’app Moubarat', value: String(played(curr.counts.bySource.MOUBARAT)),
+      key: 'appPlayed', label: t('dont via l’app Moubarat'), value: String(played(curr.counts.bySource.MOUBARAT)),
       deltaPct: pctChange(played(curr.counts.bySource.MOUBARAT), played(prev.counts.bySource.MOUBARAT)), lowerIsBetter: false,
     },
-    { key: 'occupancy', label: 'Remplissage des terrains', value: `${Math.round(occ.curr * 100)} %`, deltaPct: pctChange(Math.round(occ.curr * 100), Math.round(occ.prev * 100)), lowerIsBetter: false },
+    { key: 'occupancy', label: t('Remplissage des terrains'), value: `${Math.round(occ.curr * 100)} %`, deltaPct: pctChange(Math.round(occ.curr * 100), Math.round(occ.prev * 100)), lowerIsBetter: false },
     {
-      key: 'noShow', label: 'No-shows', value: String(curr.counts.overall.noShow), deltaPct: pctChange(curr.counts.overall.noShow, prev.counts.overall.noShow),
-      lowerIsBetter: true, note: `${da(curr.overall.lostNoShow)} perdus${nsCurr !== null ? ` · ${String(nsCurr).replace('.', ',')} % des réservations` : ''}`,
+      key: 'noShow', label: t('No-shows'), value: String(curr.counts.overall.noShow), deltaPct: pctChange(curr.counts.overall.noShow, prev.counts.overall.noShow),
+      lowerIsBetter: true,
+      note: `${t('{montant} perdus', { montant: da(curr.overall.lostNoShow) })}${nsCurr !== null ? ` · ${t('{pct} % des réservations', { pct: String(nsCurr).replace('.', ',') })}` : ''}`,
     },
-    { key: 'lostCancelled', label: 'Chiffre perdu sur annulations', value: da(curr.overall.lostCancelled), deltaPct: pctChange(curr.overall.lostCancelled, prev.overall.lostCancelled), lowerIsBetter: true },
+    { key: 'lostCancelled', label: t('Chiffre perdu sur annulations'), value: da(curr.overall.lostCancelled), deltaPct: pctChange(curr.overall.lostCancelled, prev.overall.lostCancelled), lowerIsBetter: true },
     {
-      key: 'engaged', label: 'Encore à encaisser', value: da(curr.overall.engaged), deltaPct: null, lowerIsBetter: true,
-      note: curr.overall.engaged > 0 ? 'Réservations du mois ni payées ni clôturées' : 'Tout est clôturé',
+      key: 'engaged', label: t('Encore à encaisser'), value: da(curr.overall.engaged), deltaPct: null, lowerIsBetter: true,
+      note: curr.overall.engaged > 0 ? t('Réservations du mois ni payées ni clôturées') : t('Tout est clôturé'),
     },
   ];
 }
