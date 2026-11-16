@@ -16,7 +16,7 @@ Aucune autre règle ne change.
 
 1. Un match naît toujours d’une réservation. L’organisateur est inscrit d’office. — *inchangée*
 2. Le format est choisi à la réservation et ne change plus. Un match ne change jamais de format. — *inchangée*
-3. Une seule place par joueur. On choisit son équipe (sa paire au padel), pas son poste. Changement d’équipe possible jusqu’à H-1. D’après la phase 0, ce n’est pas encore codé : à construire. À l’écran :
+3. Une seule place par joueur. On choisit son équipe (sa paire au padel), pas son poste. Changement d’équipe possible jusqu’au coup d’envoi (H-1 jusqu’au 16/11/2026, voir règle 4). D’après la phase 0, ce n’est pas encore codé : à construire. À l’écran (lot « Match libre » : l’écran change en phase 3, rejoindre sans choisir place le joueur dans l’équipe la moins remplie, A à égalité) :
    - « Rejoindre le match » ouvre le panneau « Choisis ton équipe », où l’équipe qui a le plus de places est choisie par défaut ;
    - toucher un « + » dans une équipe fait rejoindre cette équipe directement ;
    - une fois inscrit, « Changer jusqu’à H-1 » rouvre le panneau pour passer dans l’autre équipe, s’il y reste une place.
@@ -24,15 +24,15 @@ Aucune autre règle ne change.
    — *nouvelle*
 4. Deux verrous :
    - désistement libre jusqu’à H-2 ;
-   - entre H-2 et H-1, partir compte comme une demi-absence, et la place est reproposée (inscriptions ouvertes en remplacement) ;
-   - à H-1, la compo est figée et les inscriptions sont fermées.
+   - entre H-2 et le coup d’envoi, partir compte comme une demi-absence, et la place est reproposée (inscriptions ouvertes en remplacement) ;
+   - au coup d’envoi, les inscriptions, le désistement et le changement d’équipe se ferment.
 
-   — *modifiée* (décision d’Aymen du 20/10/2026, confirmée le 26/10/2026 : le core passe aux trois temps)
+   — *modifiée* (décision d’Aymen du 20/10/2026, confirmée le 26/10/2026 : le core passe aux trois temps ; puis le 16/11/2026, lot « Match libre » : la « compo figée à H-1 » est abandonnée — « pas logique » —, plus rien ne ferme avant le coup d’envoi)
 5. Un joueur ne peut pas être inscrit à deux matchs qui se chevauchent. — *inchangée*
 6. Visibilité : un match « ouvert à tous » apparaît dans Explorer ; un match « sur invitation » n’est accessible que par son lien. — *inchangée*
 7. Annuler le match garde la réservation. Annuler la réservation annule aussi le match, et tous les inscrits sont prévenus. — *inchangée*
 8. Un joueur retiré par l’organisateur est prévenu, et sa place est reproposée. Aucune absence ne lui est comptée, mais il ne peut plus reprendre de place dans ce match. S’il essaie, une fenêtre le lui explique (`PasPossibleRetire`). — *nouvelle*
-9. Match complet : bouton « Préviens-moi si ça se libère ». Premier arrivé, premier servi, jusqu’à H-1. — *modifiée* (alerte par push et notification dans l’app, jamais par SMS ; lot 11)
+9. Match complet : bouton « Préviens-moi si ça se libère ». Premier arrivé, premier servi, jusqu’au coup d’envoi (H-1 jusqu’au 16/11/2026). — *modifiée* (alerte par push et notification dans l’app, jamais par SMS ; lot 11). Lot « Match libre » (16/11/2026) : le bouton ne sera plus affiché sur l’écran du match complet (Dv6, phase 3 du lot), la fonction reste côté serveur.
 10. Groupe WhatsApp du match :
     - il est facultatif ;
     - c’est l’organisateur qui ajoute le lien de son groupe, dans « Gérer le match » : une fenêtre où il colle le lien, avec l’avertissement « tous les membres voient ton numéro » (`GroupeWhatsApp.dc.html`) ; une fois ajouté, la ligne affiche « Groupe WhatsApp ajouté » et le lien (`OrgaMatchGroupe.dc.html`), et la même fenêtre permet de le changer ou de le retirer ;

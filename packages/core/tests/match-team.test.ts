@@ -89,7 +89,10 @@ describe('règle 3 — équipes', () => {
     expect(!teamFull.ok && teamFull.code).toBe('MATCH_TEAM_FULL');
     const stranger = canChangeTeam(match, full, 'inconnu', 'A', NOW);
     expect(!stranger.ok && stranger.code).toBe('NOT_JOINED');
-    const locked = canChangeTeam(match, [created.organizerEntry, ...withTeam(1, 'B')], 'B0', 'A', match.range.start - 0.5 * H);   // règle 3 : jusqu'à H-1 (trois temps, règle 4 modifiée)
+    // Règle 3 : changement d'équipe jusqu'au coup d'envoi (16/11/2026, GO d'Aymen — plus de verrou à H-1) : à H-0:30 encore possible
+    // (assertion inversée), refusé au coup d'envoi.
+    expect(canChangeTeam(match, [created.organizerEntry, ...withTeam(1, 'B')], 'B0', 'A', match.range.start - 0.5 * H).ok).toBe(true);
+    const locked = canChangeTeam(match, [created.organizerEntry, ...withTeam(1, 'B')], 'B0', 'A', match.range.start);
     expect(!locked.ok && locked.code).toBe('MATCH_LOCKED');
     const cancelled = canChangeTeam({ ...match, status: 'CANCELLED' }, [created.organizerEntry, ...withTeam(1, 'B')], 'B0', 'A', NOW);
     expect(!cancelled.ok && cancelled.code).toBe('MATCH_CANCELLED');

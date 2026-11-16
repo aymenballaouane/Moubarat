@@ -1,6 +1,6 @@
 /* =============================================================================
    RÈGLES — MATCH.
-   Rejoindre, se désinscrire, verrouiller à H-2, pouvoirs de l'organisateur.
+   Rejoindre, se désinscrire, verrouiller au coup d'envoi, pouvoirs de l'organisateur.
    Tout est appliqué côté serveur ; l'UI ne fait que refléter ces réponses.
    ========================================================================== */
 
@@ -13,12 +13,13 @@ export function activePlayers(players: readonly MatchPlayer[]): MatchPlayer[] {
   return players.filter((p) => p.status === 'JOINED');
 }
 
-/** Composition figée : à partir de H-1 (règle 4 modifiée, trois temps) — plus d'inscription, plus de désistement, plus de changement d'équipe. */
+/** Inscriptions closes à partir du coup d'envoi (règle 4 modifiée le 16/11/2026, trois temps) — plus d'inscription, plus de désistement, plus de
+    changement d'équipe. Jusqu'au 16/11/2026 ce verrou tombait à H-1 (« composition figée une heure avant », règle abandonnée). */
 export function isLockedNow(m: Match, now: number): boolean {
   return now >= m.range.start - MATCH_LOCK_BEFORE_MS;
 }
 
-/** Les trois temps d'un match ouvert (règle 4, MODIFIÉE) : `FREE` jusqu'à H-2, `REPLACEMENT` de H-2 à H-1, `FROZEN` à partir de H-1.
+/** Les trois temps d'un match ouvert (règle 4, MODIFIÉE) : `FREE` jusqu'à H-2, `REPLACEMENT` de H-2 au coup d'envoi, `FROZEN` à partir du coup d'envoi.
     Ne regarde que l'horloge : le statut du match (annulé, joué) reste l'affaire de l'appelant. */
 export type RegistrationPhase = 'FREE' | 'REPLACEMENT' | 'FROZEN';
 
@@ -28,7 +29,7 @@ export function registrationPhase(m: Pick<Match, 'range'>, now: number): Registr
   return 'FREE';
 }
 
-/** Un départ à `leftAt` est-il une demi-absence ? Oui de H-2 à H-1 (règle 4) ; non avant H-2. Après H-1 on ne part plus (`canLeaveMatch`).
+/** Un départ à `leftAt` est-il une demi-absence ? Oui de H-2 au coup d'envoi (règle 4) ; non avant H-2. Après le coup d'envoi on ne part plus (`canLeaveMatch`).
     Même coupe que l'annulation tardive d'une réservation (`cancellationKind`, §19). */
 export function matchLeaveKind(m: Pick<Match, 'range'>, leftAt: number): 'EARLY' | 'LATE' {
   return leftAt >= m.range.start - CANCEL_FREE_BEFORE_MS ? 'LATE' : 'EARLY';
@@ -62,7 +63,7 @@ export function canJoinMatch(
   if (m.status === 'CANCELLED') return fail('MATCH_CANCELLED', 'Ce match a été annulé.');
   if (m.status === 'PLAYED')    return fail('MATCH_PLAYED', 'Ce match est terminé.');
   if (m.status === 'LOCKED' || isLockedNow(m, now)) {
-    return fail('MATCH_LOCKED', 'Les inscriptions sont fermées 1 h avant le coup d’envoi.');
+    return fail('MATCH_LOCKED', 'Le match a commencé : les inscriptions sont fermées.');
   }
   if (m.status !== 'OPEN' && m.status !== 'FULL') {
     return fail('MATCH_NOT_OPEN', 'Ce match n’est pas ouvert aux inscriptions.');
@@ -89,14 +90,14 @@ export function derivedStatus(m: Match, joinedCount: number): Match['status'] {
   return joinedCount >= m.capacity ? 'FULL' : 'OPEN';
 }
 
-/** Désinscription : libre jusqu'à H-2 ; de H-2 à H-1 elle reste possible mais compte comme une demi-absence (`matchLeaveKind`) et la place est
-    reproposée ; à partir de H-1 la composition est figée (règle 4, MODIFIÉE, trois temps). */
+/** Désinscription : libre jusqu'à H-2 ; de H-2 au coup d'envoi elle reste possible mais compte comme une demi-absence (`matchLeaveKind`) et la
+    place est reproposée ; à partir du coup d'envoi on ne se désinscrit plus (règle 4, MODIFIÉE, trois temps). */
 export function canLeaveMatch(m: Match, players: readonly MatchPlayer[], userId: string, now: number): RuleResult {
   if (!activePlayers(players).some((p) => p.userId === userId)) {
     return fail('NOT_JOINED', 'Vous n’êtes pas inscrit à ce match.');
   }
   if (isLockedNow(m, now)) {
-    return fail('CANCEL_WINDOW_PASSED', 'La composition est figée : on ne se désinscrit plus 1 h avant le coup d’envoi.');
+    return fail('CANCEL_WINDOW_PASSED', 'Le match a commencé : on ne se désinscrit plus.');
   }
   return ok;
 }
@@ -118,6 +119,21 @@ export function canOrganizerAct(m: Match, userId: string, action: OrganizerActio
   if (action === 'CANCEL_MATCH' && !canTransition(MATCH_TRANSITIONS, m.status, 'CANCELLED')) {
     return fail('INVALID_TRANSITION', 'Ce match ne peut plus être annulé.');
   }
+  return ok;
+}
+
+/* --- Visibilité après publication (lot « Match libre », décision d'Aymen du 16/11/2026) ------------------------------------------
+   Seul l'organisateur passe son match de « public » (OPEN) à « privé » (PRIVATE), ou l'inverse, tant que le match n'a pas commencé et
+   n'est ni annulé ni joué. Passer en privé retire le match des listes ; les inscrits gardent leur place ; on le rejoint par son lien.
+   Additif : aucune règle existante ne lit cette fonction. */
+export function canChangeVisibility(
+  m: Pick<Match, 'organizerId' | 'range' | 'status' | 'visibility'>, userId: string, to: Match['visibility'], now: number,
+): RuleResult {
+  if (m.organizerId !== userId) return fail('NOT_ORGANIZER', 'Seul l’organisateur peut faire cela.');
+  if (m.status === 'CANCELLED') return fail('MATCH_CANCELLED', 'Ce match a été annulé.');
+  if (m.status === 'PLAYED') return fail('MATCH_PLAYED', 'Ce match est terminé.');
+  if (now >= m.range.start) return fail('MATCH_LOCKED', 'Un match commencé ne se modifie plus.');
+  if (m.visibility === to) return fail('SAME_VISIBILITY', to === 'PRIVATE' ? 'Ce match est déjà privé.' : 'Ce match est déjà public.');
   return ok;
 }
 
@@ -172,7 +188,7 @@ export function canChangeTeam(
   const me = activePlayers(players).find((p) => p.userId === userId);
   if (!me) return fail('NOT_JOINED', 'Vous n’êtes pas inscrit à ce match.');
   if (m.status === 'LOCKED' || isLockedNow(m, now)) {
-    return fail('MATCH_LOCKED', 'La composition est figée : on ne change plus d’équipe.');
+    return fail('MATCH_LOCKED', 'Le match a commencé : on ne change plus d’équipe.');
   }
   if (me.team === team) return fail('SAME_TEAM', 'Tu es déjà dans cette équipe.');
   return canJoinTeam(m, players, team);

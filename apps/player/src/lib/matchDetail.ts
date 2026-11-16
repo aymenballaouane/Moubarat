@@ -13,8 +13,9 @@ type Lang = 'fr' | 'ar';
 type T = (key: string) => string;
 
 /** Phase d'un match POUR L'AFFICHAGE (règle 4 MODIFIÉE, trois temps — le core la calcule, `registrationPhase`) : `normal` = avant H-2 (on s'inscrit,
-    on se désinscrit librement) ; `remplacement` = de H-2 à H-1 (on peut encore s'inscrire sur une place libérée ; se désinscrire compte comme une
-    demi-absence) ; `fige` = à partir de H-1 (compo bouclée, inscriptions fermées). */
+    on se désinscrit librement) ; `remplacement` = de H-2 au coup d'envoi (on peut encore s'inscrire sur une place libérée ; se désinscrire compte
+    comme une demi-absence) ; `fige` = à partir du coup d'envoi (ou fermé à la main par l'organisateur, statut LOCKED). Le verrou à H-1 a été
+    abandonné le 16/11/2026 (lot « Match libre »). */
 export type MatchPhase = 'normal' | 'remplacement' | 'fige' | 'cancelled' | 'played';
 
 export function matchPhase(m: Pick<Match, 'status' | 'range'>, now: number): MatchPhase {
@@ -25,7 +26,7 @@ export function matchPhase(m: Pick<Match, 'status' | 'range'>, now: number): Mat
   return p === 'FROZEN' ? 'fige' : p === 'REPLACEMENT' ? 'remplacement' : 'normal';
 }
 
-/** Les inscriptions (et le changement d'équipe) sont-ils encore ouverts ? Vrai avant H-1 : phases `normal` et `remplacement`. */
+/** Les inscriptions (et le changement d'équipe) sont-ils encore ouverts ? Vrai jusqu'au coup d'envoi : phases `normal` et `remplacement`. */
 export function registrationsOpen(phase: MatchPhase): boolean {
   return phase === 'normal' || phase === 'remplacement';
 }
@@ -40,7 +41,8 @@ export function freeLeaveLimitLabel(m: Pick<Match, 'range'>, lang: Lang): string
   return limitLabel(freeLeaveLimit(m), m.range.start, lang);
 }
 
-/** Heure limite des inscriptions et du changement d'équipe : début − 1 h (le verrou du core, H-1). */
+/** Heure limite des inscriptions et du changement d'équipe : le coup d'envoi (verrou du core, `MATCH_LOCK_BEFORE_MS` = 0 depuis le
+    16/11/2026 — avant : H-1). */
 export function registrationLimit(m: Pick<Match, 'range'>): number {
   return m.range.start - MATCH_LOCK_BEFORE_MS;
 }

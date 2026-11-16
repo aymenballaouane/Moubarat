@@ -6353,3 +6353,56 @@ leurs nombres isolés.
   mode clair, écran de connexion. **Reste hors code** : la relecture par un arabophone (le document est prêt à être envoyé) ;
   le board visuel (`pnpm ui:board`) n'a pas été relancé sur les lots A à E (il régénère les données de démo — à faire avec
   l'accord d'Aymen).
+
+## Lot « Match libre et nouvelle app joueur » — phase 0 (audit) et phase 1 « Règles » (16/11/2026)
+
+Dossier d'Aymen du 16/11/2026 (« Moubarat — Match libre et nouvelle app joueur », PDF + `fr-ar-match-libre.json` + maquettes,
+hors dépôt). Phase 0 : audit en lecture seule (rapport hors dépôt). Réponses d'Aymen du 16/11/2026, toutes reprises ici :
+
+- **Accord explicite, règles gelées et base** : (1) la « composition figée une heure avant le match » (règle 4 du 20/10/2026) est
+  RETIRÉE, y compris dans le core : inscription, désistement et changement d'équipe restent possibles jusqu'au coup d'envoi ;
+  les assertions de tests qui affirmaient le verrou à H-1 sont inversées. (2) Désistement libre jusqu'à H-2, demi-absence
+  ensuite, jusqu'au coup d'envoi ; impossible après. (3) 9v9 : GO, dans une phase à part (règles, base, CRM, aucun prix par
+  défaut). (4) Match sans centre ni terrain : GO pour le changement de structure (migration réversible, rien de destructif) ;
+  le serveur n'envoie pas les matchs libres aux versions 1.0 et 1.0.1 de l'iPhone. (5) Matchs commencés retirés des listes ;
+  passage en privé après création construit côté serveur en phase 1. (6) Planche Cd2 : le texte du dossier et Acc5/Acc6
+  priment (pas de jauge, pas de niveau, pas de « Voir tous les matchs »).
+- **Écrans** : (7) « Fermer les inscriptions » n'est pas affiché (absent de Dv3) — la route serveur reste. (8) « M'alerter si une
+  place se libère » n'est pas affiché sur Dv6 — la fonction serveur reste. (9) « Tes amis jouent bientôt » garde sa place ; seuls
+  changements de l'accueil : retirer « Terrains à proximité », matchs à rejoindre en liste. (10) Niveau : « Compétition » (mot de
+  l'app), « Compétitif » est une erreur de maquette.
+- **Valeurs par défaut en attendant son avis** : (11) création d'un match à moins de 2 h du début toujours refusée ; (12) ville d'un
+  match libre = celle du joueur (sélecteur), pas de 58 wilayas ; (13) suggestions W2 = centres partenaires + saisie libre, aucun
+  service de cartes ; (14) « Je ne trouve pas mon terrain » place le curseur dans le champ, ou valide la saisie comme lieu libre si
+  le champ est rempli ; (15) « Itinéraire » d'un match libre = Google Maps sur le texte saisi et la ville ; (16) autres points de
+  la section 11 : valeurs provisoires du dossier.
+- **Photo du centre** (phase 6, en dernier) : aucun service de stockage ni aucune dépendance sans son accord ; lui proposer d'abord
+  2 ou 3 options chiffrées. Une seule photo principale par centre : le premier des 4 emplacements du CRM.
+- **Organisation** : une branche par phase, depuis `correctifs/lot-1`, rien fusionné dans `master`. Pas de build iPhone par phase
+  (une seule à la recette finale), rien soumis à l'App Store sans son accord.
+
+### Phase 1 — « Règles » (branche `match-libre/phase-1-regles`)
+
+- **Core** (GO explicite ci-dessus) : `MATCH_LOCK_BEFORE_MS` passe de 1 h à **0** — `isLockedNow`, `registrationPhase` (FROZEN au
+  coup d'envoi), `canJoinMatch`, `canLeaveMatch`, `canChangeTeam` se ferment au coup d'envoi, plus à H-1 ; messages « Le match a
+  commencé : … ». Nouvelle règle additive `canChangeVisibility` (organisateur seul, avant le coup d'envoi, match ni annulé ni joué,
+  code `SAME_VISIBILITY` si rien ne change). Tests du core : **184** (183 + 1). Assertions INVERSÉES (verrou H-1 → coup
+  d'envoi) : `match-phases.test.ts` (5 tests réécrits, chacun vérifie aussi la fermeture au coup d'envoi), `core.test.ts` (2 :
+  rejoindre et se désinscrire à 1 h du début), `match-team.test.ts` (1 : changer d'équipe à 30 min).
+- **API** : le fil `GET /matches` et `GET /matches/day-counts` excluent un match COMMENCÉ (`lower(time_range) > now`, ajouté à
+  côté du filtre existant pour garder l'index 0025), de même que `GET /me/friends-matches`. `syncMatchLifecycle` passe désormais
+  le match en LOCKED au coup d'envoi (même code, constante du core). Nouvelle route **`PUT /matches/:id/visibility`**
+  `{ visibility: 'OPEN' | 'PRIVATE' }` : organisateur seul (403 `NOT_ORGANIZER`), 409 si même visibilité / match commencé /
+  annulé / joué / issu d'un défi, 400 `BAD_VISIBILITY`. En privé : hors fil, inscrits gardés, rejoignable par le lien. Test inversé :
+  `match-three-phases.test.ts` (« à H-1 la composition est figée » → « à 40 min : départ, inscription, changement d'équipe
+  possibles » + nouveau test « au coup d'envoi tout se ferme »). Nouveau fichier `match-libre-phase1.test.ts` (fil sans match
+  commencé, décomptes cohérents, public ↔ privé et ses refus).
+- **App joueur** : aucun écran redessiné dans cette phase (le détail du match l'est en phase 3). La logique d'affichage suit le core
+  (`lib/matchDetail.ts` : « place libérée, à prendre jusqu'à » affiche désormais l'heure du coup d'envoi). Nouvelle fonction de
+  pluriel `pluralText` / `useTn` (`lib/i18n.ts`) : arabe en quatre cas (1, 2, 3 à 10, 11 et plus), français en deux ; formes dans
+  le nouveau bloc `pluriels` de `refonte-app-joueur/i18n/fr-ar.json`, arabe repris tel quel de `fr-ar-match-libre.json` (5 textes,
+  nouveaux, à relire par un arabophone). Tests inversés : `matchDetail.test.ts` (3), `homeFeed.test.ts` (1 : un match dans 30 min
+  est de nouveau proposé). Nouveau fichier `pluriels.test.ts`.
+- **Non fait dans cette phase, volontairement** : écran « Public / Privé » et Dt3 (phase 3, détail du match) ; retrait de
+  l'affichage de « M'alerter si une place se libère » (phase 3, Dv6) ; les 62 autres textes arabes nouveaux (ajoutés avec les
+  écrans qui les utilisent).

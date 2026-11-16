@@ -145,7 +145,7 @@ describe('« Préviens-moi si ça se libère » et places libérées', () => {
     expect(await notifsOf(b.id, 'SPOT_FREED', matchId)).toHaveLength(1);
   });
 
-  it('de H-2 à H-1, la place est reproposée aux joueurs de la VILLE (interrupteur, sport, accord, pas inscrits, pas restreints) — pas avant H-2', async () => {
+  it('de H-2 au coup d’envoi, la place est reproposée aux joueurs de la VILLE (interrupteur, sport, accord, pas inscrits, pas restreints) — pas avant H-2', async () => {
     const venue = await stack.db.selectFrom('venues').select('wilaya').where('id', '=', seed.venueId).executeTakeFirstOrThrow();
     const city = cityCodeOfWilaya(venue.wilaya);
     expect(city).not.toBeNull();

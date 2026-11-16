@@ -91,7 +91,10 @@ export function feedConditions(f: FeedFilters, now: Date): RawBuilder<boolean>[]
   const conds: RawBuilder<boolean>[] = [
     sql<boolean>`matches.visibility = 'OPEN'`,
     sql<boolean>`matches.status IN ('OPEN', 'FULL')`,
-    sql<boolean>`upper(matches.time_range) > ${now}`,
+    sql<boolean>`upper(matches.time_range) > ${now}`,   // garde l'index matches_feed_upcoming (migration 0025)
+    // Lot « Match libre » (16/11/2026, décision d'Aymen) : un match déjà COMMENCÉ quitte les listes, même si son statut stocké
+    // (synchronisé paresseusement) est encore OPEN/FULL — on ne s'y inscrit plus (verrou au coup d'envoi, core `isLockedNow`).
+    sql<boolean>`lower(matches.time_range) > ${now}`,
   ];
   if (f.sport) conds.push(sql<boolean>`matches.sport = ${f.sport}`);
   if (f.venueId) conds.push(sql<boolean>`matches.venue_id = ${f.venueId}::uuid`);

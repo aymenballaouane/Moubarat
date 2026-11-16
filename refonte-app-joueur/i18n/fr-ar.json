@@ -1110,5 +1110,68 @@
     "Moubarat ne répond pas": "مبارات لا تستجيب",
     "Mise à jour ou panne de notre côté, ou connexion trop faible. On réessaie tout seul dans quelques secondes.": "تحديث أو عطل من جهتنا، أو اتصال ضعيف جدًا. سنعيد المحاولة تلقائيًا بعد ثوانٍ."
   },
-  "par_ecran": {}
+  "par_ecran": {},
+  "pluriels": {
+    "_lisezmoi": "Lot « Match libre » (16/11/2026) — textes qui contiennent un nombre. Clé = texte français avec {n}. « fr » : 1 → singulier, autre → pluriel (accord français). « ar » : les quatre cas du dossier (1, 2, 3 à 10, 11 et plus), repris TELS QUELS de fr-ar-match-libre.json (fait foi pour l’arabe) — nouveaux, à faire relire par un arabophone. Lus par pluralText() (apps/player/src/lib/i18n.ts).",
+    "{n} places": {
+      "fr": {
+        "1": "{n} place",
+        "autre": "{n} places"
+      },
+      "ar": {
+        "1": "مكان واحد",
+        "2": "مكانان",
+        "3-10": "{n} أماكن",
+        "11+": "{n} مكانًا"
+      }
+    },
+    "Plus que {n} places à remplir": {
+      "fr": {
+        "1": "Plus que {n} place à remplir",
+        "autre": "Plus que {n} places à remplir"
+      },
+      "ar": {
+        "1": "بقي مكان واحد شاغر",
+        "2": "بقي مكانان شاغران",
+        "3-10": "بقي {n} أماكن شاغرة",
+        "11+": "بقي {n} مكانًا شاغرًا"
+      }
+    },
+    "Il manque encore {n} joueurs": {
+      "fr": {
+        "1": "Il manque encore {n} joueur",
+        "autre": "Il manque encore {n} joueurs"
+      },
+      "ar": {
+        "1": "ينقص لاعب واحد",
+        "2": "ينقص لاعبان",
+        "3-10": "ينقص {n} لاعبين",
+        "11+": "ينقص {n} لاعبًا"
+      }
+    },
+    "Trouver {n} joueurs": {
+      "fr": {
+        "1": "Trouver {n} joueur",
+        "autre": "Trouver {n} joueurs"
+      },
+      "ar": {
+        "1": "اعثر على لاعب واحد",
+        "2": "اعثر على لاعبين",
+        "3-10": "اعثر على {n} لاعبين",
+        "11+": "اعثر على {n} لاعبًا"
+      }
+    },
+    "Voir {n} matchs de plus": {
+      "fr": {
+        "1": "Voir {n} match de plus",
+        "autre": "Voir {n} matchs de plus"
+      },
+      "ar": {
+        "1": "عرض مباراة أخرى",
+        "2": "عرض مباراتين أخريين",
+        "3-10": "عرض {n} مباريات أخرى",
+        "11+": "عرض {n} مباراة أخرى"
+      }
+    }
+  }
 }

@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import type { FastifyInstance } from 'fastify';
 import {
-  RECIPIENTS, matchLeaveKind, activePlayers, canCancelBooking, cancellationKind, canOrganizerAct, canTransition, changeTeam, createMatch, defaultTeam, joinMatch, leaveMatch,
+  RECIPIENTS, matchLeaveKind, activePlayers, canCancelBooking, canChangeVisibility, cancellationKind, canOrganizerAct, canTransition, changeTeam, createMatch, defaultTeam, joinMatch, leaveMatch,
   removePlayer, MATCH_TRANSITIONS, MATCH_TEAMS,
   type MatchFormat, type MatchTeam, type SkillLevel,
 } from '@moubarat/core';
@@ -481,6 +481,32 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
         await trx.updateTable('matches').set({ note: note === '' ? null : note }).where('id', '=', row.id).execute();
       });
       return reply.send({ ok: true, note: note === '' ? null : note });
+    });
+
+  /* Lot « Match libre » (décision d'Aymen du 16/11/2026) — « Qui peut voir ce match ? » : l'organisateur seul passe son match de public
+     (OPEN) à privé (PRIVATE), ou l'inverse, tant qu'il n'a pas commencé (core `canChangeVisibility`). En privé, le match quitte toutes les
+     listes (fil, décomptes par jour, « Tes amis jouent bientôt », alertes) ; les inscrits gardent leur place ; on le rejoint par son lien
+     (`/matches/by-code/:code`). Un match issu d'un défi reste privé : son effectif est fermé (voir la garde de /join). Aucune notification. */
+  app.put<{ Params: { id: string }; Body: { visibility?: unknown } }>('/matches/:id/visibility',
+    { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
+      const wanted = (req.body ?? {}).visibility;
+      if (wanted !== 'OPEN' && wanted !== 'PRIVATE') {
+        throw badRequest('Visibilité attendue : OPEN (public) ou PRIVATE (privé).', 'BAD_VISIBILITY');
+      }
+      const now = Date.now();
+      await db.transaction().execute(async (trx) => {
+        const row = await syncMatchLifecycle(trx, await loadMatchForUpdate(trx, req.params.id), now);
+        const verdict = canChangeVisibility(rowToMatch(row), req.auth!.userId, wanted, now);
+        if (!verdict.ok) {
+          const status = verdict.code === 'NOT_ORGANIZER' ? 403 : 409;
+          throw new ApiError(status, verdict.code, verdict.message);
+        }
+        if (row.challenge_id !== null) {
+          throw new ApiError(409, 'MATCH_PRIVATE', 'Un match de défi reste réservé aux deux équipes.');
+        }
+        await trx.updateTable('matches').set({ visibility: wanted }).where('id', '=', row.id).execute();
+      });
+      return reply.send({ ok: true, visibility: wanted });
     });
 
   /* Règle 3 — changer d'équipe tant que les inscriptions sont ouvertes : le core (changeTeam) tranche (inscrit, verrou, place dans

@@ -49,11 +49,13 @@ const pick = (entries: FeedEntry[], playerCity: string | null = null, playerPos:
   homeJoinableMatches(entries, ME, NOW, playerCity, venueOf, playerPos);
 
 describe('fenêtre de temps : aujourd’hui seulement (remplace la fenêtre glissante 48 h)', () => {
-  it('commence dans moins de 1 h (inscriptions closes, règle 4 : H-1) ou a commencé : jamais proposé ; entre H-2 et H-1 une place libérée reste proposée', () => {
-    expect(ids(pick([entry('a', { inH: 0.5 }), entry('b', { inH: -1 })]))).toEqual([]);
+  it('commencé : jamais proposé ; jusqu’au coup d’envoi (H-1 compris, plus de verrou depuis le 16/11/2026) une place reste proposée', () => {
+    // 16/11/2026 (GO d'Aymen) : un match dans 30 min se rejoint encore — assertion inversée (avant : jamais proposé).
+    expect(ids(pick([entry('a', { inH: 0.5 }), entry('b', { inH: -1 })]))).toEqual(['a']);
     expect(ids(pick([entry('r', { inH: 1.5 })]))).toEqual(['r']);
-    expect(ids(pick([entry('c', { inH: MATCH_LOCK_BEFORE_MS / H })]))).toEqual([]);
-    expect(ids(pick([entry('d', { inH: MATCH_LOCK_BEFORE_MS / H + 0.01 })]))).toEqual(['d']);
+    expect(MATCH_LOCK_BEFORE_MS).toBe(0);
+    expect(ids(pick([entry('c', { inH: 0 })]))).toEqual([]);
+    expect(ids(pick([entry('d', { inH: 0.01 })]))).toEqual(['d']);
   });
 
   it('demain (même tard ce soir passé minuit) : jamais proposé — l’Explorer garde la liste complète', () => {

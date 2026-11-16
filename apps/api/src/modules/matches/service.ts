@@ -277,6 +277,7 @@ export async function friendsUpcomingMatches(
     .where('matches.visibility', '=', 'OPEN')
     .where('matches.status', 'in', ['OPEN', 'FULL', 'LOCKED'])
     .where(sql<boolean>`upper(matches.time_range) > ${now}`)
+    .where(sql<boolean>`lower(matches.time_range) > ${now}`)   // 16/11/2026 : un match commencé quitte les listes (lot « Match libre »)
     .where(sql<boolean>`lower(matches.time_range) <= ${windowEnd}`)
     .where((eb) => eb.or([
       eb('matches.organizer_id', 'in', coPlayerIds),

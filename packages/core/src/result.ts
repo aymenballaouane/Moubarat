@@ -26,7 +26,9 @@ export type RuleError =
   /** Règle 25 (26/10/2026) : restriction après absences ; déclaration d'une absence refusée. */
   | 'PLAYER_RESTRICTED' | 'ABSENCE_NOT_ELIGIBLE' | 'ABSENCE_TOO_EARLY'
   /** Règle 21 (26/10/2026) : « C'est bien toi ? » — déjà répondu ; réservation annulée, honorée ou commencée. */
-  | 'CLAIM_ALREADY_ANSWERED' | 'CLAIM_CLOSED';
+  | 'CLAIM_ALREADY_ANSWERED' | 'CLAIM_CLOSED'
+  /** Lot « Match libre » (16/11/2026) : l'organisateur demande la visibilité que le match a déjà. */
+  | 'SAME_VISIBILITY';
 
 export type RuleResult =
   | { ok: true }

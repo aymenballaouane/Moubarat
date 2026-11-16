@@ -38,15 +38,17 @@ export function availableStartTimes(
 
 /* --- Constantes produit (spec + décisions escaladées) --------------------- */
 
-/** Règle 4 (MODIFIÉE, décision d'Aymen du 20/10/2026, confirmée le 26/10/2026) : trois temps.
+/** Règle 4 (MODIFIÉE, décisions d'Aymen du 20/10/2026 puis du 16/11/2026 — lot « Match libre ») : trois temps.
     - jusqu'à H-2 (`CANCEL_FREE_BEFORE_MS`) : inscription et désistement libres ;
-    - de H-2 à H-1 : « remplacement » — partir compte comme une demi-absence et la place est reproposée (les inscriptions restent ouvertes) ;
-    - à H-1 (`MATCH_LOCK_BEFORE_MS`) : la composition est figée, les inscriptions sont fermées, le changement d'équipe aussi (règle 3).
-    Avant le 26/10/2026 cette constante valait 2 h : le verrou et le désistement libre tombaient au même instant. */
-export const MATCH_LOCK_BEFORE_MS = 1 * 3_600_000;
+    - de H-2 au coup d'envoi : « remplacement » — partir compte comme une demi-absence et la place est reproposée (les inscriptions restent ouvertes) ;
+    - au coup d'envoi (`MATCH_LOCK_BEFORE_MS` = 0) : plus d'inscription, plus de désistement, plus de changement d'équipe (règle 3).
+    Historique : 2 h jusqu'au 26/10/2026, puis 1 h (« composition figée une heure avant le match ») jusqu'au 16/11/2026, règle rejetée par
+    Aymen ce jour-là (« pas logique ») : rien ne ferme plus les inscriptions avant le coup d'envoi. */
+export const MATCH_LOCK_BEFORE_MS = 0;
 
 /** Un match ne s'ouvre pas aux inscriptions à moins de 2 h du coup d'envoi (création d'un match sur une réservation) — seuil historique,
-    maintenant distinct du verrou des inscriptions (H-1) : les remplacements se font sur un match déjà ouvert, pas sur un match créé à la dernière minute. */
+    distinct du verrou des inscriptions (coup d'envoi) : les remplacements se font sur un match déjà ouvert, pas sur un match créé à la dernière
+    minute. Maintenu par Aymen le 16/11/2026 (valeur par défaut, en attendant son avis). */
 export const MATCH_OPEN_MIN_BEFORE_MS = 2 * 3_600_000;
 
 /** Annulation / désinscription gratuite jusqu'à 2 h avant (promesse affichée sur Détail match). */
