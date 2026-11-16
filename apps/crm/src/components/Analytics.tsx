@@ -4,11 +4,10 @@ import {
   pctChange, noShowRatePct, panierMoyenDa, revenuePerOpenHourDa, type BookingCounts,
 } from '../lib/analyticsDetail.js';
 import { asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
-import { apiFetch, apiDownload, ApiError } from '../lib/api.js';
+import { apiFetch, apiDownload, errorText } from '../lib/api.js';
 import { da, fmt } from '../lib/format.js';
 import { useT } from '../lib/i18n.js';
 import { Icon } from './Icon.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { MonthlyReport } from './MonthlyReport.js';
 
 
@@ -107,7 +106,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      setExportError(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      setExportError(errorText(e));
     } finally {
       setExportBusy(false);
     }
@@ -146,7 +145,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
       });
       setOverviewLoad({ kind: 'ready' });
     } catch (e) {
-      setOverviewLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setOverviewLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token, today]);
 
@@ -157,7 +156,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
       setDayOcc(res);
       setDayOccLoad({ kind: 'ready' });
     } catch (e) {
-      setDayOccLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setDayOccLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token, day]);
 

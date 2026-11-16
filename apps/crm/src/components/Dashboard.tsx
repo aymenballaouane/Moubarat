@@ -9,12 +9,11 @@ import {
   dashboardKpisFromApi, matchHealthActionsFromApi, phoneToVerifyActionsFromApi,
   honoredUnpaidCount, upcomingFromApi, compareKpi, healthPenaltyText, type DashboardKpis, type KpiComparison, type KpiKey,
 } from '../lib/dashboardDetail.js';
-import { apiFetch, ApiError } from '../lib/api.js';
+import { apiFetch, errorText } from '../lib/api.js';
 import { fmt, da } from '../lib/format.js';
 import { ltr, useLang, useT, bidi } from '../lib/i18n.js';
 import { hhmm } from '../lib/time.js';
 import { Icon } from './Icon.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 
 interface DashboardProps {
   role: CenterRole; venueId: string; token: string;
@@ -223,7 +222,7 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
       setLoad({ kind: 'ready' });
     } catch (e) {
       if (mine !== requestSeq.current) return;
-      setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token, day, hasViewClients, lang]);
 

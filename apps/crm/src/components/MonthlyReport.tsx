@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiFetch, ApiError } from '../lib/api.js';
+import { apiFetch, errorText } from '../lib/api.js';
 import { todayAlgiers } from '../lib/bookingsDetail.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { useLang, useT } from '../lib/i18n.js';
 import {
   buildMonthlyReport, isMonthOver, monthLabel, monthOf, monthRange, shiftMonth,
@@ -42,7 +41,7 @@ export function MonthlyReport({ venueId, venueName, token }: { venueId: string; 
       ]);
       setLoad({ kind: 'ready', data: { rc, rp, occ: { curr: oc.overall, prev: op.overall } } });
     } catch (e) {
-      setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token, month]);
   useEffect(() => { void fetchReport(); }, [fetchReport]);

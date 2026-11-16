@@ -1,4 +1,7 @@
 import { GENERIC_ERROR_MESSAGE } from './messages.js';
+import { getLang } from './lang.js';
+import { translate } from './i18n.js';
+import { localizeServerMessage } from './serverMessages.js';
 
 /* Client HTTP minimal vers apps/api — même patron que apps/superadmin/src/lib/api.ts
    et apps/player/src/lib/api.ts (un seul point de contact réseau, jamais de gestion
@@ -17,6 +20,16 @@ export class ApiError extends Error {
         erreurs n'en ont pas besoin. */
     public readonly details?: unknown,
   ) { super(message); }
+}
+
+/** P1-15 (lot D) : le message du serveur dans la langue de l'écran, traduit à la réception (lib/serverMessages.ts). */
+function serverText(message: string | undefined): string {
+  return message ? localizeServerMessage(message, getLang()) : translate(GENERIC_ERROR_MESSAGE, getLang());
+}
+
+/** Le texte à afficher pour une erreur attrapée : celui du serveur (déjà traduit), sinon le message générique traduit. */
+export function errorText(e: unknown): string {
+  return e instanceof ApiError ? e.message : translate(GENERIC_ERROR_MESSAGE, getLang());
 }
 
 type UnauthorizedHandler = () => void;
@@ -46,7 +59,7 @@ export async function apiDownload(path: string, opts: { token?: string | null } 
   try {
     res = await fetch(`${API_BASE}${path}`, { headers });
   } catch {
-    throw new ApiError(0, 'NETWORK_ERROR', 'Connexion au serveur Moubarat impossible. Vérifiez votre connexion internet, puis réessayez.');
+    throw new ApiError(0, 'NETWORK_ERROR', translate('Connexion au serveur Moubarat impossible. Vérifiez votre connexion internet, puis réessayez.', getLang()));
   }
 
   if (!res.ok) {
@@ -54,7 +67,7 @@ export async function apiDownload(path: string, opts: { token?: string | null } 
     const json: unknown = text ? JSON.parse(text) : null;
     const body = (json ?? {}) as { error?: string; message?: string; details?: unknown };
     if (res.status === 401) onUnauthorized?.();
-    throw new ApiError(res.status, body.error ?? 'UNKNOWN', body.message ?? GENERIC_ERROR_MESSAGE, body.details);
+    throw new ApiError(res.status, body.error ?? 'UNKNOWN', serverText(body.message), body.details);
   }
 
   const blob = await res.blob();
@@ -76,7 +89,7 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
       ...(opts.body !== undefined ? { body: JSON.stringify(opts.body) } : {}),
     });
   } catch {
-    throw new ApiError(0, 'NETWORK_ERROR', 'Connexion au serveur Moubarat impossible. Vérifiez votre connexion internet, puis réessayez.');
+    throw new ApiError(0, 'NETWORK_ERROR', translate('Connexion au serveur Moubarat impossible. Vérifiez votre connexion internet, puis réessayez.', getLang()));
   }
 
   const text = await res.text();
@@ -85,7 +98,7 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
   if (!res.ok) {
     const body = (json ?? {}) as { error?: string; message?: string; details?: unknown };
     if (res.status === 401) onUnauthorized?.();
-    throw new ApiError(res.status, body.error ?? 'UNKNOWN', body.message ?? GENERIC_ERROR_MESSAGE, body.details);
+    throw new ApiError(res.status, body.error ?? 'UNKNOWN', serverText(body.message), body.details);
   }
   return json as T;
 }

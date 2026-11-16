@@ -3,11 +3,10 @@ import { canCenterAct, type CenterRole } from '@moubarat/core';
 import { DAY_NAMES, WEEKDAY_ORDER } from '../data/subscriptionsDemo.js';
 import { algiersDateOf, dayLabel, shiftDate, todayAlgiers } from '../lib/bookingsDetail.js';
 import { asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
-import { apiFetch, ApiError } from '../lib/api.js';
+import { apiFetch, errorText } from '../lib/api.js';
 import { hhmm } from '../lib/time.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { Icon } from './Icon.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { da } from '../lib/format.js';
 import { useLang, useT, bidi } from '../lib/i18n.js';
 
@@ -98,7 +97,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
       setSubs(subsRes.subscriptions);
       setLoad({ kind: 'ready' });
     } catch (e) {
-      setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token]);
 
@@ -151,7 +150,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
       onToast(t('Abonnement créé.'));
       await fetchAll();
     } catch (e) {
-      setFormError(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      setFormError(errorText(e));
     }
   }
 
@@ -164,7 +163,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
       onToast(t('Abonnement résilié.'));
       await fetchAll();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -178,7 +177,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
       onToast(t('Prix par séance enregistré.'));
       await fetchAll();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 

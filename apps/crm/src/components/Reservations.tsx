@@ -10,13 +10,12 @@ import {
   type SubscriptionReservationRow,
 } from '../lib/bookingsDetail.js';
 import { asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
-import { apiFetch, ApiError } from '../lib/api.js';
+import { apiFetch, errorText } from '../lib/api.js';
 import { da } from '../lib/format.js';
 import { ltr, useLang, useT, type TFn, bidi } from '../lib/i18n.js';
 import { hhmm } from '../lib/time.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { Icon } from './Icon.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { algiersClock, useAutoRefresh } from '../lib/autoRefresh.js';
 
 interface ReservationsProps {
@@ -394,7 +393,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       setLoad({ kind: 'ready' });
     } catch (e) {
       if (mine !== requestSeq.current) return;
-      setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token, date]);
 
@@ -416,7 +415,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       onToast(t('Réservation téléphonique confirmée.'));
       await fetchDay();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     } finally {
       setBusyId(null);
     }
@@ -455,7 +454,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
         : status === 'PAID' ? t('Séance marquée payée.') : status === 'HONORED' ? t('Séance marquée honorée.') : t('Séance marquée no-show.'));
       await fetchDay();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     } finally {
       setBusyId(null);
     }
@@ -467,7 +466,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       onToast(t('Statut de la séance corrigé.'));
       await fetchDay();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     } finally {
       setBusyId(null);
     }
@@ -486,7 +485,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
           : t(STATUS_TOAST[status]));
       await fetchDay();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     } finally {
       setBusyId(null);
     }
@@ -501,7 +500,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       onToast(res.absenceRemoved ? t('No-show annulé — l’absence du joueur est effacée.') : t('No-show annulé.'));
       await fetchDay();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     } finally {
       setBusyId(null);
     }
@@ -516,7 +515,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       onToast(res.status === 'HONORED' ? t('Statut corrigé : Honorée.') : t('Statut corrigé : Réservée.'));
       await fetchDay();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     } finally {
       setBusyId(null);
     }
@@ -536,7 +535,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
           : t('Absence enregistrée.'));
       await fetchDay();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     } finally {
       setBusyId(null);
     }
@@ -587,7 +586,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       `/bookings/${modifyTarget.id}/reschedule/preview?fieldId=${mFieldId}&date=${date}&startMin=${mStartMin}&durationMin=${mDurationMin}`,
       { token },
     ).then((res) => { if (!cancelled) setMPreview(res); })
-      .catch((e) => { if (!cancelled) setMPreview({ error: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE }); });
+      .catch((e) => { if (!cancelled) setMPreview({ error: errorText(e) }); });
     return () => { cancelled = true; };
   }, [modifyTarget, mFieldId, date, mStartMin, mDurationMin, token]);
 
@@ -602,7 +601,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       setModifyTarget(null);
       await fetchDay();
     } catch (e) {
-      setMPreview({ error: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setMPreview({ error: errorText(e) });
     } finally {
       setMSubmitting(false);
     }
@@ -640,7 +639,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
         if (mine !== searchRequest.current) return;
         setHits([]);
         setHitsCursor(null);
-        setSearchLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+        setSearchLoad({ kind: 'error', message: errorText(e) });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounced, venueId, token]);
@@ -658,7 +657,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
       setHitsCursor(res.nextCursor);
       setHitsMore({ loading: false, error: null });
     } catch (e) {
-      setHitsMore({ loading: false, error: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setHitsMore({ loading: false, error: errorText(e) });
     }
   }
   function openHit(h: SearchHit) {

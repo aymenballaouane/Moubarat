@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { canCenterAct, type CenterRole } from '@moubarat/core';
-import { apiFetch, ApiError } from '../lib/api.js';
+import { apiFetch, errorText } from '../lib/api.js';
 import { readinessBannerModel, signaledAtLabel, type ApiVenueReadiness } from '../lib/readinessView.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { useLang, useT } from '../lib/i18n.js';
 
 /* ONB-2 (audit pré-lancement, lot 6, 27/09/2026) — le gérant d'un centre pas encore publié ne savait ni qu'il ne
@@ -40,7 +39,7 @@ export function ReadinessBanner({ venueId, token, role, refreshKey, onOpenCentre
       onToast('Moubarat est prévenu : votre centre est prêt à être publié.');
       load();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
       load();
     } finally {
       setBusy(false);

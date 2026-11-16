@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { apiFetch, ApiError } from '../lib/api.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
+import { apiFetch, errorText } from '../lib/api.js';
 import { useT } from '../lib/i18n.js';
 
 
@@ -38,7 +37,7 @@ export function AccountModal({ accountName, token, onClose, onToast }: {
       onToast(n === 0 ? t('Mot de passe modifié.') : n === 1 ? t('Mot de passe modifié — 1 autre session fermée.') : t('Mot de passe modifié — {n} autres sessions fermées.', { n }));
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : GENERIC_ERROR_MESSAGE);
+      setError(errorText(err));
     } finally {
       setBusy(false);
     }

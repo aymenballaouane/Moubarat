@@ -6,12 +6,11 @@ import {
   timelineBlocksFromApi, subscriptionBlocksFromApi, type ApiBookingRow, type ApiSubscriptionOccurrence,
 } from '../lib/bookingsDetail.js';
 import { hoursFromApi, asFieldStatus, formatLabel, type ApiVenueDetail } from '../lib/venueDetail.js';
-import { apiFetch, ApiError } from '../lib/api.js';
+import { apiFetch, errorText } from '../lib/api.js';
 import { hhmm } from '../lib/time.js';
 import { da } from '../lib/format.js';
 import { ltr, useLang, useT } from '../lib/i18n.js';
 import { Icon } from './Icon.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { algiersClock, useAutoRefresh } from '../lib/autoRefresh.js';
 
 interface PlanningProps {
@@ -150,7 +149,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
       }));
       setLoad({ kind: 'ready' });
     } catch (e) {
-      setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token, date]);
 
@@ -313,7 +312,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
       setSel(null);
       void fetchDay({ silent: true });
     } catch (e) {
-      setFormError(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      setFormError(errorText(e));
     } finally {
       setFormSubmitting(false);
     }
@@ -421,7 +420,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
         }
         : { found: false });
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     } finally {
       setNaSearching(false);
     }

@@ -2,11 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { canCenterAct, type CenterRole } from '@moubarat/core';
 import { auditTimeLabel } from '../lib/auditDetail.js';
 import { parseDaAmount } from '../lib/amount.js';
-import { apiFetch, ApiError } from '../lib/api.js';
+import { apiFetch, ApiError, errorText } from '../lib/api.js';
 import { da } from '../lib/format.js';
 import { Icon } from './Icon.js';
 import { ConfirmModal } from './ConfirmModal.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { useT, type TFn } from '../lib/i18n.js';
 
 interface CaisseProps { role: CenterRole; venueId: string; token: string; onToast: (message: string) => void }
@@ -82,7 +81,7 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
       }
       setLoad({ kind: 'ready' });
     } catch (e) {
-      setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token]);
 
@@ -119,7 +118,7 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
         // réel prime, jamais une erreur sèche pour un refus attendu.
         await fetchCurrent();
       } else {
-        setOpenError(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+        setOpenError(errorText(e));
       }
     }
   }
@@ -135,7 +134,7 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
       reset();
       await fetchCurrent();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -162,7 +161,7 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
       setCloseModal(null);
       await fetchCurrent();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
       setCloseModal(null);
     }
   }

@@ -4,7 +4,7 @@ import { DAY_NAMES, WEEKDAY_ORDER } from '../data/subscriptionsDemo.js';
 import { SURFACES, EQUIPMENT_DEMO } from '../data/centreDemo.js';
 import { hhmm } from '../lib/time.js';
 import { algiersDateOf, dayLabel, dayStartMs, todayAlgiers } from '../lib/bookingsDetail.js';
-import { apiFetch, ApiError } from '../lib/api.js';
+import { apiFetch, ApiError, errorText } from '../lib/api.js';
 import {
   SPORT_LABELS, SPORT_VALUES, FIELD_STATUS_LABELS, formatLabel, formatsLabel, formatOptionsFor, identicalTariffPeers,
   fieldRowsFromApi, fieldRowFromApiWrite, mergeFieldFromApiWrite, withUpdatedRule, mergeEquipment, hoursFromApi, daysWithMultipleRanges, ruleScopeNote,
@@ -136,7 +136,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       });
       setLoad({ kind: 'ready' });
     } catch (e) {
-      setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token]);
 
@@ -160,7 +160,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === id ? previous : x)) }));
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -222,7 +222,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
         setArchiveConflicts({ message: e.message, conflicts: d?.conflicts ?? [], bookings: d?.bookings ?? 0, subscriptions: d?.subscriptions ?? 0 });
       } else {
         setArchiveTarget(null);
-        onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+        onToast(errorText(e));
       }
     } finally {
       setArchiving(false);
@@ -264,7 +264,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onToast(t('Terrain {terrain} ajouté.', { terrain: row.name }));
       setAddOpen(false);
     } catch (e) {
-      setAddError(e instanceof ApiError ? e.message : t(GENERIC_ERROR_MESSAGE));
+      setAddError(errorText(e));
     } finally {
       setAddSubmitting(false);
     }
@@ -290,7 +290,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, equipment: previous }));
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -313,7 +313,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, address: previous }));
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -332,7 +332,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, phone: previous }));
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -349,7 +349,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, description: previous }));
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -376,7 +376,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === id ? { ...x, formatPrices: previous } : x)) }));
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -411,7 +411,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
         ? (n > 1 ? t('Format ajouté — {n} bandes copiées, à régler ci-dessous.', { n }) : t('Format ajouté — {n} bande copiée, à régler ci-dessous.', { n }))
         : t('Format ajouté (tarif plat, sans bande).'));
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     } finally {
       setFmtAddBusy(null);
     }
@@ -483,7 +483,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onAudit(`a retiré le format ${formatLabel(target.format)} du terrain ${target.fieldName}`);
       onToast(t('Format retiré.'));
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -501,7 +501,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onToast(t('Enregistré.'));
     } catch (e) {
       setData((d) => d && ({ ...d, fields: d.fields.map((x) => (x.id === id ? { ...x, rules: previousRules } : x)) }));
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -519,7 +519,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onToast(checked ? t('Module Caisse activé — il apparaît dans la navigation.') : t('Module Caisse désactivé.'));
     } catch (e) {
       onToggleCaisse(!checked);
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -560,7 +560,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
         }
         return { ...d, hours: { ...d.hours, [weekday]: previous } };
       });
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -587,7 +587,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       onToast(t('Enregistré — jour fermé.'));
     } catch (e) {
       setData((d) => d && ({ ...d, hours: { ...d.hours, [weekday]: previous } }));
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     }
   }
 
@@ -608,7 +608,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       setClosures(res.closures);
       setClosuresLoad({ kind: 'ready' });
     } catch (e) {
-      setClosuresLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setClosuresLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token]);
 
@@ -660,7 +660,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       if (e instanceof ApiError && e.code === 'SLOT_TAKEN') {
         setClosureConflicts((e.details as { conflicts?: ClosureConflict[] } | undefined)?.conflicts ?? []);
       }
-      setClosureError(e instanceof ApiError ? e.message : t(GENERIC_ERROR_MESSAGE));
+      setClosureError(errorText(e));
     } finally {
       setClosureSubmitting(false);
     }
@@ -680,7 +680,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       setRemoveClosureTarget(null);
       void fetchClosures();
     } catch (e) {
-      onToast(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      onToast(errorText(e));
     } finally {
       setRemovingClosure(false);
     }

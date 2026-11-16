@@ -6330,3 +6330,14 @@ leurs nombres isolés.
   les données saisies par le centre (noms, bandes tarifaires, surfaces hors catalogue), les résumés du Journal (enregistrés
   en français par le serveur), l'export Excel, les messages d'erreur du serveur (lot D). Les clés passées par variable
   (libellés du core, jours, sources) sont listées dans `apps/crm/tests/i18n-via-variable.json`, contrôlées par le même test.
+- **Lot D (16/11/2026, GO d'Aymen « Oui, lot D »)** : les messages d'erreur du SERVEUR sont traduits côté CRM, à la réception
+  (`lib/api.ts` → `lib/serverMessages.ts`), avec repli sur le français s'il en arrive un inconnu. Le serveur n'est pas modifié :
+  il garde un seul texte français, partagé avec la console et l'app joueur. 182 messages relevés dans les fichiers serveur dont le
+  CRM appelle les routes (`apps/crm/tests/server-messages-keys.ts`), traduits dans `src/i18n/fr-ar-serveur.json` (provisoires,
+  à relire au lot E) ; un message à valeur est reconnu par un gabarit (« Ce compte est déjà rattaché à {1} ({2}). ») et sa valeur
+  reprise, traduite si c'est un morceau connu (rôle, statut, « il est déjà publié »…) ; les durées sont accordées en arabe
+  (« دقيقة واحدة », « 3 دقائق », « 11 دقيقة »). Un test échoue si un nouveau message serveur n'a pas de traduction. Au
+  passage, trois messages du serveur partagés avec l'app joueur tutoyaient au CRM : le CRM les affiche au « vous » (« clôturez-la
+  d'abord », « Annulez la réservation… », « Choisissez au moins un jour »). Un seul utilitaire `errorText(e)` remplace les
+  55 « e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE » des écrans (le message générique, lui, n'était pas traduit à
+  l'écran). Limite connue : un message déjà affiché reste dans la langue où il est arrivé jusqu'à la prochaine action.

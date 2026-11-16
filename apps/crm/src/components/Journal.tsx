@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { canCenterAct, type CenterRole } from '@moubarat/core';
 import { auditTimeLabel, roleLabel } from '../lib/auditDetail.js';
-import { apiFetch, ApiError } from '../lib/api.js';
+import { apiFetch, errorText } from '../lib/api.js';
 import { Icon } from './Icon.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { useT } from '../lib/i18n.js';
 
 interface JournalProps { role: CenterRole; venueId: string; token: string }
@@ -43,7 +42,7 @@ export function Journal({ role, venueId, token }: JournalProps) {
       });
       setNextCursor(res.nextCursor);
     } catch (e) {
-      setMoreError(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      setMoreError(errorText(e));
     } finally {
       setLoadingMore(false);
     }
@@ -58,7 +57,7 @@ export function Journal({ role, venueId, token }: JournalProps) {
       setNextCursor(res.nextCursor);
       setLoad({ kind: 'ready' });
     } catch (e) {
-      setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token]);
 

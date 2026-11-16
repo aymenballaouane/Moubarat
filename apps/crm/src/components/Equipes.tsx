@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiFetch, ApiError } from '../lib/api.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
+import { apiFetch, errorText } from '../lib/api.js';
 import { useT } from '../lib/i18n.js';
 
 
@@ -30,7 +29,7 @@ export function Equipes({ venueId, token }: EquipesProps) {
       setTeams(res.teams);
       setLoad({ kind: 'ready' });
     } catch (e) {
-      setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setLoad({ kind: 'error', message: errorText(e) });
     }
   }, [venueId, token]);
 

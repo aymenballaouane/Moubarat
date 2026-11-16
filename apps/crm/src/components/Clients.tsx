@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CONFIDENCE_LABELS, type ReliabilityV1 } from '@moubarat/core';
-import { apiFetch, ApiError } from '../lib/api.js';
+import { apiFetch, errorText } from '../lib/api.js';
 import { da } from '../lib/format.js';
 import { hhmm } from '../lib/time.js';
 import { dateLabelLong, historyRowsFromApi, type ApiClientBookingHistoryRow, type HistoryRow } from '../lib/searchDetail.js';
 import { Pill } from './StatusPill.js';
-import { GENERIC_ERROR_MESSAGE } from '../lib/messages.js';
 import { ltr, useT, bidi } from '../lib/i18n.js';
 
 interface ClientsProps {
@@ -130,7 +129,7 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
       setLoad({ kind: 'ready' });
     } catch (e) {
       if (mine !== request.current) return;
-      setLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setLoad({ kind: 'error', message: errorText(e) });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venueId, token, debouncedSearch]);
@@ -160,7 +159,7 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
       });
       setNextCursor(res.nextCursor);
     } catch (e) {
-      setMoreError(e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE);
+      setMoreError(errorText(e));
     } finally {
       setLoadingMore(false);
     }
@@ -194,7 +193,7 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
       })
       .catch((e) => {
         if (cancelled) return;
-        setHistoryLoad({ kind: 'error', message: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+        setHistoryLoad({ kind: 'error', message: errorText(e) });
       });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -213,7 +212,7 @@ export function Clients({ venueId, token, onOpenReservation }: ClientsProps) {
       setHistoryCursor(res.nextCursor);
       setHistoryMore({ loading: false, error: null });
     } catch (e) {
-      setHistoryMore({ loading: false, error: e instanceof ApiError ? e.message : GENERIC_ERROR_MESSAGE });
+      setHistoryMore({ loading: false, error: errorText(e) });
     }
   }
 
