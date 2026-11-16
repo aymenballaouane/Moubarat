@@ -719,12 +719,12 @@ async function run() {
     await c.click('button[type="submit"]');
     await c.waitForTimeout(1500);
 
-    // Libellés tels qu'affichés réellement par apps/crm/src/App.tsx (NAV_ITEMS) — "Reservations"
-    // et "Equipes" y sont sans accent (probable coquille, signalée à Aymen séparément, pas
-    // corrigée par ce script en lecture).
+    // Libellés tels qu'affichés réellement par apps/crm/src/App.tsx (NAV_ITEMS). « Réservations » a pris son accent au
+    // P0-5 de l'audit stratégique (15/11/2026) ; « Équipes » a quitté le menu au P1 (même date, décision d'Aymen) — gardé
+    // ici pour que le manifeste le dise s'il revient.
     const crmSections = [
-      ['dash', 'Dashboard'], ['plan', 'Planning'], ['resa', 'Reservations'], ['subs', 'Abonnements'],
-      ['stats', 'Analytics'], ['clients', 'Clients'], ['teams', 'Equipes'], ['staff', 'Personnel'],
+      ['dash', 'Dashboard'], ['plan', 'Planning'], ['resa', 'Réservations'], ['subs', 'Abonnements'],
+      ['stats', 'Analytics'], ['clients', 'Clients'], ['teams', 'Équipes'], ['staff', 'Personnel'],
       ['caisse', 'Caisse'], ['audit', 'Journal'], ['conf', 'Centre'],
     ];
     for (const [sid, label] of crmSections) {
