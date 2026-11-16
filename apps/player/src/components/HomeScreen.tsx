@@ -1,23 +1,21 @@
 import { useEffect, useState } from 'react';
-import { activePlayers, unreadCount, type Sport } from '@moubarat/core';
+import { activePlayers, unreadCount } from '@moubarat/core';
 import { Icon } from './Icon.js';
-import { MatchCard } from './MatchCard.js';
+import { MatchListCard } from './MatchListCard.js';
 import { HomeBanner } from './HomeBanner.js';
 import { CURRENT_USER_ID } from '../data/identity.js';
 import { MY_TEAM } from '../data/teamsDemo.js';
 import { TEAMS_CHALLENGES_ENABLED } from '../lib/featureFlags.js';
 import { NOTIFICATIONS_SEED } from '../data/notificationsDemo.js';
-import { cityLabel, sportLabel, joinNames } from '../lib/labels.js';
+import { cityLabel, joinNames } from '../lib/labels.js';
 import { useOpenVenue } from '../lib/useOpenVenue.js';
-import { useGeolocation } from '../lib/geo.js';
 import { useCountdown, pad2 } from '../lib/countdown.js';
-import { useT } from '../lib/i18n.js';
-import { fmt, hhmm, epochMinutesOfDay, relativeDayLabel } from '../lib/format.js';
-import { homeJoinableMatches, nearbyVenues } from '../lib/homeFeed.js';
+import { useT, useTn } from '../lib/i18n.js';
+import { hhmm, epochMinutesOfDay, relativeDayLabel } from '../lib/format.js';
+import { byStartThenId, homeListSlices } from '../lib/matchCardView.js';
 import { eligiblePartnerVenues } from '../lib/partnerVenue.js';
 import type { Route } from '../nav.js';
 import type { AppStore } from '../state/useAppStore.js';
-import brandMark from '../../../../design/moubarat-icon.svg';
 import heroPhoto from '../../../../design/photo-nocturne.jpg';
 import '../styles/home.css';
 
@@ -25,8 +23,10 @@ interface TabScreenProps { onNavigate: (route: Route) => void }
 
 /* Accueil — refonte (lot 4b, règles 11/33/35/40, Main(Ar).dc.html) : en-tête marque+ville+
    cloche+avatar, bannière qui défile (HomeBanner.tsx), carte réduite « Ton prochain match »
-   (compte à rebours réel), rails « Matchs à rejoindre »/« Terrains à proximité », section
-   « Tes amis jouent bientôt ». Régle de routage §6 inchangée : un match dont je suis
+   (compte à rebours réel), « Matchs à rejoindre », section « Tes amis jouent bientôt ».
+   Lot « Match libre », phase 2 (planches Acc5 / Acc6, dossier §5, décisions d'Aymen du 16/11/2026) : « Matchs à rejoindre » devient
+   une liste verticale (4 cartes, « Voir N matchs de plus », fin de liste, « Voir les autres jours ») ; « Terrains à proximité » est
+   retiré ; le reste de l'accueil ne change pas. Régle de routage §6 inchangée : un match dont je suis
    l'organisateur ouvre la vue organisateur, un match d'un autre ouvre le detail « rejoindre ». */
 
 export function HomeScreen({ onNavigate, unreadOverride, identityName, store }: TabScreenProps & {
@@ -35,15 +35,19 @@ export function HomeScreen({ onNavigate, unreadOverride, identityName, store }: 
   store: AppStore;
 }) {
   const t = useT();
+  const tn = useTn();
   const unread = unreadOverride ?? unreadCount(NOTIFICATIONS_SEED, CURRENT_USER_ID);
-  const { openVenue, openingId, error: openError } = useOpenVenue(store, onNavigate);
-  const geo = useGeolocation();
-  const showGeoHint = geo.status === 'denied' || geo.status === 'unavailable';
+  const { openVenue, error: openError } = useOpenVenue(store, onNavigate);
 
   /* « Tes amis jouent bientôt » (règle 11 point 5) — chargé à l'affichage, comme
      loadVenueAvailability ailleurs : section secondaire, jamais sur le chemin critique du
      premier rendu. */
   useEffect(() => { void store.loadFriendsMatches(); }, []);
+  /* « Matchs à rejoindre » (dossier §5) : les matchs publics d'aujourd'hui dans la ville du joueur (celle de l'en-tête), complets
+     compris, lus au serveur à l'affichage. */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { void store.loadHomeToday(store.identity.city); }, [store.identity.city]);
+  const [expanded, setExpanded] = useState(false);
 
   const next = store.myUpcoming()[0];
   /* A8 : le centre et le terrain du prochain match se lisent d'après CE match (fieldId), pas
@@ -66,17 +70,15 @@ export function HomeScreen({ onNavigate, unreadOverride, identityName, store }: 
     return candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : undefined;
   });
 
-  /* « Matchs à rejoindre » (règle 11 point 1, lib/homeFeed.ts) — aujourd'hui, encore
-     rejoignables, dans la ville du joueur si elle est connue, 6 au plus, les plus proches
-     d'abord (puis, à heure égale, le plus proche en distance si la position est accordée). */
-  const joinable = homeJoinableMatches(
-    store.openMatches(), CURRENT_USER_ID, Date.now(), store.identity.city,
-    (venueId) => store.venueSummary(venueId), geo.position,
-  );
-
-  /* « Terrains à proximité » (règle 11 point 3/33) — centres de la ville du joueur, triés par
-     distance seulement si la position est accordée ; jamais une distance affichée. */
-  const nearby = nearbyVenues(store.venues, store.identity.city, geo.position);
+  /* Du plus proche dans le temps au plus tardif, ordre stable à heure égale ; un match qui a commencé entre-temps s'en va. */
+  const today = store.homeToday.entries.filter((e) => e.match.range.start > Date.now()).sort(byStartThenId);
+  const { visible, remaining } = homeListSlices(today, expanded);
+  /** « Voir les autres jours » : l'onglet Jouer, sur le jour suivant (valeur provisoire du dossier, section 11). */
+  const tomorrowStart = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 1); return d.getTime(); })();
+  const seeOtherDays = () => onNavigate({ name: 'tab', tab: 'explorer', explorerDay: tomorrowStart });
+  const openFromList = (matchId: string, organizerId: string) => onNavigate(organizerId === CURRENT_USER_ID
+    ? { name: 'match', mode: 'organizer', matchId }
+    : { name: 'match', mode: 'detail', matchId });
 
   const [openingPartnerId, setOpeningPartnerId] = useState<string | null>(null);
   const openPartner = async (venueId: string) => {
@@ -196,19 +198,40 @@ export function HomeScreen({ onNavigate, unreadOverride, identityName, store }: 
             {t('Voir tout')}<Icon id="i-arrow" />
           </button>
         </div>
-        {joinable.length > 0 ? (
-          <div className="ho-rail">
-            {joinable.map((e) => (
+        {today.length > 0 ? (
+          <div className="mc-list">
+            {visible.map((e) => (
               <div className="mb-enter" key={e.match.id}>
-                <MatchCard
+                <MatchListCard
                   match={e.match} players={e.players} venueName={store.venueName(e.match.venueId)}
-                  venueWilaya={store.venueSummary(e.match.venueId)?.wilaya} variant="tile"
-                  onOpen={() => onNavigate({ name: 'match', mode: 'detail', matchId: e.match.id })}
+                  venueWilaya={store.venueSummary(e.match.venueId)?.wilaya}
+                  onOpen={() => openFromList(e.match.id, e.match.organizerId)}
                 />
               </div>
             ))}
+            {remaining > 0 ? (
+              <button type="button" className="mc-more mb-tap" onClick={() => setExpanded(true)}>
+                {tn('Voir {n} matchs de plus', remaining)}<Icon id="i-chevdown" />
+              </button>
+            ) : (
+              <div className="mc-end">
+                <span className="mc-end__text">{t('Fin des matchs d’aujourd’hui')}</span>
+                <button type="button" className="mc-more mc-more--arrow mb-tap" onClick={seeOtherDays}>
+                  {t('Voir les autres jours')}<Icon id="i-arrow" />
+                </button>
+              </div>
+            )}
           </div>
-        ) : (
+        ) : store.homeToday.status === 'error' ? (
+          <div className="mb-note" role="alert" style={{ marginTop: 12 }}>
+            <h4 className="mb-note__title">{t('Impossible de charger les matchs')}</h4>
+            <button type="button" className="mb-btn mb-btn--sm mb-tap" style={{ marginTop: 10 }}
+              onClick={() => { void store.loadHomeToday(store.identity.city); }}>
+              {t('Réessayer')}
+            </button>
+          </div>
+        ) : store.homeToday.status === 'ready' ? (
+          /* Aucun match aujourd'hui : le message et l'apparence actuels (Acc2), avec « Voir les autres jours » (valeur provisoire du dossier). */
           <div className="mb-note" style={{ marginTop: 12 }}>
             <div className="mb-note__mark"><Icon id="i-users" className="mb-ic--lg" /></div>
             <h4 className="mb-note__title">{t('Pas encore de match aujourd’hui.')}</h4>
@@ -217,42 +240,12 @@ export function HomeScreen({ onNavigate, unreadOverride, identityName, store }: 
               onClick={() => onNavigate({ name: 'match', mode: 'create' })}>
               {t('Créer un match')}
             </button>
-          </div>
-        )}
-      </section>
-
-      {nearby.length > 0 ? (
-        <section className="ho-sec">
-          <div className="ho-sec-head">
-            <div className="ho-sec-head__left"><h2>{t('TERRAINS À PROXIMITÉ')}</h2></div>
-            <button type="button" className="ho-sec-head__link" onClick={() => onNavigate({ name: 'tab', tab: 'explorer', explorerTab: 'terrains' })}>
-              {t('Voir tout')}<Icon id="i-arrow" />
+            <button type="button" className="mc-more mc-more--arrow mb-tap" style={{ marginTop: 12 }} onClick={seeOtherDays}>
+              {t('Voir les autres jours')}<Icon id="i-arrow" />
             </button>
           </div>
-          {showGeoHint ? (
-            <p className="ho-geo-hint"><Icon id="i-locate" />{t('Active ta position pour voir les plus proches')}</p>
-          ) : null}
-          <div className="ho-rail">
-            {nearby.map((v) => {
-              const sport = v.sports[0];
-              return (
-                <button key={v.id} type="button" className="ho-venue mb-enter" aria-busy={openingId === v.id}
-                  disabled={openingId !== null} onClick={() => { void openVenue(v.id); }}>
-                  <span className="mb-pitch ho-venue__ph"><img className="ho-venue__mark" src={brandMark} alt="" /></span>
-                  <span className="ho-venue__info">
-                    <b className="ho-venue__n">{v.name}</b>
-                    <span className="ho-venue__wilaya">{v.wilaya}</span>
-                    {v.priceFromDa !== null ? (
-                      <span className="ho-venue__rate">{t('dès')} {fmt(v.priceFromDa)} {t('DA')}{t('/ h')}</span>
-                    ) : null}
-                    {sport ? <span className="ho-venue__sport">{t(sportLabel(sport as Sport))}</span> : null}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
+        ) : null}
+      </section>
 
       {store.friendsMatches.length > 0 ? (
         <section className="ho-sec">

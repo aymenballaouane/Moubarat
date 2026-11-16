@@ -378,7 +378,7 @@ function renderRoute(
           {route.tab === 'home' ? (
             <HomeScreen onNavigate={setRoute} unreadOverride={unread} identityName={store.identity.name} store={store} />
           ) : route.tab === 'explorer' ? (
-            <ExplorerScreen onNavigate={setRoute} store={store} initialTab={route.explorerTab} />
+            <ExplorerScreen key={route.explorerDay ?? 'jouer'} onNavigate={setRoute} store={store} initialTab={route.explorerTab} initialDay={route.explorerDay} />
           ) : route.tab === 'matches' ? (
             <MatchesScreen onNavigate={setRoute} store={store} initialTab={route.matchesTab ?? 'avenir'} />
           ) : (

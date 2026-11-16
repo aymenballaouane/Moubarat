@@ -23,7 +23,7 @@ Owner produit : Aymen. Ce fichier est le brief de session — le lire en entier 
 - **Sémantique des statuts (piège connu)** : `--open` = VERT (positif) · `--joined` = ROUGE MARQUE
   (action « rejoindre », PAS un succès) · `--filling` = OR (vigilance) · `--cancelled` = ROUGE danger.
   Une métrique négative qui augmente (no-shows, pertes) s'affiche en ROUGE même si elle « monte ».
-- Zéro emoji. Icônes = `design/sprite-icons.svg` (48 symboles — `i-phone` (« Appeler », `DetailMatch.dc.html`) et `i-chev` (chevron des lignes du Profil, `Profil.dc.html`) ajoutés le 26/10/2026, extraits tels quels ; `i-pitch` et `i-user-plus` ajoutés le 26/10/2026, extraits tels quels de `CreerOuReserver.dc.html` pour la feuille du bouton « + » ; viewBox 0 0 24 24 — `i-home-fill`
+- Zéro emoji. Icônes = `design/sprite-icons.svg` (49 symboles — `i-ball` (ballon de l’onglet « Jouer » et de la puce « Foot ») ajouté le 16/11/2026, extrait tel quel d’Acc5 (lot « Match libre ») ; `i-phone` (« Appeler », `DetailMatch.dc.html`) et `i-chev` (chevron des lignes du Profil, `Profil.dc.html`) ajoutés le 26/10/2026, extraits tels quels ; `i-pitch` et `i-user-plus` ajoutés le 26/10/2026, extraits tels quels de `CreerOuReserver.dc.html` pour la feuille du bouton « + » ; viewBox 0 0 24 24 — `i-home-fill`
   ajouté le 24/10/2026, icône pleine de l'onglet Accueil actif, extraite telle quelle de
   `refonte-app-joueur/maquettes/Main.dc.html` ; `i-padel` redessiné le 25/10/2026 sur demande
   d'Aymen — raquette de la puce « Padel » d'`Explorer.dc.html` au lieu d'une loupe ; les

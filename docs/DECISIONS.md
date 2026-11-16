@@ -6406,3 +6406,35 @@ hors dépôt). Phase 0 : audit en lecture seule (rapport hors dépôt). Réponse
 - **Non fait dans cette phase, volontairement** : écran « Public / Privé » et Dt3 (phase 3, détail du match) ; retrait de
   l'affichage de « M'alerter si une place se libère » (phase 3, Dv6) ; les 62 autres textes arabes nouveaux (ajoutés avec les
   écrans qui les utilisent).
+
+### Phase 2 — « Carte de match, accueil en liste, onglet Jouer » (branche `match-libre/phase-2-cartes`, 16/11/2026)
+
+Construite dans une copie séparée du dépôt (`.claude/worktrees/match-libre`), partie de la phase 1 — le dossier partagé avec les
+autres sessions est revenu sur `correctifs/lot-1`. Aucun changement du core, de l'API ni de la base.
+
+- **Une seule carte de match** (`components/MatchListCard.tsx`, `lib/matchCardView.ts`, `styles/match-card.css`) pour l'accueil et
+  l'onglet Jouer, reprise des planches Acc5 / Acc6 / Jo1 (Cd2 telle que rendue — sans jauge, niveau ni « Voir tous les matchs »,
+  décision d'Aymen) : image de 120 px, format en haut à gauche (« 5v5 », « Padel · Simple / Double », en lettres latines aussi en
+  arabe), places en haut à droite (3+ vert, 2 or, 1 « Plus que 1 place » or, 0 « Complet » gris), heure en Bebas 38 px, lieu, wilaya,
+  « N DA / joueur ». Match complet : image et textes gris. Illustrations reprises telles quelles du canvas
+  (`components/MatchCardArt.tsx`) : stade de foot ; court de padel bleu (Simple) ou vert (Double), comme sur Acc5 / Acc6 ; logo sur
+  fond rouge sombre pour un sport sans illustration (et, en phase 5, le match libre). Photo du centre : phase 6. Mise en page
+  logique (début / fin) : l'arabe se lit en miroir (Ar-Acc5, Ar-Acc6).
+- **Accueil** : « Matchs à rejoindre » = tous les matchs publics d'aujourd'hui dans la ville du joueur, complets compris, lus au
+  serveur (`store.loadHomeToday`, `GET /matches?day=…&city=…`, toutes les pages) ; 4 cartes, « Voir N matchs de plus », puis « Fin
+  des matchs d'aujourd'hui » et « Voir les autres jours » (onglet Jouer sur le jour suivant) ; écran vide : le message actuel, avec
+  « Voir les autres jours ». « Terrains à proximité » retiré. Les matchs du joueur lui-même (inscrit ou organisateur) y figurent
+  aussi, le dossier ne les excluant pas (avant : exclus). `lib/homeFeed.ts` et ses tests supprimés (règle 11 du 25/10 remplacée).
+- **Onglet Jouer** (ex-Explorer) : titre et barre du bas « Jouer » / « العب », icône ballon (`i-ball`, ajoutée au sprite, extraite
+  telle quelle d'Acc5) ; puce « Foot » au ballon ; la même carte ; un jour choisi : plus de bouton « Afficher plus », les pages
+  suivantes se chargent seules jusqu'à la dernière, puis « Fin des matchs d'aujourd'hui » (aujourd'hui seulement) ; « Tous les
+  jours » (page Filtres) garde son bouton. Écran vide : « Voir les autres jours » ajouté (jour suivant). `ExplorerMatchCard.tsx`
+  supprimé (plus utilisé). Route `{ tab: 'explorer', explorerDay }` pour ouvrir Jouer sur un jour.
+- **Textes** : 4 nouveaux textes arabes repris tels quels de `fr-ar-match-libre.json` (« Jouer », « Plus que 1 place », « Voir les
+  autres jours », « Fin des matchs d’aujourd’hui ») + les pluriels de la phase 1 (« {n} places », « Voir {n} matchs de plus ») —
+  à faire relire. Deux textes de l'Explorer qui n'étaient pas traduits passent par `t()` (traduction déjà présente).
+- **Tests** : `matchCardView.test.ts` (7) ; `homeFeed.test.ts` supprimé avec la règle qu'il testait. App joueur : 312 tests.
+- **Vérification** : captures plein écran 390 × 844, FR et AR, avant / après, horloge du navigateur réglée sur le lendemain 10:00
+  pour montrer une journée remplie (`.claude/captures/match-libre/phase-2/`, hors git) ; aucune erreur console ; « Voir les autres
+  jours » vérifié en direct. Le board visuel (`pnpm ui:board`) n'a PAS été relancé : il régénère les données de démo — accord
+  d'Aymen demandé.

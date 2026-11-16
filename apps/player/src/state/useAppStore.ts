@@ -15,6 +15,7 @@ import { loadPushToken, savePushToken, clearPushToken } from '../lib/native.js';
 import { fetchMatchPreview } from '../lib/matchPreview.js';
 import { bootFailureKind, type BootFailureKind } from '../lib/bootFailure.js';
 import type { MatchContact } from '../lib/contacts.js';
+import { epochDateStamp } from '../lib/format.js';
 import type { ProfileSummary } from '../lib/profileView.js';
 import type { NotificationSettings } from '../lib/notificationSettings.js';
 import type { Claim } from '../lib/claimView.js';
@@ -289,6 +290,10 @@ export function useAppStore() {
   const [feedTotalAllDays, setFeedTotalAllDays] = useState<number | null>(null);
   /** Nombre de matchs du fil par jour (bandeau de jours) : `null` tant que non lu ou en échec — jamais un « 0 » inventé. */
   const [feedDayCounts, setFeedDayCounts] = useState<Record<string, number> | null>(null);
+  /* Lot « Match libre », phase 2 (dossier §5) : la liste « Matchs à rejoindre » de l'accueil = TOUS les matchs publics d'aujourd'hui
+     dans la ville du joueur, complets compris, lus au serveur (jamais les 50 premiers du fil gardés en mémoire). */
+  const [homeToday, setHomeToday] = useState<{ ids: string[]; status: 'idle' | 'loading' | 'ready' | 'error' }>({ ids: [], status: 'idle' });
+  const homeRequest = useRef(0);
 
   function applyBootstrapped(b: Bootstrapped) {
     setNeedsLegalConsent(b.needsLegalConsent);
@@ -807,6 +812,41 @@ export function useAppStore() {
       const records = res.matches.map((w) => recordFromApi(w, meId, now));
       setState((s) => records.reduce((acc, r) => applyUpsertMatch(acc, r), s));
       return records.map((r) => ({ match: r.match, players: r.players }));
+    },
+    /** Accueil › « Matchs à rejoindre » (lot « Match libre », phase 2) : les matchs publics d'AUJOURD'HUI, dans la ville du joueur si
+        elle est connue, complets compris, triés par le serveur (heure de début, puis identifiant : ordre stable). Toutes les pages
+        (au plus 10 × 100) — l'accueil montre les 4 premiers et « Voir N matchs de plus » compte le reste réel. Matchs commencés exclus
+        par le serveur (phase 1). */
+    homeToday: {
+      entries: homeToday.ids.flatMap((id) => { const r = state.matches[id]; return r ? [{ match: r.match, players: r.players }] : []; }),
+      status: homeToday.status,
+    },
+    loadHomeToday: async (city: string | null): Promise<void> => {
+      const meId = state.me?.id ?? '';
+      const request = ++homeRequest.current;
+      setHomeToday((h) => ({ ...h, status: 'loading' }));
+      const now = Date.now();
+      const qs = new URLSearchParams({ day: epochDateStamp(now), limit: '100' });
+      if (city) qs.set('city', city);
+      try {
+        const ids: string[] = [];
+        let cursor: string | null = null;
+        for (let page = 0; page < 10; page++) {
+          if (cursor) qs.set('cursor', cursor);
+          const res: { matches: ApiMatchWithRoster[]; nextCursor: string | null } = await apiFetch(`/matches?${qs.toString()}`, { token });
+          if (request !== homeRequest.current) return;
+          const records = res.matches.map((w) => recordFromApi(w, meId, now));
+          setState((s) => records.reduce((acc, r) => applyUpsertMatch(acc, r), s));
+          ids.push(...records.map((r) => r.match.id));
+          cursor = res.nextCursor;
+          if (!cursor) break;
+        }
+        setHomeToday({ ids: mergeById([], ids, (id) => id), status: 'ready' });
+      } catch (e) {
+        if (request !== homeRequest.current) return;
+        console.error('GET /matches (accueil)', e);
+        setHomeToday((h) => ({ ...h, status: 'error' }));
+      }
     },
     /** Décompte des matchs du fil par jour pour le bandeau (sport seulement). Échec silencieux : `null` conservé. */
     loadFeedDayCounts: async (sport: Sport | null, fromDayStartMs: number, days: number): Promise<void> => {

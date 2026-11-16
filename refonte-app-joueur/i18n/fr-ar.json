@@ -959,7 +959,11 @@
     "C’est bien toi ?": "هل هذا أنت؟",
     "C’est confirmé !": "تمّ التأكيد!",
     "C’est noté !": "تمّ التسجيل!",
-    "{centre}, {jour} de {debut} à {fin}, {terrain}{format}, {prix} DA le créneau. La réservation est dans tes matchs. Tu paies sur place, en espèces.": "{centre}، {jour} من {debut} إلى {fin}، {terrain}{format}، {prix} دج للموعد. الحجز الآن في مبارياتك. تدفع في المكان، نقدًا."
+    "{centre}, {jour} de {debut} à {fin}, {terrain}{format}, {prix} DA le créneau. La réservation est dans tes matchs. Tu paies sur place, en espèces.": "{centre}، {jour} من {debut} إلى {fin}، {terrain}{format}، {prix} دج للموعد. الحجز الآن في مبارياتك. تدفع في المكان، نقدًا.",
+    "Jouer": "العب",
+    "Plus que 1 place": "بقي مكان واحد",
+    "Voir les autres jours": "عرض الأيام الأخرى",
+    "Fin des matchs d’aujourd’hui": "انتهت مباريات اليوم"
   },
   "textes_provisoires_lisezmoi": "PROVISOIRE, À RELIRE PAR UN ARABOPHONE — traductions ajoutées le 26/10/2026 par Claude pour des textes SANS maquette (erreurs, toasts, états vides, écran Aide & Support, libellés de notification du core), en suivant le ton et le vocabulaire des maquettes. Ce bloc est fusionné avec « textes » par apps/player/src/lib/i18n.ts ; en cas de doublon, « textes » (les maquettes) l'emporte. Pour corriger : remplacer la valeur ici.",
   "textes_provisoires": {
