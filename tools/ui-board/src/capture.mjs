@@ -354,7 +354,7 @@ async function run() {
     } else notReached.push({ id: 'plus-sheet', reason: 'bouton « + » introuvable dans la barre de navigation' });
 
     log('App joueur — Explorer…');
-    await p.click('.bottom-nav button:has-text("Explorer")');
+    await p.click('.bottom-nav button:has-text("Jouer")');
     await capture(p, { id: 'explorer-matchs', label: 'Explorer — Matchs', journey: 'accueil-explorer', surface: 'player', path: 'Accueil → Explorer', waitFor: '#s-explorer' });
     // Page « Filtres » (Lot 5, FiltresExplorer.dc.html) depuis Matchs : plein écran par-dessus l'Explorer, refermée par ✕.
     const filtersBtn = p.locator('#s-explorer button[aria-label="Filtres"]').first();
@@ -620,11 +620,11 @@ async function run() {
       notReached.push({ id: 'booking-view', reason: `échec pendant la consultation du ticket : ${err instanceof Error ? err.message : String(err)}` });
     }
 
-    // Rejoindre : premier match ouvert du fil (Lot 5 : ExplorerScreen rend ExplorerMatchCard, classe racine "xp-mcard").
+    // Rejoindre : premier match ouvert du fil (lot « Match libre » : ExplorerScreen rend MatchListCard, classe racine "mc" ; l’onglet s’appelle « Jouer »).
     log('App joueur — Rejoindre un match…');
-    await p.click('.bottom-nav button:has-text("Explorer")').catch(() => {});
-    await p.waitForSelector('#s-explorer .xp-mcard', { timeout: 8000 }).catch(() => {});
-    const matchCard = p.locator('#s-explorer .xp-mcard').first();
+    await p.click('.bottom-nav button:has-text("Jouer")').catch(() => {});
+    await p.waitForSelector('#s-explorer .mc', { timeout: 8000 }).catch(() => {});
+    const matchCard = p.locator('#s-explorer .mc').first();
     if (await matchCard.count()) {
       await matchCard.click();
       await capture(p, { id: 'match-detail', label: 'Détail du match (rejoindre)', journey: 'rejoindre', surface: 'player', path: 'Explorer › Matchs → ouvrir un match', waitFor: '#s-detail, #s-mymatch' });
