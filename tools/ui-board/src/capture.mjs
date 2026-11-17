@@ -407,15 +407,14 @@ async function run() {
     const venueCard = p.locator('#s-explorer [class*="venue"], #s-explorer [class*="card"]').first();
     let fieldDetailReached = false;
     try {
-      if (await venueCard.count()) { await venueCard.click(); fieldDetailReached = await capture(p, { id: 'field-detail', label: 'Détail du centre/terrain', journey: 'reserver', surface: 'player', path: 'Terrains → ouvrir un centre', waitFor: '#s-terrain' }); }
+      // Lot « Match libre », phase 4 (S3) : la fiche du centre ET la réservation sont un seul écran (#s-slots) ; l'écran
+      // « choisir un terrain » (#s-terrain) n'existe plus — le terrain est attribué automatiquement.
+      if (await venueCard.count()) { await venueCard.click(); fieldDetailReached = await capture(p, { id: 'field-detail', label: 'Fiche du centre et réservation', journey: 'reserver', surface: 'player', path: 'Terrains → ouvrir un centre', waitFor: '#s-slots' }); }
     } catch { /* noté ci-dessous via fieldDetailReached=false */ }
     if (!fieldDetailReached) notReached.push({ id: 'field-detail', reason: 'aucune carte de centre cliquable trouvée sur Explorer › Terrains' });
 
     if (fieldDetailReached) {
-      const reserveBtn = p.locator('#s-terrain button:has-text("Réserver")').first();
-      if (await reserveBtn.count()) {
-        await reserveBtn.click();
-        await capture(p, { id: 'booking-slot', label: 'Choix du créneau', journey: 'reserver', surface: 'player', path: 'Détail terrain → Réserver', waitFor: '#s-slot, #s-slots' });
+      {
 
         // Le bouton Confirmer reste désactivé tant qu'un créneau, un format (si
         // plusieurs) et un nom ne sont pas renseignés (BookingFlow.tsx) — jamais
@@ -489,7 +488,7 @@ async function run() {
               await confirmBtn.click();
               await capture(p, { id: 'booking-confirm', label: 'Confirmation de réservation', journey: 'reserver', surface: 'player', path: 'Créneau → Confirmer', waitFor: '#s-confirm, #s-proof' });
               // Confirmation d'annulation (Lot 5, ConfAnnulerResa.dc.html / …Tard) : le lien du ticket ouvre la feuille ; « Je garde » la referme.
-              const cancelLink = p.locator('.rsv-tk__link').first();
+              const cancelLink = p.locator('.rv6-link').first();
               if (await cancelLink.count()) {
                 await cancelLink.click();
                 await capture(p, { id: 'booking-cancel-sheet', label: 'Annuler ta réservation ?', journey: 'reserver', surface: 'player', path: 'Ticket → Annule ici', waitFor: '.xp-cob' });
@@ -500,7 +499,7 @@ async function run() {
         } catch (err) {
           notReached.push({ id: 'booking-confirm', reason: `échec pendant la sélection du créneau : ${err instanceof Error ? err.message : String(err)}` });
         }
-      } else notReached.push({ id: 'booking-slot', reason: 'bouton Réserver introuvable sur le détail terrain' });
+      }
     }
 
     // Créer un match — depuis la confirmation de réservation (pivot réel Booking → Create
@@ -508,23 +507,20 @@ async function run() {
     // écran), le FAB n'y est donc jamais cliquable — c'est ce chemin, pas le FAB générique, que
     // l'app propose réellement ici.
     log('App joueur — Créer un match (depuis la réservation confirmée)…');
-    const createFromBookingBtn = p.locator('button:has-text("Créer un match sur ce créneau")').first();
+    // Lot « Match libre », phase 4 (S6 → S7 → S8) : « Créer mon match » sur le ticket ; « Détails » = niveau + description, puis
+    // « Publier mon match ». « Changer de créneau » n'existe plus sur cet écran : « Ton créneau » est capturé plus bas, depuis le « + ».
+    const createFromBookingBtn = p.locator('#s-proof button:has-text("Créer mon match")').first();
     if (await createFromBookingBtn.count()) {
       await createFromBookingBtn.click();
-      const createReached = await capture(p, { id: 'create-match-configure', label: 'Créer un match — Configure ton match (depuis la réservation)', journey: 'creer-match', surface: 'player', path: 'Confirmation réservation → « Créer un match sur ce créneau »', waitFor: '#s-creer-config' });
-      if (!createReached) notReached.push({ id: 'create-match-configure', reason: '« Créer un match sur ce créneau » n’a mené à aucun écran de création connu' });
+      const createReached = await capture(p, { id: 'create-match-configure', label: 'Créer un match — Détails (depuis la réservation)', journey: 'creer-match', surface: 'player', path: 'C’est réservé → « Créer mon match »', waitFor: '#s-creer-config' });
+      if (!createReached) notReached.push({ id: 'create-match-configure', reason: '« Créer mon match » n’a mené à aucun écran de création connu' });
       else {
         try {
-          // C0 « Ton créneau » : « Changer de créneau » ramène à la liste des réservations sans match.
-          await p.click('#s-creer-config .cr-change button');
-          await capture(p, { id: 'create-match-creneau', label: 'Créer un match — Ton créneau', journey: 'creer-match', surface: 'player', path: 'Configure → Changer de créneau', waitFor: '#s-creer-creneau' });
-          await p.locator('#s-creer-creneau .cr-resa').first().click();
-          await p.waitForSelector('#s-creer-config', { timeout: 6000 });
-          // Un mot aux joueurs + niveau : l'état « rempli » de la maquette.
+          // Niveau + description : l'état « rempli » de la maquette.
           await p.fill('#cr-note', 'On joue à la cool. Ramenez une chasuble blanche et une noire.').catch(() => {});
-          await p.click('.cr-level >> nth=1').catch(() => {});
-          await capture(p, { id: 'create-match-configure-filled', label: 'Créer un match — Configure ton match (niveau + mot)', journey: 'creer-match', surface: 'player', path: 'Ton créneau → réservation → niveau + mot', waitFor: '#s-creer-config' });
-          await p.click('#s-creer-config .cr-cta');
+          await p.click('#s-creer-config .cv-levels button >> nth=1').catch(() => {});
+          await capture(p, { id: 'create-match-configure-filled', label: 'Créer un match — Détails (niveau + description)', journey: 'creer-match', surface: 'player', path: 'Détails → niveau + description', waitFor: '#s-creer-config' });
+          await p.click('#s-creer-config .cv-foot .mv-cta');
           await capture(p, { id: 'create-match-publie', label: 'Créer un match — Ton match est en ligne', journey: 'creer-match', surface: 'player', path: 'Configure → Publier le match', waitFor: '#s-creer-publie' });
           // Vue organisateur (Lot 7, OrgaMatch.dc.html) : « Voir le match », puis le groupe WhatsApp et le mot aux joueurs.
           await p.click('#s-creer-publie .cr-ghost');
@@ -555,22 +551,27 @@ async function run() {
           notReached.push({ id: 'create-match-creneau', reason: `échec pendant le parcours Créer un match : ${err instanceof Error ? err.message : String(err)}` });
         }
       }
-      await p.click('button[aria-label="Retour"]').catch(() => {});
     } else {
-      notReached.push({ id: 'create-match-configure', reason: 'bouton « Créer un match sur ce créneau » introuvable sur la confirmation de réservation' });
+      notReached.push({ id: 'create-match-configure', reason: 'bouton « Créer mon match » introuvable sur « C’est réservé »' });
     }
-    // R1 en mode « Créer un match » (Reserver.dc.html mode=match) : sans réservation à ouvrir en match, « Créer un match » du « + » part droit sur Réserver.
+    // Sortie du flux plein écran (organisateur → … → barre de navigation).
+    for (let i = 0; i < 5 && (await p.locator('.bottom-nav').count()) === 0; i++) {
+      await p.click('button[aria-label="Retour"]').catch(() => {});
+      await p.waitForTimeout(400);
+    }
+    // « + » → Créer un match : « Ton créneau » s'il reste des réservations sans match, sinon « Où tu joues ? » (S2B, mode match).
     try {
       await p.click('.bottom-nav button[aria-label="Créer ou réserver"]');
       await p.click('.xp-cob__row:has-text("Créer un match")');
-      const onVenues = await p.waitForSelector('#s-venues', { timeout: 4000 }).then(() => true).catch(() => false);
-      if (onVenues) {
-        await capture(p, { id: 'create-match-terrain', label: 'Créer un match — Trouve ton terrain (mode match)', journey: 'creer-match', surface: 'player', path: '« + » → Créer un match (aucune réservation à ouvrir)', waitFor: '#s-venues' });
-        await p.locator('#s-venues .rsv-vrow').first().click().catch(() => {});
-        await p.waitForSelector('#s-terrain', { timeout: 6000 }).catch(() => {});
-        await p.click('#s-terrain .mb-sticky-actions .mb-btn').catch(() => {});
-        await capture(p, { id: 'create-match-slots', label: 'Créer un match — Le créneau de ton match', journey: 'creer-match', surface: 'player', path: 'Trouve ton terrain → centre → Réserver (mode match)', waitFor: '#s-slots' });
-      } else notReached.push({ id: 'create-match-terrain', reason: 'des réservations sans match existent : « Créer un match » ouvre « Ton créneau », pas « Trouve ton terrain »' });
+      await p.waitForSelector('#s-venues, #s-creer-creneau', { timeout: 6000 }).catch(() => {});
+      if (await p.locator('#s-creer-creneau').count()) {
+        await capture(p, { id: 'create-match-creneau', label: 'Créer un match — Ton créneau', journey: 'creer-match', surface: 'player', path: '« + » → Créer un match (réservations sans match)', waitFor: '#s-creer-creneau' });
+        notReached.push({ id: 'create-match-terrain', reason: 'des réservations sans match existent : « Créer un match » ouvre « Ton créneau », pas « Où tu joues ? »' });
+      } else if (await p.locator('#s-venues').count()) {
+        await capture(p, { id: 'create-match-terrain', label: 'Créer un match — Où tu joues ? (mode match)', journey: 'creer-match', surface: 'player', path: '« + » → Créer un match (aucune réservation à ouvrir)', waitFor: '#s-venues' });
+        await p.locator('#s-venues .rv2-card').first().click().catch(() => {});
+        await capture(p, { id: 'create-match-slots', label: 'Créer un match — Le créneau de ton match', journey: 'creer-match', surface: 'player', path: 'Où tu joues ? → centre (mode match)', waitFor: '#s-slots' });
+      } else notReached.push({ id: 'create-match-terrain', reason: '« + » → Créer un match n’a ouvert ni « Ton créneau » ni « Où tu joues ? »' });
       // Retour : R3 → R2 → R1 → sortie du flux (jusqu'à retrouver la barre de navigation).
       for (let i = 0; i < 4 && (await p.locator('.bottom-nav').count()) === 0; i++) {
         await p.click('button[aria-label="Retour"]').catch(() => {});

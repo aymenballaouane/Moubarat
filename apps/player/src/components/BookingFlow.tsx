@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { whatsappShareUrl, type MatchFormat, type Sport } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
@@ -11,6 +11,7 @@ import { VenuesTerrains } from './VenuesTerrains.js';
 import { useT } from '../lib/i18n.js';
 import { epochDayLabel, epochMinutesOfDay, fmt, hhmm, pickerDateForWeekday } from '../lib/format.js';
 import { reportRefusal } from '../lib/pasPossible.js';
+import { limitReached } from '../lib/bookingLimits.js';
 import { useToast } from '../lib/useToast.js';
 import { useFieldAvailability } from '../lib/useFieldAvailability.js';
 import {
@@ -21,17 +22,14 @@ import { canCancelInApp, canCreateMatchOn, lateCancelNotice } from '../lib/reser
 import {
   defaultStart, resolveFormat, startsForFormat, type PeriodKey,
 } from '../lib/reserverCreneau.js';
-import { sportLabel } from '../lib/labels.js';
-import {
-  venueLocationLabel, venueMapsUrl, venuePhoneHref, sportIcon,
-  fieldFormatsLabel, fieldFormatList, formatTariffs,
-} from '../lib/venueView.js';
+import { venueMapsUrl } from '../lib/venueView.js';
 import type { BookingResume, MatchPrefill } from '../nav.js';
 import type { AppStore } from '../state/useAppStore.js';
-import heroPhoto from '../../../../design/photo-nocturne.jpg';
 import '../styles/booking-match.css';
 
-type Screen = 'venues' | 'terrain' | 'slots' | 'external' | 'proof';
+/* Lot « Match libre », phase 4 (dossier §8) : plus d'écran « fiche du centre » entre le choix du centre et la réservation — toucher un
+   centre ouvre directement l'écran de réservation (S3, fiche et réservation fusionnées). */
+type Screen = 'venues' | 'slots' | 'external' | 'proof';
 
 interface ProofState {
   /** Id réel de la réservation en base (Lot 3B, étape 3) — distinct de `ref`
@@ -99,7 +97,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
 }) {
   const initialView = viewReservationId ? proofFromReservation(store, viewReservationId) : null;
   const matchMode = mode === 'match';
-  const [screen, setScreen] = useState<Screen>(initialView ? 'proof' : resume ? 'slots' : venuePicked ? 'terrain' : 'venues');
+  const [screen, setScreen] = useState<Screen>(initialView ? 'proof' : resume || venuePicked ? 'slots' : 'venues');
   const t = useT();
   const toast = useToast();
   const venue = store.venue;
@@ -149,7 +147,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
     if (!res.ok) return res;
     setSport(sportChoicesFor(store.venue)[0]?.value ?? null);
     setSel(null); setFormat(null); setExFormat(null); setExError(''); setPreferredFormat(null); setPeriod(null);
-    setScreen('terrain');
+    setScreen('slots');
     return res;
   }
 
@@ -162,6 +160,8 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
   const [exConfirming, setExConfirming] = useState(false);
 
   const [proof, setProof] = useState<ProofState | null>(initialView);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { void store.loadBookingLimits(); }, []);
   /* L'annulation est irreversible : sheet de confirmation AVANT d'agir
      (spec §11.11), la regle canonique canCancelBooking reste inchangee. */
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -292,6 +292,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
     setSel(null);
     setFormat(null);
     setScreen('proof');
+    void store.loadBookingLimits();
     /* Les DEUX hooks (bandeau "aujourd'hui" + grille "slots") sont deux
        instances React distinctes, même quand elles ciblent par coïncidence
        le même jour (ex. réserver "aujourd'hui" lui-même) — sans rafraîchir
@@ -369,6 +370,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       return;
     }
     setProof({ ...proof, cancelled: true });
+    void store.loadBookingLimits();
     todayAvailability.refresh();
     slotsAvailability.refresh();
     toast.show(check.message ?? 'Annulée. Le créneau est libéré.');
@@ -396,127 +398,8 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
     });
   }
 
-  /* R2 (patron Reserver.dc.html, estCentre) : une pastille "Libre ce soir" réserve
-     direct sur le créneau du jour réel (90 min, le défaut du parcours normal — même
-     geste que todayAvailability plus haut). */
-  function pickQuickSlot(startMin: number) {
-    /* La pastille porte son heure : le format est le premier réellement libre à cette heure (jamais un
-       format qui n'y serait pas libre), l'affectation du terrain suit le format (A7). */
-    const firstFormat = todayStarts.find((s) => s.startMin === startMin)?.byFormat[0]?.format ?? null;
-    setWd(todayWeekday); setDur(90); setFormat(firstFormat); setPreferredFormat(null); setPeriod(null); setSel(startMin);
-    setScreen('slots');
-  }
-
-  /* Taper un terrain ne le "réserve" pas lui-même — A7 (22/09/2026) : l'affectation
-     reste automatique par (sport, format) à l'étape créneaux. Un terrain d'un AUTRE
-     sport que celui en cours bascule juste l'intention sport (selectSport, même reset
-     que le sélecteur de sport), jamais un sélecteur de terrain côté joueur. */
-  function pickTerrain(f: { sport: string; formats: readonly string[] | string | null | undefined }) {
-    if (f.sport !== sport) selectSport(f.sport as Sport);
-    /* R3 s'ouvre sur le premier format de CE terrain (maquette) ; « Réserver » sans terrain touché
-       s'ouvre sur le premier format du premier terrain (resolveFormat, ordre de remplissage). */
-    setPreferredFormat(fieldFormatList(f.formats)[0] as MatchFormat | undefined ?? null);
-    setFormat(null); setSel(null); setPeriod(null);
-    setScreen('slots');
-  }
-
   if (screen === 'venues') {
     return <VenuesTerrains store={store} onPick={pickVenue} onExit={onExit} matchMode={matchMode} />;
-  }
-
-  if (screen === 'terrain') {
-    return (
-      <section className="au-screen" id="s-terrain">
-        <div className="bk-hero">
-          <img src={heroPhoto} alt={`Terrain synthétique éclairé du ${venueName}`} />
-          <span className="mb-photo__scrim" />
-          <div className="bk-top">
-            <button type="button" className="mb-back mb-back--glass mb-tap" aria-label={t('Retour')} onClick={() => (venuePicked ? onExit?.() : setScreen('venues'))}><Icon id="i-back" /></button>
-            <a
-              className="mb-back mb-back--glass mb-tap" aria-label={t('Partager')}
-              href={whatsappShareUrl(`${venueName} — réserve ton terrain sur Moubarat.`)}
-              target="_blank" rel="noopener noreferrer"
-            ><Icon id="i-share" /></a>
-          </div>
-          <div className="bk-hero-info">
-            {sport ? <span className="bk-herosport"><Icon id={sportIcon(sport)} className="mb-ic--sm" />{t(sportLabel(sport))}</span> : null}
-            <h1 className="mb-d2">{venueName}</h1>
-            {venue ? (
-              <span className="bk-hero-loc mb-tag">
-                {venueLocationLabel(venue)} · <a className="bk-link" href={venueMapsUrl(venue)} target="_blank" rel="noopener noreferrer">{t('Itinéraire →')}</a>
-              </span>
-            ) : null}
-          </div>
-        </div>
-        <div className="bk-pad">
-          {/* "Libre ce soir" (patron Reserver.dc.html) : pastilles RÉELLES (GET /fields/:fieldId/
-              availability, jamais un horaire inventé) — remplace le bandeau texte d'avant, la
-              disponibilité se lit directement sur les pastilles. Jusqu'à 4, jour réel du jour. */}
-          <h2 className="bk-sec">{t('Libre ce soir')}</h2>
-          {todayAvailability.starts === undefined ? (
-            <p className="mb-meta" style={{ margin: '0 0 18px' }}>{t('Vérification des disponibilités…')}</p>
-          ) : todayStarts.length > 0 ? (
-            <div className="bk-quick__row">
-              {todayStarts.slice(0, 4).map((s) => (
-                <button key={s.startMin} type="button" className="bk-quick__pill mb-tap" onClick={() => pickQuickSlot(s.startMin)}>
-                  <Ltr>{hhmm(s.startMin)}</Ltr>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="mb-meta" style={{ margin: '0 0 18px' }}>{t('Plus de départ libre aujourd’hui — regarde les prochains jours')}</p>
-          )}
-
-          {/* "Les terrains" (patron Reserver.dc.html) : remplace la grille de tarifs
-              génériques d'avant — le prix exact par créneau ET par format apparaît déjà à
-              l'étape suivante (SlotPicker), plus précis qu'un "dès" affiché deux fois. */}
-          <h2 className="bk-sec">{t('Les terrains')}</h2>
-          <div className="bk-terrains">
-            {venueFields.map((f) => {
-              const rates = formatTariffs(f).map((ft) => ft.baseRateDa);
-              const fromDa = rates.length > 0 ? Math.min(...rates) : null;
-              return (
-                <button key={f.id} type="button" className="bk-terrain-row mb-tap" onClick={() => pickTerrain(f)}>
-                  <span className="bk-terrain-row__pitch" aria-hidden="true" />
-                  <span className="bk-terrain-row__body">
-                    <span className="bk-terrain-row__name">{f.name}</span>
-                    <span className="bk-terrain-row__meta">{fieldFormatsLabel(f.formats)}</span>
-                  </span>
-                  {fromDa !== null ? (
-                    <span className="bk-terrain-row__price">
-                      <span>{t('dès')}</span>
-                      <b className="mb-price" data-unit="hour"><Ltr>{fmt(fromDa)}</Ltr><span className="mb-price__cur">{t('DA')}</span></b>
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-
-          {venue ? null : <p className="mb-meta" style={{ margin: '4px 0 12px' }}>{t('Fiche du centre indisponible pour le moment — les créneaux et les prix ci-dessous restent réels.')}</p>}
-
-          {/* BUG-7 (audit pré-lancement, 26/09/2026) : l'itinéraire est sur la photo (R2) ; le
-              téléphone du centre reste, cliquable — hors maquette épurée, gardé sur décision
-              d'Aymen (25/10/2026) : l'app renvoie au téléphone pour réserver par appel. Sans
-              numéro renseigné, la ligne n'apparaît pas (rien d'inventé). */}
-          {venue?.phone ? (
-            <div className="bk-hours">
-              <div className="bk-hours__row">
-                <span>{t('Téléphone')}</span>
-                <b><a className="bk-link" href={venuePhoneHref(venue.phone)}><Ltr>{venue.phone}</Ltr></a></b>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Règle 21 (26/10/2026) : le bouton provisoire « J'ai déjà réservé par téléphone » est RETIRÉ (décision d'Aymen) — une réservation prise par téléphone se
-              rattache désormais au compte par son numéro, saisi par le centre, et le joueur confirme « C'est bien toi ? ». */}
-          <div className="mb-sticky-actions">
-            <button type="button" className="mb-btn mb-btn--block" onClick={() => setScreen('slots')}>{t('Réserver')}</button>
-          </div>
-        </div>
-        <div className={`mb-toast${toast.message ? ' on' : ''}`} role="status" aria-live="polite">{toast.message ?? ''}</div>
-      </section>
-    );
   }
 
   if (screen === 'slots') {
@@ -524,7 +407,16 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       <ReserverCreneau
         matchMode={matchMode}
         venueName={venueName}
-        onBack={() => setScreen('terrain')}
+        venueAddress={venue ? [venue.address, venue.wilaya].map((x) => x.trim()).filter(Boolean).join(', ') : ''}
+        mapsUrl={venue ? venueMapsUrl(venue) : null}
+        shareUrl={whatsappShareUrl(`${venueName} — réserve ton terrain sur Moubarat.`)}
+        sports={sportChoices.map((c) => c.value)}
+        sport={sport}
+        onSelectSport={selectSport}
+        freeToday={todayAvailability.starts === undefined ? null : todayStarts.length}
+        limit={limitReached(store.bookingLimits, slotsAvailability.date)}
+        onMyMatches={onMyMatches ?? onHome}
+        onBack={() => (venuePicked ? onExit?.() : setScreen('venues'))}
         weekday={wd}
         onSelectWeekday={(v) => { setWd(v); setSel(null); setPeriod(null); }}
         formatOptions={formatOptions}
@@ -557,7 +449,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       <section className="au-screen" id="s-external">
         <div className="bk-pad">
           <div className="bk-top">
-            <button type="button" className="mb-back mb-tap" aria-label="Retour" onClick={() => setScreen('terrain')}><Icon id="i-back" /></button>
+            <button type="button" className="mb-back mb-tap" aria-label="Retour" onClick={() => setScreen('slots')}><Icon id="i-back" /></button>
             <span className="bk-step">Chemin B</span>
             <span className="mb-back-spacer" />
           </div>
@@ -640,7 +532,6 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
   const linked = live?.matchId ? store.findMatch(live.matchId) : undefined;
   const liveMatch = linked && linked.match.status !== 'CANCELLED' && linked.match.status !== 'PLAYED' ? linked : undefined;
   const ticketState: TicketState = proof.cancelled ? 'cancelled' : proof.range.end <= nowMs ? 'past' : proof.external ? 'pending' : 'reserved';
-  const shareText = `J’ai réservé ${proof.when} à ${proof.venueName}. Code ${proof.ref}.`;
 
   return (
     <ReserverTicket
@@ -649,6 +540,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       venueName={proof.venueName}
       fieldName={proof.fieldName}
       format={proof.format ?? null}
+      name={proof.name}
       totalDa={proof.totalDa}
       code={proof.ref}
       rangeStart={proof.range.start}
@@ -656,7 +548,6 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       canCancel={!proof.cancelled && !!live && canCancelInApp(live, nowMs)}
       canCreateMatch={!proof.cancelled && !!live && canCreateMatchOn(live, nowMs)}
       late={lateCancelNotice(proof.range.start, nowMs) !== null}
-      shareUrl={whatsappShareUrl(shareText)}
       onBack={viewReservationId ? onExit : undefined}
       onCancel={() => setConfirmCancel(true)}
       onCreateMatch={handleCreateMatch}

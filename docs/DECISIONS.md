@@ -6474,3 +6474,47 @@ Partie de la phase 2, dans la même copie séparée. Aucun changement du core, d
   Dv7 / Dv8) ; aucune erreur console. Défauts trouvés et corrigés en vérifiant : en arabe, la page débordait de 21 px (deux règles de
   zone tactile en conflit avec celle du design system, retirées — `.mb-tap` garantit déjà 44 px) ; un nom latin dans une phrase arabe
   voyait son point sauter de l'autre côté. Dv6 (match complet) non capturé : aucun match complet dans la démo ; couvert par les tests.
+
+### Phase 4 — « Réserver un terrain et créer un match » (branche `match-libre/phase-4-reserver`, 17/11/2026)
+
+Partie de la phase 3, dans la même copie séparée. Aucun changement du core ni de la base. **Une route API ajoutée** (lecture seule) :
+`GET /me/booking-limits` — les plafonds de la règle 23 (2 réservations par jour, 4 à venir) et où en est le joueur (réservations à venir,
+nombre par jour d'Alger). Elle sert seulement à prévenir avant d'essayer : le serveur reste juge au moment de réserver (inchangé).
+
+- **Choix du centre** (planche S2B, `VenuesTerrains.tsx`) : « Où tu joues ? », recherche par nom, « AUTOUR DE TOI · ville du joueur »
+  (tous les centres si aucun dans sa ville ; la recherche porte sur tous), grandes cartes (bande au logo tant qu'il n'y a pas de photo —
+  phase 6 —, sport, nom, adresse · wilaya).
+- **Fiche du centre et réservation sur un seul écran** (S3, `ReserverCreneau.tsx`) : bande, retour / partager, sport, nom, adresse +
+  « Itinéraire », « N créneaux disponibles aujourd'hui », puis « Quand ? », « Format », « Durée », « Heure », « Au nom de », et le pied
+  « jeu. 19 · 18:00 → 19:30 · 5V5 » + prix + « Confirmer la réservation ». **L'écran « choisir un terrain » est supprimé** : le terrain
+  est attribué automatiquement (décision du 23/09/2026, inchangée). **Écart signalé** : un centre qui a deux sports (foot et padel)
+  perdait le choix du sport avec cet écran ; un sélecteur de sport est ajouté sous le bandeau vert, seulement quand le centre en a
+  plusieurs (aucune planche ne le montre). **Écart signalé** : seules les heures libres sont affichées (texte du dossier), pas les heures
+  barrées de la planche.
+- **Limite atteinte** (S3L) : si le joueur a déjà 2 réservations ce jour-là, ou 4 à venir, un encadré remplace Format / Durée / Heure /
+  Au nom de (« Limite atteinte », le texte du cas, « Voir mes matchs ») et « Confirmer la réservation » est grisé. Les plafonds sont
+  rechargés à l'ouverture, après une réservation et après une annulation.
+- **C'est réservé** (S6, `ReserverTicket.tsx`) : carte (logo, date, centre, « Terrain T1 · 5V5 · au nom de … », « À payer sur place » et
+  prix total, « Réf. … »), « Un empêchement ? Annule ici jusqu'à … » (H-2 ; le texte de la demi-absence reste pour une réservation faite
+  à moins de 2 h), « Créer mon match » et « Voir mes matchs ». Retiré : « Partager sur WhatsApp » (absent de la planche ; le partage se
+  fait depuis le match).
+- **Créer un match** (S7, S8, S8P, `CreerMatch.tsx`) : trois étapes « Lieu · Créneau · Détails » ; dernière étape = récapitulatif (terrain
+  et prix par joueur), « Niveau », « Description » (texte libre dans son propre sens), « Publier mon match » ou le lien « Publier en
+  privé » (remplace le choix public / privé de l'ancienne étape). Écran final : « Ton match est en ligne » (public) ou « Ton match est
+  prêt » + explication (privé), « Plus que N places », prix, WhatsApp / copier le lien / voir le match. **Écart signalé** : pas de jauge
+  sur l'écran final (la planche S8 en montre une ; principe du dossier « pas de jauge », déjà appliqué aux cartes en phase 2).
+- **Textes** : 19 textes arabes repris tels quels de `fr-ar-match-libre.json`. **Provisoires, à relire** : les formes plurielles absentes
+  du fichier pour « {n} créneaux disponibles aujourd'hui », « Tu as déjà {n} réservations ce jour-là… », « Tu as déjà {n} réservations à
+  venir… », « Plus que {n} places ». L'heure limite d'annulation en arabe s'écrit « الخميس 19، 19:30 » (une seule virgule arabe).
+- **Tests** : API `booking-limits.test.ts` (+2 : la route, avec et sans réservation) ; app `bookingLimits.test.ts` (5), `createMatch.test.ts`
+  (étapes), `reserverCreneau.test.ts` (+1 : heure limite en arabe), `pluriels.test.ts`. App joueur : 328 tests.
+- **Vérification** : parcours complet en vrai sur la base de démo, FR puis AR (S2B → S3 → réserver → S6 → S7 → publier → S8 en FR, S8P en
+  AR), puis S3L dans les deux langues (2 réservations le même jour → encadré affiché, bouton grisé) ; réservations et matchs créés annulés
+  à la fin ; aucune erreur console. Défauts trouvés et corrigés en vérifiant : l'heure limite d'annulation en arabe s'affichait dans le
+  désordre avec deux virgules ; sous l'encadré « Limite atteinte », le pied montrait encore un horaire qu'on ne pouvait pas réserver ;
+  la coche verte apparaissait aussi en consultation depuis Mes matchs (réservée désormais à « C'est réservé ») ; l'heure limite se
+  coupait en deux lignes.
+- **Board visuel** (`tools/ui-board/src/capture.mjs`) : parcours mis à jour pour les nouveaux écrans (la carte d'un centre ouvre
+  directement la fiche + réservation, « Créer mon match » sur le ticket, « Publier mon match », « Où tu joues ? » en mode match ;
+  « Ton créneau » capturé depuis le « + » quand il reste des réservations sans match). Les trois écrans non atteints restent ceux d'avant
+  (Équipes désactivées, Historique, Équipes du CRM).

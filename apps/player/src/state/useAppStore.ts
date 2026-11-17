@@ -16,6 +16,7 @@ import { fetchMatchPreview } from '../lib/matchPreview.js';
 import { bootFailureKind, type BootFailureKind } from '../lib/bootFailure.js';
 import type { MatchContact } from '../lib/contacts.js';
 import { epochDateStamp } from '../lib/format.js';
+import type { BookingLimits } from '../lib/bookingLimits.js';
 import type { ProfileSummary } from '../lib/profileView.js';
 import type { NotificationSettings } from '../lib/notificationSettings.js';
 import type { Claim } from '../lib/claimView.js';
@@ -293,6 +294,8 @@ export function useAppStore() {
   /* Lot « Match libre », phase 2 (dossier §5) : la liste « Matchs à rejoindre » de l'accueil = TOUS les matchs publics d'aujourd'hui
      dans la ville du joueur, complets compris, lus au serveur (jamais les 50 premiers du fil gardés en mémoire). */
   const [homeToday, setHomeToday] = useState<{ ids: string[]; status: 'idle' | 'loading' | 'ready' | 'error' }>({ ids: [], status: 'idle' });
+  /* Lot « Match libre », phase 4 (S3L) : plafonds de réservation appliqués par le serveur et ce que le joueur a déjà. `null` = inconnus. */
+  const [bookingLimits, setBookingLimits] = useState<BookingLimits | null>(null);
   const homeRequest = useRef(0);
 
   function applyBootstrapped(b: Bootstrapped) {
@@ -941,6 +944,16 @@ export function useAppStore() {
     },
     /** Lot « Match libre » (Dv3, Dt3) : « Qui peut voir ce match ? » — l'organisateur le passe en privé (hors des listes, rejoint par le
         lien) ou le rend public. Le serveur tranche (organisateur seul, avant le coup d'envoi). */
+    bookingLimits,
+    /** GET /me/booking-limits — relu à l'ouverture de l'écran de réservation et après chaque réservation ou annulation. Échec silencieux :
+        l'écran ne prévient pas, le serveur refuse quand même à la création (fenêtre « Pas possible pour l'instant »). */
+    loadBookingLimits: async (): Promise<void> => {
+      if (!token) return;
+      try {
+        const res = await apiFetch<{ limits: BookingLimits | null }>('/me/booking-limits', { token });
+        setBookingLimits(res.limits);
+      } catch (e) { console.error('GET /me/booking-limits', e); }
+    },
     setMatchVisibility: async (matchId: string, visibility: 'OPEN' | 'PRIVATE'): Promise<ActionResult> => {
       try {
         await apiFetch(`/matches/${matchId}/visibility`, { method: 'PUT', token, body: { visibility } });

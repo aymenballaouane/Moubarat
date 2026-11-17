@@ -79,7 +79,7 @@ Aucune autre règle ne change.
 
 ## D. Garde-fous
 
-23. Au plus 2 réservations par jour, au plus 4 réservations à venir, jamais deux qui se chevauchent. D’après la phase 0, ce n’est pas encore codé : à construire. — *nouvelle*
+23. Au plus 2 réservations par jour, au plus 4 réservations à venir, jamais deux qui se chevauchent. Codé dans le core (26/10/2026). Depuis le lot « Match libre » (phase 4, 17/11/2026), les deux plafonds sont aussi annoncés AVANT d’essayer : sur l’écran de réservation, un encadré « Limite atteinte » remplace le formulaire et grise « Confirmer la réservation » (planche S3L ; route `GET /me/booking-limits`) ; le serveur reste juge au moment de réserver. — *nouvelle*
 24. Chaque refus s’explique dans une fenêtre « Pas possible pour l’instant ». Elle dit la limite et ce que le joueur peut faire. Il y en a 8 (écrans `PasPossible*.dc.html`) : 2 réservations par jour, 4 à venir, chevauchement, restriction après absences (3 cas), joueur retiré, accord « numéro visible » retiré. — *nouvelle*
 25. Restriction après 2 absences :
     - la 1re fois, pas de match ni de réservation pendant 7 jours ;

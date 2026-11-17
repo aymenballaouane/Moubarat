@@ -1,0 +1,41 @@
+/* Créer un match, détails et publication (lot « Match libre », phase 4 — planches S7, S8, S8P ; dossier §8). Positions logiques :
+   l'arabe se lit en miroir (Ar-S7, Ar-S8). */
+
+.cv-title { font-size: 18px; font-weight: 700; line-height: 24px; }
+
+/* --- Récapitulatif (S7, S8) --- */
+.cv-card { border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--ink-2); }
+.cv-card__top { position: relative; height: 176px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px; background: #0E141D; }
+.cv-card__logo { position: absolute; inset: 0; background: linear-gradient(160deg, #3A0C04 0%, #0A0202 65%); display: flex; justify-content: center; padding-top: 52px; box-sizing: border-box; }
+.cv-card__veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,0) 35%, rgba(10,10,15,.88) 100%); }
+.cv-card__tags { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+.cv-tags { display: flex; gap: 6px; }
+.cv-tag, .cv-card__tags .cr-badge {
+  font-size: 12px; font-weight: 700; letter-spacing: 1.1px; color: var(--text); background: rgba(10,10,15,.78); border-radius: 4px;
+  padding: 6px 9px; display: inline-flex; align-items: center; gap: 6px; line-height: 1;
+}
+[dir="rtl"] .cv-tag, [dir="rtl"] .cv-card__tags .cr-badge { letter-spacing: 0; }
+.cv-card__low { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cv-card__date { font-size: 13px; font-weight: 600; letter-spacing: .6px; color: var(--text-2); }
+[dir="rtl"] .cv-card__date { letter-spacing: 0; }
+.cv-card__name { font-family: var(--font-display); font-size: 38px; line-height: 38px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-card__row { min-height: 50px; box-sizing: border-box; padding: 10px 16px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cv-card__field { font-size: 14px; font-weight: 600; color: var(--text-2); }
+.cv-price { font-family: var(--font-display); font-size: 28px; line-height: 28px; white-space: nowrap; }
+.cv-price small { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--text-2); margin-inline-start: 6px; }
+
+/* --- Détails (S7) --- */
+.cv-q { display: block; margin: 0 0 10px; font-size: 17px; font-weight: 700; text-align: center; line-height: 22px; }
+.cv-levels button { flex: 1 1 auto; }
+.cv-note { min-height: 96px; border-radius: 12px; background: var(--ink-2); border: 1px solid var(--line); color: var(--text); font-size: 16px; line-height: 24px; padding: 14px; box-sizing: border-box; resize: none; width: 100%; font-family: inherit; }
+.cv-foot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.cv-private { background: transparent; border: 0; color: var(--text-2); font-size: 14px; font-weight: 600; font-family: inherit; min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.cv-private span { text-decoration: underline; }
+.cv-private .mb-ic { width: 16px; height: 16px; }
+.cv-private:disabled { opacity: .5; cursor: default; }
+
+/* --- Ton match est en ligne / prêt (S8, S8P) --- */
+.cv-done__head { padding-top: max(34px, env(safe-area-inset-top)); display: flex; flex-direction: column; align-items: center; }
+.cv-done__h1 { margin: 16px 0 8px; font-size: 30px; font-weight: 700; line-height: 34px; text-align: center; }
+.cv-done__sub { margin: 0 0 24px; text-align: center; font-size: 16px; line-height: 24px; color: var(--text-2); }
+.cv-actions { margin-top: 22px; display: flex; flex-direction: column; gap: 12px; padding-bottom: max(22px, env(safe-area-inset-bottom)); }

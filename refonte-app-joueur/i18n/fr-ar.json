@@ -997,7 +997,26 @@
     "Les joueurs déjà inscrits gardent leur place.": "اللاعبون المسجّلون يحتفظون بأماكنهم.",
     "Passer en privé": "اجعلها بالدعوة فقط",
     "Garder public": "أبقِها مفتوحة للجميع",
-    "jusqu’à {fin} · {duree}": "حتى {fin} · {duree}"
+    "jusqu’à {fin} · {duree}": "حتى {fin} · {duree}",
+    "Où tu joues ?": "أين تلعب؟",
+    "Chercher un centre par son nom": "ابحث عن مركز بالاسم",
+    "AUTOUR DE TOI": "حولك",
+    "Format": "الصيغة",
+    "Durée": "المدة",
+    "Heure": "الساعة",
+    "Au nom de": "باسم",
+    "À payer sur place": "تُدفع في المكان",
+    "Réf. {ref}": "المرجع {ref}",
+    "jusqu’à {heure}": "حتى {heure}",
+    "Créer mon match": "أنشئ مباراتي",
+    "Limite atteinte": "تم بلوغ الحد",
+    "Lieu": "المكان",
+    "Description": "كلمة للاعبين",
+    "Publier mon match": "انشر المباراة",
+    "Publier en privé": "انشرها بالدعوة فقط",
+    "Ton match est prêt": "مباراتك جاهزة",
+    "Il est privé : seuls tes potes avec le lien peuvent le voir.": "المباراة بالدعوة فقط: وحدهم أصدقاؤك الذين لديهم الرابط يمكنهم رؤيتها.",
+    "au nom de": "باسم"
   },
   "textes_provisoires_lisezmoi": "PROVISOIRE, À RELIRE PAR UN ARABOPHONE — traductions ajoutées le 26/10/2026 par Claude pour des textes SANS maquette (erreurs, toasts, états vides, écran Aide & Support, libellés de notification du core), en suivant le ton et le vocabulaire des maquettes. Ce bloc est fusionné avec « textes » par apps/player/src/lib/i18n.ts ; en cas de doublon, « textes » (les maquettes) l'emporte. Pour corriger : remplacer la valeur ici.",
   "textes_provisoires": {
@@ -1249,6 +1268,58 @@
         "2": "دقيقتين",
         "3-10": "{n} دقائق",
         "11+": "{n} دقيقة"
+      }
+    },
+    "{n} créneaux disponibles aujourd’hui": {
+      "provisoire": "3-10 vient de fr-ar-match-libre.json (« {n} مواعيد متاحة اليوم ») ; 1, 2 et 11+ sont provisoires",
+      "fr": {
+        "1": "{n} créneau disponible aujourd’hui",
+        "autre": "{n} créneaux disponibles aujourd’hui"
+      },
+      "ar": {
+        "1": "موعد واحد متاح اليوم",
+        "2": "موعدان متاحان اليوم",
+        "3-10": "{n} مواعيد متاحة اليوم",
+        "11+": "{n} موعدًا متاحًا اليوم"
+      }
+    },
+    "Tu as déjà {n} réservations ce jour-là. Choisis un autre jour.": {
+      "provisoire": "2 vient de fr-ar-match-libre.json ; 1, 3-10 et 11+ sont provisoires (le chiffre suit le réglage du serveur)",
+      "fr": {
+        "1": "Tu as déjà {n} réservation ce jour-là. Choisis un autre jour.",
+        "autre": "Tu as déjà {n} réservations ce jour-là. Choisis un autre jour."
+      },
+      "ar": {
+        "1": "لديك حجز واحد في هذا اليوم. اختر يومًا آخر.",
+        "2": "لديك حجزان في هذا اليوم. اختر يومًا آخر.",
+        "3-10": "لديك {n} حجوزات في هذا اليوم. اختر يومًا آخر.",
+        "11+": "لديك {n} حجزًا في هذا اليوم. اختر يومًا آخر."
+      }
+    },
+    "Tu as déjà {n} réservations à venir. Annule-en une ou attends qu’un match ait eu lieu.": {
+      "provisoire": "texte français du dossier (§8) ; toutes les formes arabes sont provisoires",
+      "fr": {
+        "1": "Tu as déjà {n} réservation à venir. Annule-la ou attends qu’un match ait eu lieu.",
+        "autre": "Tu as déjà {n} réservations à venir. Annule-en une ou attends qu’un match ait eu lieu."
+      },
+      "ar": {
+        "1": "لديك حجز واحد قادم. ألغِه أو انتظر حتى تُلعب مباراة.",
+        "2": "لديك حجزان قادمان. ألغِ أحدهما أو انتظر حتى تُلعب مباراة.",
+        "3-10": "لديك {n} حجوزات قادمة. ألغِ واحدًا منها أو انتظر حتى تُلعب مباراة.",
+        "11+": "لديك {n} حجزًا قادمًا. ألغِ واحدًا منها أو انتظر حتى تُلعب مباراة."
+      }
+    },
+    "Plus que {n} places": {
+      "provisoire": "arabe = les formes de « Plus que {n} places à remplir » de fr-ar-match-libre.json, comme la maquette Ar-S8 (« بقي 9 أماكن شاغرة »)",
+      "fr": {
+        "1": "Plus que {n} place",
+        "autre": "Plus que {n} places"
+      },
+      "ar": {
+        "1": "بقي مكان واحد شاغر",
+        "2": "بقي مكانان شاغران",
+        "3-10": "بقي {n} أماكن شاغرة",
+        "11+": "بقي {n} مكانًا شاغرًا"
       }
     }
   },

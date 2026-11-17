@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import { useTn } from '../lib/i18n.js';
 import type { MatchFormat, SkillLevel, Sport } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
@@ -9,6 +10,9 @@ import { CREATE_STEPS, NOTE_MAX, formatBadge, stepStates } from '../lib/createMa
 import { fillTemplate, ticketDateLabel } from '../lib/reserverCreneau.js';
 import heroPhoto from '../../../../design/photo-nocturne.jpg';
 import '../styles/create.css';
+import '../styles/match-view.css';
+import '../styles/create-v2.css';
+import '../styles/reserver-v2.css';
 
 /* Créer un match (Lot 6, Creer.dc.html) — les trois écrans, PRÉSENTATIONNELS : « Ton créneau » (C0), « Configure ton match »
    (C1), « Ton match est en ligne » (C2), + le suivi en trois étapes. La réservation, le prix et la publication restent dans
@@ -57,7 +61,7 @@ export function CreerHeader({ step, onBack }: { step: 1 | 2 | 3; onBack: () => v
     <>
       <header className="cr-head">
         <button type="button" className="cr-back mb-tap" aria-label={t('Retour')} onClick={onBack}><Icon id="i-back" /></button>
-        <span className="cr-crumb">{t('CRÉER UN MATCH')}</span>
+        <span className="cv-title">{t('Créer un match')}</span>
       </header>
       <ol className="cr-steps" aria-label={t('Étapes')}>
         {CREATE_STEPS.map((label, i) => {
@@ -90,7 +94,7 @@ export function CreerCreneau({ cards, claimSlot, onPick, onBookAnother, onBack }
   const t = useT();
   return (
     <section className="au-screen cr" id="s-creer-creneau">
-      <CreerHeader step={1} onBack={onBack} />
+      <CreerHeader step={2} onBack={onBack} />
       <h1 className="cr-h1">{t('Ton créneau')}</h1>
       {claimSlot}
       <section className="cr-list" aria-label={t('Tes réservations sans match')}>
@@ -127,109 +131,102 @@ export function CreerCreneau({ cards, claimSlot, onPick, onBookAnother, onBack }
   );
 }
 
-/* --- Aperçu partagé par C1 et C2 : la photo, les badges, le niveau ------------------------------------------------- */
+/* --- Le récapitulatif du match (S7 et S8) : logo du centre (photo en phase 6), sport, format, niveau, date, centre ---------------- */
 
-function PreviewShell({ summary, level, variant, children }: { summary: MatchSummary; level: SkillLevel; variant: 'c1' | 'c2'; children: ReactNode }) {
+function SummaryCard({ summary: s, level, children }: { summary: MatchSummary; level: SkillLevel; children: ReactNode }) {
   const t = useT();
+  const lang = useLang();
+  const arrow = lang === 'ar' ? '←' : '→';
+  const date = ticketDateLabel(s.startEpoch, lang);
+  const bars = level === 'COMPETITION' ? 3 : level === 'INTERMEDIAIRE' ? 2 : 1;
+  const lvl = t(levelLabel(level));
   return (
-    <div className={`cr-card cr-card--${variant}`}>
-      <img src={heroPhoto} alt="" />
-      <span className="cr-card__veil" />
-      {summary.sport === 'PADEL' ? <span className="cr-card__padel" /> : null}
-      <span className="cr-card__tags">
-        <SportBadge sport={summary.sport} />
-        {variant === 'c1' ? <span className="cr-tag">{formatBadge(summary.format)}</span> : null}
-      </span>
-      <span className="cr-card__lvl">{t(levelLabel(level)).toUpperCase()}</span>
-      <span className="cr-card__body">{children}</span>
+    <div className="cv-card">
+      <div className="cv-card__top">
+        <span className="cv-card__logo" aria-hidden="true">
+          <svg width="48" height="48" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
+        </span>
+        <span className="cv-card__veil" aria-hidden="true" />
+        <div className="cv-card__tags">
+          <span className="cv-tags"><SportBadge sport={s.sport} /><span className="cv-tag"><Ltr>{formatBadge(s.format)}</Ltr></span></span>
+          <span className="cv-tag">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M5 20v-5" opacity={bars >= 1 ? 1 : 0.3} /><path d="M12 20v-9" opacity={bars >= 2 ? 1 : 0.3} /><path d="M19 20V4" opacity={bars >= 3 ? 1 : 0.3} />
+            </svg>
+            {lang === 'ar' ? lvl : lvl.toUpperCase()}
+          </span>
+        </div>
+        <div className="cv-card__low">
+          <span className="cv-card__date">{lang === 'ar' ? date : date.toUpperCase()} · <Ltr>{hhmm(epochMinutesOfDay(s.startEpoch))}</Ltr> {arrow} <Ltr>{hhmm(epochMinutesOfDay(s.endEpoch))}</Ltr></span>
+          <span className="cv-card__name">{s.venueName.toUpperCase()}</span>
+        </div>
+      </div>
+      {children}
     </div>
   );
 }
 
 function PerPlayer({ amountDa }: { amountDa: number }) {
   const t = useT();
-  return <span className="mb-price" data-unit="player"><Ltr>{fmt(amountDa)}</Ltr><span className="mb-price__cur">{t('DA')}</span></span>;
+  return <span className="cv-price"><Ltr>{fmt(amountDa)}</Ltr> {t('DA')}<small>{t('par joueur')}</small></span>;
 }
 
-/* --- C1 · Configure ton match ------------------------------------------------------------------------------------- */
+/* --- C1 · Détails (S7) ------------------------------------------------------------------------------------------------------------ */
 
 export function CreerConfig(p: {
   summary: MatchSummary;
   level: SkillLevel;
   onLevel: (level: SkillLevel) => void;
-  /** « Ouvert à tous » (dans Explorer) ou « Sur invitation » (seulement par le lien — règle 6). */
-  visibility: 'OPEN' | 'PRIVATE';
-  onVisibility: (visibility: 'OPEN' | 'PRIVATE') => void;
   note: string;
   onNote: (note: string) => void;
   publishing: boolean;
   /** Raison affichée sous le bouton quand le match ne peut pas partir (format inconnu…). */
   error: string | null;
-  onChangeSlot: () => void;
   onBack: () => void;
-  onPublish: () => void;
+  /** « Publier mon match » (public) ou le lien « Publier en privé » (dossier §3 : public par défaut). */
+  onPublish: (visibility: 'OPEN' | 'PRIVATE') => void;
   toast: ReactNode;
 }) {
   const t = useT();
-  const lang = useLang();
   const { summary: s } = p;
-  const arrow = lang === 'ar' ? '←' : '→';
-  const start = hhmm(epochMinutesOfDay(s.startEpoch));
-  const end = hhmm(epochMinutesOfDay(s.endEpoch));
+  const terrain = /^terrain\b/i.test(s.fieldName.trim()) ? s.fieldName : `${t('Terrain')} ${s.fieldName}`;
   return (
     <section className="au-screen cr" id="s-creer-config">
-      <CreerHeader step={2} onBack={p.onBack} />
-      <h1 className="cr-h1 cr-h1--row">{t('Configure ton match')}</h1>
-
+      <CreerHeader step={3} onBack={p.onBack} />
       <section className="cr-preview" aria-label={t('Aperçu de ton match')}>
-        <PreviewShell summary={s} level={p.level} variant="c1">
-          <span className="cr-card__date">{ticketDateLabel(s.startEpoch, lang)} · <Ltr>{start}</Ltr> {arrow} <Ltr>{end}</Ltr></span>
-          <span className="cr-card__name">{s.venueName.toUpperCase()}</span>
-          <span className="cr-card__row">
-            <span className="cr-card__field">{s.fieldName}</span>
-            <span className="cr-card__price"><PerPlayer amountDa={s.perPlayerDa} /></span>
-          </span>
-        </PreviewShell>
-        <div className="cr-change"><button type="button" className="mb-tap" onClick={p.onChangeSlot}><span>{t('Changer de créneau')}</span></button></div>
+        <SummaryCard summary={s} level={p.level}>
+          <div className="cv-card__row">
+            <span className="cv-card__field">{terrain}</span>
+            <PerPlayer amountDa={s.perPlayerDa} />
+          </div>
+        </SummaryCard>
       </section>
 
       <section className="cr-block">
-        <span className="cr-q" id="cr-q-level">{t('Quel niveau ?')}</span>
-        <div className="cr-levels" role="radiogroup" aria-labelledby="cr-q-level">
+        <h2 className="cv-q" id="cr-q-level">{t('Niveau')}</h2>
+        <div className="mv-seg cv-levels" role="radiogroup" aria-labelledby="cr-q-level">
           {LEVELS.map((l, k) => (
-            <button key={l} type="button" role="radio" aria-checked={p.level === l} className="cr-level mb-tap" onClick={() => p.onLevel(l)}>
-              <span className="cr-level__bars" aria-hidden="true">
-                <i style={{ height: 6 }} data-on="true" /><i style={{ height: 11 }} data-on={k >= 1 ? 'true' : undefined} /><i style={{ height: 16 }} data-on={k >= 2 ? 'true' : undefined} />
-              </span>
-              <span>{t(levelLabel(l))}</span>
+            <button key={l} type="button" role="radio" aria-checked={p.level === l} aria-pressed={p.level === l} className="mb-tap" onClick={() => p.onLevel(l)}>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M5 20v-5" /><path d="M12 20v-9" opacity={k >= 1 ? 1 : 0.3} /><path d="M19 20V4" opacity={k >= 2 ? 1 : 0.3} />
+              </svg>
+              {t(levelLabel(l))}
             </button>
           ))}
         </div>
       </section>
 
-      <section className="cr-block">
-        <span className="cr-q" id="cr-q-visi">{t('Qui peut venir ?')}</span>
-        <div className="cr-seg" role="radiogroup" aria-labelledby="cr-q-visi">
-          {(['OPEN', 'PRIVATE'] as const).map((v) => (
-            <button key={v} type="button" role="radio" aria-checked={p.visibility === v} className="cr-seg__b mb-tap" onClick={() => p.onVisibility(v)}>
-              <Icon id={v === 'OPEN' ? 'i-globe' : 'i-lock'} />{t(v === 'OPEN' ? 'Ouvert à tous' : 'Sur invitation')}
-            </button>
-          ))}
-        </div>
+      <section className="cr-block cv-desc">
+        <label className="cv-q" htmlFor="cr-note">{t('Description')}</label>
+        <textarea id="cr-note" className="cr-note cv-note" rows={4} maxLength={NOTE_MAX} value={p.note} dir="auto" onChange={(e) => p.onNote(e.target.value)} />
       </section>
 
-      <section className="cr-block">
-        <label className="cr-q" htmlFor="cr-note">{t('Un petit mot pour les joueurs ?')}</label>
-        <textarea
-          id="cr-note" className="cr-note" rows={3} maxLength={NOTE_MAX} value={p.note}
-          placeholder={t('On joue à la cool. Ramenez une chasuble blanche et une noire.')}
-          onChange={(e) => p.onNote(e.target.value)}
-        />
-      </section>
-
-      <footer className="cr-foot">
-        <button type="button" className="cr-cta mb-tap" data-loading={p.publishing ? 'true' : undefined} disabled={p.publishing || p.error !== null} onClick={p.onPublish}>
-          {t('Publier le match')}
+      <footer className="cr-foot cv-foot">
+        <button type="button" className="mv-cta mb-tap" data-loading={p.publishing ? 'true' : undefined} disabled={p.publishing || p.error !== null} onClick={() => p.onPublish('OPEN')}>
+          {t('Publier mon match')}
+        </button>
+        <button type="button" className="cv-private mb-tap" disabled={p.publishing || p.error !== null} onClick={() => p.onPublish('PRIVATE')}>
+          <Icon id="i-lock" /><span>{t('Publier en privé')}</span>
         </button>
         {p.error ? <p className="cr-err" role="alert">{p.error}</p> : null}
       </footer>
@@ -238,13 +235,13 @@ export function CreerConfig(p: {
   );
 }
 
-/* --- C2 · Ton match est en ligne ---------------------------------------------------------------------------------- */
+/* --- C2 · Ton match est en ligne / prêt (S8, S8P) — sans la barre d'étapes, sans jauge (dossier §2 : pas de jauge) --------------- */
 
 export function CreerPublie(p: {
   summary: MatchSummary;
   level: SkillLevel;
   visibility: 'OPEN' | 'PRIVATE';
-  /** Le lien du match sans protocole (« app.moubarat.app/m/7KQ2XM »), `null` tant que le serveur ne l'a pas servi. */
+  /** Le lien du match sans protocole (« app.moubarat.app/m/7KQ2XM »), null tant que le serveur ne l'a pas servi. */
   linkLabel: string | null;
   copied: boolean;
   onCopy: () => void;
@@ -254,35 +251,28 @@ export function CreerPublie(p: {
   toast: ReactNode;
 }) {
   const t = useT();
-  const lang = useLang();
+  const tn = useTn();
   const { summary: s } = p;
-  const missing = s.places - 1;
+  const priv = p.visibility === 'PRIVATE';
   return (
-    <section className="au-screen cr" id="s-creer-publie">
-      <CreerHeader step={3} onBack={p.onBack} />
-      <div className="cr-done">
-        <span className="cr-done__check"><Icon id="i-check" /></span>
-        <h1>{t('Ton match est en ligne')}</h1>
-        <p>{t(p.visibility === 'OPEN' ? 'Envoie le lien à tes potes.' : 'Seuls ceux qui ont le lien peuvent le rejoindre.')}</p>
+    <section className="au-screen cr cv-done" id="s-creer-publie">
+      <div className="cv-done__head">
+        <span className="rv6-check" aria-hidden="true"><Icon id="i-check" /></span>
+        <h1 className="cv-done__h1">{t(priv ? 'Ton match est prêt' : 'Ton match est en ligne')}</h1>
+        <p className="cv-done__sub">{t(priv ? 'Il est privé : seuls tes potes avec le lien peuvent le voir.' : 'Envoie le lien à tes potes.')}</p>
       </div>
 
-      <section className="cr-preview" aria-label={t('Aperçu du match')} style={{ marginTop: 26 }}>
-        <PreviewShell summary={s} level={p.level} variant="c2">
-          <span className="cr-card__date">{ticketDateLabel(s.startEpoch, lang)}</span>
-          <span className="cr-card__big">
-            <b className="cr-card__hour"><Ltr>{hhmm(epochMinutesOfDay(s.startEpoch))}</Ltr></b>
-            <span className="cr-card__title">{s.venueName.toUpperCase()}</span>
-          </span>
-          <span className="cr-card__meta">{formatBadge(s.format)} · <PerPlayer amountDa={s.perPlayerDa} /></span>
-          <span className="cr-gauge">
-            <span className="cr-gauge__bar"><i style={{ width: `${Math.round(100 / s.places)}%` }} /></span>
-            <span className="cr-gauge__txt"><Ltr><b>1</b>/{s.places}</Ltr> · {fillTemplate(t('il en manque {n}'), { n: String(missing) })}</span>
-          </span>
-        </PreviewShell>
+      <section className="cr-preview" aria-label={t('Aperçu du match')}>
+        <SummaryCard summary={s} level={p.level}>
+          <div className="cv-card__row">
+            <span className="cv-card__field">{tn('Plus que {n} places', Math.max(s.places - 1, 0))}</span>
+            <PerPlayer amountDa={s.perPlayerDa} />
+          </div>
+        </SummaryCard>
       </section>
 
-      <div className="cr-actions">
-        <a className="cr-cta mb-tap" href={p.shareHref} target="_blank" rel="noopener noreferrer"><Icon id="i-chat" />{t('Inviter sur WhatsApp')}</a>
+      <div className="cv-actions">
+        <a className="mv-cta mb-tap" href={p.shareHref} target="_blank" rel="noopener noreferrer"><Icon id="i-chat" />{t('Inviter sur WhatsApp')}</a>
         {p.linkLabel ? (
           <div className="cr-linkrow">
             <Icon id="i-link" />
@@ -292,7 +282,6 @@ export function CreerPublie(p: {
         ) : null}
         <button type="button" className="cr-ghost mb-tap" onClick={p.onSeeMatch}>{t('Voir le match')}</button>
       </div>
-      <div className="cr-pad" />
       {p.toast}
     </section>
   );

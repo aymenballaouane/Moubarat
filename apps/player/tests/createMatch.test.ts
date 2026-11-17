@@ -43,13 +43,14 @@ describe('règle 13 — prix par joueur arrondi à la dizaine supérieure', () =
 });
 
 describe('suivi en trois étapes', () => {
-  it('libellés de la maquette', () => {
-    expect([...CREATE_STEPS]).toEqual(['Créneau', 'Détails', 'Publié']);
+  /* Lot « Match libre », phase 4 (planches S7, W1 à W4) : Lieu · Créneau · Détails ; « Ton match est en ligne » n'a plus de barre. */
+  it('libellés des maquettes S7 et W1 à W4', () => {
+    expect([...CREATE_STEPS]).toEqual(['Lieu', 'Créneau', 'Détails']);
   });
-  it('étape 1 et 2 : une étape courante ; étape 3 (Publié) : tout est coché', () => {
+  it('les étapes passées cochées, l’étape en cours numérotée (S7 : Lieu et Créneau cochés, « 3 Détails » en cours)', () => {
     expect(stepStates(1)).toEqual([{ done: false, current: true }, { done: false, current: false }, { done: false, current: false }]);
     expect(stepStates(2)).toEqual([{ done: true, current: false }, { done: false, current: true }, { done: false, current: false }]);
-    expect(stepStates(3)).toEqual([{ done: true, current: false }, { done: true, current: false }, { done: true, current: false }]);
+    expect(stepStates(3)).toEqual([{ done: true, current: false }, { done: true, current: false }, { done: false, current: true }]);
   });
 });
 
