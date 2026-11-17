@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Sport } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
+import { VenuePhoto } from './VenuePhoto.js';
 import { useT } from '../lib/i18n.js';
 import { cityLabel } from '../lib/labels.js';
 import { fold, inPlayerCity } from '../lib/venueFilters.js';
@@ -82,23 +83,25 @@ export function VenuesTerrains({ store, onPick, onExit, matchMode }: VenuesTerra
             <p className="mb-note__text">{t('Les premiers centres arrivent bientôt — reviens vite.')}</p>
           </div>
         ) : (
-          visible.map((v) => <VenueCard key={v.id} venue={v} opening={openingId === v.id} onOpen={() => { void pick(v.id); }} />)
+          visible.map((v) => <VenueCard key={v.id} venue={v} photo={store.venuePhoto(v.id, 'card')} opening={openingId === v.id} onOpen={() => { void pick(v.id); }} />)
         )}
       </div>
     </section>
   );
 }
 
-function VenueCard({ venue, opening, onOpen }: { venue: VenueSummary; opening: boolean; onOpen: () => void }) {
+function VenueCard({ venue, photo, opening, onOpen }: { venue: VenueSummary; photo: string | null; opening: boolean; onOpen: () => void }) {
   const t = useT();
   const sport = venue.sports[0] as Sport | undefined;
   const place = [venue.address, venue.wilaya].map((s) => s.trim()).filter(Boolean).join(' · ');
   return (
     <button type="button" className="rv2-card mb-tap" aria-busy={opening} aria-label={venue.name} onClick={onOpen}>
       <span className="rv2-card__img">
-        <span className="rv2-card__logo" aria-hidden="true">
-          <svg width="64" height="64" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
-        </span>
+        <VenuePhoto src={photo}>
+          <span className="rv2-card__logo" aria-hidden="true">
+            <svg width="64" height="64" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
+          </span>
+        </VenuePhoto>
         {sport ? (
           <span className="rv2-card__sport"><Icon id={sport === 'PADEL' ? 'i-padel' : 'i-ball'} />{sport === 'PADEL' ? t('PADEL') : t('FOOT')}</span>
         ) : null}

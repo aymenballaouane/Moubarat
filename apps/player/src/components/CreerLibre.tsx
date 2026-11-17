@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import type { MatchFormat, SkillLevel } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
+import { VenuePhoto } from './VenuePhoto.js';
 import { CreerHeader } from './CreerMatch.js';
 import { useT } from '../lib/i18n.js';
 import { fillTemplate, buildDayChips, PERIOD_LABELS, PERIOD_ORDER, type PeriodKey } from '../lib/reserverCreneau.js';
@@ -32,15 +33,15 @@ import '../styles/creer-libre.css';
 
 const LEVELS: readonly SkillLevel[] = ['LOISIR', 'INTERMEDIAIRE', 'COMPETITION'];
 
-function LogoTile() {
+function LogoTile({ photo }: { photo: string | null }) {
   return (
     <span className="cl-logo" aria-hidden="true">
-      <svg width="30" height="30" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
+      <VenuePhoto src={photo}><svg width="30" height="30" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg></VenuePhoto>
     </span>
   );
 }
 
-export interface PartnerVenue { id: string; name: string; wilaya: string }
+export interface PartnerVenue { id: string; name: string; wilaya: string; /** Phase photos : la photo du centre (vignette), `null` sans photo. */ photo?: string | null }
 
 /* --- W1 / W2 · Où ? ----------------------------------------------------------------------------------------------------------------- */
 
@@ -72,7 +73,7 @@ export function CreerLieu(p: {
 
   const partnerRow = (v: PartnerVenue) => (
     <button key={v.id} type="button" className="cl-row mb-tap" aria-busy={p.openingId === v.id ? 'true' : undefined} onClick={() => p.onPickVenue(v.id)}>
-      <LogoTile />
+      <LogoTile photo={v.photo ?? null} />
       <span className="cl-row__col">
         <span className="cl-row__name">{v.name}</span>
         <span className="cl-row__sub">

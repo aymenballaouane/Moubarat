@@ -204,7 +204,7 @@ export function HomeScreen({ onNavigate, unreadOverride, identityName, store }: 
               <div className="mb-enter" key={e.match.id}>
                 <MatchListCard
                   match={e.match} players={e.players} venueName={store.matchPlace(e.match)}
-                  venueWilaya={store.matchWilaya(e.match)}
+                  venueWilaya={store.matchWilaya(e.match)} photoUrl={store.venuePhoto(e.match.venueId, 'card')}
                   onOpen={() => openFromList(e.match.id, e.match.organizerId)}
                 />
               </div>

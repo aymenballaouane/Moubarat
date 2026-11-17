@@ -899,6 +899,16 @@ la console (`apps/api/src/lib/client-features.ts`). **Conséquence à connaître
 outil interne) qui lit les centres, les disponibilités ou les matchs doit envoyer `X-Moubarat-Features: match-libre,format-9v9`, sinon
 le serveur le traite comme une ancienne app et lui cache le 9v9 et les matchs libres.
 
+### 4.20 Photo principale des centres (migration 0049, 17-18/11/2026)
+
+Une photo par centre, rangée DANS la base (table `venue_photos`, deux tailles déjà réduites par le CRM, quelques centaines de Ko par
+centre) : rien à configurer chez l'hébergeur, elle suit la base lors d'une copie (§4.18). Lecture publique
+`GET /venues/:id/photo/large|card?v=N`, cache d'un an : derrière un CDN, laisser passer le paramètre `v` (il change à chaque nouvel
+envoi). Le corps de `PUT /venues/:id/photo` monte à ~1,6 Mo (limite fixée sur la route) : un répartiteur ou un pare-feu qui couperait
+les corps de plus de 1 Mo ferait échouer l'envoi depuis le CRM. Si un jour les photos se comptent par milliers (galeries), passer à un
+stockage d'objets (Cloudflare R2 étudié le 17/11/2026) : l'adresse lue par l'app ne changerait pas. Retour arrière :
+`apps/api/migrations/retour/0049_venue_photo.sql` (refusé tant qu'un centre a une photo).
+
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 
 Chaque point ci-dessous a été soit vérifié (test automatisé, ou vérification manuelle décrite),

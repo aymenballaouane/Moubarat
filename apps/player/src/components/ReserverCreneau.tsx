@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { MatchFormat, Sport } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
+import { VenuePhoto } from './VenuePhoto.js';
 import { SlotTakenSheet } from './SlotTakenSheet.js';
 import { useLang, useT, useTn } from '../lib/i18n.js';
 import type { LimitReached } from '../lib/bookingLimits.js';
@@ -32,6 +33,8 @@ export interface ReserverCreneauProps {
   venueName: string;
   /** L'en-tête du centre (S3). */
   venueAddress: string;
+  /** Phase photos : la photo du centre (grande taille), `null` sans photo — le logo Moubarat sinon. */
+  photoUrl?: string | null | undefined;
   mapsUrl: string | null;
   shareUrl: string;
   /** Sports du centre ; plusieurs = un choix au-dessus de « Quand ? » (la maquette n'en montre qu'un). */
@@ -107,9 +110,11 @@ export function ReserverCreneau(p: ReserverCreneauProps) {
   return (
     <section className="au-screen rsv-r3" id="s-slots">
       <div className="rv3-band">
-        <span className="rv3-band__logo" aria-hidden="true">
-          <svg width="84" height="84" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
-        </span>
+        <VenuePhoto src={p.photoUrl ?? null}>
+          <span className="rv3-band__logo" aria-hidden="true">
+            <svg width="84" height="84" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
+          </span>
+        </VenuePhoto>
         <span className="rv3-band__veil" aria-hidden="true" />
         <div className="rv3-band__top">
           <button type="button" className="mv-round mb-tap" aria-label={t('Retour')} onClick={p.onBack}><Icon id="i-back" /></button>

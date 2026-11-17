@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { CANCEL_FREE_BEFORE_MS } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
+import { VenuePhoto } from './VenuePhoto.js';
 import { useLang, useT } from '../lib/i18n.js';
 import { fmt, hhmm, epochMinutesOfDay } from '../lib/format.js';
 import { fillNodes } from '../lib/fillNodes.js';
@@ -26,6 +27,8 @@ export interface ReserverTicketProps {
   format: string | null;
   /** « au nom de … ». */
   name: string;
+  /** Phase photos : la photo du centre (vignette), `null` sans photo — le logo Moubarat sinon. */
+  photoUrl?: string | null | undefined;
   totalDa: number;
   code: string;
   rangeStart: number;
@@ -75,7 +78,7 @@ export function ReserverTicket(p: ReserverTicketProps) {
 
         <div className="rv6-card" aria-label={t('Ton ticket')} data-cancelled={cancelled ? 'true' : undefined}>
           <div className="rv6-card__img" aria-hidden="true">
-            <svg width="48" height="48" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
+            <VenuePhoto src={p.photoUrl ?? null}><svg width="48" height="48" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg></VenuePhoto>
           </div>
           <div className="rv6-card__body">
             <div className="rv6-date">

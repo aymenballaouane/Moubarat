@@ -1,6 +1,8 @@
 import type { Match } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
+import { VenuePhoto } from './VenuePhoto.js';
+import { venuePhotoUrl } from '../lib/venuePhoto.js';
 import { countdownText, durationText, useLang, useT } from '../lib/i18n.js';
 import { fmt, hhmm, epochMinutesOfDay } from '../lib/format.js';
 import { levelLabel } from '../lib/labels.js';
@@ -53,9 +55,11 @@ export function MatchHead({ match, venueName, centre, now, onBack, onShare, onMo
   return (
     <>
       <div className="mv-band">
-        <span className="mv-band__logo" aria-hidden="true">
-          <svg width="64" height="64" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
-        </span>
+        <VenuePhoto src={free || !centre ? null : venuePhotoUrl(centre.id, centre.photoVersion, 'large')}>
+          <span className="mv-band__logo" aria-hidden="true">
+            <svg width="64" height="64" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
+          </span>
+        </VenuePhoto>
         <span className="mv-band__veil" aria-hidden="true" />
         <div className="mv-band__top">
           {onBack ? <button type="button" className="mv-round mb-tap" aria-label={t('Retour')} onClick={onBack}><Icon id="i-back" /></button> : <span />}

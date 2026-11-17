@@ -11,6 +11,11 @@ import { GENERIC_ERROR_MESSAGE } from '@moubarat/core';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3001';
 
+/** Adresse complète d'une ressource du serveur lue directement par le navigateur (une image : `<img src>`). */
+export function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly statusCode: number,

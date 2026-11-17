@@ -17,6 +17,7 @@ import { bootFailureKind, type BootFailureKind } from '../lib/bootFailure.js';
 import type { MatchContact } from '../lib/contacts.js';
 import { epochDateStamp } from '../lib/format.js';
 import type { BookingLimits } from '../lib/bookingLimits.js';
+import { venuePhotoUrl, type VenuePhotoSize } from '../lib/venuePhoto.js';
 import type { ProfileSummary } from '../lib/profileView.js';
 import type { NotificationSettings } from '../lib/notificationSettings.js';
 import type { Claim } from '../lib/claimView.js';
@@ -475,6 +476,12 @@ export function useAppStore() {
     /** Phase 5 : le lieu d'un match (centre ou lieu libre saisi) et sa wilaya. */
     matchPlace: (m: Parameters<typeof matchPlaceOf>[1]) => matchPlaceOf(state, m),
     matchWilaya: (m: Parameters<typeof matchWilayaOf>[1]) => matchWilayaOf(state, m),
+    /** Phase photos (17/11/2026) : l'adresse de la photo principale d'un centre (`null` sans photo, ou pour un match libre). */
+    venuePhoto: (venueId: string | null | undefined, size: VenuePhotoSize): string | null => {
+      if (!venueId) return null;
+      const version = venueSummaryOf(state, venueId)?.photoVersion ?? (state.venue?.id === venueId ? state.venue.photoVersion : null);
+      return venuePhotoUrl(venueId, version, size);
+    },
     /** Ouvre un centre : charge sa fiche complète (GET /venues/:id) si ce n'est pas déjà celui d'ouvert —
         BookingFlow/CreateMatchFlow lisent `store.venue`. */
     selectVenue: async (venueId: string): Promise<ActionResult> => {

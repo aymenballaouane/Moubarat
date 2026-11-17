@@ -2,6 +2,7 @@ import type { Match, MatchPlayer } from '@moubarat/core';
 import { MatchCardArt } from './MatchCardArt.js';
 import { Ltr } from './Ltr.js';
 import { Icon } from './Icon.js';
+import { VenuePhoto } from './VenuePhoto.js';
 import { useT, useTn } from '../lib/i18n.js';
 import { fmt, hhmm, epochMinutesOfDay } from '../lib/format.js';
 import { cardArtKind, formatPill, freePlaces, placesBadge } from '../lib/matchCardView.js';
@@ -14,11 +15,13 @@ import '../styles/match-card.css';
 
 const NBSP = String.fromCharCode(0xa0);
 
-export function MatchListCard({ match, players, venueName, venueWilaya, onOpen }: {
+export function MatchListCard({ match, players, venueName, venueWilaya, photoUrl, onOpen }: {
   match: Match;
   players: readonly MatchPlayer[];
   venueName: string;
   venueWilaya?: string | undefined;
+  /** Phase photos : la photo du centre (vignette), `null` sans photo. */
+  photoUrl?: string | null | undefined;
   onOpen: () => void;
 }) {
   const t = useT();
@@ -33,7 +36,8 @@ export function MatchListCard({ match, players, venueName, venueWilaya, onOpen }
     <button type="button" className="mc mb-tap" data-full={full ? 'true' : undefined} onClick={onOpen}
       aria-label={`${hour} · ${venueName} · ${formatPill(match)} · ${placesText}`}>
       <span className="mc-top">
-        <span className="mc-art"><MatchCardArt kind={cardArtKind(match)} /></span>
+        {/* Phase photos : la photo du centre si elle existe ; sinon l'illustration du sport (centre) ou le logo (match libre) — dossier §6. */}
+        <span className="mc-art"><VenuePhoto src={photoUrl ?? null}><MatchCardArt kind={cardArtKind(match)} /></VenuePhoto></span>
         <span className="mc-scrim" aria-hidden="true" />
         <span className="mc-pill mc-pill--format"><Ltr>{formatPill(match)}</Ltr></span>
         <span className="mc-pill mc-pill--places" data-tone={badge.tone}>{placesText}</span>

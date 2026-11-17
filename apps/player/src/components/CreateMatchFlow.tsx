@@ -122,6 +122,7 @@ export function CreateMatchFlow({ store, onExit, onBookAnother, onChangeSlot, pr
   const summary: MatchSummary = {
     sport, format: shownFormat, startEpoch, endEpoch, venueName,
     fieldName: info?.field.name ?? '—', perPlayerDa: perPlayerShown(totalDa, places), places,
+    photoUrl: store.venuePhoto(info?.venueId ?? store.venue?.id, 'card'),   // phase photos
   };
   const formatError = knownFormat === null && (source !== null || pending !== null)
     ? `Le format de cette réservation n’est pas connu et ce terrain en propose plusieurs — contacte le centre${store.venue?.phone ? ` (${store.venue.phone})` : ''} pour créer le match.`

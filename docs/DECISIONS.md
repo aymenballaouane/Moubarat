@@ -6621,3 +6621,34 @@ par défaut ».
   réservations d'un joueur (`/me/bookings` — cacher une réservation réelle serait pire) et le compteur de créneaux libres du jour
   (`/venues/availability-summary`, un simple nombre). Tests : `format-9v9.test.ts` (+2 : ce que voit une ancienne app, ce que voit un
   client à jour). Vérifié en vrai : le CRM ajoute et voit toujours le 9v9, la nouvelle app le réserve.
+
+### Phase photos — « La photo du centre » (branche `match-libre/phase-7-photos`, 17-18/11/2026)
+
+Mission autopilote d'Aymen (17/11/2026, « GO ») ; option de stockage choisie par lui à l'étape 0 : **A — dans la base actuelle**, coût 0,
+aucun service ni aucune dépendance. Consigne du dossier : « Une seule photo principale par centre : prends le premier des 4 emplacements du
+CRM ».
+
+- **Base** : migration 0049, table `venue_photos` (une ligne par centre : JPEG ou WebP, deux tailles — `large` ~1600×800 pour les bandes,
+  `card` ~640×320 pour les cartes —, une `version` qui change à chaque envoi, plafonds de poids). Additive ; retour arrière à la main
+  `migrations/retour/0049_venue_photo.sql` (refusé tant qu'un centre a une photo).
+- **API** (`modules/venues/photo.ts`) : `PUT /venues/:id/photo` et `DELETE` (permission EDIT_PROFILE, comme la fiche du centre ; tracé
+  dans le Journal « a changé / retiré la photo du centre ») ; `GET /venues/:id/photo/large|card` publique, cache d'un an (la version est
+  dans l'adresse). Le serveur vérifie les premiers octets du fichier (JPEG ou WebP réels, jamais le type annoncé seul). `photoVersion`
+  servie par `GET /venues` et `GET /venues/:id` (jamais les octets dans ces listes).
+- **CRM** (Centre → Photos du centre) : le premier emplacement, « Photo d'ambiance », reçoit la photo — « Ajouter la photo », « Remplacer
+  la photo », « Retirer ». La photo est réduite **dans le navigateur du gérant** (`lib/photoResize.ts` : rognage centré 2:1, deux tailles
+  JPEG, qualité abaissée si besoin), aucun envoi de l'original. Les trois autres emplacements restent des cadres vides (« arriveront plus
+  tard »). 9 textes arabes ajoutés au CRM en « provisoires » ; le texte « L'ajout de photos arrive bientôt » retiré.
+- **App** : la photo du centre partout où l'app montrait le logo ou l'image d'un centre — Réserver (S2B), fiche + réservation (S3), « C'est
+  réservé » (S6), « Créer un match » (S7, S8), W1/W2 (vignettes des partenaires), Jouer › Terrains, cartes de match (accueil, Jouer),
+  bannière « Stade partenaire » de l'accueil, détail du match. Sans photo (ou si l'image ne charge pas) : ce que l'écran affichait déjà
+  (`VenuePhoto.tsx`).
+- **Décision prise seul (mission autopilote)** : la consigne « sinon logo Moubarat, sur tous les écrans » est appliquée à tous les écrans
+  qui montraient déjà le logo ; deux écrans gardent leur repli validé avant : les cartes de match d'un centre sans photo gardent
+  l'illustration du sport (dossier §6, phase 2) et la bannière de l'accueil garde la photo nocturne. Simple à changer si Aymen préfère
+  le logo partout.
+- **Tests** : API `venue-photo.test.ts` (4 : sans photo, refus — sans compte, sans droit, faux fichier, format, trop lourd —, envoi et
+  versions, retrait) ; CRM `photoResize.test.ts` (3) ; app `venuePhoto.test.ts` (2). **Core 196 · API 1119 · app 340 · CRM 98 · console 27**, typecheck
+  propre sur les 5 paquets.
+- **Vérification en vrai** (base de démo) : le gérant de Green Arena envoie une photo depuis le CRM (version 1, aperçu immédiat) ; l'app
+  la montre en FR et en AR sur Réserver, la fiche, Jouer › Terrains, une carte de match et le détail ; aucune erreur console.

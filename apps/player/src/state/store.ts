@@ -61,6 +61,8 @@ export interface VenueDetail {
   /** Position servie par l'API (jamais affichée comme distance — aucune géolocalisation) : sert au lien « Itinéraire ». */
   lat: number | null; lng: number | null;
   description: string | null; equipments: string[]; photos: string[];
+  /** Phase photos (17/11/2026) : version de la photo principale (`null` ou absente sans photo). */
+  photoVersion?: number | null;
   fields: {
     id: string; name: string; sport: string; formats: string[]; hourlyRateDa: number;
     /** Seule source de vérité des formats du terrain, avec le tarif de base de
@@ -87,6 +89,8 @@ export interface VenueSummary {
   /** Plus bas tarif horaire de base, tous formats confondus (field_format_prices) — `null` sans terrain. */
   priceFromDa: number | null;
   rating: VenueDetail['rating'];
+  /** Phase photos (17/11/2026) : version de la photo principale ; `null` ou absente sans photo. */
+  photoVersion?: number | null;
   fields: {
     id: string; name: string; sport: string; formats: string[];
     formatPrices: { format: string; hourlyRateDa: number }[];

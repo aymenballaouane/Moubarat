@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { registerVenuePhotoRoutes } from './photo.js';
 import { hiddenFormats } from '../../lib/client-features.js';
 import { FORMAT_CAPACITY, SPORT_FORMATS, validateFieldFormats, type MatchFormat, type Sport } from '@moubarat/core';
 import type { Db } from '../../db/client.js';
@@ -73,6 +74,8 @@ async function realignFormatsToSport(db: Db, fieldId: string, sport: Sport, fall
 }
 
 export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: Deps): Promise<void> {
+  // Phase photos (option A d'Aymen, 17/11/2026) : la photo principale d'un centre — ./photo.ts.
+  await registerVenuePhotoRoutes(app, { db, guards });
 
   /* ONB-2 (audit pré-lancement, lot 6, 27/09/2026) — ce que le CRM ne savait pas dire à son gérant : le centre
      est-il publié, sinon qu'est-ce qui manque (la MÊME règle et les MÊMES libellés que la console, readiness.ts,
@@ -143,11 +146,14 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
       .where((eb) => eb.or([eb('status', 'is', null), eb('status', '!=', 'ARCHIVED')]))
       .execute();
     const fieldIds = fields.length ? fields.map((f) => f.id) : ['00000000-0000-0000-0000-000000000000'];
-    const [formatPrices, ratings, hours] = await Promise.all([
+    const [formatPrices, ratings, hours, photos] = await Promise.all([
       db.selectFrom('field_format_prices').selectAll().where('field_id', 'in', fieldIds).execute(),
       ratingSummaryForMany(db, 'VENUE', venues.map((v) => v.id)),
       db.selectFrom('opening_hours').select(['venue_id', 'start_min', 'end_min']).where('venue_id', 'in', venueIds).execute(),
+      // Phase photos : la VERSION seulement (jamais les octets) — l'app en fait l'adresse de l'image.
+      db.selectFrom('venue_photos').select(['venue_id', 'version']).where('venue_id', 'in', venueIds).execute(),
     ]);
+    const photoVersionOf = new Map(photos.map((p) => [p.venue_id, p.version]));
 
     /* A9 (24/09/2026, cadrage §1.7) : un centre qui n'est pas « prêt à publier » (aucun terrain actif tarifé, ou
        aucun horaire) n'apparaît jamais dans le catalogue — y compris un centre déjà actif dont le gérant a depuis
@@ -175,6 +181,7 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
           formats: [...new Set(venuePrices.map((p) => p.format))],
           priceFromDa: venuePrices.length > 0 ? Math.min(...venuePrices.map((p) => p.hourly_rate_da)) : null,
           rating: ratings.get(v.id) ?? { avg: null, count: 0, visible: false },
+          photoVersion: photoVersionOf.get(v.id) ?? null,
           fields: venueFields.map((f) => ({
             id: f.id, name: f.name, sport: f.sport, formats: f.formats.filter((x) => !hidden.has(x)),
             formatPrices: venuePrices.filter((p) => p.field_id === f.id).map((p) => ({
@@ -215,12 +222,13 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
       if (includeArchived) await guards.requireCenterAction(req, v.id, 'VIEW_PLANNING');
 
       const fieldsBase = db.selectFrom('fields').selectAll().where('venue_id', '=', v.id);
-      const [fields, hours, rating] = await Promise.all([
+      const [fields, hours, rating, photo] = await Promise.all([
         (includeArchived ? fieldsBase : fieldsBase.where((eb) => eb.or([eb('status', 'is', null), eb('status', '!=', 'ARCHIVED')])))
           .orderBy('name').execute(),
         db.selectFrom('opening_hours').selectAll().where('venue_id', '=', v.id)
           .orderBy('weekday').execute(),
         ratingSummaryFor(db, 'VENUE', v.id),
+        db.selectFrom('venue_photos').select('version').where('venue_id', '=', v.id).executeTakeFirst(),
       ]);
       /* Lot P1 (décision Aymen 04/09/2026) : les bandes tarifaires RÉELLES par
          terrain — l'app joueur affichait un tarif « pleines » figé qui pouvait
@@ -240,6 +248,8 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
           id: v.id, name: v.name, wilaya: v.wilaya, address: v.address,
           lat: v.lat, lng: v.lng, phone: v.phone, description: v.description,
           equipments: v.equipments, photos: v.photos,
+          // Phase photos : version de la photo principale (`null` sans photo) — GET /venues/:id/photo/:size?v=…
+          photoVersion: photo?.version ?? null,
           // Audit D2 : persisté (migration 0014), plus un état React local
           // remis à zéro à chaque rechargement — RECEPTION voit ce que
           // MANAGER a réglé, à chaque connexion.

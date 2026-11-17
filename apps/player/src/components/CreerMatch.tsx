@@ -3,6 +3,7 @@ import { useTn } from '../lib/i18n.js';
 import type { MatchFormat, SkillLevel, Sport } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
+import { VenuePhoto } from './VenuePhoto.js';
 import { fmt, hhmm, epochMinutesOfDay } from '../lib/format.js';
 import { useLang, useT } from '../lib/i18n.js';
 import { levelLabel, sportLabel } from '../lib/labels.js';
@@ -47,6 +48,8 @@ export interface MatchSummary {
   /** Prix par joueur affiché (règle 13 : dizaine supérieure), places = capacité du format. */
   perPlayerDa: number;
   places: number;
+  /** Phase photos : la photo du centre (vignette), `null` sans photo ou pour un match libre. */
+  photoUrl?: string | null | undefined;
 }
 
 function SportBadge({ sport }: { sport: Sport }) {
@@ -143,9 +146,11 @@ function SummaryCard({ summary: s, level, children }: { summary: MatchSummary; l
   return (
     <div className="cv-card">
       <div className="cv-card__top">
-        <span className="cv-card__logo" aria-hidden="true">
-          <svg width="48" height="48" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
-        </span>
+        <VenuePhoto src={s.photoUrl ?? null}>
+          <span className="cv-card__logo" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
+          </span>
+        </VenuePhoto>
         <span className="cv-card__veil" aria-hidden="true" />
         <div className="cv-card__tags">
           <span className="cv-tags"><SportBadge sport={s.sport} /><span className="cv-tag"><Ltr>{formatBadge(s.format)}</Ltr></span></span>

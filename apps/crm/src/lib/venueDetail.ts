@@ -33,6 +33,8 @@ export interface ApiField {
 export interface ApiVenueDetail {
   id: string; name: string; wilaya: string; address: string; phone: string | null;
   description: string | null; equipments: string[]; photos: string[];
+  /** Phase photos (17/11/2026) : version de la photo principale (`null` sans photo) — GET /venues/:id/photo/:size?v=… */
+  photoVersion?: number | null;
   fields: ApiField[];
   openingHours: { weekday: number; startMin: number; endMin: number }[];
 }

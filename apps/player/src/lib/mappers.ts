@@ -24,6 +24,8 @@ export interface ApiVenueSummary {
   description: string | null; equipments: string[] | null;
   sports: string[]; formats: string[]; priceFromDa: number | null;
   rating: { avg: number | null; count: number; visible: boolean };
+  /** Phase photos (17/11/2026) : version de la photo principale, `null` sans photo ; absente d'un serveur plus ancien. */
+  photoVersion?: number | null;
   fields: VenueSummary['fields'];
 }
 
@@ -38,6 +40,7 @@ export function venueSummaryFromApi(w: ApiVenueSummary): VenueSummary {
     description: w.description, equipments: w.equipments ?? [],
     sports: [...w.sports].sort((a, b) => sportRank(a) - sportRank(b)), formats: w.formats, priceFromDa: w.priceFromDa,
     rating: { ...w.rating, minCount: VENUE_RATING_MIN_COUNT },
+    photoVersion: w.photoVersion ?? null,
     fields: w.fields,
   };
 }

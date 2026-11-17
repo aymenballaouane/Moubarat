@@ -586,7 +586,19 @@ export interface RateLimitCountersTable {
   hits: number;
 }
 
+/** Migration 0049 — la photo principale d'un centre, en deux tailles réduites dans le navigateur du CRM (option A d'Aymen, 17/11/2026). */
+export interface VenuePhotosTable {
+  venue_id: string;
+  mime: 'image/jpeg' | 'image/webp';
+  large: Buffer;
+  card: Buffer;
+  version: Generated<number>;
+  updated_at: Generated<Date>;
+  updated_by: string | null;
+}
+
 export interface Database {
+  venue_photos: VenuePhotosTable;
   users: UsersTable;
   profiles: ProfilesTable;
   absences: AbsencesTable;

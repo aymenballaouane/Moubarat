@@ -60,6 +60,8 @@ interface ProofState {
       changé (sport re-choisi) entre la réservation et l'affichage du récap. */
   venueName: string;
   fieldName: string;
+  /** Phase photos : le centre de la réservation (sa photo sur le ticket). */
+  venueId?: string | undefined;
 }
 
 /** « Ta réservation » (R4, mode consultation) : le ticket d'une réservation EXISTANTE, ouvert depuis Mes matchs. */
@@ -73,7 +75,7 @@ function proofFromReservation(store: AppStore, bookingId: string): ProofState | 
     when: `${epochDayLabel(booking.range.start)} · ${hhmm(epochMinutesOfDay(booking.range.start))} → ${hhmm(epochMinutesOfDay(booking.range.end))}`,
     name: booking.reservationName ?? '', totalDa: booking.priceTotal.amount, discountDa: 0,
     external: booking.source === 'PHONE' && !booking.verifiedByCenter, cancelled: booking.status === 'CANCELLED',
-    format: r.format, range: booking.range, venueName: info?.venueName ?? 'Centre', fieldName: info?.field.name ?? '—',
+    format: r.format, range: booking.range, venueName: info?.venueName ?? 'Centre', fieldName: info?.field.name ?? '—', venueId: info?.venueId,
   };
 }
 
@@ -304,7 +306,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       id: res.booking!.id, ref: res.reference!, when: `${dayLabel(wd)} · ${hhmm(startMin)} → ${hhmm(startMin + dur)}`,
       name: name.trim(), totalDa: res.booking!.priceTotal.amount, discountDa: res.discountDa ?? 0,
       external: false, cancelled: false, format: effectiveFormat,
-      range: res.booking!.range, venueName, fieldName: bookField.name,
+      range: res.booking!.range, venueName, fieldName: bookField.name, venueId: venue?.id,
     };
     setProof(nextProof);
     setSel(null);
@@ -364,7 +366,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       id: res.booking!.id, ref: res.reference!, when: `${dayLabel(exWd)} · ${hhmm(exStart)} → ${hhmm(e)}`,
       name: exName.trim(), totalDa: res.booking!.priceTotal.amount, discountDa: 0, external: true, cancelled: false,
       format: exResolvedFormat,
-      range: res.booking!.range, venueName, fieldName: exField.name,
+      range: res.booking!.range, venueName, fieldName: exField.name, venueId: venue?.id,
     };
     setProof(nextProof);
     setScreen('proof');
@@ -422,7 +424,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
          match libre. La ville du match libre est celle du joueur (réponse 12 d'Aymen), Alger s'il n'en a pas choisi. */
       const city = store.identity.city;
       const wilaya = city && city !== 'AUTRE' ? cityLabel(city) : 'Alger';
-      const partners = store.venues.map((v) => ({ id: v.id, name: v.name, wilaya: v.wilaya }));
+      const partners = store.venues.map((v) => ({ id: v.id, name: v.name, wilaya: v.wilaya, photo: store.venuePhoto(v.id, 'card') }));
       const nearby = partners.filter((v) => inPlayerCity(v.wilaya, city));
       return (
         <CreerLieu
@@ -443,6 +445,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
         matchMode={matchMode}
         venueName={venueName}
         venueAddress={venue ? [venue.address, venue.wilaya].map((x) => x.trim()).filter(Boolean).join(', ') : ''}
+        photoUrl={store.venuePhoto(venue?.id, 'large')}
         mapsUrl={venue ? venueMapsUrl(venue) : null}
         shareUrl={whatsappShareUrl(`${venueName} — réserve ton terrain sur Moubarat.`)}
         sports={sportChoices.map((c) => c.value)}
@@ -574,6 +577,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       state={ticketState}
       venueName={proof.venueName}
       fieldName={proof.fieldName}
+      photoUrl={store.venuePhoto(proof.venueId, 'card')}
       format={proof.format ?? null}
       name={proof.name}
       totalDa={proof.totalDa}

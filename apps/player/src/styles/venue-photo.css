@@ -1,0 +1,6 @@
+/* Phase photos (17/11/2026) : la photo du centre remplit le cadre de l'écran qui l'affiche (bande, carte, vignette). */
+.vphoto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Cadres qui n'étaient pas encore positionnés : la photo s'y loge sans déborder. */
+.cl-logo, .rv6-card__img { position: relative; overflow: hidden; }
+/* Catalogue de Jouer : au-dessus de la texture « terrain » (.mb-pitch), sous le badge des sports. */
+.xp-vcard__photo > img.vphoto { z-index: 3; }
