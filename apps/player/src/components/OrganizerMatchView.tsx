@@ -81,7 +81,7 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
   const over = match.status === 'CANCELLED' || match.status === 'PLAYED';
   const phase = matchPhase(match, now);
   const open = registrationsOpen(phase);
-  const venueName = store.venueName(match.venueId);
+  const venueName = store.matchPlace(match);   // phase 5 : le lieu saisi pour un match libre
   const fieldName = store.fieldInfo(match.fieldId)?.field.name ?? '';
   const centre = store.venueSummary(match.venueId);
   const views = teamViews(match, players, meId, nameOf);

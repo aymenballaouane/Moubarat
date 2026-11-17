@@ -283,8 +283,8 @@ export function ExplorerScreen({ onNavigate, store, initialTab, initialDay }: {
                   on défile jusqu'au bout ; « Tous les jours » (filtres) garde « Afficher plus ». */}
               <div className="mc-list" aria-busy={feed.status === 'loading' || feed.loadingMore}>
                 {feed.entries.map((e) => (
-                  <MatchListCard key={e.match.id} match={e.match} players={e.players} venueName={store.venueName(e.match.venueId)}
-                    venueWilaya={store.venueSummary(e.match.venueId)?.wilaya}
+                  <MatchListCard key={e.match.id} match={e.match} players={e.players} venueName={store.matchPlace(e.match)}
+                    venueWilaya={store.matchWilaya(e.match)}
                     onOpen={() => openMatch(e.match.id, e.match.organizerId)} />
                 ))}
               </div>

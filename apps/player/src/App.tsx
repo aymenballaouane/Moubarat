@@ -12,6 +12,7 @@ import { BOOT_AUTO_RETRY_MS } from './lib/bootFailure.js';
 import { BookingFlow } from './components/BookingFlow.js';
 import { MatchDetail } from './components/MatchDetail.js';
 import { CreateMatchFlow } from './components/CreateMatchFlow.js';
+import { FreeMatchFlow } from './components/FreeMatchFlow.js';
 import { MatchRoute } from './components/MatchRoute.js';
 import { OrganizerMatchView } from './components/OrganizerMatchView.js';
 import { TeamsFlow } from './components/TeamsFlow.js';
@@ -305,11 +306,21 @@ function renderRoute(
           resume={route.resume}
           onMyMatches={() => setRoute({ name: 'tab', tab: 'matches' })}
           onCreateMatch={(prefill) => setRoute({ name: 'match', mode: 'create', prefill })}
+          onFreeMatch={(place, query) => setRoute({ name: 'match', mode: 'free', place, query })}
+          freeQuery={route.freeQuery}
           onExit={goBack}
           onHome={() => setRoute(HOME)}
         />
       );
     case 'match': {
+      if (route.mode === 'free') {
+        return (
+          <FreeMatchFlow
+            store={store} place={route.place} onExit={goBack}
+            onBackToPlace={() => setRoute({ name: 'booking', mode: 'match', freeQuery: route.query })}
+          />
+        );
+      }
       if (route.mode === 'create') {
         return (
           <CreateMatchFlow
@@ -350,7 +361,7 @@ function renderRoute(
           onExit={goBack} onNavigate={setRoute}
           items={store.notifications} onItemsChange={store.setNotifications}
           findMatch={store.findMatch} store={store}
-          venueNameOfMatch={(matchId) => { const m = store.findMatch(matchId); return m ? store.venueName(m.match.venueId) : null; }}
+          venueNameOfMatch={(matchId) => { const m = store.findMatch(matchId); return m ? store.matchPlace(m.match) : null; }}
           booking={(bookingId) => {
             const r = store.reservations.find((x) => x.booking.id === bookingId);
             return r ? { venueName: store.fieldInfo(r.booking.fieldId)?.venueName ?? null, start: r.booking.range.start, end: r.booking.range.end } : null;

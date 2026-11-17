@@ -28,7 +28,9 @@ export type RuleError =
   /** Règle 21 (26/10/2026) : « C'est bien toi ? » — déjà répondu ; réservation annulée, honorée ou commencée. */
   | 'CLAIM_ALREADY_ANSWERED' | 'CLAIM_CLOSED'
   /** Lot « Match libre » (16/11/2026) : l'organisateur demande la visibilité que le match a déjà. */
-  | 'SAME_VISIBILITY';
+  | 'SAME_VISIBILITY'
+  /** Lot « Match libre », phase 5 (17/11/2026) : match libre — lieu manquant ou trop long, durée ou heure de début hors grille, trop loin dans le futur. */
+  | 'PLACE_INVALID' | 'DURATION_INVALID' | 'SLOT_INVALID' | 'SLOT_TOO_FAR';
 
 export type RuleResult =
   | { ok: true }

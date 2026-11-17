@@ -530,7 +530,8 @@ export function applySetVenues(state: StoreState, venues: VenueSummary[]): Store
    CET id, jamais d'après « le centre courant » (faux dès que l'app connaît plusieurs centres). Source : la
    liste des centres, puis la fiche ouverte (qui couvre un centre pas — ou plus — listé). */
 
-export function venueSummaryOf(state: StoreState, venueId: string): VenueSummary | undefined {
+export function venueSummaryOf(state: StoreState, venueId: string | null): VenueSummary | undefined {
+  if (venueId === null) return undefined;   // match libre (phase 5) : aucun centre
   return state.venues.find((v) => v.id === venueId);
 }
 
@@ -539,9 +540,20 @@ export function venueNameOf(state: StoreState, venueId: string): string {
   return venueSummaryOf(state, venueId)?.name ?? (state.venue?.id === venueId ? state.venue.name : 'Centre');
 }
 
+/** Lot « Match libre », phase 5 : le nom du LIEU d'un match — le centre pour un match de centre, le lieu saisi pour un match libre. */
+export function matchPlaceOf(state: StoreState, m: { venueId: string | null; place?: { name: string } | undefined }): string {
+  return m.venueId === null ? (m.place?.name ?? '') : venueNameOf(state, m.venueId);
+}
+
+/** La wilaya d'un match : celle du centre, ou celle saisie avec le lieu d'un match libre. */
+export function matchWilayaOf(state: StoreState, m: { venueId: string | null; place?: { wilaya: string } | undefined }): string | undefined {
+  return m.venueId === null ? m.place?.wilaya : venueSummaryOf(state, m.venueId)?.wilaya;
+}
+
 export interface FieldInfo { venueId: string; venueName: string; field: VenueSummary['fields'][number] }
 
-export function fieldInfoOf(state: StoreState, fieldId: string): FieldInfo | undefined {
+export function fieldInfoOf(state: StoreState, fieldId: string | null): FieldInfo | undefined {
+  if (fieldId === null) return undefined;   // match libre (phase 5) : aucun terrain
   for (const v of state.venues) {
     const field = v.fields.find((f) => f.id === fieldId);
     if (field) return { venueId: v.id, venueName: v.name, field };

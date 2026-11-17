@@ -66,8 +66,10 @@ export type Route =
   /** `viewReservationId` : consultation du ticket d'une réservation existante (R4, depuis Mes matchs). `mode: 'match'` : Réserver
       en mode « Créer un match » (maquette Reserver mode=match) — le CTA mène à la configuration au lieu du ticket ; `resume` :
       retour de la configuration vers le créneau (R3). */
-  | { name: 'booking'; venuePicked?: boolean; viewReservationId?: string; mode?: 'match'; resume?: BookingResume }
+  | { name: 'booking'; venuePicked?: boolean; viewReservationId?: string; mode?: 'match'; resume?: BookingResume; freeQuery?: string }
   | { name: 'match'; mode: 'create'; prefill?: MatchPrefill }
+  /** Lot « Match libre », phase 5 : W3 → W4 → publié, pour un lieu choisi en W1/W2 (`query` : le texte saisi, repris au retour). */
+  | { name: 'match'; mode: 'free'; place: { name: string; wilaya: string }; query: string }
   /** Detail « rejoindre » d'un match du flux (matchId resolu via
       matchesFeedDemo.findMatch) ; sans matchId, premier match ouvert. */
   | { name: 'match'; mode: 'detail'; matchId?: string }

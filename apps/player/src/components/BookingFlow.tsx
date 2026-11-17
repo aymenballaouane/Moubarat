@@ -8,6 +8,9 @@ import { SportPills } from './SportPills.js';
 import { CancelReservationSheet } from './CancelReservationSheet.js';
 import { ReserverTicket, type TicketState } from './ReserverTicket.js';
 import { VenuesTerrains } from './VenuesTerrains.js';
+import { CreerLieu } from './CreerLibre.js';
+import { inPlayerCity } from '../lib/venueFilters.js';
+import { cityLabel } from '../lib/labels.js';
 import { useT } from '../lib/i18n.js';
 import { epochDayLabel, epochMinutesOfDay, fmt, hhmm, pickerDateForWeekday } from '../lib/format.js';
 import { reportRefusal } from '../lib/pasPossible.js';
@@ -74,7 +77,7 @@ function proofFromReservation(store: AppStore, bookingId: string): ProofState | 
   };
 }
 
-export function BookingFlow({ store, venuePicked, viewReservationId, mode, resume, onCreateMatch, onExit, onHome, onMyMatches }: {
+export function BookingFlow({ store, venuePicked, viewReservationId, mode, resume, onCreateMatch, onExit, onHome, onMyMatches, onFreeMatch, freeQuery }: {
   store: AppStore;
   /** Lot 6 : Réserver en mode « Créer un match » (maquette Reserver mode=match) — R1/R3 changent de titre et le CTA de R3 mène à la
       configuration du match (le créneau n'est réservé qu'à « Publier le match », BUG-3) au lieu du ticket. */
@@ -90,6 +93,10 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       s'ouvre sur R1, qui choisit lui-même le centre (plusieurs centres réels désormais, A8+). */
   venuePicked?: boolean | undefined;
   onCreateMatch: (prefill: MatchPrefill) => void;
+  /** Lot « Match libre », phase 5 (W1/W2) : en mode « match », un lieu hors des centres partenaires a été choisi — la suite (W3, W4)
+      est FreeMatchFlow. `freeQuery` : le texte saisi, repris au retour de W3. */
+  onFreeMatch?: ((place: { name: string; wilaya: string }, query: string) => void) | undefined;
+  freeQuery?: string | undefined;
   onExit?: (() => void) | undefined;
   /** Cible REELLE du CTA « Retour a l'accueil » du recap — onExit revient au
       dernier onglet visite, ce qui dementait le libelle (revue Premium). */
@@ -142,6 +149,17 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       avant même le premier rendu) mais figerait à tort le sport d'un centre PRÉCÉDENT quand R1
       vient de charger le nouveau. Même geste que selectSport (remet aussi créneau/format
       à zéro) — changer de centre ne doit jamais laisser une sélection de l'ancien. */
+  const [lieuOpening, setLieuOpening] = useState<string | null>(null);
+  const [lieuError, setLieuError] = useState<string | null>(null);
+  async function pickPartner(venueId: string) {
+    if (lieuOpening !== null) return;
+    setLieuError(null);
+    setLieuOpening(venueId);
+    const res = await pickVenue(venueId);
+    setLieuOpening(null);
+    if (!res.ok) setLieuError(res.message ?? t('Ce centre est indisponible pour le moment.'));
+  }
+
   async function pickVenue(venueId: string) {
     const res = await store.selectVenue(venueId);
     if (!res.ok) return res;
@@ -399,6 +417,23 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
   }
 
   if (screen === 'venues') {
+    if (matchMode && onFreeMatch) {
+      /* W1/W2 : « Où tu joues ? » — un centre partenaire mène à sa réservation (S3, le match naît de la réservation) ; un autre lieu, au
+         match libre. La ville du match libre est celle du joueur (réponse 12 d'Aymen), Alger s'il n'en a pas choisi. */
+      const city = store.identity.city;
+      const wilaya = city && city !== 'AUTRE' ? cityLabel(city) : 'Alger';
+      const partners = store.venues.map((v) => ({ id: v.id, name: v.name, wilaya: v.wilaya }));
+      const nearby = partners.filter((v) => inPlayerCity(v.wilaya, city));
+      return (
+        <CreerLieu
+          nearby={nearby.length > 0 ? nearby : partners} venues={partners} wilayaLabel={t(wilaya)} initialQuery={freeQuery}
+          openingId={lieuOpening} error={lieuError}
+          onPickVenue={(id) => { void pickPartner(id); }}
+          onFreePlace={(name, query) => onFreeMatch({ name, wilaya }, query)}
+          onBack={() => onExit?.()}
+        />
+      );
+    }
     return <VenuesTerrains store={store} onPick={pickVenue} onExit={onExit} matchMode={matchMode} />;
   }
 

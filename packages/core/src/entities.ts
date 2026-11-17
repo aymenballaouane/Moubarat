@@ -127,6 +127,13 @@ export interface Booking {
 
 export type MatchStatus = 'DRAFT' | 'OPEN' | 'FULL' | 'LOCKED' | 'PLAYED' | 'CANCELLED';
 
+/** Le lieu d'un match libre — saisi tel quel (aucun service de cartes ni liste de lieux vérifiés dans cette version). */
+export interface FreePlace {
+  name: string;
+  area?: string;
+  wilaya: string;
+}
+
 export interface Match {
   id: string;
   sport: Sport;
@@ -137,8 +144,13 @@ export interface Match {
       (ex. « on joue relax, niveau mixte »). Pure donnée d'affichage, ne
       porte aucune règle : jamais lue par une fonction de rules/. */
   description?: string;
-  venueId: string;
-  fieldId: string;
+  /** Centre et terrain d'un match de centre ; `null` pour un match libre (lot « Match libre », phase 5, GO d'Aymen du 16/11/2026),
+      qui se joue ailleurs et porte alors `place`. Un match a toujours l'un OU l'autre, jamais les deux (contrainte en base). */
+  venueId: string | null;
+  fieldId: string | null;
+  /** Match libre : le lieu saisi par l'organisateur (« Terrain de Bab Ezzouar »), sa commune si connue, sa wilaya. Ni photo,
+      ni prix, ni badge : un lieu libre n'est pas un centre. */
+  place?: FreePlace;
   range: TimeRange;
   capacity: number;           // ≤ FORMAT_CAPACITY[format]
   pricePerPlayer: PricePerPlayer;

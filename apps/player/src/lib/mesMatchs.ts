@@ -10,6 +10,11 @@ import { fieldFormatList } from './venueView.js';
 export interface MatchEntry { match: Match; players: MatchPlayer[] }
 export interface ResaEntry { booking: Booking; format?: MatchFormat | undefined; reference?: string | undefined }
 
+/** Phase 5 : le lieu d'un match — le centre, ou le lieu saisi d'un match libre (aucun terrain). */
+function placeOfMatch(m: { venueId: string | null; place?: { name: string } | undefined }, ctx: { venueName: (venueId: string) => string }): string {
+  return m.venueId === null ? (m.place?.name ?? '') : ctx.venueName(m.venueId);
+}
+
 export interface MesMatchsContext {
   meId: string;
   now: number;
@@ -58,7 +63,7 @@ export function buildUpcoming(matches: readonly MatchEntry[], reservations: read
     const mine = m.organizerId === ctx.meId;
     cards.push({
       id: `m:${m.id}`, kind: mine ? 'orga' : 'joue', startMs: m.range.start, sport: m.sport, format: m.format,
-      venueName: ctx.venueName(m.venueId), fieldName: ctx.fieldInfo(m.fieldId)?.field.name ?? null,
+      venueName: placeOfMatch(m, ctx), fieldName: m.fieldId === null ? null : (ctx.fieldInfo(m.fieldId)?.field.name ?? null),
       canCreate: false, pending: false, team: myTeamIn(e, ctx.meId), left: Math.max(0, m.capacity - activePlayers(e.players).length),
       priceDa: m.pricePerPlayer.amount, matchId: m.id, mine,
     });
@@ -113,7 +118,7 @@ export function buildPast(matches: readonly MatchEntry[], reservations: readonly
     const role: PastRole = state === 'cancelled'
       ? (!mine && name ? { kind: 'cancelledBy', name } : { kind: 'none' })
       : mine ? { kind: 'organized' } : { kind: 'team', team: myTeamIn(e, ctx.meId) };
-    rows.push({ id: `m:${m.id}`, startMs: m.range.start, sport: m.sport, format: m.format, venueName: ctx.venueName(m.venueId), state, role, matchId: m.id });
+    rows.push({ id: `m:${m.id}`, startMs: m.range.start, sport: m.sport, format: m.format, venueName: placeOfMatch(m, ctx), state, role, matchId: m.id });
   }
   for (const r of reservations) {
     const b = r.booking;

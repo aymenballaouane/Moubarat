@@ -6,7 +6,7 @@ import {
   applyRegisterBooking, applyRateMatch, applySetIdentity,
   applyNextBookingSeq, applySetToken, applySetMe, applySetProfile, applyReplaceMatches,
   applyReplaceReservations, applyReplaceNotifications, applySetMatchResults, applySetVenue, applySetVenues,
-  venueNameOf, venueSummaryOf, fieldInfoOf, type VenueDetail, type VenueSummary,
+  venueNameOf, venueSummaryOf, fieldInfoOf, matchPlaceOf, matchWilayaOf, type VenueDetail, type VenueSummary,
   applyUpsertMatch, applyMergePlayerNames, applyPatchBookingStatus, applyLinkReservationToMatch,
   type StoreState, type Identity, type MatchRecord,
 } from './store.js';
@@ -470,8 +470,11 @@ export function useAppStore() {
     /** Nom du centre / infos du terrain d'après leur ID (un match, une réservation, une notification) —
         jamais « le centre courant ». */
     venueName: (venueId: string) => venueNameOf(state, venueId),
-    venueSummary: (venueId: string) => venueSummaryOf(state, venueId),
-    fieldInfo: (fieldId: string) => fieldInfoOf(state, fieldId),
+    venueSummary: (venueId: string | null) => venueSummaryOf(state, venueId),
+    fieldInfo: (fieldId: string | null) => fieldInfoOf(state, fieldId),
+    /** Phase 5 : le lieu d'un match (centre ou lieu libre saisi) et sa wilaya. */
+    matchPlace: (m: Parameters<typeof matchPlaceOf>[1]) => matchPlaceOf(state, m),
+    matchWilaya: (m: Parameters<typeof matchWilayaOf>[1]) => matchWilayaOf(state, m),
     /** Ouvre un centre : charge sa fiche complète (GET /venues/:id) si ce n'est pas déjà celui d'ouvert —
         BookingFlow/CreateMatchFlow lisent `store.venue`. */
     selectVenue: async (venueId: string): Promise<ActionResult> => {
@@ -1048,6 +1051,26 @@ export function useAppStore() {
         // La réservation locale reçoit son `matchId` (BUG-8) — même vérité que la base après POST /matches.
         setState((s) => applyLinkReservationToMatch(applyUpsertMatch(s, record), input.bookingId, match.id));
         return { ok: true, matchId: match.id };
+      } catch (e) { return actionResultFromError(e); }
+    },
+    /** Lot « Match libre », phase 5 — POST /matches/free : un match AILLEURS que chez un centre partenaire (rien n'est réservé).
+        Le serveur rejoue la règle core `createFreeMatch` ; le match est inséré avec l'id réel renvoyé. */
+    publishFreeMatch: async (input: {
+      place: { name: string; wilaya: string }; format: MatchFormat; level: SkillLevel; start: number; durationMin: number;
+      title: string; note?: string | undefined; visibility: 'OPEN' | 'PRIVATE';
+    }): Promise<ActionResult & { matchId?: string; code?: string | undefined }> => {
+      try {
+        const res = await apiFetch<{ match: ApiPublicMatch }>('/matches/free', {
+          method: 'POST', token,
+          body: {
+            place: input.place, sport: 'FOOTBALL', format: input.format, level: input.level, start: input.start, durationMin: input.durationMin,
+            title: input.title, visibility: input.visibility, ...(input.note ? { note: input.note } : {}),
+          },
+        });
+        const match = matchFromApi(res.match);
+        const record: MatchRecord = { match, players: syntheticPlayersFromCount(match.id, 1, true, meId ?? '', Date.now()), code: res.match.code ?? undefined };
+        setState((s) => applyUpsertMatch(s, record));
+        return { ok: true, matchId: match.id, code: res.match.code ?? undefined };
       } catch (e) { return actionResultFromError(e); }
     },
 

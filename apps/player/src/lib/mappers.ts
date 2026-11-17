@@ -53,7 +53,10 @@ export interface ApiAvailabilitySummary {
 
 export interface ApiPublicMatch {
   id: string; sport: string; format: string; level: string; title: string;
-  venueId: string; fieldId: string; start: number; end: number; capacity: number;
+  /** `null` pour un match libre (phase 5), qui porte alors `place`. */
+  venueId: string | null; fieldId: string | null; start: number; end: number; capacity: number;
+  /** Match libre : le lieu saisi par l'organisateur (absent ou `null` pour un match de centre). */
+  place?: { name: string; area?: string; wilaya: string } | null;
   pricePerPlayerDa: number; visibility: string; status: string; organizerId: string;
   coordination: string; whatsappUrl: string | null; createdAt: number;
   /** « Un petit mot pour les joueurs » (migration 0033) — lu par la fiche du match au lot 7. */
@@ -71,6 +74,7 @@ export function matchFromApi(w: ApiPublicMatch): Match {
     title: w.title,
     venueId: w.venueId,
     fieldId: w.fieldId,
+    ...(w.place ? { place: w.place } : {}),
     range: { start: w.start, end: w.end },
     capacity: w.capacity,
     // Règle 13 : prix par joueur AFFICHÉ à la dizaine supérieure (lib/price.ts) — un seul endroit pour tous les écrans.

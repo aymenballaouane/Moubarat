@@ -6518,3 +6518,59 @@ nombre par jour d'Alger). Elle sert seulement à prévenir avant d'essayer : le 
   directement la fiche + réservation, « Créer mon match » sur le ticket, « Publier mon match », « Où tu joues ? » en mode match ;
   « Ton créneau » capturé depuis le « + » quand il reste des réservations sans match). Les trois écrans non atteints restent ceux d'avant
   (Équipes désactivées, Historique, Équipes du CRM).
+
+### Phase 5 — « Créer un match n'importe où » (match libre, branche `match-libre/phase-5-libre`, 17/11/2026)
+
+Partie de la phase 4, dans la même copie séparée. GO d'Aymen du 16/11/2026 : changement de structure accepté (« migration
+réversible, rien de destructif ») et « le serveur n'envoie pas les matchs libres aux versions 1.0 et 1.0.1 de l'iPhone ».
+
+- **Core** (additif) : `Match.venueId` / `fieldId` peuvent valoir `null` et `Match.place` porte le lieu d'un match libre ; nouvelle
+  règle `createFreeMatch` (lieu de 2 à 80 caractères, wilaya, formats du sport — 5v5 à 11v11 pour le foot, simple / double pour le
+  padel —, durée 1 h, 1 h 30 ou 2 h, heure par demi-heure, jamais à moins de 2 h ni à plus de 60 jours, nom 3 à 40 caractères,
+  prix 0, organisateur inscrit en équipe A) ; `canRate` refuse de noter un centre pour un match libre. Quatre codes d'erreur ajoutés
+  (`PLACE_INVALID`, `DURATION_INVALID`, `SLOT_INVALID`, `SLOT_TOO_FAR`). **Core : 192 tests** (184 + 8, `free-match.test.ts`) ; aucun
+  test existant modifié.
+- **Base** : migration 0047 (`venue_id`/`field_id` nullables, `place_name`/`place_area`/`place_wilaya`, contraintes
+  `matches_place_kind` et `matches_place_lengths`) ; aucune ligne existante modifiée ; retour arrière à la main
+  `apps/api/migrations/retour/0047_match_libre.sql`, qui refuse tant qu'un match libre existe. Appliquée à la base de développement
+  partagée (additive, sans effet sur le code des autres branches tant qu'aucun match libre n'y reste : les 4 matchs libres des essais, créés par le
+  compte de test local et annulés, ont été supprimés de cette base après les captures).
+- **API** : `POST /matches/free` (mêmes garde-fous que rejoindre : accord « numéro visible », restriction après absences, aucun
+  chevauchement — le lieu saisi apparaît dans « Tu joues déjà à cette heure-là ») ; `place` dans chaque match servi. **Anciennes apps** :
+  seul un appel avec l'en-tête `X-Moubarat-Features: match-libre` reçoit des matchs libres (une ancienne app n'envoie aucune version :
+  c'est donc la nouvelle qui se déclare) — sinon absents du fil, des décomptes, de Mes matchs, des matchs des amis, et fiche / lien
+  en `409 APP_UPDATE_REQUIRED`. Filtre « ville » du fil : la wilaya du centre OU celle saisie avec le lieu ; la recherche texte lit
+  aussi le lieu. Alerte « une place se libère » (joueurs de la ville), statistiques du profil (comptées, jamais dans « Tes centres »),
+  console et signalements (le lieu à la place du centre) adaptés. Détail pour les développeurs : `docs/PASSATION.md` §4.19.
+- **App** (planches W1 à W4) : « + » → Créer un match (après « Ton créneau » s'il reste des réservations sans match) → **W1** « Où tu
+  joues ? » (champ « Nom du terrain ou adresse », « AUTOUR DE TOI » : centres partenaires avec « PARTENAIRE », « Je ne trouve pas mon
+  terrain ») ; toucher un centre mène à sa réservation (S3, le match naît de la réservation) ; **W2** dès la saisie : « LIEUX ET
+  ADRESSES » — centres dont le nom correspond, puis la saisie telle quelle (« Ben Aknoun · Commune · Alger ») ; « Je ne trouve pas mon
+  terrain » met le curseur dans le champ s'il est vide, sinon valide la saisie (réponses 13 et 14) ; **W3** jours, durée, « À quelle
+  heure ? », heures par demi-heure, « Continuer » ; **W4** format, niveau, description, « Publier mon match » / « Publier en privé » ;
+  puis S8 / S8P **sans prix**. Retour possible à chaque étape (W3 → W1 garde le texte saisi). Carte de match libre (accueil, Jouer) :
+  fond rouge sombre et logo, lieu saisi, wilaya, sans prix (dossier §6). Fiche : même écran sans badge « Centre partenaire » ni prix,
+  logo sur la bande, adresse = quartier et ville, « Itinéraire » = Google Maps sur le texte saisi et la ville (réponse 15).
+- **Valeurs provisoires** (à confirmer par Aymen) : ville d'un match libre = celle du joueur, **Alger** s'il n'en a pas choisi ;
+  heures de W3 : matin 08:00 → 11:30, après-midi 12:00 → 17:30, soir 18:00 → 23:00 (la planche montre 18:00 → 21:30) ; le match porte
+  le nom du lieu saisi ; **aucun plafond** de matchs libres par joueur (dossier, section 11 : les limites ne concernent que les
+  réservations) — seule la règle « jamais deux engagements qui se chevauchent » s'applique.
+- **Écarts signalés** : seul le **foot** se crée en match libre (W4 ne montre que des formats de foot ; le core accepte déjà le padel) ;
+  pas de **9v9** avant sa phase ; l'icône de « Je ne trouve pas mon terrain » est le repère du sprite (pas de repère « + » dans le
+  sprite) ; « Commune » est le mot de la maquette même quand le texte saisi n'est pas une commune.
+- **Textes** : 6 textes arabes repris tels quels de `fr-ar-match-libre.json` ; la wilaya (enregistrée en français) est traduite à
+  l'affichage.
+- **Tests** : API `match-libre-phase5.test.ts` (7 : création, refus, chevauchement, privé, ancienne app, rejoindre / annuler,
+  contrainte en base) ; app `freeMatch.test.ts` (7), `matchCardView.test.ts` (+1). **Core 192 · API 1109 · app joueur 336** ;
+  typecheck propre sur les 5 paquets. Suite API complète : 3 fichiers en échec lors d'un passage chargé (tests de l'app lancés en même
+  temps) — `staff-crm` et `multi-instance` (délais de 30 s dépassés) passent entièrement relancés seuls ; `venues-availability-summary`
+  est l'échec connu, sans risque réel (CLAUDE.md, 25/10/2026).
+- **Board visuel** (`tools/ui-board/src/capture.mjs`) : « + » → Créer un match capture désormais W1, W2, W3, W4, puis un centre
+  partenaire → sa réservation ; rien n'est publié (le board ne crée aucun match libre). Board après : 62 écrans. Un écran non atteint de plus, sans lien
+  avec ce lot : « Rejoindre » (`match-team-sheet`) dépend de l'heure du passage — en fin d'après-midi, le premier match du jour dans
+  Jouer est celui que le board vient de créer (vue organisateur, sans « Rejoindre »), les plus tôt ayant commencé.
+- **Vérification** : parcours complet en vrai sur la base de démo, FR (public) puis AR (privé) : W1 → W2 → W3 → W4 → S8 / S8P → fiche
+  organisateur → onglet Jouer (la carte du match libre) ; puis, comme une ancienne app : le match n'est pas dans Mes matchs et sa fiche
+  répond 409 ; matchs annulés à la fin ; aucune erreur console. Défauts trouvés et corrigés en vérifiant : titres « Créer un match »,
+  « Où tu joues ? », « Niveau » et « Description » en gris au lieu de blanc (aussi sur S7) ; croix bleue du navigateur dans le champ de
+  recherche ; ville « Alger » non traduite en arabe sur la fiche et sur W1.

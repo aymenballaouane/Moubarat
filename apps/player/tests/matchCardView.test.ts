@@ -36,6 +36,10 @@ describe('pastille de format et image', () => {
     expect(cardArtKind({ sport: 'PADEL', format: 'DOUBLE' })).toBe('padel-vert');
     expect(cardArtKind({ sport: 'BASKET', format: '3v3' })).toBe('logo');
   });
+  it('match libre (phase 5) : le logo sur fond rouge sombre, quel que soit le sport', () => {
+    expect(cardArtKind({ sport: 'FOOTBALL', format: '5v5', venueId: null })).toBe('logo');
+    expect(cardArtKind({ sport: 'FOOTBALL', format: '5v5', venueId: 'v1' })).toBe('foot');
+  });
 });
 
 describe('ordre et découpe de la liste de l’accueil', () => {

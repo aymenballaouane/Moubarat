@@ -73,6 +73,9 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
   const headers: Record<string, string> = {};
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
+  /* Lot « Match libre », phase 5 : cette app comprend les matchs libres (sans centre). Le serveur n'en envoie qu'aux apps qui le
+     déclarent — jamais aux versions 1.0 et 1.0.1 de l'iPhone, qui n'envoient pas cet en-tête (décision d'Aymen du 16/11/2026). */
+  headers['X-Moubarat-Features'] = 'match-libre';
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? API_TIMEOUT_MS);

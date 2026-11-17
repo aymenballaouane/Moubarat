@@ -35,7 +35,9 @@ export function formatPill(match: Pick<Match, 'sport' | 'format'>): string {
 /** L'image de la carte (dossier §6, « Les images ») pour un centre partenaire sans photo : l'illustration du sport — stade de foot ;
     court de padel bleu (Simple) ou vert (Double), comme les maquettes Acc5 / Acc6. Un sport sans illustration retombe sur le logo
     (fond rouge sombre), le repli du match libre. La photo du centre viendra en phase 6. */
-export function cardArtKind(match: Pick<Match, 'sport' | 'format'>): CardArtKind {
+export function cardArtKind(match: Pick<Match, 'sport' | 'format'> & { venueId?: string | null }): CardArtKind {
+  // Match libre (phase 5) : fond rouge sombre avec le logo Moubarat (dossier §6) — un lieu libre n'est pas un centre.
+  if (match.venueId === null) return 'logo';
   if (match.sport === 'FOOTBALL') return 'foot';
   if (match.sport === 'PADEL') return match.format === 'DOUBLE' ? 'padel-vert' : 'padel-bleu';
   return 'logo';

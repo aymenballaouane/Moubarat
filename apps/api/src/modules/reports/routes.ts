@@ -78,7 +78,7 @@ export async function registerReportRoutes(app: FastifyInstance, { db, guards, p
           'reports.created_at as created_at', 'reports.handled_at as handled_at',
           'reporter.id as reporter_id', 'reporter.name as reporter_name', 'reporter.phone as reporter_phone',
           'tu.id as target_user_id', 'tu.name as target_user_name', 'tu.status as target_user_status',
-          'tm.id as target_match_id', 'tm.title as target_match_title', 'tv.name as target_venue_name',
+          'tm.id as target_match_id', 'tm.title as target_match_title', sql<string | null>`coalesce(tv.name, tm.place_name)`.as('target_venue_name'),
         ])
         .where('reports.status', '=', status)
         .orderBy('reports.created_at', status === 'OPEN' ? 'asc' : 'desc')

@@ -10,6 +10,30 @@ import { ApiError, notFound } from '../../lib/http.js';
 export type MatchRow = Selectable<MatchesTable>;
 export type MatchPlayerRow = Selectable<MatchPlayersTable>;
 
+/** Le lieu d'un match libre (migration 0047), `null` pour un match de centre. */
+export function placeOf(row: Pick<MatchRow, 'venue_id' | 'place_name' | 'place_area' | 'place_wilaya'>): { name: string; area?: string; wilaya: string } | null {
+  if (row.venue_id !== null || row.place_name === null || row.place_wilaya === null) return null;
+  return { name: row.place_name, ...(row.place_area !== null ? { area: row.place_area } : {}), wilaya: row.place_wilaya };
+}
+
+/** Lot « Match libre », phase 5 (décision d'Aymen du 16/11/2026) : « le serveur n'envoie pas les matchs libres aux versions 1.0 et
+    1.0.1 de l'iPhone ». Ces versions (comme l'app Android 1.0.4 et toute page web mise en cache avant ce lot) n'envoient aucune
+    version : c'est donc l'INVERSE qui est vérifié — seule une app qui déclare comprendre les matchs libres (en-tête
+    `X-Moubarat-Features: match-libre`, envoyé par l'app à partir de ce lot) en reçoit. Toute autre requête est traitée comme une
+    ancienne app : un match libre n'apparaît dans aucune de ses listes et sa fiche répond 409 APP_UPDATE_REQUIRED. */
+export const FREE_MATCH_FEATURE = 'match-libre';
+export function knowsFreeMatches(headers: Record<string, string | string[] | undefined>): boolean {
+  const raw = headers['x-moubarat-features'];
+  const value = Array.isArray(raw) ? raw.join(',') : (raw ?? '');
+  return value.split(',').map((x) => x.trim().toLowerCase()).includes(FREE_MATCH_FEATURE);
+}
+/** Fiche d'un match libre demandée par une ancienne app : refus explicite (jamais un écran qui planterait faute de centre). */
+export function assertVisibleToClient(row: Pick<MatchRow, 'venue_id'>, headers: Record<string, string | string[] | undefined>): void {
+  if (row.venue_id === null && !knowsFreeMatches(headers)) {
+    throw new ApiError(409, 'APP_UPDATE_REQUIRED', 'Mets à jour Moubarat pour voir ce match.');
+  }
+}
+
 export function rowToMatch(row: MatchRow): Match {
   return {
     id: row.id, sport: row.sport, format: row.format, level: row.level, title: row.title,
@@ -20,6 +44,7 @@ export function rowToMatch(row: MatchRow): Match {
       ? { kind: 'WHATSAPP' as const, ...(row.whatsapp_url !== null ? { url: row.whatsapp_url } : {}) }
       : { kind: 'IN_APP' as const },
     createdAt: row.created_at.getTime(),
+    ...(placeOf(row) !== null ? { place: placeOf(row)! } : {}),
     ...(row.booking_id !== null ? { bookingId: row.booking_id } : {}),
     ...(row.challenge_id !== null ? { challengeId: row.challenge_id } : {}),
   };
@@ -39,6 +64,9 @@ export function publicMatch(row: MatchRow, opts: { group?: boolean; code?: boole
   return {
     id: row.id, sport: row.sport, format: row.format, level: row.level, title: row.title,
     venueId: row.venue_id, fieldId: row.field_id, start: range.start, end: range.end,
+    // Lot « Match libre », phase 5 : le lieu d'un match libre (null pour un match de centre) — seulement servi aux apps qui le
+    // comprennent (knowsFreeMatches) : une ancienne app ne reçoit jamais de match libre.
+    place: placeOf(row),
     capacity: row.capacity, pricePerPlayerDa: row.price_per_player_da,
     visibility: row.visibility, status: row.status, organizerId: row.organizer_id,
     coordination: row.coordination, whatsappUrl: opts.group ? row.whatsapp_url : null, hasGroup: row.whatsapp_url !== null, note: row.note,
@@ -178,8 +206,9 @@ export async function describeConflict(db: Db, userId: string, range: { start: n
   Promise<{ venueName: string; start: number; end: number } | null> {
   const matchRows = await db.selectFrom('match_players')
     .innerJoin('matches', 'matches.id', 'match_players.match_id')
-    .innerJoin('venues', 'venues.id', 'matches.venue_id')
-    .select(['matches.id as match_id', 'matches.time_range as time_range', 'venues.name as venue_name'])
+    // Match libre (phase 5) : pas de centre — le lieu saisi le remplace dans « Tu joues déjà à cette heure-là : {lieu} ».
+    .leftJoin('venues', 'venues.id', 'matches.venue_id')
+    .select(['matches.id as match_id', 'matches.time_range as time_range', sql<string>`coalesce(venues.name, matches.place_name)`.as('venue_name')])
     .where('match_players.user_id', '=', userId).where('match_players.status', '=', 'JOINED')
     .where('matches.status', '!=', 'CANCELLED').execute();
   const bookingRows = await db.selectFrom('bookings')
@@ -233,7 +262,7 @@ export async function myPlayedMatchIds(db: Db, userId: string, now: number = Dat
     purement en lecture, hors packages/core (gelé — ceci n'est qu'une projection de l'historique
     des rosters, pas une règle métier). */
 export async function friendsUpcomingMatches(
-  db: Db, viewerId: string, now: Date, opts: { maxFriends?: number; windowMs?: number } = {},
+  db: Db, viewerId: string, now: Date, opts: { maxFriends?: number; windowMs?: number; includeFree?: boolean } = {},
 ): Promise<Record<string, unknown>[]> {
   const maxFriends = opts.maxFriends ?? 10;
   const windowMs = opts.windowMs ?? 7 * 86_400_000;
@@ -279,6 +308,7 @@ export async function friendsUpcomingMatches(
     .where(sql<boolean>`upper(matches.time_range) > ${now}`)
     .where(sql<boolean>`lower(matches.time_range) > ${now}`)   // 16/11/2026 : un match commencé quitte les listes (lot « Match libre »)
     .where(sql<boolean>`lower(matches.time_range) <= ${windowEnd}`)
+    .$if(opts.includeFree !== true, (q) => q.where('matches.venue_id', 'is not', null))   // ancienne app : aucun match libre
     .where((eb) => eb.or([
       eb('matches.organizer_id', 'in', coPlayerIds),
       eb('match_players.user_id', 'in', coPlayerIds),

@@ -266,7 +266,7 @@ export function CreerPublie(p: {
         <SummaryCard summary={s} level={p.level}>
           <div className="cv-card__row">
             <span className="cv-card__field">{tn('Plus que {n} places', Math.max(s.places - 1, 0))}</span>
-            <PerPlayer amountDa={s.perPlayerDa} />
+            {s.perPlayerDa > 0 ? <PerPlayer amountDa={s.perPlayerDa} /> : null}
           </div>
         </SummaryCard>
       </section>

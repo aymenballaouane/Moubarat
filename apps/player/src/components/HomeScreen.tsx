@@ -53,7 +53,7 @@ export function HomeScreen({ onNavigate, unreadOverride, identityName, store }: 
   /* A8 : le centre et le terrain du prochain match se lisent d'après CE match (fieldId), pas
      d'après le centre ouvert. */
   const nextInfo = next ? store.fieldInfo(next.match.fieldId) : undefined;
-  const nextVenueName = next ? (nextInfo?.venueName ?? store.venueName(next.match.venueId)) : undefined;
+  const nextVenueName = next ? (nextInfo?.venueName ?? store.matchPlace(next.match)) : undefined;
   const nextMine = next ? next.match.organizerId === CURRENT_USER_ID : false;
   const countdown = useCountdown(next?.match.range.start ?? Date.now());
 
@@ -66,7 +66,7 @@ export function HomeScreen({ onNavigate, unreadOverride, identityName, store }: 
      centre différent à chaque montage de l'écran, parmi ceux de la ville du joueur, jamais
      celui du prochain match. */
   const [partnerVenue] = useState(() => {
-    const candidates = eligiblePartnerVenues(store.venues, store.identity.city, next?.match.venueId);
+    const candidates = eligiblePartnerVenues(store.venues, store.identity.city, next?.match.venueId ?? undefined);
     return candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : undefined;
   });
 
@@ -203,8 +203,8 @@ export function HomeScreen({ onNavigate, unreadOverride, identityName, store }: 
             {visible.map((e) => (
               <div className="mb-enter" key={e.match.id}>
                 <MatchListCard
-                  match={e.match} players={e.players} venueName={store.venueName(e.match.venueId)}
-                  venueWilaya={store.venueSummary(e.match.venueId)?.wilaya}
+                  match={e.match} players={e.players} venueName={store.matchPlace(e.match)}
+                  venueWilaya={store.matchWilaya(e.match)}
                   onOpen={() => openFromList(e.match.id, e.match.organizerId)}
                 />
               </div>
@@ -272,7 +272,7 @@ export function HomeScreen({ onNavigate, unreadOverride, identityName, store }: 
                     <span className="ho-friend__when">
                       {relativeDayLabel(entry.match.range.start, Date.now(), t)} · {hhmm(epochMinutesOfDay(entry.match.range.start))}
                     </span>
-                    <span className="ho-friend__loc">{store.venueName(entry.match.venueId)}</span>
+                    <span className="ho-friend__loc">{store.matchPlace(entry.match)}</span>
                   </span>
                   <span className="ho-friend__right">
                     {going

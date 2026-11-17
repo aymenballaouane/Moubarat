@@ -214,7 +214,7 @@ export function HistoryScreen({ onExit, onNavigate, ratings, store }: HistoryScr
       ) : (
         <div className="mx-list">
           {pastEntries.map((e) => (
-            <PastRow key={e.match.id} entry={e} venueName={store.venueName(e.match.venueId)}
+            <PastRow key={e.match.id} entry={e} venueName={store.matchPlace(e.match)}
               myRating={myRatingFor(e.match.id)}
               rateOk={rateGate(e).ok}
               onRate={() => openRating(e)}

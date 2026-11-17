@@ -559,21 +559,39 @@ async function run() {
       await p.click('button[aria-label="Retour"]').catch(() => {});
       await p.waitForTimeout(400);
     }
-    // « + » → Créer un match : « Ton créneau » s'il reste des réservations sans match, sinon « Où tu joues ? » (S2B, mode match).
+    // « + » → Créer un match : « Ton créneau » s'il reste des réservations sans match (puis « Réserver un autre créneau »), et toujours
+    // W1 « Où tu joues ? » (lot « Match libre », phase 5) → W2 (saisie) → W3 (créneau) → W4 (détails). Rien n'est publié : le board ne
+    // crée aucun match libre.
     try {
       await p.click('.bottom-nav button[aria-label="Créer ou réserver"]');
       await p.click('.xp-cob__row:has-text("Créer un match")');
-      await p.waitForSelector('#s-venues, #s-creer-creneau', { timeout: 6000 }).catch(() => {});
+      await p.waitForSelector('#s-creer-lieu, #s-creer-creneau', { timeout: 6000 }).catch(() => {});
       if (await p.locator('#s-creer-creneau').count()) {
         await capture(p, { id: 'create-match-creneau', label: 'Créer un match — Ton créneau', journey: 'creer-match', surface: 'player', path: '« + » → Créer un match (réservations sans match)', waitFor: '#s-creer-creneau' });
-        notReached.push({ id: 'create-match-terrain', reason: 'des réservations sans match existent : « Créer un match » ouvre « Ton créneau », pas « Où tu joues ? »' });
-      } else if (await p.locator('#s-venues').count()) {
-        await capture(p, { id: 'create-match-terrain', label: 'Créer un match — Où tu joues ? (mode match)', journey: 'creer-match', surface: 'player', path: '« + » → Créer un match (aucune réservation à ouvrir)', waitFor: '#s-venues' });
-        await p.locator('#s-venues .rv2-card').first().click().catch(() => {});
-        await capture(p, { id: 'create-match-slots', label: 'Créer un match — Le créneau de ton match', journey: 'creer-match', surface: 'player', path: 'Où tu joues ? → centre (mode match)', waitFor: '#s-slots' });
+        await p.click('#s-creer-creneau .cr-other').catch(() => {});
+        await p.waitForSelector('#s-creer-lieu', { timeout: 6000 }).catch(() => {});
+      }
+      if (await p.locator('#s-creer-lieu').count()) {
+        await capture(p, { id: 'create-match-terrain', label: 'Créer un match — W1 · Où tu joues ?', journey: 'creer-match', surface: 'player', path: '« + » → Créer un match', waitFor: '#s-creer-lieu' });
+        await p.fill('#s-creer-lieu input', 'Ben Aknoun');
+        await capture(p, { id: 'create-libre-saisie', label: 'Créer un match — W2 · Lieux et adresses', journey: 'creer-match', surface: 'player', path: 'W1 → saisie « Ben Aknoun »', waitFor: '.cl-row--place' });
+        await p.click('#s-creer-lieu .cl-row--place');
+        await p.waitForSelector('#s-creer-libre-creneau', { timeout: 6000 });
+        await p.locator('#s-creer-libre-creneau .rsv-r3__day').nth(2).click();
+        await p.locator('#s-creer-libre-creneau .rsv-r3__hour').nth(3).click();
+        await capture(p, { id: 'create-libre-creneau', label: 'Créer un match — W3 · Créneau', journey: 'creer-match', surface: 'player', path: 'W2 → lieu libre', waitFor: '#s-creer-libre-creneau' });
+        await p.click('#s-creer-libre-creneau .cl-foot .mv-cta');
+        await p.fill('#s-creer-libre-details #cr-note', 'Rendez-vous à l’entrée principale. On joue à la cool.').catch(() => {});
+        await capture(p, { id: 'create-libre-details', label: 'Créer un match — W4 · Détails', journey: 'creer-match', surface: 'player', path: 'W3 → Continuer', waitFor: '#s-creer-libre-details' });
+        await p.click('#s-creer-libre-details button[aria-label="Retour"]').catch(() => {});   // W4 → W3
+        await p.click('#s-creer-libre-creneau button[aria-label="Retour"]').catch(() => {});   // W3 → W1
+        await p.waitForSelector('#s-creer-lieu', { timeout: 6000 }).catch(() => {});
+        await p.fill('#s-creer-lieu input', '').catch(() => {});
+        await p.locator('#s-creer-lieu .cl-row').first().click().catch(() => {});   // un centre partenaire → sa réservation (S3)
+        await capture(p, { id: 'create-match-slots', label: 'Créer un match — centre partenaire → réservation', journey: 'creer-match', surface: 'player', path: 'W1 → centre partenaire (mode match)', waitFor: '#s-slots' });
       } else notReached.push({ id: 'create-match-terrain', reason: '« + » → Créer un match n’a ouvert ni « Ton créneau » ni « Où tu joues ? »' });
       // Retour : R3 → R2 → R1 → sortie du flux (jusqu'à retrouver la barre de navigation).
-      for (let i = 0; i < 4 && (await p.locator('.bottom-nav').count()) === 0; i++) {
+      for (let i = 0; i < 6 && (await p.locator('.bottom-nav').count()) === 0; i++) {
         await p.click('button[aria-label="Retour"]').catch(() => {});
         await p.waitForTimeout(400);
       }

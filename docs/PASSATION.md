@@ -867,6 +867,29 @@ variable d'un front exige de redéployer le projet Vercel concerné.
 7. Refermer `ipAllowList` de la base Render. Garder Render arrêté mais intact une semaine (retour arrière = rebasculer le
    DNS), puis supprimer la base Render **après accord d'Aymen** — c'est aussi la fin du transfert de données à l'étranger.
 
+### 4.19 Match libre : migration 0047, en-tête `X-Moubarat-Features`, retour arrière (lot « Match libre », phase 5, 17/11/2026)
+
+Un match peut se jouer hors d'un centre partenaire (« match libre ») : `matches.venue_id` et `matches.field_id` deviennent
+nullables, trois colonnes s'ajoutent (`place_name`, `place_area`, `place_wilaya`) et la contrainte `matches_place_kind`
+impose « un centre ET un terrain, OU un lieu libre (sans réservation, sans défi, prix 0) ». Aucune ligne existante n'est
+modifiée : la migration s'applique comme les autres (`pnpm db:migrate`), sans coupure.
+
+**Les anciennes apps ne voient JAMAIS un match libre** (décision d'Aymen : iPhone 1.0 et 1.0.1 ; vaut aussi pour Android
+1.0.4 et toute page web mise en cache). Ces versions n'envoient aucune version : le serveur sert les matchs libres
+uniquement à une requête qui porte l'en-tête `X-Moubarat-Features: match-libre` (envoyé par l'app joueur à partir de ce
+lot, `apps/player/src/lib/api.ts`). Sans lui : absents du fil, des décomptes par jour, de Mes matchs, des matchs des amis ;
+`GET /matches/:id` et `GET /matches/by-code/:code` répondent `409 APP_UPDATE_REQUIRED`. Règle dans
+`apps/api/src/modules/matches/service.ts` (`knowsFreeMatches`). **À ne pas casser** : un répartiteur, un CDN ou un
+pare-feu qui filtrerait les en-têtes inconnus ferait disparaître les matchs libres de la nouvelle app — laisser passer
+`X-Moubarat-Features` (le CORS de l'API le renvoie déjà au préflight : `@fastify/cors` reflète les en-têtes demandés).
+
+**Création** : `POST /matches/free` (règle core `createFreeMatch`). Le CRM et Analytics ne voient jamais un match libre
+(ils filtrent par centre). La console (`/platform/matches`, signalements) montre le lieu saisi à la place du centre.
+
+**Retour arrière** (seulement si l'on redéploie un code d'avant ce lot) : `apps/api/migrations/retour/0047_match_libre.sql`,
+à exécuter à la main avec psql (commande en tête du fichier). Il refuse de s'exécuter tant qu'un match libre existe : à
+trancher avec Aymen avant (annuler ces matchs et prévenir leurs inscrits). Le migrateur ne lit jamais ce dossier `retour/`.
+
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 
 Chaque point ci-dessous a été soit vérifié (test automatisé, ou vérification manuelle décrite),

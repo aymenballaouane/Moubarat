@@ -1,0 +1,55 @@
+/* Créer un match libre (lot « Match libre », phase 5 — planches W1 à W4, dossier §8). Mesures relevées sur les maquettes (390 px de
+   large), variables de l'app quand elles existent ; positions logiques (l'arabe se lit en miroir, planches Ar-W1 à Ar-W4). */
+
+.au-screen.cl { display: flex; flex-direction: column; min-height: 100%; }
+.cl-h1 { margin: 18px 0 16px; color: var(--text); }
+.cl-kicker { display: block; margin: 22px 0 12px; }
+
+/* --- W1 / W2 · les lignes --- */
+.cl-list { display: flex; flex-direction: column; gap: 14px; }
+.cl-row {
+  width: 100%; box-sizing: border-box; min-height: 75px; padding: 10px 16px 10px 10px; border-radius: 16px; border: 1px solid var(--line);
+  background: var(--ink-2); color: var(--text); font-family: inherit; text-align: start; cursor: pointer;
+  display: flex; align-items: center; gap: 14px;
+}
+.cl-row[aria-busy="true"] { opacity: .6; }
+.cl-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.cl-logo { width: 56px; height: 56px; border-radius: 12px; flex: none; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #3A0C04 0%, #0A0202 65%); }
+.cl-row__col { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.cl-row__name { font-size: 18px; font-weight: 700; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.cl-row__sub { display: flex; align-items: center; gap: 6px; font-size: 15px; line-height: 20px; color: var(--text-3); min-width: 0; }
+.cl-row__pin { width: 15px; height: 15px; flex: none; }
+.cl-row__city { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cl-partner { flex: none; margin-inline-start: 4px; padding: 3px 7px; border-radius: 4px; background: rgba(255,43,0,.16); color: var(--primary-glow);
+  font-size: 12px; font-weight: 700; letter-spacing: 1.3px; line-height: 14px; }
+[dir="rtl"] .cl-partner { letter-spacing: 0; }
+.cl-row__go { width: 22px; height: 22px; color: var(--text-3); flex: none; }
+[dir="rtl"] .cl-row__go { transform: scaleX(-1); }
+
+.cl-row--place { min-height: 63px; padding: 10px 16px 10px 12px; }
+.cl-pin { width: 40px; height: 40px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,43,0,.16); color: var(--primary-glow); }
+.cl-pin .mb-ic { width: 20px; height: 20px; }
+.cl-row--place .cl-row__name { font-size: 17px; }
+.cl-row--place .cl-row__sub { gap: 0; }
+
+.cl-notfound {
+  margin-top: 14px; width: 100%; min-height: 55px; border-radius: 14px; border: 1.5px dashed var(--line-strong); background: transparent;
+  color: var(--text); font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+}
+.cl-notfound:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.cl-notfound__ic { width: 22px; height: 22px; color: var(--primary-glow); }
+
+/* --- W3 · Créneau --- */
+.cl-days { margin-top: 22px; }
+.cl-foot { margin-top: auto; }
+.cl-foot .mv-cta:disabled { background: var(--ink-3); color: var(--text-3); cursor: default; }
+
+/* --- W4 · Détails --- */
+.cl-formats { overflow-x: auto; scrollbar-width: none; }
+.cl-formats::-webkit-scrollbar { display: none; }
+.cl-formats button { flex: 0 0 auto; min-width: 52px; padding: 0 10px; font-family: var(--font-display); font-weight: 400; font-size: 22px; letter-spacing: .5px; }
+.cl-desc { flex: 1; }
+.cl-note { min-height: 200px; }

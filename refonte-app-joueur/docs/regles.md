@@ -14,7 +14,7 @@ Aucune autre règle ne change.
 
 ## A. Matchs
 
-1. Un match naît toujours d’une réservation. L’organisateur est inscrit d’office. — *inchangée*
+1. Chez un centre partenaire, un match naît toujours d’une réservation. L’organisateur est inscrit d’office. — *modifiée* (lot « Match libre », phase 5, 17/11/2026, GO d’Aymen du 16/11/2026) : un match peut aussi se jouer AILLEURS (« match libre ») — le joueur saisit un lieu (nom ou adresse), un jour, une heure (par demi-heure, jamais à moins de 2 h), une durée (1 h, 1 h 30, 2 h), un format, un niveau ; rien n’est réservé, il n’y a ni centre, ni terrain, ni prix, et les plafonds de réservations (règle 23) ne s’y appliquent pas. Les autres règles du match (inscription, équipes, désistement, chevauchement — règle 5) sont les mêmes. Règle core `createFreeMatch`.
 2. Le format est choisi à la réservation et ne change plus. Un match ne change jamais de format. — *inchangée*
 3. Une seule place par joueur. On choisit son équipe (sa paire au padel), pas son poste. Changement d’équipe possible jusqu’au coup d’envoi (H-1 jusqu’au 16/11/2026, voir règle 4). D’après la phase 0, ce n’est pas encore codé : à construire. À l’écran (lot « Match libre » : l’écran change en phase 3, rejoindre sans choisir place le joueur dans l’équipe la moins remplie, A à égalité) :
    - « Rejoindre le match » ne demande aucune équipe : le joueur est placé dans l’équipe la moins remplie (A à égalité) — lot « Match libre », phase 3, planche Dv1 ; le panneau « Choisis ton équipe » est retiré ;

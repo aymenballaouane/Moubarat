@@ -90,7 +90,7 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
   const views = teamViews(match, players, meId, nameOf);
   const mine = myTeam(views);
   const other: MatchTeam | null = mine === 'A' ? 'B' : mine === 'B' ? 'A' : null;
-  const venueName = store.venueName(match.venueId);
+  const venueName = store.matchPlace(match);   // phase 5 : le lieu saisi pour un match libre
   const centre = store.venueSummary(match.venueId);
   const organizerName = nameOf(match.organizerId);
   const organizerPhone = contacts.find((c) => c.userId === match.organizerId)?.phone ?? null;

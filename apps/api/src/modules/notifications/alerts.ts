@@ -40,8 +40,10 @@ export async function notifySpotFreed(trx: Db, match: MatchRow, leaverId: string
 
   let citizens: string[] = [];
   if (phase === 'REPLACEMENT') {
-    const venue = await trx.selectFrom('venues').select('wilaya').where('id', '=', match.venue_id).executeTakeFirst();
-    const city = venue ? cityCodeOfWilaya(venue.wilaya) : null;
+    // Match libre (phase 5) : sa wilaya est celle saisie avec le lieu.
+    const venue = match.venue_id === null ? undefined : await trx.selectFrom('venues').select('wilaya').where('id', '=', match.venue_id).executeTakeFirst();
+    const wilaya = venue?.wilaya ?? match.place_wilaya;
+    const city = wilaya ? cityCodeOfWilaya(wilaya) : null;
     if (city !== null) {
       const since = new Date(now - 3_600_000);
       const rows = await trx.selectFrom('profiles')

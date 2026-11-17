@@ -1,7 +1,7 @@
 /* Créer un match, détails et publication (lot « Match libre », phase 4 — planches S7, S8, S8P ; dossier §8). Positions logiques :
    l'arabe se lit en miroir (Ar-S7, Ar-S8). */
 
-.cv-title { font-size: 18px; font-weight: 700; line-height: 24px; }
+.cv-title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--text); }
 
 /* --- Récapitulatif (S7, S8) --- */
 .cv-card { border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--ink-2); }
@@ -25,7 +25,7 @@
 .cv-price small { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--text-2); margin-inline-start: 6px; }
 
 /* --- Détails (S7) --- */
-.cv-q { display: block; margin: 0 0 10px; font-size: 17px; font-weight: 700; text-align: center; line-height: 22px; }
+.cv-q { display: block; margin: 0 0 10px; font-size: 17px; font-weight: 700; text-align: center; line-height: 22px; color: var(--text); }
 .cv-levels button { flex: 1 1 auto; }
 .cv-note { min-height: 96px; border-radius: 12px; background: var(--ink-2); border: 1px solid var(--line); color: var(--text); font-size: 16px; line-height: 24px; padding: 14px; box-sizing: border-box; resize: none; width: 100%; font-family: inherit; }
 .cv-foot { display: flex; flex-direction: column; align-items: center; gap: 4px; }

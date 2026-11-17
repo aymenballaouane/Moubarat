@@ -370,8 +370,13 @@ export interface MatchesTable {
   format: MatchFormatDb;
   level: SkillLevelDb;
   title: string;
-  venue_id: string;
-  field_id: string;
+  /** Migration 0047 (match libre) : NULL pour un match libre, qui porte alors `place_*` (contrainte `matches_place_kind`). */
+  venue_id: string | null;
+  field_id: string | null;
+  /** Migration 0047 — le lieu d'un match libre : nom ou adresse saisi, commune si connue, wilaya. NULL pour un match de centre. */
+  place_name: string | null;
+  place_area: string | null;
+  place_wilaya: string | null;
   time_range: string;                 // tstzrange
   capacity: number;
   price_per_player_da: number;
