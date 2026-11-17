@@ -31,7 +31,7 @@ export const DEFAULT_DURATIONS_MIN = [60, 90, 120] as const;
 /* --- Formats autorisés par sport ------------------------------------------ */
 
 export const SPORT_FORMATS: Record<Sport, readonly MatchFormat[]> = {
-  FOOTBALL: ['5v5', '6v6', '7v7', '8v8', '11v11'],
+  FOOTBALL: ['5v5', '6v6', '7v7', '8v8', '9v9', '11v11'],   // 9v9 : phase 9v9 du lot « Match libre » (17/11/2026)
   PADEL: ['SIMPLE', 'DOUBLE'],
   BASKET: ['3v3', '5v5'],
 };

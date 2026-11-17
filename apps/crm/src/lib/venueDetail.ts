@@ -54,7 +54,8 @@ export function formatsLabel(formats: readonly string[], t: TFn = (k) => k): str
 }
 
 /** Formats proposables pour un sport — décision Aymen 04/09 : plus aucun
-    format hors core (9v9, 2v2, 4v4 ont disparu), Simple/Double pour le padel. */
+    format hors core (2v2, 4v4 ont disparu), Simple/Double pour le padel. Le 9v9 est revenu PAR le core le 17/11/2026 (phase 9v9 du
+    lot « Match libre », GO d'Aymen) — sans prix par défaut. */
 export function formatOptionsFor(sport: Sport): readonly MatchFormat[] {
   return SPORT_FORMATS[sport];
 }

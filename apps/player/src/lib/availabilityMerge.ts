@@ -1,4 +1,4 @@
-import type { MatchFormat } from '@moubarat/core';
+import { FORMAT_CAPACITY, type MatchFormat } from '@moubarat/core';
 import type { AvailabilityStart } from './mappers.js';
 
 export interface FormatRate { format: MatchFormat; hourlyRateDa: number }
@@ -32,5 +32,8 @@ export function mergeFieldAvailabilities(perField: readonly FieldAvailability[])
       if (!formats.some((x) => x.format === f.format)) formats.push(f);
     }
   }
+  // Phase 9v9 : les formats du plus petit au plus grand (5V5, 7V7, 9V9…), jamais dans l'ordre des terrains — un 9v9 ajouté sur le premier
+  // terrain ne passe pas devant le 5v5. Tri stable : à capacité égale, l'ordre d'origine.
+  formats.sort((a, b) => FORMAT_CAPACITY[a.format] - FORMAT_CAPACITY[b.format]);
   return { starts: [...byStart.values()].sort((a, b) => a.startMin - b.startMin), formats };
 }

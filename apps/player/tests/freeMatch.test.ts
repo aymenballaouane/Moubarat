@@ -23,9 +23,9 @@ describe('W3 — les heures proposées', () => {
     expect(firstOpenPeriod(day, at(9))).toBe('soir');
     expect(firstOpenPeriod(day, at(22, 30))).toBeNull();
   });
-  it('durées et formats : ceux du core (W3 : 1 h, 1 h 30, 2 h ; W4 : 5V5 à 11V11, sans 9V9 pour l’instant)', () => {
+  it('durées et formats : ceux du core (W3 : 1 h, 1 h 30, 2 h ; W4 : 5V5 à 11V11, 9V9 compris)', () => {
     expect(FREE_DURATIONS).toEqual([60, 90, 120]);
-    expect(FREE_FORMATS).toEqual(['5v5', '6v6', '7v7', '8v8', '11v11']);
+    expect(FREE_FORMATS).toEqual(['5v5', '6v6', '7v7', '8v8', '9v9', '11v11']);
   });
 });
 

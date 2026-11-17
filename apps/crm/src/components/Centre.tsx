@@ -889,7 +889,12 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
                       <span className="fn" style={{ minWidth: 150 }}>{t('Ajouter un format')}</span>
                       <select
                         className="mb-field__control" value={draft.format} aria-label={t('Format à ajouter à {terrain}', { terrain: f.name })}
-                        onChange={(e) => setFmtAdd((m) => ({ ...m, [f.id]: { ...draft, format: e.target.value as MatchFormat | '' } }))}
+                        onChange={(e) => {
+                          const format = e.target.value as MatchFormat | '';
+                          /* 9v9 (phase 9v9 du lot « Match libre », décision d'Aymen : aucun prix par défaut) — ses bandes ne sont JAMAIS
+                             recopiées d'office d'un autre format : le gérant saisit son prix, et choisit lui-même de copier des bandes. */
+                          setFmtAdd((m) => ({ ...m, [f.id]: { ...draft, format, ...(format === '9v9' ? { copyFrom: '' as const } : {}) } }));
+                        }}
                       >
                         <option value="">{t('Format…')}</option>
                         {addable.map((x) => <option key={x} value={x}>{lf(x)}</option>)}

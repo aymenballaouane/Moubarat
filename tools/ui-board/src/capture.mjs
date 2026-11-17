@@ -426,7 +426,9 @@ async function run() {
           // le format est déjà choisi d'office et le nom proposé — on les confirme quand même.
           // Tard le soir, « aujourd'hui » n'a plus aucun départ : on passe à demain (jamais un échec dû à l'heure du run).
           await p.waitForTimeout(1200);
-          if (!(await p.locator('.rsv-r3__hour').count())) { await p.locator('.rsv-r3__day').nth(1).click(); await p.waitForTimeout(1500); }
+          // Toujours DEMAIN (17/11/2026) : un créneau du jour même pris en soirée tombe à moins de 2 h — l'app retire alors, à juste titre,
+          // « Créer mon match » du ticket, et toute la suite du parcours (Créer, Organiser) manquait au board selon l'heure du passage.
+          await p.locator('.rsv-r3__day').nth(1).click(); await p.waitForTimeout(1500);
           const slotBtn = p.locator('.rsv-r3__hour').first();
           if (await slotBtn.count()) {
             await slotBtn.click();
@@ -644,9 +646,19 @@ async function run() {
     log('App joueur — Rejoindre un match…');
     await p.click('.bottom-nav button:has-text("Jouer")').catch(() => {});
     await p.waitForSelector('#s-explorer .mc', { timeout: 8000 }).catch(() => {});
-    const matchCard = p.locator('#s-explorer .mc').first();
-    if (await matchCard.count()) {
-      await matchCard.click();
+    // Le soir, le fil du jour peut être vide (les matchs commencés le quittent) : on passe à demain. Puis on ouvre le premier match qui
+    // n'est PAS celui que le board vient d'organiser (sa vue organisateur n'a pas de « Rejoindre ») — indépendant de l'heure du passage.
+    if (!(await p.locator('#s-explorer .mc').count())) { await p.locator('#s-explorer .xp-day').nth(1).click().catch(() => {}); await p.waitForTimeout(2000); }
+    let matchCard = p.locator('#s-explorer .mc').first();
+    for (let i = 0; i < 6 && (await p.locator('#s-explorer .mc').count()) > i; i++) {
+      await p.locator('#s-explorer .mc').nth(i).click();
+      await p.waitForSelector('#s-detail, #s-mymatch', { timeout: 6000 }).catch(() => {});
+      if (await p.locator('#s-detail').count()) { matchCard = p.locator('#s-explorer .mc').nth(i); break; }
+      await p.click('button[aria-label="Retour"]').catch(() => {});
+      await p.waitForSelector('#s-explorer .mc', { timeout: 6000 }).catch(() => {});
+    }
+    if (await p.locator('#s-detail').count() || await matchCard.count()) {
+      if (!(await p.locator('#s-detail, #s-mymatch').count())) await matchCard.click();
       await capture(p, { id: 'match-detail', label: 'Détail du match (rejoindre)', journey: 'rejoindre', surface: 'player', path: 'Explorer › Matchs → ouvrir un match', waitFor: '#s-detail, #s-mymatch' });
       // Lot « Match libre », phase 3 (Dv1 → Dv5 → Dv2) : toucher un « + » choisit l'équipe, « Rejoindre l'équipe A » inscrit,
       // puis « Tu joues · équipe A » et « Se désinscrire ». La feuille « Choisis ton équipe » n'existe plus.

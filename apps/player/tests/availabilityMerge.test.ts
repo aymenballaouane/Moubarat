@@ -60,6 +60,11 @@ describe('mergeFieldAvailabilities', () => {
     expect(mergeFieldAvailabilities([t1, t2]).formats.map((f) => f.format)).toEqual(['5v5', '6v6', '7v7']);
   });
 
+  it('phase 9v9 : du plus petit au plus grand, même quand le premier terrain propose le 9v9', () => {
+    const big = { fieldId: 'g', starts: [], formats: [{ format: '9v9' as const, hourlyRateDa: 9000 }, { format: '5v5' as const, hourlyRateDa: 2200 }] };
+    expect(mergeFieldAvailabilities([big, t2]).formats.map((f) => f.format)).toEqual(['5v5', '7v7', '9v9']);
+  });
+
   it('aucun terrain → rien', () => {
     expect(mergeFieldAvailabilities([])).toEqual({ starts: [], formats: [] });
   });

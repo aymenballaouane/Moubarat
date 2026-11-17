@@ -42,7 +42,7 @@ describe('createFreeMatch — match libre', () => {
     expect(createFreeMatch({ ...base, place: { name: 'Stade', wilaya: '' } }).result).toMatchObject({ ok: false, code: 'PLACE_INVALID' });
   });
 
-  it('formats : ceux du sport seulement (W4) — pas de 9v9 avant sa propre phase, pas de padel en 5v5', () => {
+  it('formats : ceux du sport seulement (W4, 9v9 compris depuis sa phase) — pas de padel en 5v5', () => {
     for (const f of FREE_MATCH_FORMATS.FOOTBALL!) expect(createFreeMatch({ ...base, format: f }).result.ok).toBe(true);
     expect(createFreeMatch({ ...base, sport: 'PADEL', format: '5v5' }).result).toMatchObject({ ok: false, code: 'FORMAT_SPORT_MISMATCH' });
     expect(createFreeMatch({ ...base, sport: 'PADEL', format: 'DOUBLE' }).match!.capacity).toBe(4);

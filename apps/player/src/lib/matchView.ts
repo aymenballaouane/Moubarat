@@ -12,8 +12,8 @@ import { isSameCalendarDay } from './format.js';
 export interface PitchLayout { orientation: 'h' | 'v'; groups: number[] }
 
 /** Selon le nombre de places PAR ÉQUIPE (planche Fmt-Vue). Horizontal jusqu'à 6 par équipe (5v5 de Dv1, 6v6), vertical au-delà
-    (7v7 de Dv4, 8v8, 11v11) — valeur provisoire du dossier, section 11. Le 9v9 n'est pas dessiné : trois rangées de trois, comme les
-    autres grands formats (provisoire, le format arrive dans une phase à part). */
+    (7v7 de Dv4, 8v8, 9v9, 11v11) — valeur provisoire du dossier, section 11. Le 9v9 n’est pas dessiné : trois rangées de trois, comme les
+    autres grands formats (provisoire ; le format est arrivé avec la phase 9v9 du 17/11/2026). */
 export function pitchLayout(perTeam: number): PitchLayout {
   const known: Record<number, PitchLayout> = {
     1: { orientation: 'h', groups: [1] },

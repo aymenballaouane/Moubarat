@@ -50,6 +50,6 @@
 /* --- W4 · Détails --- */
 .cl-formats { overflow-x: auto; scrollbar-width: none; }
 .cl-formats::-webkit-scrollbar { display: none; }
-.cl-formats button { flex: 0 0 auto; min-width: 52px; padding: 0 10px; font-family: var(--font-display); font-weight: 400; font-size: 22px; letter-spacing: .5px; }
+.cl-formats button { flex: 1 0 auto; min-width: 44px; padding: 0 6px; font-family: var(--font-display); font-weight: 400; font-size: 22px; letter-spacing: .5px; }
 .cl-desc { flex: 1; }
 .cl-note { min-height: 200px; }

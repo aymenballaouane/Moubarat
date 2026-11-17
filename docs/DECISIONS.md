@@ -6574,3 +6574,42 @@ réversible, rien de destructif ») et « le serveur n'envoie pas les matchs lib
   répond 409 ; matchs annulés à la fin ; aucune erreur console. Défauts trouvés et corrigés en vérifiant : titres « Créer un match »,
   « Où tu joues ? », « Niveau » et « Description » en gris au lieu de blanc (aussi sur S7) ; croix bleue du navigateur dans le champ de
   recherche ; ville « Alger » non traduite en arabe sur la fiche et sur W1.
+
+### Phase 9v9 — « Le format 9 contre 9 » (branche `match-libre/phase-6-9v9`, 17/11/2026)
+
+Partie de la phase 5, dans la même copie séparée. GO d'Aymen du 16/11/2026 : « 9v9 dans une phase à part : règles, base, CRM, aucun prix
+par défaut ».
+
+- **Core** (additif) : `MatchFormat` gagne `'9v9'` (18 joueurs, entre le 8v8 et le 11v11) dans `FORMAT_CAPACITY`, `SPORT_FORMATS.FOOTBALL`
+  et les formats du match libre (planche W4). Nouveau `format-9v9.test.ts` (4 tests : capacité, foot oui / padel et basket non, match
+  de centre à 18 places et 750 DA chacun sur 13 500 DA, match libre). **Core : 196 tests.** Seul test modifié : un intitulé de
+  `free-match.test.ts` (ajouté en phase 5) qui disait « pas de 9v9 avant sa propre phase ».
+- **Base** : migration 0048, une seule valeur ajoutée au type `match_format` (le schéma gelé n'est pas touché), aucune ligne modifiée ;
+  aucun terrain ne propose le 9v9 tant qu'un centre ne l'ajoute pas. Retour arrière à la main `migrations/retour/0048_format_9v9.sql` :
+  il refuse tant qu'une ligne utilise le 9v9, sinon recrée le type sans lui et convertit chaque colonne (trouvées dans le catalogue).
+  **Les deux retours arrière (0047 et 0048) sont désormais testés** sur une base jetable (`migrations-retour.test.ts`) : refus quand
+  la nouveauté est utilisée, retour sinon, puis le migrateur réapplique la migration à l'identique.
+- **Aucun prix par défaut** : l'API refusait déjà d'ajouter un format sans tarif saisi (`POST /venues/:id/fields/:fieldId/formats`,
+  400) — vérifié pour le 9v9 (`format-9v9.test.ts`). Dans le CRM (Centre → Tarifs → « Ajouter un format »), le 9v9 apparaît dans la
+  liste ; choisir le 9v9 remet « Bandes » sur « aucune (tarif plat) » : les tarifs horaires d'un autre format ne sont jamais recopiés
+  d'office (le gérant peut toujours le choisir lui-même).
+- **CRM, test inversé** (GO ci-dessus) : `venueDetail.test.ts` affirmait que le foot ne proposait pas le 9v9 (décision du 04/09/2026,
+  « 9v9 a disparu ») — l'assertion vérifie désormais que le PADEL ne le propose pas, et la liste du foot le contient. CRM : 95 tests.
+- **App** : le filtre « Format » de Jouer propose le 9v9 ; le terrain du détail à 9 par équipe est à la verticale, trois rangées de trois
+  (aucune planche ne le dessine, valeur provisoire déjà en place depuis la phase 3) ; W4 montre les six formats sans défilement.
+  **Défaut trouvé en vérifiant et corrigé** : les formats d'un centre s'affichaient dans l'ordre de ses terrains (9V9 avant 5V5 quand
+  le 9v9 est ajouté au premier terrain) — ils sont désormais triés du plus petit au plus grand (`availabilityMerge.ts`,
+  `venueCatalog.ts`, +2 tests). App joueur : 338 tests.
+- **Vérification en vrai** (base de démo, Green Arena Sport) : CRM (FR) — 9v9 choisi sans tarif → refusé ; avec 9 000 DA/h → ajouté, sans
+  bande ; app (FR, AR) — Réserver → 9V9 à 13 500 DA (1 h 30) → réservé → « Créer mon match » → publié → fiche à 18 places et 750 DA
+  chacun ; W4 avec les six formats (FR, AR). Nettoyage : match et réservation annulés, format retiré du terrain. Aucune erreur console.
+  Le CRM n'a été capturé qu'en français (l'écran Tarifs n'a pas changé de mise en page : une option de plus dans une liste).
+- **Tests** : **core 196 · API 1113** (+2 `format-9v9`, +2 `migrations-retour` ; 102 fichiers, tous verts) **· CRM 95 · app joueur 338** ;
+  typecheck propre sur les 5 paquets.
+- **Board visuel** : 65 écrans (seuls les trois écrans jamais atteints d'avant manquent). Le board dépendait de l'heure du passage : en soirée,
+  il réservait un créneau du jour à moins de 2 h (l'app retire alors « Créer mon match », à juste titre) et le fil du jour pouvait être
+  vide ou ne montrer que son propre match. `tools/ui-board/src/capture.mjs` réserve désormais toujours DEMAIN et ouvre le premier match
+  qui n'est pas le sien (le jour suivant si le fil du jour est vide). Base de développement : aucune ligne en 9v9 ni aucun match libre
+  n'y reste après les essais.
+- **Question ouverte pour Aymen** : les anciennes apps (iPhone 1.0 et 1.0.1, Android 1.0.4) ne connaissent pas le 9v9. Leur réaction
+  si un centre l'active n'a pas été vérifiée : le leur cacher (comme le match libre) ou le tester d'abord sur un téléphone.

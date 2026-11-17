@@ -102,9 +102,9 @@ export function createMatch(p: CreateMatchInput):
 
 /** Durées proposées (planche W3 : 1 h, 1 h 30, 2 h), en minutes. */
 export const FREE_MATCH_DURATIONS_MIN = [60, 90, 120] as const;
-/** Formats d'un match libre par sport (planche W4) — le 9v9 viendra avec sa propre phase. */
+/** Formats d'un match libre par sport (planche W4 : 5V5, 6V6, 7V7, 8V8, 9V9, 11V11). */
 export const FREE_MATCH_FORMATS: Readonly<Partial<Record<Match['sport'], readonly MatchFormat[]>>> = {
-  FOOTBALL: ['5v5', '6v6', '7v7', '8v8', '11v11'],
+  FOOTBALL: ['5v5', '6v6', '7v7', '8v8', '9v9', '11v11'],
   PADEL: ['SIMPLE', 'DOUBLE'],
 };
 /** Pas des heures de début (planche W3 : par 30 minutes). */

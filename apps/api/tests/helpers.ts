@@ -201,7 +201,7 @@ export async function insertTestField(
   db: Db,
   values: {
     venue_id: string; name: string; sport: 'FOOTBALL' | 'PADEL' | 'BASKET';
-    formats: Array<'5v5' | '6v6' | '7v7' | '8v8' | '11v11' | 'DOUBLE' | 'SIMPLE' | '3v3'>;
+    formats: Array<'5v5' | '6v6' | '7v7' | '8v8' | '9v9' | '11v11' | 'DOUBLE' | 'SIMPLE' | '3v3'>;
     hourly_rate_da: number; status?: 'ACTIVE' | 'MAINTENANCE' | 'ARCHIVED';
   },
 ): Promise<{ id: string }> {

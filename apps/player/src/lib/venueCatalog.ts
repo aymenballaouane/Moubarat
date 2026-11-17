@@ -43,5 +43,7 @@ export function formatChoicesFor(fields: readonly VenueField[]): FormatChoice[] 
       out.push({ value: format, capacity: FORMAT_CAPACITY[format] });
     }
   }
-  return out;
+  // Du plus petit au plus grand (5V5, 7V7, 9V9…), quel que soit l'ordre des terrains et des formats en base — phase 9v9 : un format ajouté
+  // après coup (le 9v9) ne doit pas passer devant les autres. Tri stable : à capacité égale, l'ordre d'origine.
+  return out.sort((a, b) => a.capacity - b.capacity);
 }

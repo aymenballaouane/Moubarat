@@ -14,11 +14,12 @@ import type { TimeRange } from './time.js';
 
 export type Sport = 'FOOTBALL' | 'PADEL' | 'BASKET';
 
-export type MatchFormat = '5v5' | '6v6' | '7v7' | '8v8' | '11v11' | 'DOUBLE' | 'SIMPLE' | '3v3';
+/** '9v9' : lot « Match libre », phase 9v9 (17/11/2026, GO d'Aymen du 16/11/2026) — 18 joueurs, migration 0048. */
+export type MatchFormat = '5v5' | '6v6' | '7v7' | '8v8' | '9v9' | '11v11' | 'DOUBLE' | 'SIMPLE' | '3v3';
 
 /** Capacité en joueurs par format — contrainte serveur, pas décorative. */
 export const FORMAT_CAPACITY: Record<MatchFormat, number> = {
-  '5v5': 10, '6v6': 12, '7v7': 14, '8v8': 16, '11v11': 22,
+  '5v5': 10, '6v6': 12, '7v7': 14, '8v8': 16, '9v9': 18, '11v11': 22,
   DOUBLE: 4, SIMPLE: 2, '3v3': 6,
 };
 

@@ -890,6 +890,13 @@ pare-feu qui filtrerait les en-têtes inconnus ferait disparaître les matchs li
 à exécuter à la main avec psql (commande en tête du fichier). Il refuse de s'exécuter tant qu'un match libre existe : à
 trancher avec Aymen avant (annuler ces matchs et prévenir leurs inscrits). Le migrateur ne lit jamais ce dossier `retour/`.
 
+**Format 9v9** (migration 0048, même lot, phase 9v9) : une valeur ajoutée au type `match_format`, sans coupure ; aucun terrain ne le
+propose tant qu'un centre ne l'ajoute pas dans le CRM avec un tarif qu'il saisit. Retour arrière à la main :
+`apps/api/migrations/retour/0048_format_9v9.sql` (refusé tant qu'une ligne utilise le 9v9). Les deux scripts de retour sont joués
+par les tests (`apps/api/tests/migrations-retour.test.ts`). Les anciennes apps (iPhone 1.0, 1.0.1, Android 1.0.4) ne connaissent pas
+le 9v9 : elles l'affichent tel quel (« 9v9 ») là où elles affichent un format reçu du serveur — à vérifier sur un téléphone avant
+qu'un centre réel ne l'active.
+
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 
 Chaque point ci-dessous a été soit vérifié (test automatisé, ou vérification manuelle décrite),

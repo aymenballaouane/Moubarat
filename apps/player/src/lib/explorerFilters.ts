@@ -26,7 +26,7 @@ export const LEVEL_CHOICES: readonly { value: string; label: string }[] = [
 ];
 
 /** Formats du football proposés par « Quel format ? » (masqué pour le padel, dont les formats sont d'une autre famille). */
-export const FORMAT_CHOICES: readonly string[] = ['5v5', '6v6', '7v7', '8v8', '11v11'];
+export const FORMAT_CHOICES: readonly string[] = ['5v5', '6v6', '7v7', '8v8', '9v9', '11v11'];   // 9v9 : phase 9v9 du lot « Match libre »
 
 /** « Quand ? » → ce que l'écran sait déjà faire : un filtre rapide et/ou un jour du bandeau. `todayStart` / `tomorrowStart` = début (ms) des
     deux premiers jours du rail. « Aujourd'hui » est le jour d'aujourd'hui du bandeau (Lot 5 : l'Explorer s'ouvre dessus, comme la maquette). */
