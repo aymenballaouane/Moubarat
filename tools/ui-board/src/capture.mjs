@@ -529,10 +529,11 @@ async function run() {
           // Vue organisateur (Lot 7, OrgaMatch.dc.html) : « Voir le match », puis le groupe WhatsApp et le mot aux joueurs.
           await p.click('#s-creer-publie .cr-ghost');
           await capture(p, { id: 'match-organizer', label: 'Vue organisateur — Tu organises', journey: 'organiser', surface: 'player', path: 'Ton match est en ligne → Voir le match', waitFor: '#s-mymatch' });
-          await p.locator('#s-mymatch .og-act').nth(2).click().catch(() => {});
+          // Lot « Match libre », phase 3 (Dv3) : « Gérer le match » = lien, groupe WhatsApp, annulations ; « Modifier » ouvre le mot aux joueurs.
+          await p.locator('#s-mymatch .mv-act:has-text("WhatsApp")').first().click().catch(() => {});
           await capture(p, { id: 'match-group-sheet', label: 'Groupe WhatsApp du match', journey: 'organiser', surface: 'player', path: 'Gérer le match → Ajouter un groupe WhatsApp', waitFor: '.mb-sheet' });
           await p.click('.mb-sheet .xp-cob__close').catch(() => {});
-          await p.locator('#s-mymatch .og-act').nth(0).click().catch(() => {});
+          await p.locator('#s-mymatch .mv-sec__head .mv-link').first().click().catch(() => {});
           await capture(p, { id: 'match-note', label: 'Ton mot aux joueurs', journey: 'organiser', surface: 'player', path: 'Gérer le match → Modifier ton mot aux joueurs', waitFor: '#s-mymatch-note' });
           await p.click('#s-mymatch-note button[aria-label="Retour"]').catch(() => {});
           // La page du lien (LienMatch.dc.html) : lue SANS compte, dans un contexte neuf.
@@ -628,14 +629,15 @@ async function run() {
     if (await matchCard.count()) {
       await matchCard.click();
       await capture(p, { id: 'match-detail', label: 'Détail du match (rejoindre)', journey: 'rejoindre', surface: 'player', path: 'Explorer › Matchs → ouvrir un match', waitFor: '#s-detail, #s-mymatch' });
-      // Lot 7 : « Rejoindre le match » → « Choisis ton équipe » → le ticket « TU JOUES » → « Tu te désinscris ? ».
+      // Lot « Match libre », phase 3 (Dv1 → Dv5 → Dv2) : toucher un « + » choisit l'équipe, « Rejoindre l'équipe A » inscrit,
+      // puis « Tu joues · équipe A » et « Se désinscrire ». La feuille « Choisis ton équipe » n'existe plus.
       try {
-        if (await p.locator('#s-detail .md-cta').first().count()) {
-          await p.click('#s-detail .md-cta >> text=/Rejoindre/');
-          await capture(p, { id: 'match-team-sheet', label: 'Choisis ton équipe', journey: 'rejoindre', surface: 'player', path: 'Détail du match → Rejoindre le match', waitFor: '.md-opts' });
-          await p.click('.mb-sheet .mb-btn--block:not(.mb-btn--danger)');
-          await capture(p, { id: 'match-ticket', label: 'Le ticket — Tu joues', journey: 'rejoindre', surface: 'player', path: 'Choisis ton équipe → Je rejoins', waitFor: '#s-detail[data-view="ticket"]' });
-          await p.click('#s-detail .md-cta--ghost').catch(() => {});
+        if (await p.locator('#s-detail .mv-cta').first().count()) {
+          await p.locator('#s-detail button.mv-slot--plus').first().click();
+          await capture(p, { id: 'match-team-sheet', label: 'Choisir son équipe (un « + » touché)', journey: 'rejoindre', surface: 'player', path: 'Détail du match → toucher un « + »', waitFor: '#s-detail .mv-slot--me' });
+          await p.click('#s-detail .mv-cta');
+          await capture(p, { id: 'match-ticket', label: 'Tu joues', journey: 'rejoindre', surface: 'player', path: 'Rejoindre l’équipe → inscrit', waitFor: '#s-detail[data-view="ticket"]' });
+          await p.click('#s-detail .mv-leave').catch(() => {});
           await capture(p, { id: 'match-leave-sheet', label: 'Tu te désinscris ?', journey: 'rejoindre', surface: 'player', path: 'Ticket → Se désinscrire', waitFor: '.mb-sheet' });
           await p.click('.mb-sheet .mb-btn--block:not(.mb-btn--danger)').catch(() => {});
         } else notReached.push({ id: 'match-team-sheet', reason: 'pas de bouton « Rejoindre le match » sur ce match (complet ou fermé)' });

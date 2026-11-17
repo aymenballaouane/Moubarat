@@ -1,0 +1,172 @@
+/* Détail du match (lot « Match libre », phase 3) — mesures et couleurs reprises des planches Dv1 à Dv9, Dp1, Dp2, Dt3 (dossier §4 et
+   §7). Variables de l'app réutilisées quand elles existent. Positions logiques (début / fin) : l'arabe se lit en miroir (Ar-Dv1, Ar-Dv3). */
+
+.mv { display: flex; flex-direction: column; min-height: 100%; background: var(--ink); color: var(--text); }
+.mv-pad { padding: 8px 22px 0; display: flex; flex-direction: column; gap: 12px; }
+
+/* --- Bande (160 px) --- */
+.mv-band { position: relative; height: 160px; flex: none; overflow: hidden; background: #0E141D; }
+.mv-band__logo { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(160deg, #3A0C04 0%, #0A0202 65%); }
+.mv-band__veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,.55) 0, rgba(10,10,15,0) 35%, rgba(10,10,15,0) 68%, var(--ink) 100%); }
+.mv-band__top { position: absolute; top: 16px; inset-inline: 16px; display: flex; align-items: center; justify-content: space-between; }
+.mv-band__right { display: flex; gap: 8px; }
+.mv-round {
+  width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line); background: rgba(0,0,0,.66); color: #fff;
+  display: flex; align-items: center; justify-content: center; padding: 0; flex: none; cursor: pointer;
+}
+.mv-round .mb-ic { width: 18px; height: 18px; }
+[dir="rtl"] .mv-round svg:has(> use[href="#i-back"]) { transform: scaleX(-1); }
+.mv-partner {
+  position: absolute; inset-inline-start: 22px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+  border-radius: 999px; background: rgba(10,10,15,.78); border: 1px solid rgba(0,200,150,.40); font-size: 12px; font-weight: 700; color: var(--text);
+}
+.mv-partner__ic { width: 14px; height: 14px; color: var(--success); }
+
+/* --- Date et heure --- */
+.mv-when { display: flex; align-items: center; gap: 18px; }
+.mv-cal { width: 104px; height: 112px; border-radius: 16px; overflow: hidden; background: var(--ink-2); border: 1px solid var(--line); display: flex; flex-direction: column; flex: none; }
+.mv-cal__month { height: 28px; background: var(--primary); color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 1.6px; display: flex; align-items: center; justify-content: center; }
+.mv-cal__day { flex: 1; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 60px; line-height: 60px; }
+.mv-cal__wd { height: 24px; font-size: 13px; font-weight: 700; letter-spacing: 1.4px; color: var(--text-2); display: flex; align-items: center; justify-content: center; }
+[dir="rtl"] .mv-cal__month, [dir="rtl"] .mv-cal__wd { letter-spacing: 0; }
+.mv-when__txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mv-count { align-self: flex-start; font-size: 13px; font-weight: 700; color: var(--success); background: rgba(0,200,150,.12); border-radius: 999px; padding: 4px 10px; }
+.mv-hour { font-family: var(--font-display); font-size: 76px; line-height: 70px; }
+.mv-until { font-size: 15px; color: var(--text-2); }
+
+/* --- Lieu --- */
+.mv-place { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+.mv-tags { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; letter-spacing: 1.2px; color: var(--text-2); }
+[dir="rtl"] .mv-tags { letter-spacing: 0; }
+.mv-level { display: inline-flex; align-items: center; gap: 6px; }
+.mv-name { margin: 0; font-family: var(--font-display); font-size: 36px; line-height: 36px; font-weight: 400; }
+.mv-addr { display: flex; align-items: center; gap: 10px; }
+.mv-addr__ic { width: 18px; height: 18px; color: var(--text-2); flex: none; }
+.mv-addr__txt { font-size: 15px; color: var(--text-2); min-width: 0; flex: 1; }
+.mv-route {
+  margin-inline-start: auto; height: 36px; padding: 0 12px 0 10px; border-radius: 8px; border: 1px solid var(--line-strong); color: var(--text);
+  font-size: 14px; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 6px; flex: none; position: relative;
+}
+
+/* --- Prix --- */
+.mv-price { display: flex; align-items: center; gap: 12px; padding: 0 16px; height: 48px; border-radius: 14px; background: rgba(0,200,150,.08); border: 1px solid rgba(0,200,150,.28); }
+.mv-price__ic { width: 22px; height: 22px; color: var(--success); flex: none; }
+.mv-price__txt { font-size: 17px; font-weight: 700; }
+.mv-price__sub { font-size: 14px; font-weight: 500; color: var(--text-2); margin-inline-start: 8px; }
+
+/* --- Terrain --- */
+.mv-pitch-wrap { display: flex; flex-direction: column; gap: 8px; }
+.mv-pitch { position: relative; width: 100%; border-radius: 14px; overflow: hidden; }
+.mv-pitch--h { background: repeating-linear-gradient(90deg, #0F4A2E 0 12.5%, #0C3E26 12.5% 25%); }
+.mv-pitch--v { background: repeating-linear-gradient(180deg, #0F4A2E 0 12.5%, #0C3E26 12.5% 25%); }
+.mv-pitch__lines { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: rgba(245,247,250,.5); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.mv-pitch__lines * { vector-effect: non-scaling-stroke; }
+.mv-pitch__circle { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; transform: translate(-50%, -50%); border-radius: 999px; border: 1.5px solid rgba(245,247,250,.5); }
+.mv-team { position: absolute; top: 10px; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--text-2); }
+[dir="rtl"] .mv-team { letter-spacing: 0; }
+.mv-team--a { inset-inline-start: 14px; }
+.mv-team--b { inset-inline-end: 14px; }
+.mv-team--bottom { top: auto; bottom: 10px; inset-inline-end: auto; inset-inline-start: 14px; }
+.mv-slot {
+  position: absolute; width: 40px; height: 40px; border-radius: 999px; box-sizing: border-box; padding: 0; font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink-4); border: 1px solid rgba(245,247,250,.35); box-shadow: 0 2px 6px rgba(0,0,0,.35); font-size: 16px; font-weight: 600; color: var(--text);
+}
+.mv-slot--me { border: 2px solid var(--primary); box-shadow: 0 0 0 3px var(--ink); font-size: 13px; font-weight: 700; }
+.mv-slot--plus { background: rgba(10,10,15,.45); border: 2px dashed rgba(245,247,250,.75); box-shadow: none; font-size: 20px; font-weight: 700; }
+button.mv-slot--plus { cursor: pointer; }
+button.mv-slot--plus:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.mv-help {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: 7px; white-space: nowrap; background: rgba(6,28,18,.88);
+  padding: 2px 10px; border-radius: 6px; font-size: 12px; color: var(--text-2);
+}
+.mv-help-below { margin: -4px 0 0; text-align: center; font-size: 12px; color: var(--text-2); }
+
+/* --- Organisateur et son mot --- */
+.mv-org { display: flex; align-items: flex-start; gap: 10px; }
+.mv-org__av { width: 34px; height: 34px; border-radius: 999px; background: var(--ink-4); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex: none; }
+.mv-org__col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mv-org__who { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.mv-org__mot { padding: 12px 14px; border-radius: 4px 16px 16px 16px; background: var(--ink-2); border: 1px solid var(--line); font-size: 15px; line-height: 22px; color: var(--text); overflow-wrap: anywhere; }
+[dir="rtl"] .mv-org__mot { border-radius: 16px 4px 16px 16px; }
+
+/* --- Appeler --- */
+.mv-call { padding: 12px 14px; border-radius: 16px; background: var(--ink-2); border: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+.mv-call__col { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.mv-call__lbl { font-size: 13px; line-height: 18px; color: var(--text-2); }
+.mv-call__num { font-size: 20px; font-weight: 700; line-height: 28px; letter-spacing: .5px; }
+.mv-callbtn {
+  height: 44px; border-radius: 12px; border: 1px solid rgba(0,200,150,.45); background: rgba(0,200,150,.12); color: var(--success);
+  font-size: 14px; font-weight: 700; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; flex: none; text-decoration: none;
+}
+.mv-callbtn .mb-ic { width: 18px; height: 18px; }
+.mv-wa { align-self: flex-start; }
+
+/* --- Blocs de l'organisateur --- */
+.mv-sec { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+.mv-sec__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.mv-sec__head h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.mv-sec__note { font-size: 13px; color: var(--text-2); }
+.mv-box { border-radius: 16px; background: var(--ink-2); border: 1px solid var(--line); overflow: hidden; }
+.mv-prow { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.mv-prow:last-child { border-bottom: 0; }
+.mv-prow__av { width: 36px; height: 36px; border-radius: 999px; background: var(--ink-4); border: 1px solid var(--line-strong); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex: none; }
+.mv-prow__col { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.mv-prow__who { font-size: 14px; line-height: 20px; color: var(--text-2); }
+.mv-prow__num { font-size: 18px; font-weight: 700; line-height: 24px; letter-spacing: .4px; }
+.mv-prow__abs { height: 44px; border-radius: 12px; border: 1px solid var(--line-strong); background: transparent; color: var(--text); font: inherit; font-size: 14px; font-weight: 700; padding: 0 14px; cursor: pointer; }
+.mv-link { background: transparent; border: 0; color: var(--text-2); font-size: 14px; font-weight: 600; font-family: inherit; text-decoration: underline; min-height: 44px; padding: 0 4px; cursor: pointer; }
+.mv-note { padding: 14px 16px; border-radius: 12px; background: var(--ink-2); border: 1px solid var(--line); font-size: 15px; line-height: 22px; overflow-wrap: anywhere; }
+.mv-vis { border-radius: 16px; background: var(--ink-2); border: 1px solid var(--line); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.mv-vis__q { font-size: 15px; font-weight: 600; }
+.mv-seg { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--ink); border: 1px solid var(--line); }
+.mv-seg button {
+  flex: 1; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--text-2); font-size: 14px; font-weight: 700; font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0; cursor: pointer;
+}
+.mv-seg button[aria-pressed="true"] { border: 1px solid rgba(255,43,0,.45); border-bottom: 3px solid var(--primary); background: rgba(255,43,0,.14); color: var(--primary-glow); }
+.mv-seg .mb-ic { width: 16px; height: 16px; }
+.mv-vis__txt { font-size: 14px; line-height: 20px; color: var(--text-2); }
+.mv-act {
+  width: 100%; min-height: 56px; display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: transparent; border: 0;
+  border-bottom: 1px solid var(--line); color: var(--text); font-size: 16px; font-family: inherit; text-align: start; cursor: pointer;
+}
+.mv-act:last-child { border-bottom: 0; }
+.mv-act .mb-ic { width: 20px; height: 20px; color: var(--text-2); flex: none; }
+.mv-act__t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mv-act__t small { font-size: 12px; color: var(--text-3); }
+.mv-act--danger, .mv-act--danger .mb-ic { color: var(--danger); }
+[dir="rtl"] .mv-act__chev { transform: scaleX(-1); }
+
+/* --- Barre du bas --- */
+.mv-foot {
+  position: sticky; bottom: 0; margin-top: auto; border-top: 1px solid var(--line); background: var(--ink); padding: 12px 16px 22px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; z-index: 5;
+}
+.mv-cta {
+  height: 56px; border-radius: 12px; border: 0; background: var(--primary); color: #fff; font-size: 16px; font-weight: 600; font-family: inherit;
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0; cursor: pointer; text-decoration: none;
+}
+.mv-cta:disabled { opacity: .6; cursor: default; }
+.mv-cta .mb-ic { width: 20px; height: 20px; }
+.mv-full { height: 56px; border-radius: 12px; border: 1px solid rgba(138,148,166,.20); background: var(--ink-3); color: #A8B1C0; font-size: 16px; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; }
+.mv-going { height: 56px; border-radius: 12px; background: rgba(0,200,150,.12); border: 1px solid rgba(0,200,150,.45); color: var(--success); width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 700; }
+.mv-going .mb-ic { width: 20px; height: 20px; }
+.mv-leave { background: transparent; border: 0; color: var(--danger); font-size: 14px; font-weight: 600; font-family: inherit; text-decoration: underline; min-height: 44px; padding: 0 14px; margin-top: 2px; cursor: pointer; }
+.mv-foot__line { font-size: 13px; line-height: 20px; color: var(--text-2); text-align: center; }
+.mv-foot__line--late { color: var(--danger); }
+.mv-closed { font-size: 14px; color: var(--text-2); padding: 12px 0; text-align: center; }
+.mv-spacer { height: 20px; }
+
+/* --- « Passer ce match en privé ? » (Dt3) --- */
+.mv-sec__title { margin: 0; font-size: 16px; font-weight: 600; }
+.mv-dt3 {
+  background: var(--ink-3); border-top: 1px solid var(--line-strong); border-radius: 20px 20px 0 0; padding: 12px 22px 22px;
+  display: flex; flex-direction: column; align-items: center; box-sizing: border-box;
+}
+.mv-dt3__grab { width: 40px; height: 4px; border-radius: 2px; background: rgba(138,148,166,.40); margin-bottom: 20px; }
+.mv-dt3__ic { width: 52px; height: 52px; border-radius: 999px; background: rgba(255,43,0,.14); color: var(--primary-glow); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.mv-dt3__ic .mb-ic { width: 24px; height: 24px; }
+.mv-dt3__title { margin: 0 0 14px; font-size: 20px; font-weight: 700; line-height: 26px; text-align: center; }
+.mv-dt3__body { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; font-size: 15px; line-height: 22px; color: var(--text-2); text-align: center; }
+.mv-keep { background: transparent; border: 0; color: var(--text-2); font-size: 15px; font-weight: 600; font-family: inherit; min-height: 48px; padding: 0 14px; margin-top: 4px; cursor: pointer; }

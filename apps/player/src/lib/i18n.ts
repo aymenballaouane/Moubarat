@@ -76,3 +76,25 @@ export function useTn(): (key: string, n: number) => string {
   const lang = useLang();
   return (key: string, n: number) => pluralText(key, n, lang);
 }
+
+/* --- Compte à rebours et durée du détail du match (lot « Match libre », phase 3, dossier §7 et §9) ------------------------------- */
+
+const DUREES = (translations as unknown as { durees: Record<string, { fr: string; ar: string } | string> }).durees;
+
+/** « 1 h 30 » / « ساعة ونصف » ; une durée hors de la liste s'écrit en chiffres (« 1 h 15 »). */
+export function durationText(minutes: number, lang: Lang): string {
+  const d = DUREES[String(minutes)];
+  if (d && typeof d === 'object') return lang === 'ar' ? d.ar : d.fr;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} h` : h === 0 ? `${m} min` : `${h} h ${String(m).padStart(2, '0')}`;
+}
+
+/** « Dans 4 jours », « Dans 1 h 40 », « Dans 2 h », « Dans 50 min » ; en arabe « بعد 4 أيام », « بعد ساعة و40 دقيقة », « بعد 50 دقيقة ». */
+export function countdownText(c: { kind: 'days'; n: number } | { kind: 'hm'; h: number; m: number } | { kind: 'min'; n: number }, lang: Lang): string {
+  if (c.kind === 'days') return pluralText('Dans {n} jours', c.n, lang);
+  const dans = translate('Dans', lang);
+  if (c.kind === 'min') return `${dans} ${pluralText('{n} min', c.n, lang)}`;
+  if (lang === 'ar') return `${dans} ${pluralText('{n} h', c.h, lang)}${c.m > 0 ? ` و${pluralText('{n} min', c.m, lang)}` : ''}`;
+  return `${dans} ${c.h} h${c.m > 0 ? ` ${String(c.m).padStart(2, '0')}` : ''}`;
+}

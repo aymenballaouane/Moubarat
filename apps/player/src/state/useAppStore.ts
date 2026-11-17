@@ -939,6 +939,15 @@ export function useAppStore() {
         return { ok: true };
       } catch (e) { return actionResultFromError(e); }
     },
+    /** Lot « Match libre » (Dv3, Dt3) : « Qui peut voir ce match ? » — l'organisateur le passe en privé (hors des listes, rejoint par le
+        lien) ou le rend public. Le serveur tranche (organisateur seul, avant le coup d'envoi). */
+    setMatchVisibility: async (matchId: string, visibility: 'OPEN' | 'PRIVATE'): Promise<ActionResult> => {
+      try {
+        await apiFetch(`/matches/${matchId}/visibility`, { method: 'PUT', token, body: { visibility } });
+        await refreshMatchDetail(matchId);
+        return { ok: true };
+      } catch (e) { return actionResultFromError(e); }
+    },
     /** Règle 10 : le groupe WhatsApp du match (lien https://chat.whatsapp.com/…) ; `null` le retire. */
     setWhatsappGroup: async (matchId: string, url: string | null): Promise<ActionResult> => {
       try {

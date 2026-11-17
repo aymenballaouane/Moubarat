@@ -6438,3 +6438,39 @@ autres sessions est revenu sur `correctifs/lot-1`. Aucun changement du core, de 
   pour montrer une journée remplie (`.claude/captures/match-libre/phase-2/`, hors git) ; aucune erreur console ; « Voir les autres
   jours » vérifié en direct. Le board visuel (`pnpm ui:board`) n'a PAS été relancé : il régénère les données de démo — accord
   d'Aymen demandé.
+
+### Phase 3 — « Détail du match » (branche `match-libre/phase-3-detail`, 17/11/2026)
+
+Partie de la phase 2, dans la même copie séparée. Aucun changement du core, de l'API ni de la base : l'écran utilise les routes déjà là
+(rejoindre sans équipe, changer d'équipe, se désinscrire, numéros autorisés, mot, groupe WhatsApp, annulations) et celle de la phase 1
+(`PUT /matches/:id/visibility`).
+
+- **Un seul écran, joueur et organisateur** (planches Dv1 à Dv9, Dp2, Dt3) : `MatchHead.tsx` (bande de 160 px — logo Moubarat sur fond
+  rouge sombre tant qu'il n'y a pas de photo, phase 6 —, retour / partager / « Plus » = signaler, badge « Centre partenaire », calendrier,
+  compte à rebours « Dans 4 jours » → « Dans 1 h 40 » → « Dans 50 min », heure, « jusqu'à 21:00 · 1 h 30 », « FOOT · 5V5 · LOISIR »,
+  nom, adresse, « Itinéraire », « 410 DA chacun · à payer sur place ») et `MatchPitch.tsx` (terrain vert « Forêt », A / B, ronds,
+  « + », « Toi » cerclé de rouge ; horizontal jusqu'à 6 par équipe, vertical au-delà — positions des planches Dv1 / Dv4 / Fmt-Vue,
+  `lib/matchView.ts`). Arabe en miroir ; noms, heures, numéros isolés (`lib/fillNodes.ts`) ; texte libre (mot de l'organisateur) dans son
+  propre sens (`dir="auto"`).
+- **Joueur** (`MatchDetail.tsx`) : « Rejoindre le match » sans choix d'équipe (le serveur place dans la moins remplie) ; un « + » choisit
+  l'équipe (Dv5) ; inscrit, un « + » de l'autre équipe y fait passer (Dv2) ; « Tu joues · équipe B », « Se désinscrire », « Libre jusqu'à
+  17:30 » ou, à moins de 2 h, le texte rouge de la demi-absence (Dv7, Dv8) ; « Appeler l'organisateur » avec son numéro une fois inscrit
+  (si l'organisateur a l'accord « numéro visible ») ; match complet : bloc gris (Dv6). Retirés de cet écran : le « ticket », la feuille
+  « Choisis ton équipe » (`ChooseTeamSheet` supprimée), « D'autres matchs ce soir », la distance, et l'affichage de « M'alerter si une
+  place se libère » (décision d'Aymen ; la fonction serveur reste). Le groupe WhatsApp, quand l'organisateur en a ajouté un, reste
+  proposé à l'inscrit (règle 10 ; absent des planches parce qu'aucun groupe n'y est ajouté).
+- **Organisateur** (`OrganizerMatchView.tsx`) : « Joueurs inscrits » (nom · équipe, numéro, « Appeler » ; « Numéros visibles par toi
+  seul »), « Ton mot aux joueurs » + « Modifier », « Gérer le match » (« Qui peut voir ce match ? » Public / Privé — passer en privé
+  ouvre la confirmation Dt3, revenir en public non —, copier le lien, groupe WhatsApp, annuler le match, annuler la réservation),
+  « Trouver N joueurs ». Retirés : « TU ORGANISES », la jauge, et le bouton « Retirer » un joueur (absent de Dv3 — **question posée à
+  Aymen** ; la route serveur et la règle 8 restent). Après le match : « Absent » (règle 25) à la place de « Appeler ».
+- **Textes** : 34 textes arabes repris tels quels de `fr-ar-match-libre.json` ; « jusqu'à {fin} · {duree} » dérivé du texte
+  « jusqu'à {fin} · 1 h 30 » du même fichier. **Provisoires, à relire** (formes absentes du fichier) : « Dans {n} jours » (1, 2, 11+),
+  « {n} h » (2, 3-10, 11+), « {n} min » (1, 2, 3-10), les durées « 1 h » (ساعة) et « 2 h » (ساعتان), le mot « Dans » (بعد). Mois et jour
+  de la semaine en arabe : ceux du navigateur (`ar-DZ` : نوفمبر, الجمعة), comme sur la planche Ar-Dv1.
+- **Tests** : `matchView.test.ts` (10 : positions des planches Dv1 / Dv4, aucune place hors du terrain, compte à rebours et durées FR / AR
+  des maquettes, numéro affiché, phrases d'aide Dv1 à Dv9). App joueur : 322 tests.
+- **Vérification** : captures FR et AR de Dv1, Dv2, Dv4, Dv5, Dv7, Dv8, Dv9, Dt3 sur la base de démo (horloge du navigateur réglée pour
+  Dv7 / Dv8) ; aucune erreur console. Défauts trouvés et corrigés en vérifiant : en arabe, la page débordait de 21 px (deux règles de
+  zone tactile en conflit avec celle du design system, retirées — `.mb-tap` garantit déjà 44 px) ; un nom latin dans une phrase arabe
+  voyait son point sauter de l'autre côté. Dv6 (match complet) non capturé : aucun match complet dans la démo ; couvert par les tests.

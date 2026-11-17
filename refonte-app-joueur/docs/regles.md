@@ -17,9 +17,9 @@ Aucune autre règle ne change.
 1. Un match naît toujours d’une réservation. L’organisateur est inscrit d’office. — *inchangée*
 2. Le format est choisi à la réservation et ne change plus. Un match ne change jamais de format. — *inchangée*
 3. Une seule place par joueur. On choisit son équipe (sa paire au padel), pas son poste. Changement d’équipe possible jusqu’au coup d’envoi (H-1 jusqu’au 16/11/2026, voir règle 4). D’après la phase 0, ce n’est pas encore codé : à construire. À l’écran (lot « Match libre » : l’écran change en phase 3, rejoindre sans choisir place le joueur dans l’équipe la moins remplie, A à égalité) :
-   - « Rejoindre le match » ouvre le panneau « Choisis ton équipe », où l’équipe qui a le plus de places est choisie par défaut ;
-   - toucher un « + » dans une équipe fait rejoindre cette équipe directement ;
-   - une fois inscrit, « Changer jusqu’à H-1 » rouvre le panneau pour passer dans l’autre équipe, s’il y reste une place.
+   - « Rejoindre le match » ne demande aucune équipe : le joueur est placé dans l’équipe la moins remplie (A à égalité) — lot « Match libre », phase 3, planche Dv1 ; le panneau « Choisis ton équipe » est retiré ;
+   - toucher un « + » choisit cette équipe (le « + » devient « Toi », le bouton devient « Rejoindre l’équipe A », Dv5) ;
+   - une fois inscrit, toucher un « + » de l’autre équipe y fait passer directement (Dv2), jusqu’au coup d’envoi.
 
    — *nouvelle*
 4. Deux verrous :

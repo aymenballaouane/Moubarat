@@ -963,7 +963,41 @@
     "Jouer": "العب",
     "Plus que 1 place": "بقي مكان واحد",
     "Voir les autres jours": "عرض الأيام الأخرى",
-    "Fin des matchs d’aujourd’hui": "انتهت مباريات اليوم"
+    "Fin des matchs d’aujourd’hui": "انتهت مباريات اليوم",
+    "Centre partenaire": "مركز شريك",
+    "{prix} DA chacun": "{prix} دج للاعب",
+    "· à payer sur place": "· تُدفع في المكان",
+    "ÉQUIPE A": "الفريق A",
+    "ÉQUIPE B": "الفريق B",
+    "Toi": "أنت",
+    "Tu peux choisir ton équipe : touche un « + »": "يمكنك اختيار فريقك: المس علامة «+»",
+    "Touche un « + » pour changer d’équipe": "المس علامة «+» لتغيير فريقك",
+    "Touche un autre « + » pour changer d’équipe": "المس علامة «+» أخرى لتغيير فريقك",
+    "{nom} · organisateur": "{nom} · المنظّم",
+    "Rejoindre l’équipe A": "انضم إلى الفريق A",
+    "Rejoindre l’équipe B": "انضم إلى الفريق B",
+    "Ton numéro sera visible par l’organisateur": "سيظهر رقمك للمنظّم",
+    "Désinscription libre jusqu’à {heure}": "الانسحاب حرّ حتى {heure}",
+    "Libre jusqu’à {heure}": "الانسحاب حرّ حتى {heure}",
+    "Tu joues · équipe {x}": "أنت تلعب · الفريق {x}",
+    "Appeler l’organisateur": "اتصل بالمنظّم",
+    "Partir maintenant compte comme une demi-absence": "الانسحاب الآن يُحتسب نصف غياب",
+    "Joueurs inscrits": "اللاعبون المسجّلون",
+    "Numéros visibles par toi seul": "الأرقام ظاهرة لك وحدك",
+    "{nom} · équipe {x}": "{nom} · الفريق {x}",
+    "Qui peut voir ce match ?": "من يمكنه رؤية هذه المباراة؟",
+    "Public": "مفتوحة للجميع",
+    "Privé": "بالدعوة",
+    "Tout le monde peut le voir et le rejoindre.": "يمكن للجميع رؤيتها والانضمام إليها.",
+    "Toutes les places sont prises": "كل الأماكن محجوزة",
+    "Match complet": "المباراة مكتملة",
+    "Si quelqu’un se désiste, une place se libère.": "إذا انسحب أحدهم، يتوفر مكان.",
+    "Passer ce match en privé ?": "جعل هذه المباراة بالدعوة فقط؟",
+    "Il disparaît de la liste des matchs.": "ستختفي من قائمة المباريات.",
+    "Les joueurs déjà inscrits gardent leur place.": "اللاعبون المسجّلون يحتفظون بأماكنهم.",
+    "Passer en privé": "اجعلها بالدعوة فقط",
+    "Garder public": "أبقِها مفتوحة للجميع",
+    "jusqu’à {fin} · {duree}": "حتى {fin} · {duree}"
   },
   "textes_provisoires_lisezmoi": "PROVISOIRE, À RELIRE PAR UN ARABOPHONE — traductions ajoutées le 26/10/2026 par Claude pour des textes SANS maquette (erreurs, toasts, états vides, écran Aide & Support, libellés de notification du core), en suivant le ton et le vocabulaire des maquettes. Ce bloc est fusionné avec « textes » par apps/player/src/lib/i18n.ts ; en cas de doublon, « textes » (les maquettes) l'emporte. Pour corriger : remplacer la valeur ici.",
   "textes_provisoires": {
@@ -1112,7 +1146,8 @@
     "Ce match est introuvable": "هذه المباراة غير موجودة",
     "Il a peut-être été retiré, ou le lien n’est plus valable.": "ربما حُذفت، أو أن الرابط لم يعد صالحًا.",
     "Moubarat ne répond pas": "مبارات لا تستجيب",
-    "Mise à jour ou panne de notre côté, ou connexion trop faible. On réessaie tout seul dans quelques secondes.": "تحديث أو عطل من جهتنا، أو اتصال ضعيف جدًا. سنعيد المحاولة تلقائيًا بعد ثوانٍ."
+    "Mise à jour ou panne de notre côté, ou connexion trop faible. On réessaie tout seul dans quelques secondes.": "تحديث أو عطل من جهتنا، أو اتصال ضعيف جدًا. سنعيد المحاولة تلقائيًا بعد ثوانٍ.",
+    "Dans": "بعد"
   },
   "par_ecran": {},
   "pluriels": {
@@ -1176,6 +1211,60 @@
         "3-10": "عرض {n} مباريات أخرى",
         "11+": "عرض {n} مباراة أخرى"
       }
+    },
+    "Dans {n} jours": {
+      "provisoire": "3-10 vient de la maquette Ar-Dv1 (« بعد 4 أيام ») ; 1, 2 et 11+ sont provisoires",
+      "fr": {
+        "1": "Dans {n} jour",
+        "autre": "Dans {n} jours"
+      },
+      "ar": {
+        "1": "بعد يوم واحد",
+        "2": "بعد يومين",
+        "3-10": "بعد {n} أيام",
+        "11+": "بعد {n} يومًا"
+      }
+    },
+    "{n} h": {
+      "provisoire": "1 vient de fr-ar-match-libre.json (« بعد ساعة و40 دقيقة ») ; 2, 3-10 et 11+ sont provisoires",
+      "fr": {
+        "1": "{n} h",
+        "autre": "{n} h"
+      },
+      "ar": {
+        "1": "ساعة",
+        "2": "ساعتين",
+        "3-10": "{n} ساعات",
+        "11+": "{n} ساعة"
+      }
+    },
+    "{n} min": {
+      "provisoire": "11+ vient de fr-ar-match-libre.json (« 40 دقيقة », « 50 دقيقة ») ; 1, 2 et 3-10 sont provisoires",
+      "fr": {
+        "1": "{n} min",
+        "autre": "{n} min"
+      },
+      "ar": {
+        "1": "دقيقة",
+        "2": "دقيقتين",
+        "3-10": "{n} دقائق",
+        "11+": "{n} دقيقة"
+      }
     }
+  },
+  "durees": {
+    "60": {
+      "fr": "1 h",
+      "ar": "ساعة"
+    },
+    "90": {
+      "fr": "1 h 30",
+      "ar": "ساعة ونصف"
+    },
+    "120": {
+      "fr": "2 h",
+      "ar": "ساعتان"
+    },
+    "_lisezmoi": "Lot « Match libre », phase 3 — durée d’un match dans « jusqu’à 21:00 · 1 h 30 » (détail du match). « 90 » vient de fr-ar-match-libre.json (« ساعة ونصف ») ; « 60 » et « 120 » sont provisoires, à relire. Une autre durée s’écrit en chiffres."
   }
 }
