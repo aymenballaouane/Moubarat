@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { hiddenFormats } from '../../lib/client-features.js';
 import { FORMAT_CAPACITY, SPORT_FORMATS, validateFieldFormats, type MatchFormat, type Sport } from '@moubarat/core';
 import type { Db } from '../../db/client.js';
 import type { PlatformGuards } from '../../auth/platform-guards.js';
@@ -130,7 +131,10 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
      jamais le fields.hourly_rate_da figé — même correctif que GET /venues/:id depuis le 16/09), note
      par centre calculée EN LOT (ratingSummaryForMany, une requête pour tous les centres, pas une par
      centre). Distance : laissée au client (lat/lng déjà fournis), pas de PostGIS à cette échelle. */
-  app.get('/venues', async (_req, reply) => {
+  app.get('/venues', async (req, reply) => {
+    // Phase 9v9 (décision d'Aymen du 17/11/2026) : une ancienne app ne reçoit jamais le 9v9 — ni format, ni prix, ni terrain qui ne propose
+    // que lui, ni centre qui n'a plus rien d'autre (lib/client-features.ts).
+    const hidden = hiddenFormats(req.headers);
     const venues = await db.selectFrom('venues').selectAll()
       .where('status', '=', 'ACTIVE').orderBy('name').execute();
     const venueIds = venues.length ? venues.map((v) => v.id) : ['00000000-0000-0000-0000-000000000000'];
@@ -157,9 +161,11 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
 
     return reply.send({
       venues: venues.filter((v) => publishable.has(v.id)).map((v) => {
-        const venueFields = fields.filter((f) => f.venue_id === v.id);
-        const venueFieldIds = new Set(venueFields.map((f) => f.id));
-        const venuePrices = formatPrices.filter((p) => venueFieldIds.has(p.field_id));
+        const venuePricesAll = formatPrices.filter((p) => fields.some((f) => f.id === p.field_id && f.venue_id === v.id));
+        const venuePrices = venuePricesAll.filter((p) => !hidden.has(p.format));
+        const venueFields = fields.filter((f) => f.venue_id === v.id)
+          .filter((f) => !venuePricesAll.some((p) => p.field_id === f.id) || venuePrices.some((p) => p.field_id === f.id));
+        if (venueFields.length === 0) return null;
         return {
           id: v.id, name: v.name, wilaya: v.wilaya, address: v.address,
           // `phone` (BUG-7, 26/09/2026) : déjà public via GET /venues/:id (décision Aymen 22/09) — servi ici aussi pour que
@@ -170,7 +176,7 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
           priceFromDa: venuePrices.length > 0 ? Math.min(...venuePrices.map((p) => p.hourly_rate_da)) : null,
           rating: ratings.get(v.id) ?? { avg: null, count: 0, visible: false },
           fields: venueFields.map((f) => ({
-            id: f.id, name: f.name, sport: f.sport, formats: f.formats,
+            id: f.id, name: f.name, sport: f.sport, formats: f.formats.filter((x) => !hidden.has(x)),
             formatPrices: venuePrices.filter((p) => p.field_id === f.id).map((p) => ({
               format: p.format, hourlyRateDa: p.hourly_rate_da,
             })),
@@ -178,7 +184,7 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
             status: f.status ?? 'ACTIVE',
           })),
         };
-      }),
+      }).filter((v) => v !== null),
     });
   });
 
@@ -225,6 +231,10 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
         db.selectFrom('field_format_prices').selectAll()
           .where('field_id', 'in', fields.map((f) => f.id)).orderBy('format').execute(),
       ]);
+      // Phase 9v9 : une ancienne app ne reçoit pas le 9v9 (format, prix, bandes), ni un terrain qui ne propose que lui.
+      const hidden = hiddenFormats(req.headers);
+      const shownFields = fields.filter((f) => !formatPrices.some((p) => p.field_id === f.id)
+        || formatPrices.some((p) => p.field_id === f.id && !hidden.has(p.format)));
       return reply.send({
         venue: {
           id: v.id, name: v.name, wilaya: v.wilaya, address: v.address,
@@ -234,17 +244,17 @@ export async function registerVenueRoutes(app: FastifyInstance, { db, guards }: 
           // remis à zéro à chaque rechargement — RECEPTION voit ce que
           // MANAGER a réglé, à chaque connexion.
           cashModuleEnabled: v.cash_module_enabled,
-          fields: fields.map((f) => ({
-            id: f.id, name: f.name, sport: f.sport, formats: f.formats,
+          fields: shownFields.map((f) => ({
+            id: f.id, name: f.name, sport: f.sport, formats: f.formats.filter((x) => !hidden.has(x)),
             hourlyRateDa: f.hourly_rate_da, surface: f.surface, sizeLabel: f.size_label,
             indoor: f.indoor, status: f.status ?? 'ACTIVE',
             /** Seule source de vérité pour les formats de ce terrain
                 (16/09/2026) — `formats` ci-dessus reste dérivé, pour l'app
                 joueur qui n'a pas besoin des prix. */
-            formatPrices: formatPrices.filter((p) => p.field_id === f.id).map((p) => ({
+            formatPrices: formatPrices.filter((p) => p.field_id === f.id && !hidden.has(p.format)).map((p) => ({
               format: p.format, hourlyRateDa: p.hourly_rate_da,
             })),
-            pricingRules: rules.filter((r) => r.field_id === f.id).map((r) => ({
+            pricingRules: rules.filter((r) => r.field_id === f.id && (r.format === null || !hidden.has(r.format))).map((r) => ({
               id: r.id, label: r.label, weekdays: r.weekdays, startMin: r.start_min, endMin: r.end_min,
               format: r.format, rateDaPerHour: r.rate_da,
             })),

@@ -52,6 +52,8 @@ export interface FeedFilters {
   q?: string;
   /** Lot « Match libre », phase 5 : l'appelant comprend les matchs libres (en-tête, voir `knowsFreeMatches`) — sinon ils sont exclus. */
   includeFree?: boolean;
+  /** Phase 9v9 : formats que l'appelant ne sait pas afficher (une ancienne app ne reçoit aucun match en 9v9). */
+  hiddenFormats?: ReadonlySet<string>;
 }
 
 export function parseFeedFilters(query: FeedQuery): FeedFilters {
@@ -100,6 +102,7 @@ export function feedConditions(f: FeedFilters, now: Date): RawBuilder<boolean>[]
   ];
   // Une ancienne app (sans l'en-tête) ne reçoit aucun match libre (décision d'Aymen du 16/11/2026, iPhone 1.0 et 1.0.1).
   if (f.includeFree !== true) conds.push(sql<boolean>`matches.venue_id IS NOT NULL`);
+  if (f.hiddenFormats && f.hiddenFormats.size > 0) conds.push(sql<boolean>`matches.format::text NOT IN (${sql.join([...f.hiddenFormats])})`);
   if (f.sport) conds.push(sql<boolean>`matches.sport = ${f.sport}`);
   if (f.venueId) conds.push(sql<boolean>`matches.venue_id = ${f.venueId}::uuid`);
   if (f.dayStart !== undefined) {
@@ -134,7 +137,7 @@ export function feedConditions(f: FeedFilters, now: Date): RawBuilder<boolean>[]
     l'Explorer). Ne tient compte que du sport et du centre : le décompte d'un jour ne change pas quand on choisit
     « ce soir » ou qu'on tape un texte — comportement historique du bandeau. Les jours sans match sont absents. */
 export async function feedDayCounts(
-  db: Db, f: Pick<FeedFilters, 'sport' | 'venueId' | 'includeFree'>, fromDayStart: number, days: number, now: Date,
+  db: Db, f: Pick<FeedFilters, 'sport' | 'venueId' | 'includeFree' | 'hiddenFormats'>, fromDayStart: number, days: number, now: Date,
 ): Promise<Record<string, number>> {
   const conds = feedConditions({ ...f, evening: false, weekend: false, spots: false }, now);
   conds.push(sql<boolean>`lower(matches.time_range) >= ${new Date(fromDayStart)} AND lower(matches.time_range) < ${new Date(fromDayStart + days * 86_400_000)}`);

@@ -6,6 +6,7 @@ import {
   type MatchFormat, type MatchTeam, type SkillLevel,
 } from '@moubarat/core';
 import type { Db } from '../../db/client.js';
+import { hiddenFormats } from '../../lib/client-features.js';
 import type { Guards } from '../../auth/guards.js';
 import { writeNotifications } from '../../notifications/write.js';
 import { assertNotRestricted, recordAbsence } from '../absences/service.js';
@@ -377,7 +378,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
   app.get<{ Querystring: FeedQuery & { limit?: string; cursor?: string } }>('/matches',
     { preHandler: (req) => guards.tryAuth(req) }, async (req, reply) => {
       const now = new Date();
-      const filters = { ...parseFeedFilters(req.query), includeFree: knowsFreeMatches(req.headers) };
+      const filters = { ...parseFeedFilters(req.query), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers) };
       const limit = pageLimit(req.query.limit, { def: 50, max: 100 });
       const cursor = decodeCursor(req.query.cursor, ['iso', 'uuid']);
       const conds = feedConditions(filters, now);
@@ -413,7 +414,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     let fromStart: number;
     try { fromStart = dayStartMs(req.query.from ?? algiersDateOf(now.getTime())); }
     catch { throw badRequest('Paramètre from attendu au format YYYY-MM-DD.'); }
-    const counts = await feedDayCounts(db, { ...(sport ? { sport } : {}), ...(venueId ? { venueId } : {}), includeFree: knowsFreeMatches(req.headers) }, fromStart, days, now);
+    const counts = await feedDayCounts(db, { ...(sport ? { sport } : {}), ...(venueId ? { venueId } : {}), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers) }, fromStart, days, now);
     return reply.send({ from: algiersDateOf(fromStart), days, counts });
   });
 
@@ -444,6 +445,8 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
       ]));
     if (cursor) query = query.where(sql<boolean>`(lower(matches.time_range), matches.id) < (${cursor[0]}::timestamptz, ${cursor[1]}::uuid)`);
     if (!knowsFreeMatches(req.headers)) query = query.where('matches.venue_id', 'is not', null);   // ancienne app : aucun match libre
+    const hiddenF = hiddenFormats(req.headers);
+    if (hiddenF.size > 0) query = query.where(sql<boolean>`matches.format::text NOT IN (${sql.join([...hiddenF])})`);   // ni de 9v9
     const rows = await query
       .orderBy(sql`lower(matches.time_range)`, 'desc').orderBy('matches.id', 'desc')
       .limit(limit + 1).execute();
@@ -455,7 +458,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
      packages/core : voir friendsUpcomingMatches, service.ts. Bornée (10 coéquipiers au plus,
      7 jours), donc pas de curseur ici. */
   app.get('/me/friends-matches', { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
-    const matches = await friendsUpcomingMatches(db, req.auth!.userId, new Date(), { includeFree: knowsFreeMatches(req.headers) });
+    const matches = await friendsUpcomingMatches(db, req.auth!.userId, new Date(), { includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers) });
     return reply.send({ matches });
   });
 

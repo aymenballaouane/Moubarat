@@ -11,6 +11,9 @@ let stack: TestStack;
 let seed: SeedResult;
 let hamid = '', sofiane = '';
 const nextNonFriday = makeSafeDayPicker();
+/** Un client à jour (app joueur, CRM, console) — une ancienne app de téléphone n'envoie pas cet en-tête et ne reçoit jamais le 9v9. */
+const NEW = { 'x-moubarat-features': 'match-libre,format-9v9' };
+let matchId = '';
 const addFormat = (body: Record<string, unknown>) => stack.app.inject({
   method: 'POST', url: `/venues/${seed.venueId}/fields/${seed.fields.t1}/formats`, headers: bearer(hamid), payload: body,
 });
@@ -41,7 +44,7 @@ describe('9v9 — du CRM à la réservation', () => {
     expect(row.formats).toContain('9v9');
 
     const date = nextNonFriday(4);
-    const avail = await stack.app.inject({ method: 'GET', url: `/fields/${seed.fields.t1}/availability?date=${date}&duration=90&step=60` });
+    const avail = await stack.app.inject({ method: 'GET', url: `/fields/${seed.fields.t1}/availability?date=${date}&duration=90&step=60`, headers: NEW });
     expect(avail.statusCode, avail.body).toBe(200);
     const starts = (avail.json() as { starts: { startMin: number; byFormat: { format: string; totalDa: number }[] }[] }).starts;
     const start = starts.find((s) => s.byFormat.some((f) => f.format === '9v9'));
@@ -49,13 +52,52 @@ describe('9v9 — du CRM à la réservation', () => {
     expect(start!.byFormat.find((f) => f.format === '9v9')!.totalDa).toBe(13_500);   // 9 000 DA/h × 1 h 30, aucune bande
 
     const booked = await stack.app.inject({
-      method: 'POST', url: '/bookings', headers: bearer(sofiane),
+      method: 'POST', url: '/bookings', headers: { ...bearer(sofiane), ...NEW },
       payload: { fieldId: seed.fields.t1, date, startMin: start!.startMin, durationMin: 90, format: '9v9' },
     });
     expect(booked.statusCode, booked.body).toBe(201);
     const bookingId = (booked.json() as { booking: { id: string } }).booking.id;
-    const match = await stack.app.inject({ method: 'POST', url: '/matches', headers: bearer(sofiane), payload: { bookingId, title: 'Grand match' } });
+    const match = await stack.app.inject({ method: 'POST', url: '/matches', headers: { ...bearer(sofiane), ...NEW }, payload: { bookingId, title: 'Grand match' } });
     expect(match.statusCode, match.body).toBe(201);
     expect((match.json() as { match: Record<string, unknown> }).match).toMatchObject({ format: '9v9', capacity: 18, pricePerPlayerDa: 750 });
+    matchId = (match.json() as { match: { id: string } }).match.id;
+  });
+});
+
+describe('ancienne app (sans l’en-tête) — jamais le 9v9 (décision d’Aymen du 17/11/2026)', () => {
+  const get = (url: string, headers: Record<string, string> = {}) => stack.app.inject({ method: 'GET', url, headers });
+  type V = { id: string; formats: string[]; fields: { id: string; formats: string[]; formatPrices: { format: string }[] }[] };
+
+  it('catalogue et fiche du centre : ni format, ni prix 9v9 ; le client à jour les reçoit', async () => {
+    const t1Of = (venues: V[]) => venues.find((v) => v.id === seed.venueId)!.fields.find((f) => f.id === seed.fields.t1)!;
+    const oldList = (await get('/venues')).json() as { venues: V[] };
+    expect(oldList.venues.find((v) => v.id === seed.venueId)!.formats).not.toContain('9v9');
+    expect(t1Of(oldList.venues).formats).not.toContain('9v9');
+    expect(t1Of(oldList.venues).formatPrices.map((p) => p.format)).not.toContain('9v9');
+    const newList = (await get('/venues', NEW)).json() as { venues: V[] };
+    expect(t1Of(newList.venues).formatPrices.map((p) => p.format)).toContain('9v9');
+
+    const t1Detail = async (h: Record<string, string>) => ((await get(`/venues/${seed.venueId}`, h)).json() as { venue: V }).venue.fields.find((f) => f.id === seed.fields.t1)!;
+    expect((await t1Detail({})).formatPrices.map((p) => p.format)).not.toContain('9v9');
+    expect((await t1Detail(NEW)).formatPrices.map((p) => p.format)).toContain('9v9');
+  });
+
+  it('disponibilités : aucun devis 9v9 ; matchs : absent du fil et de Mes matchs, fiche en 409 APP_UPDATE_REQUIRED', async () => {
+    const date = nextNonFriday(4);
+    const avail = (await get(`/fields/${seed.fields.t1}/availability?date=${date}&duration=90&step=60`)).json() as
+      { field: { formats: { format: string }[] }; starts: { byFormat: { format: string }[] }[] };
+    expect(avail.field.formats.map((f) => f.format)).not.toContain('9v9');
+    expect(avail.starts.flatMap((s) => s.byFormat.map((f) => f.format))).not.toContain('9v9');
+
+    const feed = async (h: Record<string, string>) => ((await get('/matches?limit=100', h)).json() as { matches: { id: string }[] }).matches.map((m) => m.id);
+    expect(await feed(NEW)).toContain(matchId);
+    expect(await feed({})).not.toContain(matchId);
+    const mine = async (h: Record<string, string>) => ((await get('/me/matches', { ...bearer(sofiane), ...h })).json() as { matches: { id: string }[] }).matches.map((m) => m.id);
+    expect(await mine(NEW)).toContain(matchId);
+    expect(await mine({})).not.toContain(matchId);
+    const old = await get(`/matches/${matchId}`, bearer(sofiane));
+    expect(old.statusCode).toBe(409);
+    expect((old.json() as { error: string }).error).toBe('APP_UPDATE_REQUIRED');
+    expect((await get(`/matches/${matchId}`, { ...bearer(sofiane), ...NEW })).statusCode).toBe(200);
   });
 });

@@ -6604,12 +6604,20 @@ par défaut ».
   bande ; app (FR, AR) — Réserver → 9V9 à 13 500 DA (1 h 30) → réservé → « Créer mon match » → publié → fiche à 18 places et 750 DA
   chacun ; W4 avec les six formats (FR, AR). Nettoyage : match et réservation annulés, format retiré du terrain. Aucune erreur console.
   Le CRM n'a été capturé qu'en français (l'écran Tarifs n'a pas changé de mise en page : une option de plus dans une liste).
-- **Tests** : **core 196 · API 1113** (+2 `format-9v9`, +2 `migrations-retour` ; 102 fichiers, tous verts) **· CRM 95 · app joueur 338** ;
+- **Tests** : **core 196 · API 1115** (+4 `format-9v9` dont 2 « ancienne app », +2 `migrations-retour` ; 102 fichiers, tous verts) **· CRM 95 · app joueur 338** ;
   typecheck propre sur les 5 paquets.
 - **Board visuel** : 65 écrans (seuls les trois écrans jamais atteints d'avant manquent). Le board dépendait de l'heure du passage : en soirée,
   il réservait un créneau du jour à moins de 2 h (l'app retire alors « Créer mon match », à juste titre) et le fil du jour pouvait être
   vide ou ne montrer que son propre match. `tools/ui-board/src/capture.mjs` réserve désormais toujours DEMAIN et ouvre le premier match
   qui n'est pas le sien (le jour suivant si le fil du jour est vide). Base de développement : aucune ligne en 9v9 ni aucun match libre
   n'y reste après les essais.
-- **Question ouverte pour Aymen** : les anciennes apps (iPhone 1.0 et 1.0.1, Android 1.0.4) ne connaissent pas le 9v9. Leur réaction
-  si un centre l'active n'a pas été vérifiée : le leur cacher (comme le match libre) ou le tester d'abord sur un téléphone.
+- **Anciennes apps — décision d'Aymen du 17/11/2026 : « Le leur cacher »**. Même principe que le match libre, généralisé dans
+  `apps/api/src/lib/client-features.ts` : un client à jour se déclare par `X-Moubarat-Features` (`match-libre`, `format-9v9`) — l'app
+  joueur, et désormais aussi **le CRM et la console** (sites web, mis à jour avec le serveur), sans quoi le gérant ne verrait plus le
+  9v9 qu'il a ajouté. Sans l'en-tête (anciennes apps de téléphone) : aucun 9v9 dans le catalogue (`GET /venues` — format, prix, terrain
+  qui ne propose que lui, centre qui n'a plus que lui), la fiche d'un centre (`GET /venues/:id` — formats, prix, bandes), les
+  disponibilités (`GET /fields/:id/availability` — un départ libre seulement en 9v9 disparaît), le fil, les décomptes, Mes matchs et les
+  matchs des amis ; la fiche ou le lien d'un match en 9v9 répondent `409 APP_UPDATE_REQUIRED`. Non filtrés, volontairement : les
+  réservations d'un joueur (`/me/bookings` — cacher une réservation réelle serait pire) et le compteur de créneaux libres du jour
+  (`/venues/availability-summary`, un simple nombre). Tests : `format-9v9.test.ts` (+2 : ce que voit une ancienne app, ce que voit un
+  client à jour). Vérifié en vrai : le CRM ajoute et voit toujours le 9v9, la nouvelle app le réserve.

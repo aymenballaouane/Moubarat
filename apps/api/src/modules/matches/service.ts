@@ -6,6 +6,7 @@ import type { Db } from '../../db/client.js';
 import type { MatchesTable, MatchPlayersTable } from '../../db/types.js';
 import { fromPgRange } from '../../lib/pgrange.js';
 import { ApiError, notFound } from '../../lib/http.js';
+import { clientFeatures, hiddenFormats, FEATURE_FREE_MATCH } from '../../lib/client-features.js';
 
 export type MatchRow = Selectable<MatchesTable>;
 export type MatchPlayerRow = Selectable<MatchPlayersTable>;
@@ -21,15 +22,13 @@ export function placeOf(row: Pick<MatchRow, 'venue_id' | 'place_name' | 'place_a
     version : c'est donc l'INVERSE qui est vérifié — seule une app qui déclare comprendre les matchs libres (en-tête
     `X-Moubarat-Features: match-libre`, envoyé par l'app à partir de ce lot) en reçoit. Toute autre requête est traitée comme une
     ancienne app : un match libre n'apparaît dans aucune de ses listes et sa fiche répond 409 APP_UPDATE_REQUIRED. */
-export const FREE_MATCH_FEATURE = 'match-libre';
 export function knowsFreeMatches(headers: Record<string, string | string[] | undefined>): boolean {
-  const raw = headers['x-moubarat-features'];
-  const value = Array.isArray(raw) ? raw.join(',') : (raw ?? '');
-  return value.split(',').map((x) => x.trim().toLowerCase()).includes(FREE_MATCH_FEATURE);
+  return clientFeatures(headers).has(FEATURE_FREE_MATCH);
 }
-/** Fiche d'un match libre demandée par une ancienne app : refus explicite (jamais un écran qui planterait faute de centre). */
-export function assertVisibleToClient(row: Pick<MatchRow, 'venue_id'>, headers: Record<string, string | string[] | undefined>): void {
-  if (row.venue_id === null && !knowsFreeMatches(headers)) {
+/** Fiche d'un match libre, ou d'un match en 9v9 (phase 9v9, décision d'Aymen du 17/11/2026), demandée par une ancienne app : refus
+    explicite (jamais un écran qui planterait faute de centre ou de format connu). */
+export function assertVisibleToClient(row: Pick<MatchRow, 'venue_id' | 'format'>, headers: Record<string, string | string[] | undefined>): void {
+  if ((row.venue_id === null && !knowsFreeMatches(headers)) || hiddenFormats(headers).has(row.format)) {
     throw new ApiError(409, 'APP_UPDATE_REQUIRED', 'Mets à jour Moubarat pour voir ce match.');
   }
 }
@@ -262,7 +261,7 @@ export async function myPlayedMatchIds(db: Db, userId: string, now: number = Dat
     purement en lecture, hors packages/core (gelé — ceci n'est qu'une projection de l'historique
     des rosters, pas une règle métier). */
 export async function friendsUpcomingMatches(
-  db: Db, viewerId: string, now: Date, opts: { maxFriends?: number; windowMs?: number; includeFree?: boolean } = {},
+  db: Db, viewerId: string, now: Date, opts: { maxFriends?: number; windowMs?: number; includeFree?: boolean; hiddenFormats?: ReadonlySet<string> } = {},
 ): Promise<Record<string, unknown>[]> {
   const maxFriends = opts.maxFriends ?? 10;
   const windowMs = opts.windowMs ?? 7 * 86_400_000;
@@ -309,6 +308,7 @@ export async function friendsUpcomingMatches(
     .where(sql<boolean>`lower(matches.time_range) > ${now}`)   // 16/11/2026 : un match commencé quitte les listes (lot « Match libre »)
     .where(sql<boolean>`lower(matches.time_range) <= ${windowEnd}`)
     .$if(opts.includeFree !== true, (q) => q.where('matches.venue_id', 'is not', null))   // ancienne app : aucun match libre
+    .$if((opts.hiddenFormats?.size ?? 0) > 0, (q) => q.where(sql<boolean>`matches.format::text NOT IN (${sql.join([...opts.hiddenFormats!])})`))   // ni de 9v9
     .where((eb) => eb.or([
       eb('matches.organizer_id', 'in', coPlayerIds),
       eb('match_players.user_id', 'in', coPlayerIds),
