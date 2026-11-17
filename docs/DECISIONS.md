@@ -6462,8 +6462,8 @@ Partie de la phase 2, dans la même copie séparée. Aucun changement du core, d
 - **Organisateur** (`OrganizerMatchView.tsx`) : « Joueurs inscrits » (nom · équipe, numéro, « Appeler » ; « Numéros visibles par toi
   seul »), « Ton mot aux joueurs » + « Modifier », « Gérer le match » (« Qui peut voir ce match ? » Public / Privé — passer en privé
   ouvre la confirmation Dt3, revenir en public non —, copier le lien, groupe WhatsApp, annuler le match, annuler la réservation),
-  « Trouver N joueurs ». Retirés : « TU ORGANISES », la jauge, et le bouton « Retirer » un joueur (absent de Dv3 — **question posée à
-  Aymen** ; la route serveur et la règle 8 restent). Après le match : « Absent » (règle 25) à la place de « Appeler ».
+  « Trouver N joueurs ». Retirés : « TU ORGANISES » et la jauge. Le bouton « Retirer » un joueur (règle 8), absent de Dv3, est **gardé
+  sur décision d'Aymen du 17/11/2026** : une icône à côté de « Appeler », jusqu'au coup d'envoi, avec la confirmation existante. Après le match : « Absent » (règle 25) à la place de « Appeler ».
 - **Textes** : 34 textes arabes repris tels quels de `fr-ar-match-libre.json` ; « jusqu'à {fin} · {duree} » dérivé du texte
   « jusqu'à {fin} · 1 h 30 » du même fichier. **Provisoires, à relire** (formes absentes du fichier) : « Dans {n} jours » (1, 2, 11+),
   « {n} h » (2, 3-10, 11+), « {n} min » (1, 2, 3-10), les durées « 1 h » (ساعة) et « 2 h » (ساعتان), le mot « Dans » (بعد). Mois et jour

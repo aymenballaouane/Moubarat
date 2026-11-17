@@ -33,7 +33,7 @@ import '../styles/report.css';
    « Ton mot aux joueurs » (« Modifier »), « Gérer le match » (« Qui peut voir ce match ? » Public / Privé — passer en privé demande la
    confirmation Dt3 —, copier le lien, groupe WhatsApp, annuler le match, annuler la réservation) et « Trouver N joueurs ».
    Pas affichés, absents des planches : « Fermer les inscriptions » (décision d'Aymen du 16/11/2026, la route serveur reste), la jauge,
-   « TU ORGANISES », et le bouton « Retirer » un joueur (question posée à Aymen ; la route serveur reste). Après le match : « Absent »
+   « TU ORGANISES ». Le bouton « Retirer » un joueur (règle 8), absent de Dv3, est gardé sur décision d'Aymen du 17/11/2026. Après le match : « Absent »
    (règle 25), à la place de « Appeler ». Toutes les règles restent côté core / serveur. */
 
 interface OrganizerMatchViewProps {
@@ -43,7 +43,7 @@ interface OrganizerMatchViewProps {
   store: AppStore;
 }
 
-type Sheet = null | { kind: 'absent'; userId: string } | { kind: 'cancelMatch' } | { kind: 'cancelBooking' } | { kind: 'group' } | { kind: 'private' } | { kind: 'report' };
+type Sheet = null | { kind: 'kick'; userId: string } | { kind: 'absent'; userId: string } | { kind: 'cancelMatch' } | { kind: 'cancelBooking' } | { kind: 'group' } | { kind: 'private' } | { kind: 'report' };
 
 export function OrganizerMatchView({ match, players, onExit, store }: OrganizerMatchViewProps) {
   const t = useT();
@@ -121,6 +121,14 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
   /* Règle 25 : « n'est pas venu » — l'organisateur le déclare une fois le match FINI (core canDeclareAbsence : jamais lui-même, jamais un joueur retiré ou parti). */
   const canAbsent = (userId: string) => userId !== meId
     && canDeclareAbsence({ match, players, targetId: userId, declarerId: meId, byCenter: false, now: Date.now() }).ok;
+  async function kick(userId: string) {
+    setBusy(true);
+    const res = await store.kickPlayer(match.id, userId);
+    setBusy(false);
+    setSheet(null);
+    if (!res.ok) { toast.show(res.message); return; }
+    toast.show(t('C’est fait, sa place est libre.'));
+  }
   async function declareAbsent(userId: string) {
     setBusy(true);
     const res = await store.declareAbsent(match.id, userId);
@@ -182,6 +190,7 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
   }
 
   const absentTarget = sheet?.kind === 'absent' ? rows.find((r) => r.userId === sheet.userId) : undefined;
+  const kickTarget = sheet?.kind === 'kick' ? rows.find((r) => r.userId === sheet.userId) : undefined;
   const others = Math.max(count - 1, 0);
   const helpState = pitchHelp({ organizer: true, joined: true, picked: false, free: left, open, replacement: false });
   const help = helpState?.kind === 'full' ? t('Toutes les places sont prises')
@@ -224,8 +233,16 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
                       <button type="button" className="mv-prow__abs mb-tap" disabled={busy}
                         aria-label={fillTemplate(t('Déclarer {nom} absent'), { nom: r.name })}
                         onClick={() => setSheet({ kind: 'absent', userId: r.userId })}>{t('Absent')}</button>
-                    ) : href && !over ? (
-                      <a className="mv-callbtn mb-tap" href={href} aria-label={fillTemplate(t('Appeler {prenom}'), { prenom: r.name })}><Icon id="i-phone" />{t('Appeler')}</a>
+                    ) : !over ? (
+                      <>
+                        {href ? <a className="mv-callbtn mb-tap" href={href} aria-label={fillTemplate(t('Appeler {prenom}'), { prenom: r.name })}><Icon id="i-phone" />{t('Appeler')}</a> : null}
+                        {/* « Retirer » (règle 8) — absent de la planche Dv3, remis sur décision d'Aymen du 17/11/2026 ; jusqu'au coup d'envoi (core). */}
+                        {open ? (
+                          <button type="button" className="mv-kick mb-tap" disabled={busy}
+                            aria-label={fillTemplate(t('Retirer {nom} du match'), { nom: r.name })}
+                            onClick={() => setSheet({ kind: 'kick', userId: r.userId })}><Icon id="i-user-minus" /></button>
+                        ) : null}
+                      </>
                     ) : null}
                   </div>
                 );
@@ -304,6 +321,15 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
           send={(target, reason, note) => store.sendReport(target, reason, note)}
           onClose={() => setSheet(null)}
           onSent={(duplicate) => { setSheet(null); toast.show(duplicate ? t('Tu as déjà signalé ça : le support s’en occupe.') : t('Merci, c’est transmis au support Moubarat.')); }}
+        />
+      ) : null}
+
+      {sheet?.kind === 'kick' && kickTarget ? (
+        <MatchConfirmSheet
+          title={fillTemplate(t('Retirer {nom} du match ?'), { nom: kickTarget.name })}
+          body={t('Il sera prévenu, et sa place proposée aux joueurs du coin. Ça ne compte pas comme une absence, mais il ne pourra plus rejoindre ce match. À faire seulement s’il t’a dit qu’il ne viendra pas.')}
+          keep={t('Le garder')} confirm={t('Retirer du match')} busy={busy}
+          onKeep={() => setSheet(null)} onConfirm={() => { void kick(kickTarget.userId); }}
         />
       ) : null}
 
