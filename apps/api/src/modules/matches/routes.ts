@@ -271,8 +271,10 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
       if (!found) throw notFound('Ce lien ne mène à aucun match.');
       assertVisibleToClient(found, req.headers);   // match libre : jamais à une ancienne app
       const synced = await syncMatchLifecycle(db, found, Date.now());
-      const organizer = await db.selectFrom('users').select('name').where('id', '=', synced.organizer_id).executeTakeFirst();
-      const organizerName = organizer?.name ?? null;
+      // Lot B, phase 2 : « {prénom} t'invite à jouer » — le PRÉNOM de l'organisateur (profiles.first_name), son pseudo s'il n'en a pas.
+      const organizer = await db.selectFrom('users').leftJoin('profiles', 'profiles.user_id', 'users.id')
+        .select(['users.name', 'profiles.first_name']).where('users.id', '=', synced.organizer_id).executeTakeFirst();
+      const organizerName = organizer ? (organizer.first_name?.trim() || organizer.name) : null;
       // Ce que montre la page du lien à un visiteur (LienMatch) : le centre et le terrain — des informations publiques (GET /venues).
       // Match libre (phase 5) : pas de centre ni de terrain — le lieu voyage dans `match.place`.
       const place = synced.field_id === null ? undefined : await db.selectFrom('fields').innerJoin('venues', 'venues.id', 'fields.venue_id')

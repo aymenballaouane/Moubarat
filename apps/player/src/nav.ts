@@ -81,6 +81,9 @@ export type Route =
       regle de routage du spec §6 : jamais le detail « rejoindre » pour
       son propre match. */
   | { name: 'match'; mode: 'organizer'; matchId: string }
+  /** Lot B, phase 2 : « C'est bon, tu joues ! » après l'inscription courte d'un invité ; « Le match vient d'être complet. » sinon. */
+  | { name: 'match'; mode: 'joined'; matchId: string; code: string }
+  | { name: 'match'; mode: 'full'; dayStart: number }
   | { name: 'teams'; visitTeamId?: string }
   /** opponentId : pre-selectionne l'adversaire et ouvre le compose — cible
       du CTA « Defier cette equipe » de la page equipe visiteur. challengeId :

@@ -50,6 +50,8 @@ export interface UsersTable {
       NULL = compte antérieur à ce lot, pas encore passé par la passerelle d'accès (condition de
       garde, pas de colonne booléenne séparée). */
   password_hash: string | null;
+  /** Migration 0052 (lot B, phase 2) : passerelle d'accès franchie (avec ou sans mot de passe — invité arrivé par un lien). */
+  access_setup_at: Date | null;
   /** Migration 0032 — même verrou anti-bruteforce que platform_accounts (migration 0004,
       packages/core/src/rules/platform-auth.ts, déjà générique). */
   failed_login_attempts: Generated<number>;
@@ -90,7 +92,9 @@ export interface ProfilesTable {
 export interface PushDevicesTable {
   token: string;
   user_id: string;
-  platform: 'ios' | 'android';
+  platform: 'ios' | 'android' | 'web';
+  /** Migration 0053 (lot B, phase 3) : clés d'un abonnement web (p256dh, auth). */
+  web_keys: { p256dh: string; auth: string } | null;
   created_at: Generated<Date>;
   last_seen_at: Generated<Date>;
 }

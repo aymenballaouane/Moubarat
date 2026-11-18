@@ -9,6 +9,8 @@ import type { Env } from './env.js';
 import { makeGuards } from './auth/guards.js';
 import { makePlatformGuards } from './auth/platform-guards.js';
 import { registerAuthRoutes } from './auth/routes.js';
+import { registerGuestRoutes } from './auth/guest.js';
+import { registerOgRoutes } from './modules/og/routes.js';
 import { registerPlatformAuthRoutes } from './platform/auth/routes.js';
 import { registerPlatformAccountRoutes } from './platform/accounts/routes.js';
 import { registerPlatformVenueRoutes } from './platform/venues/routes.js';
@@ -51,6 +53,7 @@ import { trustProxySetting } from './lib/proxy.js';
 import { Lifecycle } from './lib/lifecycle.js';
 import { ConsoleSmsProvider, NullSmsProvider, SmssakSmsProvider, type SmsProvider } from './lib/sms.js';
 import { ApnsPushProvider, NullPushProvider, type PushProvider } from './lib/push.js';
+import { RoutingPushProvider, WebPushProvider } from './lib/web-push.js';
 import { PushDispatcher, registerPushDispatcher } from './notifications/push.js';
 
 export interface ServerDeps {
@@ -82,14 +85,18 @@ function generateRequestId(req: { headers: Record<string, string | string[] | un
 /** Choix du fournisseur push — le fournisseur réel demandé s'il est
     entièrement configuré, sinon repli explicite (rien n'est envoyé). */
 function selectPushProvider(env: Env, app: FastifyInstance): PushProvider {
+  let ios: PushProvider | undefined;
   if (env.pushProvider === 'apns') {
-    if (env.apns) return new ApnsPushProvider(env.apns, app.log);
-    app.log.warn(
+    if (env.apns) ios = new ApnsPushProvider(env.apns, app.log);
+    else app.log.warn(
       'PUSH_PROVIDER=apns demandé mais configuration incomplète '
-      + '(APNS_KEY_ID/APNS_TEAM_ID/APNS_PRIVATE_KEY/APNS_BUNDLE_ID) — repli sur NullPushProvider.',
+      + '(APNS_KEY_ID/APNS_TEAM_ID/APNS_PRIVATE_KEY/APNS_BUNDLE_ID) — aucun envoi vers iPhone.',
     );
   }
-  return new NullPushProvider(app.log);
+  // Lot B, phase 3 : les alertes web (app web et app Android du Play Store) — chaque appareil part par le canal de sa plateforme.
+  const web = env.webPush ? new WebPushProvider(env.webPush, app.log) : undefined;
+  if (!ios && !web) return new NullPushProvider(app.log);
+  return new RoutingPushProvider({ ...(ios ? { ios } : {}), ...(web ? { web } : {}) });
 }
 
 /** Choix du fournisseur SMS — dev toujours prioritaire (jamais de vrai SMS
@@ -271,6 +278,7 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
   const placesLimiter = createSharedRateLimiter(db, { name: 'places', max: env.placesMaxPerHour, window: 'hour', log: limiterLog });
 
   await registerAuthRoutes(app, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter });
+  await registerGuestRoutes(app, { db, guards });   // lot B, phase 2 : inscription courte d'un invité
   await registerPlatformAuthRoutes(app, { db, guards: platformGuards, loginIpLimiter });
   await registerPlatformAccountRoutes(app, { db, guards: platformGuards });
   await registerPlatformVenueRoutes(app, { db, guards: platformGuards });
@@ -298,8 +306,9 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
   if (env.teamsChallengesEnabled) await registerTeamRoutes(app, { db, guards, inviteLimiter: teamInviteLimiter });
   await registerMatchRoutes(app, { db, guards });
   await registerPlaceRoutes(app, { guards, baseUrl: env.placesSearchUrl, limiter: placesLimiter });
+  await registerOgRoutes(app, { db });   // lot B, phase 2 : aperçu des liens de match (balises og:* et image)
   await registerNotificationRoutes(app, { db, guards });
-  await registerPushRoutes(app, { db, guards });
+  await registerPushRoutes(app, { db, guards, webPushPublicKey: env.webPush?.publicKey ?? null });
   await registerAccountRoutes(app, { db, guards, nameLimiter: nameChangeLimiter });
   await registerProfileRoutes(app, { db, guards });
   await registerAbsenceRoutes(app, { db, guards, platformGuards });

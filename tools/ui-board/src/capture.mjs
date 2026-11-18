@@ -543,7 +543,7 @@ async function run() {
               const linkCtx = await browser.newContext(contextOptionsFor(VIEWPORT_PLAYER));
               const lp = await linkCtx.newPage();
               await lp.goto(`${PLAYER_URL}/m/${linkCode}`, { waitUntil: 'load' });
-              await capture(lp, { id: 'match-link', label: 'Lien d’un match — {nom} t’invite à jouer', journey: 'rejoindre', surface: 'player', path: 'Ouvrir moubaratsport.com/m/CODE sans compte', waitFor: '#s-lien .lm-card' });
+              await capture(lp, { id: 'match-link', label: 'Lien d’un match — {nom} t’invite à jouer', journey: 'rejoindre', surface: 'player', path: 'Ouvrir moubaratsport.com/m/CODE sans compte', waitFor: '#s-lien .lk-card' });   // lot B, phase 2 : nouvelle page d’invitation
               await linkCtx.close();
             } else notReached.push({ id: 'match-link', reason: 'aucun match avec un code pour ouvrir la page du lien' });
           } catch (err) {

@@ -1,6 +1,6 @@
 /* Lot B, phase 1 — « Ton match » (CreerTonMatch.tsx), mesures de la planche Cm-B2. Les rangées (jours, segments, heures) sont celles de
    la page Réserver (reserver.css) ; ici seulement ce qui est propre à la page. */
-.ctm { padding-bottom: 0; }
+.ctm { padding-bottom: 0; color: var(--text); }
 .ctm-head { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
 .ctm-back {
   width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text);

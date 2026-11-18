@@ -38,7 +38,9 @@ import { CURRENT_USER_ID } from './data/identity.js';
 import { HOME, type Route, type Tab } from './nav.js';
 import { useAppStore, type AppStore } from './state/useAppStore.js';
 import { loadToken } from './lib/session.js';
-import { clearPendingMatch, codeFromPath, loadPendingMatch, savePendingMatch } from './lib/matchLink.js';
+import { clearPendingMatch, codeFromPath, loadPendingMatch, saveGuestJoin, savePendingMatch, takeGuestJoin } from './lib/matchLink.js';
+import { MatchJustFull, TuJoues } from './components/TuJoues.js';
+import type { GuestInvite } from './components/AuthFlow.js';
 import { installNativeBridge, on, post } from './lib/native.js';
 
 /* Chantier iOS — annoncée au natif dans le message `ready` (native.ts). Pas
@@ -63,7 +65,9 @@ export function App() {
   /* Lien de match reçu (Lot 7) : le code attend ici (et en sessionStorage, pour survivre à un rechargement pendant l'inscription) jusqu'à ce qu'on
      soit connecté ; alors le match s'ouvre, sur la fiche ou, si c'est le sien, sur la vue organisateur. */
   const [pendingCode, setPendingCode] = useState<string | null>(() => LINK_AT_LOAD ?? loadPendingMatch());
-  const [authStart, setAuthStart] = useState<'welcome' | 'connexion'>('welcome');
+  const [authStart, setAuthStart] = useState<'welcome' | 'connexion' | 'numero'>('welcome');
+  /** Lot B, phase 2 : l'invité arrivé par un lien (inscription courte), le temps de créer son compte. */
+  const [guestInvite, setGuestInvite] = useState<GuestInvite | null>(null);
   /* Retour au DERNIER onglet visite quand un flux plein-ecran se ferme —
      jamais une cible codee en dur (piege releve par l'audit sur le
      benchmark : back fige vers Explorer quel que soit le point d'entree). */
@@ -92,8 +96,24 @@ export function App() {
       clearPendingMatch();
       setPendingCode(null);
       window.history.replaceState(null, '', '/');
-      if (res.ok && res.matchId) setRoute(res.mine ? { name: 'match', mode: 'organizer', matchId: res.matchId } : { name: 'match', mode: 'detail', matchId: res.matchId });
-      else setRoute(HOME);
+      if (!(res.ok && res.matchId)) { setRoute(HOME); return; }
+      const matchId = res.matchId;
+      if (res.mine) { setRoute({ name: 'match', mode: 'organizer', matchId }); return; }
+      // Lot B, phase 2 : l'invité qui vient de créer son compte est inscrit tout de suite (équipe choisie par le serveur).
+      if (takeGuestJoin(pendingCode)) {
+        // Pas de garde « alive » ici : le rechargement de l’état après connexion relance cet effet, et l’inscription vient d’avoir lieu.
+        void store.joinMatch(matchId).then((joined) => {
+          setGuestInvite(null);
+          if (joined.ok) setRoute({ name: 'match', mode: 'joined', matchId, code: pendingCode });
+          else if (!joined.ok && (joined.code === 'MATCH_FULL' || joined.code === 'MATCH_TEAM_FULL')) {
+            const start = store.findMatch(matchId)?.match.range.start ?? Date.now();
+            const d = new Date(start);
+            setRoute({ name: 'match', mode: 'full', dayStart: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() });
+          } else setRoute({ name: 'match', mode: 'detail', matchId });
+        });
+        return;
+      }
+      setRoute({ name: 'match', mode: 'detail', matchId });
     });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -262,7 +282,7 @@ export function App() {
     <>
       <IconSprite />
       <PasPossibleHost onNavigate={setRoute} />
-      {renderRoute(route, setRoute, goBack, store, unread, plusOpen, setPlusOpen, authStart, (start) => setAuthStart(start))}
+      {renderRoute(route, setRoute, goBack, store, unread, plusOpen, setPlusOpen, authStart, (start) => setAuthStart(start), { pendingCode, setPendingCode, guestInvite, setGuestInvite })}
     </>
   );
 }
@@ -275,14 +295,18 @@ function renderRoute(
   unread: number,
   plusOpen: boolean,
   setPlusOpen: (open: boolean) => void,
-  authStart: 'welcome' | 'connexion',
-  setAuthStart: (start: 'welcome' | 'connexion') => void,
+  authStart: 'welcome' | 'connexion' | 'numero',
+  setAuthStart: (start: 'welcome' | 'connexion' | 'numero') => void,
+  /** Lot B, phase 2 : le lien en attente et l'invité en cours d'inscription. */
+  guestCtx: { pendingCode: string | null; setPendingCode: (c: string | null) => void; guestInvite: GuestInvite | null; setGuestInvite: (g: GuestInvite | null) => void },
 ) {
+  const { pendingCode, setPendingCode, guestInvite, setGuestInvite } = guestCtx;
   switch (route.name) {
     case 'auth':
       return (
         <AuthFlow
-          startStep={authStart}
+          startStep={authStart} guest={authStart === 'numero' ? guestInvite : null}
+          onCancel={() => { const c = pendingCode; if (c) setRoute({ name: 'link', code: c }); }}
           onEnter={(profile) => { store.login(profile); setRoute(HOME); }}
         />
       );
@@ -292,8 +316,8 @@ function renderRoute(
       return (
         <LienMatch
           code={route.code}
-          onJoin={() => { savePendingMatch(route.code); setAuthStart('welcome'); setRoute({ name: 'auth' }); }}
-          onHaveApp={() => { savePendingMatch(route.code); setAuthStart('connexion'); setRoute({ name: 'auth' }); }}
+          onJoin={(info) => { savePendingMatch(route.code); saveGuestJoin(route.code); setPendingCode(route.code); setGuestInvite({ code: route.code, ...info }); setAuthStart('numero'); setRoute({ name: 'auth' }); }}
+          onHaveAccount={() => { savePendingMatch(route.code); setPendingCode(route.code); setAuthStart('connexion'); setRoute({ name: 'auth' }); }}
         />
       );
     case 'booking':
@@ -313,6 +337,15 @@ function renderRoute(
         />
       );
     case 'match': {
+      if (route.mode === 'joined') {
+        const entry = store.findMatch(route.matchId);
+        if (!entry) return null;
+        const team = entry.players.find((p) => p.userId === store.me?.id)?.team ?? null;
+        return <TuJoues match={entry.match} team={team} code={route.code} store={store} onSeeMatch={() => setRoute({ name: 'match', mode: 'detail', matchId: route.matchId })} />;
+      }
+      if (route.mode === 'full') {
+        return <MatchJustFull onOtherMatches={() => setRoute({ name: 'tab', tab: 'explorer', explorerDay: route.dayStart })} onHome={() => setRoute(HOME)} />;
+      }
       if (route.mode === 'free') {
         return (
           <FreeMatchFlow

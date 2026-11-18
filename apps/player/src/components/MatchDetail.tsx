@@ -18,7 +18,7 @@ import { fillTemplate } from '../lib/reserverCreneau.js';
 import { latePhrase } from '../lib/cancelResa.js';
 import { telHref, type MatchContact } from '../lib/contacts.js';
 import { share } from '../lib/share.js';
-import { inviteText, matchLink } from '../lib/matchLink.js';
+import { inviteLink, inviteMessage, type InviteDetails } from '../lib/matchLink.js';
 import { freeCount, freeLeaveLimitLabel, matchPhase, momentPhrase, myTeam, registrationsOpen, teamViews } from '../lib/matchDetail.js';
 import { displayPhone, pitchHelp, type PitchHelp } from '../lib/matchView.js';
 import { fillNodes } from '../lib/fillNodes.js';
@@ -112,7 +112,8 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
       dayLabel: epochDayLabel(match.range.start), timeLabel: startHour,
       pricePerPlayerDa: match.pricePerPlayer.amount, spotsLeft: Math.max(left, 1),
     });
-    void share(code ? { title: venueName, text: inviteText(code).split(' : ')[0] ?? '', url: matchLink(code) } : { title: venueName, text: waText });
+    const invite: InviteDetails | null = code ? { code, format: match.format, start: match.range.start, placeName: venueName, wilaya: match.place?.wilaya ?? centre?.wilaya ?? null, pricePerPlayerDa: match.pricePerPlayer.amount, missing: left } : null;
+    void share(invite ? { title: venueName, text: inviteMessage(invite, lang, { withLink: false }), url: inviteLink(invite.code, lang) } : { title: venueName, text: waText });
   }
 
   /* --- actions -------------------------------------------------------------------------------------------------------------------- */

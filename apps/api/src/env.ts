@@ -34,6 +34,8 @@ export interface Env {
       aucun (NullPushProvider : rien n'est envoyé, tracé en debug). Piloté par
       `PUSH_PROVIDER=apns`, jamais par du code — voir lib/push.ts. */
   pushProvider: 'apns' | null;
+  /** Lot B, phase 3 : clés VAPID des alertes web (WEB_PUSH_PUBLIC_KEY / WEB_PUSH_PRIVATE_KEY / WEB_PUSH_SUBJECT), `null` = coupées. */
+  webPush: { publicKey: string; privateKey: string; subject: string } | null;
   /** Configuration APNs complète — `null` tant qu'une des cinq variables
       manque, auquel cas server.ts se replie sur NullPushProvider avec un
       avertissement au démarrage. La clé privée (.p8, PEM) vient UNIQUEMENT
@@ -201,6 +203,13 @@ export function readEnv(overrides: Partial<Env> = {}): Env {
       ?? 'http://localhost:5175,http://127.0.0.1:5175,http://localhost:5174,http://127.0.0.1:5174,http://localhost:4174,http://127.0.0.1:4174,http://localhost:5176,http://127.0.0.1:5176,capacitor://localhost,http://localhost'
     ).split(',').map((s) => s.trim()).filter(Boolean),
     pushProvider: process.env.PUSH_PROVIDER === 'apns' ? 'apns' : null,
+    /* Lot B, phase 3 : alertes web (Web Push). Les trois variables ensemble, sinon rien n'est envoyé par le web (la cloche reste). */
+    webPush: (() => {
+      const publicKey = process.env.WEB_PUSH_PUBLIC_KEY?.trim();
+      const privateKey = process.env.WEB_PUSH_PRIVATE_KEY?.trim();
+      const subject = process.env.WEB_PUSH_SUBJECT?.trim();
+      return publicKey && privateKey && subject ? { publicKey, privateKey, subject } : null;
+    })(),
     apns: (() => {
       const keyId = process.env.APNS_KEY_ID;
       const teamId = process.env.APNS_TEAM_ID;

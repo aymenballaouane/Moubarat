@@ -6749,3 +6749,36 @@ Créneau, Détails) : `CreerLibre.tsx` et `CreerCarte.tsx` sont retirés.
   traduction déjà dans l'app (« أعد المحاولة »).
 - **À savoir** : la version en ligne (phase adresses, 18/11 à 2 h 07) charge encore les images de tile.openstreetmap.org. Cette phase les
   retire de la production ; elle ne partira en ligne qu'après le test d'Aymen et avec un fond de carte réglé (Google).
+
+### Phase 2 — Inviter un ami (branche `lot-b/phase-2-inviter`)
+
+Maquettes `2_Inviter_un_ami` (message, page d'invitation, prénom, « C'est bon, tu joues ! »).
+- **Message partagé** (`lib/matchLink.ts`, `inviteMessage`) : jour, heure, lieu (« (wilaya) »), prix pour un match de centre seulement, places
+  qui manquent, lien COMPLET — dans la langue de l'app de l'organisateur (avant : toujours « On joue ? Rejoins le match : … » en français).
+  Pluriels arabes du pack. En arabe, le lien porte `?l=ar` pour que l'aperçu soit en arabe (seul écart avec le format du pack, qui écrit
+  le lien sans paramètre). Les symboles ⚽ 📍 💰 en tête de ligne sont ceux du message validé par Aymen : c'est un texte envoyé dans
+  WhatsApp, pas un écran de l'app (la règle « zéro emoji » vaut pour l'interface). Utilisé par « Trouver {n} joueurs », « Partager »
+  (détail du match, vue organisateur) et l'écran « match en ligne » (match libre et match de centre).
+- **Aperçu du lien** : l'API sert `GET /og/m/:code?l=fr|ar` (titre « Match 5v5 · ven. 20 nov. à 19:30 », description « {lieu} · il
+  manque 9 joueurs ») et `GET /og/m/:code/image.png` (1200 × 630, dessinée par satori et rendue par resvg — bibliothèques libres, polices
+  de l'app). Code inconnu, match annulé ou passé : « Moubarat Sport » / « Organise ton match, trouve des joueurs. ». Côté site, un relais
+  Vercel (`apps/player/middleware.ts`, Routing Middleware) pose les balises og:* sur la page `/m/CODE` (les robots de WhatsApp
+  n'exécutent pas le JavaScript) ; une panne de l'API laisse partir la page sans aperçu, jamais une erreur. **Vérifiable seulement une
+  fois déployé chez Vercel** (pas de relais en développement) : la fonction d'injection est testée, l'API aussi.
+- **Page d'invitation sans compte** (`LienMatch.tsx`, refaite) : « {prénom} t'invite à jouer » — `/matches/by-code` renvoie désormais le
+  PRÉNOM de l'organisateur (`profiles.first_name`, le pseudo en secours) ; carte avec la capsule du détail (composant `MatchCapsule`
+  partagé), l'heure, le jour, « Dans 2 jours », le lieu et son adresse, aucun prix pour un match libre ; « Rejoindre le match » et « Crée
+  ton compte en 1 minute, tu reviens direct ici. » ; « J'ai déjà un compte » en haut. Match annulé : « Ce match n'est plus disponible. »
+- **Inscription courte d'un invité** : seulement en arrivant par un lien. « Ton numéro » (accords, inchangé) → « Ton code » → « Comment tu
+  t'appelles ? » (prénom seul ; pseudo proposé « karim.b27 », repris par le serveur s'il est libre). Serveur : `POST /me/guest-setup`
+  (prénom, accords, sport et ville du match ; aucun mot de passe) et migration 0052 `users.access_setup_at` (la passerelle d'accès est
+  franchie, avec ou sans mot de passe : `needsAccessSetup = password_hash IS NULL AND access_setup_at IS NULL` — aucun compte existant
+  ne change). Puis l'invité est INSCRIT au match (équipe choisie par le serveur) et voit « C'est bon, tu joues ! » : l'organisateur avec
+  son numéro et « Appeler » (règle 31), « Choisir un mot de passe » facultatif (`POST /me/password/initial`, une seule fois, seulement
+  pour un compte qui n'en a jamais eu), « Voir le match ». Sans mot de passe, il se reconnecte par « Mot de passe oublié » (code SMS), qui
+  lui en pose un. Match rempli pendant l'inscription : « Le match vient d'être complet. » et « Voir les autres matchs du jour ».
+- **Lien du groupe WhatsApp** : déjà réservé aux inscrits et à l'organisateur (vérifié, test ajouté) — rien à changer.
+- **Tests** : API `guest-invite.test.ts` (6), `og.test.ts` (4), retour arrière 0052 ; app `matchLink.test.ts` (le test de l'ancien
+  message remplacé par ceux du nouveau, demande du pack), `ogMeta.test.ts` (2).
+- **Vérifié en vrai** (base de dev, code SMS de développement) : lien → « Rejoindre le match » → numéro → code → « Yacine » (pseudo
+  « yacine.b07 », celui affiché) → inscrit → « C'est bon, tu joues ! » avec le numéro de l'organisateur. Comptes de test retirés ensuite.

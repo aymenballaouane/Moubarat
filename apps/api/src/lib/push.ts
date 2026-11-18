@@ -16,7 +16,12 @@
 import http2 from 'node:http2';
 import { createPrivateKey, sign, type KeyObject } from 'node:crypto';
 
-export interface PushDevice { token: string; platform: 'ios' | 'android' }
+export interface PushDevice {
+  token: string;
+  platform: 'ios' | 'android' | 'web';
+  /** Lot B, phase 3 : les clés de chiffrement d'un abonnement web (`token` = son adresse). */
+  keys?: { p256dh: string; auth: string } | null;
+}
 
 export interface PushMessage {
   title: string;

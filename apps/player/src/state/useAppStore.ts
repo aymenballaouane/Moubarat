@@ -926,6 +926,11 @@ export function useAppStore() {
       } catch { return []; }
     },
 
+    /** Lot B, phase 2 : « Choisir un mot de passe » (facultatif) pour un compte d'invité qui n'en a pas — POST /me/password/initial. */
+    setInitialPassword: async (password: string): Promise<ActionResult> => {
+      try { await apiFetch('/me/password/initial', { method: 'POST', token, body: { password } }); return { ok: true }; }
+      catch (e) { return actionResultFromError(e); }
+    },
     /** `team` (règle 3) : l'équipe choisie ; absente = le serveur prend celle qui a le plus de places. */
     joinMatch: async (matchId: string, team?: MatchTeam): Promise<ActionResult> => {
       try {

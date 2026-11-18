@@ -10,6 +10,7 @@ import { dayParts, durationText, eligibleReservations, formatBadge, slotStartEpo
 import { perPlayerShown } from '../lib/price.js';
 import { reportRefusal } from '../lib/pasPossible.js';
 import { useToast } from '../lib/useToast.js';
+import { useLang } from '../lib/i18n.js';
 import { fieldFormatList } from '../lib/venueView.js';
 import type { BookingResume, MatchPrefill, PendingSlotPrefill } from '../nav.js';
 import type { AppStore } from '../state/useAppStore.js';
@@ -41,6 +42,7 @@ interface ReservationSource { booking: Booking; format: MatchFormat | undefined;
 
 export function CreateMatchFlow({ store, onExit, onBookAnother, onChangeSlot, prefill }: CreateMatchFlowProps) {
   const toast = useToast();
+  const lang = useLang();
   const [now] = useState(() => Date.now());
 
   const [source, setSource] = useState<ReservationSource | null>(() =>
@@ -214,7 +216,7 @@ export function CreateMatchFlow({ store, onExit, onBookAnother, onChangeSlot, pr
     return (
       <CreerPublie
         summary={{ ...summary, format: m.format, perPlayerDa: m.pricePerPlayer.amount, places: m.capacity }}
-        level={level} visibility={visibility} shareHref={code ? inviteHref(code) : whatsappShareUrl(waText)}
+        level={level} visibility={visibility} shareHref={code ? inviteHref({ code, format: m.format, start: m.range.start, placeName: venueName, wilaya: store.venueSummary(m.venueId)?.wilaya ?? null, pricePerPlayerDa: m.pricePerPlayer.amount, missing: m.capacity - 1 }, lang) : whatsappShareUrl(waText)}
         linkLabel={code ? matchLinkLabel(code) : null} copied={copied}
         onCopy={() => { if (code) void copyText(matchLink(code)).then((ok) => { if (ok) { setCopied(true); window.setTimeout(() => setCopied(false), 2500); } }); }}
         onSeeMatch={() => setScreen('mymatch')} onBack={onExit} toast={toastEl}

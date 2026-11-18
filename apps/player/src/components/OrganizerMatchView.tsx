@@ -18,7 +18,7 @@ import { fillNodes } from '../lib/fillNodes.js';
 import { lateCancelNotice } from '../lib/reservationView.js';
 import { copyText } from '../lib/clipboard.js';
 import { share } from '../lib/share.js';
-import { inviteHref, inviteText, matchLink } from '../lib/matchLink.js';
+import { inviteHref, inviteLink, inviteMessage, matchLink, type InviteDetails } from '../lib/matchLink.js';
 import { contactsByUser, telHref } from '../lib/contacts.js';
 import { CURRENT_USER_ID } from '../data/identity.js';
 import type { AppStore } from '../state/useAppStore.js';
@@ -112,8 +112,10 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
     dayLabel: epochDayLabel(match.range.start), timeLabel: startHour,
     pricePerPlayerDa: match.pricePerPlayer.amount, spotsLeft: Math.max(left, 1),
   });
+  // Lot B, phase 2 : le message partagé dit le jour, l'heure, le lieu, le prix et les places qui manquent, dans la langue de l'app.
+  const invite: InviteDetails | null = code ? { code, format: match.format, start: match.range.start, placeName: venueName, wilaya: match.place?.wilaya ?? centre?.wilaya ?? null, pricePerPlayerDa: match.pricePerPlayer.amount, missing: left } : null;
   function shareMatch() {
-    void share(code ? { title: venueName, text: inviteText(code).split(' : ')[0] ?? '', url: matchLink(code) } : { title: venueName, text: waText });
+    void share(invite ? { title: venueName, text: inviteMessage(invite, lang, { withLink: false }), url: inviteLink(invite.code, lang) } : { title: venueName, text: waText });
   }
 
   /* --- actions ------------------------------------------------------------------------------------------------------------- */
@@ -302,7 +304,7 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
 
       {!over && left > 0 && open ? (
         <footer className="mv-foot">
-          <a className="mv-cta mb-tap" href={code ? inviteHref(code) : whatsappShareUrl(waText)} target="_blank" rel="noopener noreferrer">
+          <a className="mv-cta mb-tap" href={invite ? inviteHref(invite, lang) : whatsappShareUrl(waText)} target="_blank" rel="noopener noreferrer">
             <Icon id="i-chat" />{tn('Trouver {n} joueurs', left)}
           </a>
         </footer>

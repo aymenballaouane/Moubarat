@@ -5,6 +5,7 @@ import { CreerPublie } from './CreerMatch.js';
 import { OrganizerMatchView } from './OrganizerMatchView.js';
 import { copyText } from '../lib/clipboard.js';
 import { inviteHref, matchLink, matchLinkLabel } from '../lib/matchLink.js';
+import { useLang } from '../lib/i18n.js';
 import { firstOpenPeriod, freeMatchTitle, freeStarts, type FreePlaceInput } from '../lib/freeMatch.js';
 import { reportRefusal } from '../lib/pasPossible.js';
 import type { PeriodKey } from '../lib/reserverCreneau.js';
@@ -31,6 +32,7 @@ export function FreeMatchFlow({ store, place, onBackToPlace, onExit }: {
   onExit: () => void;
 }) {
   const toast = useToast();
+  const lang = useLang();
   const [now] = useState(() => Date.now());
   // Aujourd'hui s'il reste une heure possible, sinon demain.
   const [dayIndex, setDayIndex] = useState(() => (firstOpenPeriod(dayStartOf(0), now) !== null ? 0 : 1));
@@ -99,7 +101,7 @@ export function FreeMatchFlow({ store, place, onBackToPlace, onExit }: {
     return (
       <CreerPublie
         summary={{ sport: m.sport, format: m.format, startEpoch: m.range.start, endEpoch: m.range.end, venueName: place.name, fieldName: '', perPlayerDa: 0, places: FORMAT_CAPACITY[m.format] }}
-        level={level} visibility={visibility} shareHref={code ? inviteHref(code) : '#'}
+        level={level} visibility={visibility} shareHref={code ? inviteHref({ code, format: m.format, start: m.range.start, placeName: place.name, wilaya: place.wilaya, pricePerPlayerDa: 0, missing: m.capacity - 1 }, lang) : '#'}
         linkLabel={code ? matchLinkLabel(code) : null} copied={copied}
         onCopy={() => { if (code) void copyText(matchLink(code)).then((ok) => { if (ok) { setCopied(true); window.setTimeout(() => setCopied(false), 2500); } }); }}
         onSeeMatch={() => setScreen('mymatch')} onBack={onExit} toast={toastEl}

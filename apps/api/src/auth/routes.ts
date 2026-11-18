@@ -216,7 +216,7 @@ export async function registerAuthRoutes(
       // Règles 28-30 (24/10/2026) : pseudo + mot de passe + nouveaux accords, pas encore
       // posés pour un compte antérieur à ce lot (`password_hash` reste NULL) — vrai pour un
       // compte tout juste créé par cette même requête aussi bien que pour un ancien compte.
-      needsAccessSetup: user.password_hash === null,
+      needsAccessSetup: user.password_hash === null && user.access_setup_at === null,
     });
   });
 
@@ -302,7 +302,7 @@ export async function registerAuthRoutes(
       user: { id: user.id, name: user.name, phone: user.phone, role: user.role },
       needsLegalConsent: await needsLegalConsent(db, 'PLAYER', user.id),
       needsNameChange: user.name_change_required,
-      needsAccessSetup: user.password_hash === null,
+      needsAccessSetup: user.password_hash === null && user.access_setup_at === null,
     });
   });
 
@@ -370,13 +370,13 @@ export async function registerAuthRoutes(
          visible », pseudo, mot de passe — règles 28 à 30) : lui poser un mot de passe ici faisait tomber `needsAccessSetup` et
          l'envoyait dans l'app sans les accords (numéro visible par défaut, aucune attestation d'âge). Son code SMS prouve qu'il est
          bien le titulaire : on ouvre sa session, mais le mot de passe reste vide — la passerelle s'affiche et le lui demande. */
-      const current = await trx.selectFrom('users').select('password_hash')
+      const current = await trx.selectFrom('users').select(['password_hash', 'access_setup_at'])
         .where('phone', '=', norm.e164).where('deleted_at', 'is', null).forUpdate().executeTakeFirst();
       // Un mot de passe réinitialisé par SMS efface aussi le verrou anti-bruteforce et révoque
       // les AUTRES sessions (même téléphone = même personne, mais un appareil volé qui avait
       // encore une session active ne doit pas la garder après ce geste de récupération).
       const updated = await trx.updateTable('users')
-        .set({ password_hash: current && current.password_hash === null ? null : hash, failed_login_attempts: 0, locked_until: null })
+        .set({ password_hash: current && current.password_hash === null && current.access_setup_at === null ? null : hash, failed_login_attempts: 0, locked_until: null })
         .where('phone', '=', norm.e164).where('deleted_at', 'is', null)
         .returningAll().executeTakeFirst();
       if (!updated) return { ok: false as const, error: badRequest('Aucun compte avec ce numéro.', 'NOT_FOUND') };
@@ -394,7 +394,7 @@ export async function registerAuthRoutes(
     return reply.send({
       token,
       user: { id: user.id, name: user.name, phone: user.phone, role: user.role },
-      needsAccessSetup: user.password_hash === null,
+      needsAccessSetup: user.password_hash === null && user.access_setup_at === null,
     });
   });
 
@@ -438,7 +438,7 @@ export async function registerAuthRoutes(
         let updated: bigint;
         try {
           const res = await trx.updateTable('users')
-            .set({ name: pseudo, name_change_required: false, password_hash: hash })
+            .set({ name: pseudo, name_change_required: false, password_hash: hash, access_setup_at: new Date() })
             .where('id', '=', userId).where('deleted_at', 'is', null).where('password_hash', 'is', null)
             .executeTakeFirst();
           updated = res.numUpdatedRows;

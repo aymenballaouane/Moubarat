@@ -154,8 +154,9 @@ export class PushDispatcher {
     if (PUSH_POLICY[type] === 'in-app-only') return;
     const ids = [...new Set(userIds)];
     if (ids.length === 0) return;
-    const devices = await this.db.selectFrom('push_devices').select(['token', 'platform'])
+    const rows = await this.db.selectFrom('push_devices').select(['token', 'platform', 'web_keys'])
       .where('user_id', 'in', ids).execute();
+    const devices = rows.map((r) => ({ token: r.token, platform: r.platform, keys: r.web_keys }));
     if (devices.length === 0) return;
 
     const label = NOTIFICATION_LABELS[type];

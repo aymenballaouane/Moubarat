@@ -17,6 +17,8 @@ import { peekAuthNotice, clearAuthNotice } from '../lib/session.js';
 import { hasSupport, useSupport } from '../lib/support.js';
 import { useToast } from '../lib/useToast.js';
 import { cityLabel } from '../lib/labels.js';
+import { fillTemplate } from '../lib/reserverCreneau.js';
+import { fillNodes } from '../lib/fillNodes.js';
 import heroPhoto from '../../../../design/photo-nocturne.jpg';
 
 /* Refonte app joueur, lot "Inscription et connexion" (règles 28-30, 24/10/2026) — Numéro
@@ -32,7 +34,7 @@ import heroPhoto from '../../../../design/photo-nocturne.jpg';
    un compte existant sans mot de passe (AccessSetupGate.tsx), unifié par `needsAccessSetup`. */
 
 type Step =
-  | 'welcome' | 'numero' | 'code' | 'acces' | 'jeu' | 'done'
+  | 'welcome' | 'numero' | 'code' | 'acces' | 'prenom' | 'jeu' | 'done'
   | 'connexion' | 'mdp-oublie' | 'mdp-nouveau';
 type Sport = CoreSport;
 type Level = CoreLevel;
@@ -61,6 +63,18 @@ interface AccessSetupResponse { user: VerifyResponse['user']; needsAccessSetup: 
 
 export interface AuthProfile { token: string; name: string; sport: Sport | null; level: Level | null }
 
+/** Lot B, phase 2 — l'invité arrivé par le lien d'un match : « Pour le match de {jour} », le sport et la ville du match (repris dans son
+    profil). Son inscription : « Ton numéro » (accords) → « Ton code » → « Comment tu t'appelles ? » (prénom seul, pseudo généré, aucun
+    mot de passe), puis il rejoint le match. */
+export interface GuestInvite { code: string; dayWord: string; sport: Sport; city: string | null }
+
+/** « karim.b27 » (maquette 03_Prenom) — même forme que le serveur (apps/api/src/auth/guest.ts), qui la reprend si elle est libre. */
+export function guestPseudo(firstName: string, rand: () => number = Math.random): string {
+  const latin = firstName.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z]/g, '');
+  const base = (latin.length >= 2 ? latin : 'joueur').slice(0, 20);
+  return `${base}.${String.fromCharCode(97 + Math.floor(rand() * 26))}${String(Math.floor(rand() * 100)).padStart(2, '0')}`;
+}
+
 /** Message d'erreur à afficher pour n'importe quel échec réseau/API — jamais
     le texte brut d'une exception JS. Le message d'une ApiError vient du serveur
     (déjà dans sa langue de référence, hors périmètre de ce lot) ; seul le repli
@@ -86,7 +100,14 @@ function SupportLinks() {
   );
 }
 
-export function AuthFlow({ onEnter, startStep = 'welcome' }: { onEnter: (profile: AuthProfile) => void; startStep?: 'welcome' | 'connexion' }) {
+export function AuthFlow({ onEnter, startStep = 'welcome', guest = null, onCancel }: {
+  onEnter: (profile: AuthProfile) => void;
+  startStep?: 'welcome' | 'connexion' | 'numero';
+  /** Lot B, phase 2 : inscription courte d'un invité (arrivé par le lien d'un match). */
+  guest?: GuestInvite | null;
+  /** Retour depuis le premier écran du parcours invité : la page du lien. */
+  onCancel?: (() => void) | undefined;
+}) {
   const t = useT();
   const lang = useLang();
   /* Déconnecté parce que le compte a été suspendu (JO7), ou renvoyé de Numéro parce que ce
@@ -257,6 +278,12 @@ export function AuthFlow({ onEnter, startStep = 'welcome' }: { onEnter: (profile
       setOtpError('');
       setResolved({ token: res.token, name: res.user.name });
       setPseudo(res.isNew ? '' : res.user.name);
+      if (guest) {
+        // Invité : un compte neuf (ou jamais terminé) donne son prénom ; un compte déjà prêt entre et rejoint le match directement.
+        if (res.needsAccessSetup) setStep('prenom');
+        else onEnter({ token: res.token, name: res.user.name, sport: guest.sport, level: null });
+        return;
+      }
       if (res.needsAccessSetup) setStep('acces');
       else setStep('jeu');
     } catch (err) {
@@ -289,6 +316,29 @@ export function AuthFlow({ onEnter, startStep = 'welcome' }: { onEnter: (profile
       setStep('jeu');
     } catch (err) {
       setAccesError(errorMessage(err, t));
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  /* Lot B, phase 2 — « Comment tu t'appelles ? » : le prénom, les accords de l'écran « Ton numéro », le sport et la ville du match. Le
+     pseudo proposé est repris par le serveur s'il est libre (sinon il en tire un autre de la même forme). */
+  const [guestPseudoHint, setGuestPseudoHint] = useState('');
+  const [prenomError, setPrenomError] = useState('');
+  useEffect(() => { setGuestPseudoHint(firstName.trim().length >= 2 ? guestPseudo(firstName) : ''); }, [firstName]);
+  const prenomValid = firstName.trim().length >= 2 && /\p{L}/u.test(firstName);
+  async function submitPrenom() {
+    if (!resolved || !guest || !prenomValid) return;
+    setPrenomError('');
+    setVerifying(true);
+    try {
+      const res = await apiFetch<AccessSetupResponse>('/me/guest-setup', {
+        method: 'POST', token: resolved.token,
+        body: { firstName: firstName.trim(), pseudo: guestPseudoHint || undefined, ageConfirmed, phoneVisible, promoOptIn, sport: guest.sport, city: guest.city ?? undefined },
+      });
+      onEnter({ token: resolved.token, name: res.user.name, sport: guest.sport, level: null });
+    } catch (err) {
+      setPrenomError(errorMessage(err, t));
     } finally {
       setVerifying(false);
     }
@@ -397,7 +447,7 @@ export function AuthFlow({ onEnter, startStep = 'welcome' }: { onEnter: (profile
   if (step === 'numero') {
     return (
       <section className="au-screen oa" id="s-numero">
-        <OaTop step={1} onBack={() => setStep('welcome')} />
+        <OaTop step={1} of={guest ? 3 : 4} onBack={() => (guest && onCancel ? onCancel() : setStep('welcome'))} />
         <h1 className="oa-h1">{t('Ton numéro')}</h1>
 
         <div className="oa-sec">
@@ -444,7 +494,7 @@ export function AuthFlow({ onEnter, startStep = 'welcome' }: { onEnter: (profile
   if (step === 'code') {
     return (
       <section className="au-screen oa" id="s-code">
-        <OaTop step={2} onBack={() => setStep('numero')} />
+        <OaTop step={2} of={guest ? 3 : 4} onBack={() => setStep('numero')} />
         <h1 className="oa-h1">{t('Ton code')}</h1>
         <p className="oa-sub">{t('On vient de l’envoyer au')} <b><Ltr>{algerianLocalGrouped(phoneNational)}</Ltr></b>.</p>
 
@@ -479,6 +529,40 @@ export function AuthFlow({ onEnter, startStep = 'welcome' }: { onEnter: (profile
             disabled={!otpComplete || verifying} onClick={() => { void submitCode(); }}
           >
             {t('Vérifier')}
+          </button>
+        </OaFoot>
+      </section>
+    );
+  }
+
+  if (step === 'prenom' && guest) {
+    return (
+      <section className="au-screen oa" id="s-prenom">
+        <header className="oa-guest-top">
+          <span className="oa-guest-top__row">
+            <button type="button" className="oa-back mb-tap" aria-label={t('Retour')} onClick={() => setStep('code')}><Icon id="i-back" /></button>
+            <span className="oa-guest-top__label">{fillTemplate(t('Pour le match de {jour}'), { jour: guest.dayWord })}</span>
+            <span className="oa-guest-top__step"><Ltr>3/3</Ltr></span>
+          </span>
+          <span className="oa-guest-top__bars" aria-hidden="true"><i /><i /><i /></span>
+        </header>
+        <h1 className="oa-h1">{t('Comment tu t’appelles ?')}</h1>
+        <div className="oa-sec">
+          <label className="oa-q" htmlFor="guest-first">{t('Prénom')}</label>
+          <input id="guest-first" className="oa-input" type="text" autoComplete="given-name" maxLength={30} dir="auto" autoFocus
+            value={firstName} onChange={(e) => { setFirstName(e.target.value); setPrenomError(''); }} />
+          <p className="oa-guest-help">{t('C’est ce que verront l’organisateur et les joueurs.')}</p>
+        </div>
+        {guestPseudoHint ? (
+          <p className="oa-guest-pseudo">
+            {fillNodes(t('Ton pseudo : {pseudo} · tu pourras le changer dans ton profil'), { pseudo: <b><Ltr>{guestPseudoHint}</Ltr></b> })}
+          </p>
+        ) : null}
+        <p className={`au-error${prenomError ? ' on' : ''}`}><Icon id="i-x" className="mb-ic--sm" /><span>{prenomError}</span></p>
+        <OaFoot>
+          <button type="button" className="mb-btn mb-btn--block" data-loading={verifying ? 'true' : undefined}
+            disabled={!prenomValid || verifying} onClick={() => { void submitPrenom(); }}>
+            {t('Rejoindre le match')}
           </button>
         </OaFoot>
       </section>

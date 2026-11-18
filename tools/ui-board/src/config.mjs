@@ -10,10 +10,16 @@ export const PG_BIN = 'C:\\Users\\Lenovo\\tools\\pg16\\pgsql\\bin';
 export const PG_DATA = 'C:\\Users\\Lenovo\\tools\\pg16\\data';
 export const PG_LOG = 'C:\\Users\\Lenovo\\tools\\pg16\\pg.log';
 
-export const API_URL = 'http://127.0.0.1:3001';
-export const CRM_URL = 'http://localhost:5174';
-export const PLAYER_URL = 'http://localhost:5175';
-export const PROTO_URL = 'http://localhost:4173';
+/* Ports réglables (18/11/2026) : un autre serveur de développement peut déjà occuper les ports habituels (autre session de travail) —
+   BOARD_API_PORT, BOARD_CRM_PORT, BOARD_PLAYER_PORT, BOARD_PROTO_PORT les déplacent sans rien toucher d'autre. */
+export const API_PORT = Number(process.env.BOARD_API_PORT ?? 3001);
+export const CRM_PORT = Number(process.env.BOARD_CRM_PORT ?? 5174);
+export const PLAYER_PORT = Number(process.env.BOARD_PLAYER_PORT ?? 5175);
+export const PROTO_PORT = Number(process.env.BOARD_PROTO_PORT ?? 4173);
+export const API_URL = `http://127.0.0.1:${API_PORT}`;
+export const CRM_URL = `http://localhost:${CRM_PORT}`;
+export const PLAYER_URL = `http://localhost:${PLAYER_PORT}`;
+export const PROTO_URL = `http://localhost:${PROTO_PORT}`;
 
 export const VIEWPORT_PLAYER = { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
 export const VIEWPORT_CRM = { width: 1440, height: 900, deviceScaleFactor: 2, isMobile: false };

@@ -33,6 +33,18 @@ beforeAll(async () => {
 });
 afterAll(() => stack.teardown());
 
+describe('retour arrière de 0052 (inscription courte d’un invité)', () => {
+  it('refuse tant qu’un compte d’invité sans mot de passe existe ; défait la migration sinon ; le migrateur la réapplique', async () => {
+    await q("UPDATE users SET access_setup_at = now() WHERE id = $1 AND password_hash IS NULL", [seed.users.sofiane]);
+    await expect(runRetour('0052_user_access_setup.sql')).rejects.toThrow(/0052 refusé/);
+    await q('UPDATE users SET access_setup_at = NULL WHERE id = $1', [seed.users.sofiane]);
+    await runRetour('0052_user_access_setup.sql');
+    const cols = (await q<{ c: string }>("SELECT column_name AS c FROM information_schema.columns WHERE table_name = 'users'")).map((r) => r.c);
+    expect(cols).not.toContain('access_setup_at');
+    expect(await migrate(stack.pool)).toEqual(['0052_user_access_setup']);
+  });
+});
+
 describe('retour arrière de 0051 (adresse d’un match libre)', () => {
   it('refuse tant qu’un match à venir porte une adresse ; défait la migration sinon ; le migrateur la réapplique', async () => {
     const start = Date.now() + 30 * 86_400_000;

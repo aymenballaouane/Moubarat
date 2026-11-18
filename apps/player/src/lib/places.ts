@@ -80,3 +80,10 @@ export function defaultFieldName(area: string | null | undefined, wilaya: string
   const where = (area ?? '').trim() || (wilaya ?? '').trim();
   return where ? label.replace('{quartier}', where) : label.replace(/\s*·\s*\{quartier\}/, '').trim();
 }
+
+/** Le code de ville du profil (« ALGER ») pour une wilaya écrite (« Alger ») — `null` si ce n'est pas une ville de l'app. */
+export function cityCodeOf(wilaya: string | null | undefined): string | null {
+  if (!wilaya) return null;
+  const key = fold(wilaya.trim());
+  return Object.keys(CITY_CENTERS).find((code) => fold(cityLabel(code)) === key) ?? null;
+}
