@@ -254,6 +254,8 @@ export function CreerPublie(p: {
   onSeeMatch: () => void;
   onBack: () => void;
   toast: ReactNode;
+  /** Lot B, phase 3 : « Sois prévenu quand des joueurs arrivent » (AlertsCard, variante organisateur). */
+  alerts?: ReactNode;
 }) {
   const t = useT();
   const tn = useTn();
@@ -287,6 +289,7 @@ export function CreerPublie(p: {
         ) : null}
         <button type="button" className="cr-ghost mb-tap" onClick={p.onSeeMatch}>{t('Voir le match')}</button>
       </div>
+      {p.alerts}
       {p.toast}
     </section>
   );

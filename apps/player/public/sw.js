@@ -142,3 +142,26 @@ self.addEventListener('fetch', (event) => {
     ),
   );
 });
+
+/* Lot B, phase 3 (18/11/2026) — les alertes sur le téléphone (Web Push). Le serveur envoie { title, body, data: { type, refId } } : on
+   l'affiche telle quelle (le texte est celui de la cloche de l'app). Toucher l'alerte ouvre l'app (ou la remet au premier plan) sur
+   l'écran Notifications. */
+self.addEventListener('push', (event) => {
+  let msg = { title: 'Moubarat', body: '', data: {} };
+  try { if (event.data) msg = { ...msg, ...event.data.json() }; } catch { /* message illisible : titre seul */ }
+  event.waitUntil(self.registration.showNotification(msg.title, {
+    body: msg.body, data: msg.data, icon: '/icons/icon-192.png', badge: '/icons/favicon-32.png',
+    tag: msg.data && msg.data.refId ? String(msg.data.type) + ':' + String(msg.data.refId) : undefined,
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL('/?ouvrir=notifications', self.location.origin).href;
+  event.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const open = all.find((c) => new URL(c.url).origin === self.location.origin);
+    if (open) { await open.focus(); open.postMessage({ type: 'moubarat:open-notifications' }); return; }
+    await self.clients.openWindow(target);
+  })());
+});

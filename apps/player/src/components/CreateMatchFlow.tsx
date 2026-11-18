@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FORMAT_CAPACITY, matchShareText, whatsappShareUrl, type Booking, type MatchFormat, type SkillLevel, type Sport } from '@moubarat/core';
 import { ClaimCard, useClaimAnswer } from './ClaimCard.js';
 import { CreerConfig, CreerCreneau, CreerPublie, type MatchSummary, type ResaCardData } from './CreerMatch.js';
+import { AlertsCard } from './AlertsCard.js';
 import { OrganizerMatchView } from './OrganizerMatchView.js';
 import { epochDayTimeLabel } from '../lib/format.js';
 import { copyText } from '../lib/clipboard.js';
@@ -220,6 +221,7 @@ export function CreateMatchFlow({ store, onExit, onBookAnother, onChangeSlot, pr
         linkLabel={code ? matchLinkLabel(code) : null} copied={copied}
         onCopy={() => { if (code) void copyText(matchLink(code)).then((ok) => { if (ok) { setCopied(true); window.setTimeout(() => setCopied(false), 2500); } }); }}
         onSeeMatch={() => setScreen('mymatch')} onBack={onExit} toast={toastEl}
+        alerts={<AlertsCard store={store} variant="organizer" />}
       />
     );
   }

@@ -944,6 +944,23 @@ contrainte `matches_place_position`). Additive, sans coupure. Retour arrière à
 - **Position du joueur** : demandée par le navigateur seulement au toucher de « Ma position » ; jamais envoyée au serveur (elle sert à
   trier les centres et à recentrer la carte).
 
+### 4.23 Lot B : invitation, aperçu des liens, alertes web (migrations 0052-0053, 18/11/2026)
+
+- **Migration 0052** (`users.access_setup_at`) : l'inscription courte d'un invité (sans mot de passe). Additive. Retour arrière :
+  `migrations/retour/0052_user_access_setup.sql` (refusé tant qu'un compte d'invité sans mot de passe existe).
+- **Migration 0053** (`push_devices` : plateforme `web` et `web_keys`). Additive. Retour arrière : `migrations/retour/0053_web_push.sql`
+  (supprime les abonnements web). Ordre complet des retours du lot : 0053, 0052, 0051, 0050, 0049, 0048, 0047.
+- **Alertes web — à faire AVANT la mise en ligne** : générer une fois les clés `pnpm --filter @moubarat/api web-push:keys`, puis poser sur
+  le serveur `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY` (secret : jamais dans le code ni sur GitHub) et `WEB_PUSH_SUBJECT`
+  (`mailto:contact@moubarat.app`). Sans elles : aucune alerte web, l'app n'affiche pas la carte (rien ne casse). Changer de clés
+  oblige chaque téléphone à réactiver ses alertes. Le serveur doit pouvoir sortir en HTTPS vers les services de notification des
+  navigateurs (fcm.googleapis.com, updates.push.services.mozilla.com, web.push.apple.com…).
+- **Aperçu des liens** : `apps/player/middleware.ts` (Routing Middleware Vercel) lit `VITE_API_BASE_URL` à l'exécution ; il doit donc être
+  défini dans les variables du projet Vercel de l'app joueur (c'est déjà le cas). Routes publiques de l'API : `GET /og/m/:code` et
+  `GET /og/m/:code/image.png` (dépendances `satori` et `@resvg/resvg-js`, binaire précompilé pour Linux installé par pnpm).
+- **Android** : nouvelle version Play Store nécessaire pour les alertes (délégation des notifications) — configuration prête dans
+  `apps/android/twa-manifest.json` (1.0.5, code 7), à construire avec la clé de signature (`apps/android/README.md`).
+
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 
 Chaque point ci-dessous a été soit vérifié (test automatisé, ou vérification manuelle décrite),

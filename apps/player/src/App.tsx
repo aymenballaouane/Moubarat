@@ -40,6 +40,7 @@ import { useAppStore, type AppStore } from './state/useAppStore.js';
 import { loadToken } from './lib/session.js';
 import { clearPendingMatch, codeFromPath, loadPendingMatch, saveGuestJoin, savePendingMatch, takeGuestJoin } from './lib/matchLink.js';
 import { MatchJustFull, TuJoues } from './components/TuJoues.js';
+import { AlertsCard } from './components/AlertsCard.js';
 import type { GuestInvite } from './components/AuthFlow.js';
 import { installNativeBridge, on, post } from './lib/native.js';
 
@@ -163,8 +164,12 @@ export function App() {
     // approximatif : l'écran Notifications, où le même item, une fois
     // touché, route correctement.
     const offNotif = on('notificationOpened', () => setRoute({ name: 'notifications' }));
+    // Lot B, phase 3 : une alerte web touchée (service worker) — l'app déjà ouverte reçoit un message, sinon elle s'ouvre avec ?ouvrir=notifications.
+    const onSwMessage = (e: MessageEvent) => { if ((e.data as { type?: string } | null)?.type === 'moubarat:open-notifications') setRoute({ name: 'notifications' }); };
+    navigator.serviceWorker?.addEventListener('message', onSwMessage);
+    if (new URLSearchParams(window.location.search).get('ouvrir') === 'notifications' && loadToken()) { window.history.replaceState(null, '', '/'); setRoute({ name: 'notifications' }); }
     const offPushToken = on('pushToken', (m) => { void store.registerPushDevice(m.token, m.platform); });
-    return () => { offTab(); offCreate(); offNotif(); offPushToken(); };
+    return () => { offTab(); offCreate(); offNotif(); offPushToken(); navigator.serviceWorker?.removeEventListener('message', onSwMessage); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -341,7 +346,7 @@ function renderRoute(
         const entry = store.findMatch(route.matchId);
         if (!entry) return null;
         const team = entry.players.find((p) => p.userId === store.me?.id)?.team ?? null;
-        return <TuJoues match={entry.match} team={team} code={route.code} store={store} onSeeMatch={() => setRoute({ name: 'match', mode: 'detail', matchId: route.matchId })} />;
+        return <TuJoues match={entry.match} team={team} code={route.code} store={store} onSeeMatch={() => setRoute({ name: 'match', mode: 'detail', matchId: route.matchId })} alertsSlot={<AlertsCard store={store} variant="player" />} />;
       }
       if (route.mode === 'full') {
         return <MatchJustFull onOtherMatches={() => setRoute({ name: 'tab', tab: 'explorer', explorerDay: route.dayStart })} onHome={() => setRoute(HOME)} />;

@@ -6782,3 +6782,30 @@ Maquettes `2_Inviter_un_ami` (message, page d'invitation, prénom, « C'est bon,
   message remplacé par ceux du nouveau, demande du pack), `ogMeta.test.ts` (2).
 - **Vérifié en vrai** (base de dev, code SMS de développement) : lien → « Rejoindre le match » → numéro → code → « Yacine » (pseudo
   « yacine.b07 », celui affiché) → inscrit → « C'est bon, tu joues ! » avec le numéro de l'organisateur. Comptes de test retirés ensuite.
+
+### Phase 3 — Les alertes sur le téléphone (branche `lot-b/phase-3-alertes`)
+
+Décision d'Aymen : le web et Android d'abord ; l'iPhone quand il aura la clé Apple et une version à envoyer.
+- **Canal** : la norme Web Push (gratuite, aucun service tiers à payer ; clés VAPID). Serveur : migration 0053 (`push_devices` accepte la
+  plateforme `web` avec ses deux clés de chiffrement), `WebPushProvider` (bibliothèque libre `web-push`), un aiguillage par plateforme
+  (`RoutingPushProvider` : iPhone par APNs, web par Web Push), routes `GET /push/web-key`, `PUT`/`DELETE /me/push-devices/web`. Les
+  alertes envoyées sont EXACTEMENT celles de la cloche (rappel 3 h avant, place libérée, joueur qui rejoint ou part, match modifié ou
+  annulé…) : elles respectent donc déjà les réglages de Profil › Notifications, appliqués quand l'alerte est écrite. Un abonnement
+  expiré (404/410) est retiré tout seul. Sans clés VAPID, rien n'est envoyé par le web et l'app n'affiche pas la carte.
+- **App** : `lib/webPush.ts` (abonnement du navigateur), le service worker affiche l'alerte et ouvre l'écran Notifications au toucher,
+  `AlertsCard` — « Sois prévenu avant le match » (joueur) / « Sois prévenu quand des joueurs arrivent » (organisateur). La permission
+  n'est demandée qu'au toucher de « Activer les alertes », montré : après avoir rejoint un match (détail), après avoir publié (écran
+  « match en ligne », libre et centre), sur « C'est bon, tu joues ! », et dans Profil › Notifications, où la phrase « pas sur l'écran de
+  ton téléphone » est remplacée par « Choisis les alertes que tu reçois sur ton téléphone. » (gardée là où le téléphone ne sait pas
+  recevoir d'alertes web : iPhone hors écran d'accueil, serveur sans clés). À la déconnexion, le navigateur se désabonne.
+- **Refusées** : « Les alertes sont coupées dans les réglages de ton téléphone. » Le bouton « Ouvrir les réglages » du pack n'est PAS
+  affiché : un site (ni l'app Android qui l'affiche) ne peut pas ouvrir lui-même les réglages du téléphone ; la phrase dit où aller.
+- **Android (vérification demandée par Aymen)** : l'app Play Store 1.0.4 n'a PAS la délégation des notifications
+  (`enableNotifications: false`, aucune permission POST_NOTIFICATIONS). **Il faut une nouvelle version Play Store** : la configuration est
+  prête (`apps/android/twa-manifest.json` : `enableNotifications: true`, version 1.0.5, code 7) ; la construire et l'envoyer revient à
+  Aymen (clé de signature) — rien n'a été envoyé. En attendant, les alertes marchent dans Chrome sur Android (site web).
+- **iPhone** : inchangé (APNs déjà prêt côté serveur, attend la clé Apple et une nouvelle version).
+- **Non vérifié en vrai** : la réception d'une alerte sur un téléphone. Le navigateur de test sans fenêtre refuse d'office les
+  notifications ; l'envoi est couvert par les tests (`web-push.test.ts` : abonnement, envoi, abonnement expiré, aiguillage) et la carte
+  a été vue dans ses 4 variantes (FR/AR, sombre/clair). À tester sur téléphone dès que les clés VAPID de production sont posées.
+- **Textes arabes** : section « alertes » du pack ; 2 textes sans maquette ajoutés en provisoires.

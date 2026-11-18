@@ -6,6 +6,7 @@ import {
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
 import { MatchHead } from './MatchHead.js';
+import { AlertsCard } from './AlertsCard.js';
 import { MatchPitch } from './MatchPitch.js';
 import { MatchConfirmSheet } from './MatchSheets.js';
 import { ReportSheet, type ReportTarget } from './ReportSheet.js';
@@ -118,6 +119,7 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
 
   /* --- actions -------------------------------------------------------------------------------------------------------------------- */
 
+  const [justJoined, setJustJoined] = useState(false);
   async function join() {
     if (busy) return;
     if (picked) {
@@ -129,6 +131,7 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
     setBusy(false);
     if (!res.ok) { if (!reportRefusal(res)) toast.show(res.message); return; }
     setPicked(null);
+    setJustJoined(true);   // lot B, phase 3 : « Sois prévenu avant le match »
     toast.show(t('C’est noté, tu joues.'));
   }
   async function changeTo(team: MatchTeam) {
@@ -201,6 +204,7 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
           <a className="mv-callbtn mv-wa mb-tap" href={groupUrl} target="_blank" rel="noopener noreferrer"><Icon id="i-chat" />{t('Groupe WhatsApp')}</a>
         ) : null}
 
+        {justJoined && joined ? <AlertsCard store={store} variant="player" /> : null}
         <div className="mv-org">
           <span className="mv-org__av" aria-hidden="true">{organizerName.charAt(0).toUpperCase()}</span>
           <span className="mv-org__col">

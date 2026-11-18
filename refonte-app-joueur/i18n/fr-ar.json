@@ -1086,6 +1086,8 @@
   },
   "textes_provisoires_lisezmoi": "PROVISOIRE, À RELIRE PAR UN ARABOPHONE — traductions ajoutées le 26/10/2026 par Claude pour des textes SANS maquette (erreurs, toasts, états vides, écran Aide & Support, libellés de notification du core), en suivant le ton et le vocabulaire des maquettes. Ce bloc est fusionné avec « textes » par apps/player/src/lib/i18n.ts ; en cas de doublon, « textes » (les maquettes) l'emporte. Pour corriger : remplacer la valeur ici.",
   "textes_provisoires": {
+    "Alertes activées sur ce téléphone.": "التنبيهات مفعّلة على هذا الهاتف.",
+    "Activation impossible pour le moment. Réessaie.": "تعذّر التفعيل حاليًا. حاول مرة أخرى.",
     "{jour} à {heure}": "{jour} على {heure}",
     "L’organisateur": "المنظّم",
     "Mot de passe enregistré.": "تمّ حفظ كلمة المرور.",

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { AlertsCard } from './AlertsCard.js';
+import { webPushSupported } from '../lib/webPush.js';
 import { Icon } from './Icon.js';
 import { useT } from '../lib/i18n.js';
 import { useToast } from '../lib/useToast.js';
@@ -19,6 +21,7 @@ export function NotifSettingsScreen({ store, onBack }: { store: AppStore; onBack
 
   useEffect(() => {
     void store.loadNotificationSettings();
+    void store.loadWebPushKey();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -36,7 +39,11 @@ export function NotifSettingsScreen({ store, onBack }: { store: AppStore; onBack
       <h1 className="pf-sub__title">{t('Notifications')}</h1>
       {/* Lot 0 de l'audit final (MS-027, décision d'Aymen du 12/11/2026) : aucun push ne part au lancement (TWA sans
           notifications, aucun fournisseur configuré côté serveur). L'écran dit donc où les alertes apparaissent vraiment. */}
-      <p className="pf-note pf-note--center">{t('Pour l’instant, tes alertes s’affichent dans l’app (la cloche en haut de l’accueil), pas sur l’écran de ton téléphone. Pense à ouvrir Moubarat avant tes matchs.')}</p>
+      {/* Lot B, phase 3 : là où le téléphone sait recevoir des alertes web (et le serveur a sa clé), « Choisis les alertes que tu reçois sur
+          ton téléphone. » et le bouton qui les active ; ailleurs (iPhone hors écran d'accueil, serveur sans clé), la phrase d'avant. */}
+      {webPushSupported() && store.webPushKey ? <AlertsCard store={store} variant="settings" showOn /> : (
+        <p className="pf-note pf-note--center">{t('Pour l’instant, tes alertes s’affichent dans l’app (la cloche en haut de l’accueil), pas sur l’écran de ton téléphone. Pense à ouvrir Moubarat avant tes matchs.')}</p>
+      )}
 
       <div className="pf-card pf-accords pf-accords--switches">
         {NOTIFICATION_SWITCHES.map((sw) => (

@@ -12,6 +12,7 @@ import {
 } from './store.js';
 import { loadToken, saveToken, clearToken, loadPrefs, savePrefs, clearPrefs, saveAuthNotice } from '../lib/session.js';
 import { loadPushToken, savePushToken, clearPushToken } from '../lib/native.js';
+import { disableAlerts } from '../lib/webPush.js';
 import { fetchMatchPreview } from '../lib/matchPreview.js';
 import { bootFailureKind, type BootFailureKind } from '../lib/bootFailure.js';
 import type { MatchContact } from '../lib/contacts.js';
@@ -299,6 +300,8 @@ export function useAppStore() {
   const [homeToday, setHomeToday] = useState<{ ids: string[]; status: 'idle' | 'loading' | 'ready' | 'error' }>({ ids: [], status: 'idle' });
   /* Lot « Match libre », phase 4 (S3L) : plafonds de réservation appliqués par le serveur et ce que le joueur a déjà. `null` = inconnus. */
   const [bookingLimits, setBookingLimits] = useState<BookingLimits | null>(null);
+  /** Lot B, phase 3 : la clé publique des alertes web (`null` = coupées côté serveur, `undefined` = pas encore lue). */
+  const [webPushKey, setWebPushKey] = useState<string | null | undefined>(undefined);
   const homeRequest = useRef(0);
 
   function applyBootstrapped(b: Bootstrapped) {
@@ -962,6 +965,16 @@ export function useAppStore() {
     /** Lot « Match libre » (Dv3, Dt3) : « Qui peut voir ce match ? » — l'organisateur le passe en privé (hors des listes, rejoint par le
         lien) ou le rend public. Le serveur tranche (organisateur seul, avant le coup d'envoi). */
     bookingLimits,
+    /* --- Lot B, phase 3 : les alertes sur le téléphone (Web Push) --- */
+    webPushKey: webPushKey ?? null,
+    loadWebPushKey: async (): Promise<void> => {
+      if (webPushKey !== undefined) return;
+      try { setWebPushKey((await apiFetch<{ publicKey: string | null }>('/push/web-key')).publicKey); } catch { setWebPushKey(null); }
+    },
+    /** L'abonnement du navigateur → PUT /me/push-devices/web. `true` si le serveur l'a gardé. */
+    registerWebPush: async (subscription: PushSubscriptionJSON): Promise<boolean> => {
+      try { await apiFetch('/me/push-devices/web', { method: 'PUT', token, body: { subscription } }); return true; } catch { return false; }
+    },
     /** GET /me/booking-limits — relu à l'ouverture de l'écran de réservation et après chaque réservation ou annulation. Échec silencieux :
         l'écran ne prévient pas, le serveur refuse quand même à la création (fenêtre « Pas possible pour l'instant »). */
     loadBookingLimits: async (): Promise<void> => {
@@ -1315,6 +1328,8 @@ export function useAppStore() {
           apiFetch(`/me/push-devices/${encodeURIComponent(pushToken)}`, { method: 'DELETE', token: tok }).catch(() => { /* meilleur effort */ });
           clearPushToken();
         }
+        // Lot B, phase 3 : le navigateur cesse aussi de recevoir les alertes web de CE compte.
+        void disableAlerts((endpoint) => apiFetch('/me/push-devices/web', { method: 'DELETE', token: tok, body: { endpoint } }).then(() => undefined));
         apiFetch('/auth/logout', { method: 'POST', token: tok }).catch(() => { /* meilleur effort */ });
       }
     },

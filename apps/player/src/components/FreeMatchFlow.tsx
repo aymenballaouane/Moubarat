@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FORMAT_CAPACITY, type MatchFormat, type SkillLevel } from '@moubarat/core';
 import { CreerTonMatch } from './CreerTonMatch.js';
 import { CreerPublie } from './CreerMatch.js';
+import { AlertsCard } from './AlertsCard.js';
 import { OrganizerMatchView } from './OrganizerMatchView.js';
 import { copyText } from '../lib/clipboard.js';
 import { inviteHref, matchLink, matchLinkLabel } from '../lib/matchLink.js';
@@ -105,6 +106,7 @@ export function FreeMatchFlow({ store, place, onBackToPlace, onExit }: {
         linkLabel={code ? matchLinkLabel(code) : null} copied={copied}
         onCopy={() => { if (code) void copyText(matchLink(code)).then((ok) => { if (ok) { setCopied(true); window.setTimeout(() => setCopied(false), 2500); } }); }}
         onSeeMatch={() => setScreen('mymatch')} onBack={onExit} toast={toastEl}
+        alerts={<AlertsCard store={store} variant="organizer" />}
       />
     );
   }
