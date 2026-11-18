@@ -192,7 +192,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
      s'appliquent PAS : ils ne concernent que les réservations chez un centre (valeur provisoire du dossier, section 11). */
   app.post<{
     Body: {
-      place?: { name?: unknown; area?: unknown; wilaya?: unknown; lat?: unknown; lng?: unknown }; sport?: string; format?: string; level?: string;
+      place?: { name?: unknown; area?: unknown; address?: unknown; wilaya?: unknown; lat?: unknown; lng?: unknown }; sport?: string; format?: string; level?: string;
       start?: number; durationMin?: number; visibility?: string; note?: string; title?: string;
     };
   }>('/matches/free', { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
@@ -206,6 +206,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     const placeName = str(p.name);
     const placeArea = str(p.area).trim();
     const placeWilaya = str(p.wilaya);
+    const placeAddress = str(p.address).trim();   // lot B, phase 1 : l'adresse sous l'épingle
     // Phase adresses : la position du lieu (adresse choisie ou épingle), facultative — le core vérifie qu'elle est entière et plausible.
     const placeLat = p.lat === undefined || p.lat === null ? undefined : Number(p.lat);
     const placeLng = p.lng === undefined || p.lng === null ? undefined : Number(p.lng);
@@ -221,7 +222,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     const now = Date.now();
 
     const result = createFreeMatch({
-      id: '', place: { name: placeName, ...(placeArea !== '' ? { area: placeArea } : {}), wilaya: placeWilaya, lat: placeLat, lng: placeLng },
+      id: '', place: { name: placeName, ...(placeArea !== '' ? { area: placeArea } : {}), ...(placeAddress !== '' ? { address: placeAddress } : {}), wilaya: placeWilaya, lat: placeLat, lng: placeLng },
       sport: sport as (typeof SPORTS)[number], format, level: level as SkillLevel, start, durationMin, title, visibility,
       organizerId: req.auth!.userId, now,
     });
@@ -237,7 +238,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
         sport: match.sport, format: match.format, level: match.level, title: match.title,
         venue_id: null, field_id: null,
         place_name: match.place!.name, place_area: match.place!.area ?? null, place_wilaya: match.place!.wilaya,
-        place_lat: match.place!.lat ?? null, place_lng: match.place!.lng ?? null,
+        place_lat: match.place!.lat ?? null, place_lng: match.place!.lng ?? null, place_address: match.place!.address ?? null,
         time_range: toPgRange(match.range), capacity: match.capacity, price_per_player_da: 0,
         visibility: match.visibility, status: match.status, organizer_id: match.organizerId,
         booking_id: null, coordination: 'WHATSAPP', note: note === '' ? null : note,

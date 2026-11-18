@@ -18,6 +18,7 @@ import type { MatchContact } from '../lib/contacts.js';
 import { epochDateStamp } from '../lib/format.js';
 import type { BookingLimits } from '../lib/bookingLimits.js';
 import type { PlaceSuggestion } from '../lib/places.js';
+import type { FreePlaceInput } from '../lib/freeMatch.js';
 import { venuePhotoUrl, type VenuePhotoSize } from '../lib/venuePhoto.js';
 import type { ProfileSummary } from '../lib/profileView.js';
 import type { NotificationSettings } from '../lib/notificationSettings.js';
@@ -1080,7 +1081,7 @@ export function useAppStore() {
       } catch { return null; }
     },
     publishFreeMatch: async (input: {
-      place: { name: string; wilaya: string; lat?: number | undefined; lng?: number | undefined }; format: MatchFormat; level: SkillLevel; start: number; durationMin: number;
+      place: FreePlaceInput; format: MatchFormat; level: SkillLevel; start: number; durationMin: number;
       title: string; note?: string | undefined; visibility: 'OPEN' | 'PRIVATE';
     }): Promise<ActionResult & { matchId?: string; code?: string | undefined }> => {
       try {

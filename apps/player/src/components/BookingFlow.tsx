@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { whatsappShareUrl, type MatchFormat, type Sport } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
@@ -8,9 +8,9 @@ import { SportPills } from './SportPills.js';
 import { CancelReservationSheet } from './CancelReservationSheet.js';
 import { ReserverTicket, type TicketState } from './ReserverTicket.js';
 import { VenuesTerrains } from './VenuesTerrains.js';
-import { CreerLieu } from './CreerLibre.js';
-import { CreerCarte } from './CreerCarte.js';
-import { cityCenter, wilayaForPlace, type LatLng, type PlaceSuggestion } from '../lib/places.js';
+import { CreerOu } from './CreerOu.js';
+import { cityCenter, wilayaForPlace } from '../lib/places.js';
+import type { FreePlaceInput } from '../lib/freeMatch.js';
 import { inPlayerCity } from '../lib/venueFilters.js';
 import { cityLabel } from '../lib/labels.js';
 import { useT } from '../lib/i18n.js';
@@ -81,7 +81,7 @@ function proofFromReservation(store: AppStore, bookingId: string): ProofState | 
   };
 }
 
-export function BookingFlow({ store, venuePicked, viewReservationId, mode, resume, onCreateMatch, onExit, onHome, onMyMatches, onFreeMatch, freeQuery }: {
+export function BookingFlow({ store, venuePicked, viewReservationId, mode, resume, onCreateMatch, onExit, onHome, onMyMatches, onFreeMatch, freePlace }: {
   store: AppStore;
   /** Lot 6 : Réserver en mode « Créer un match » (maquette Reserver mode=match) — R1/R3 changent de titre et le CTA de R3 mène à la
       configuration du match (le créneau n'est réservé qu'à « Publier le match », BUG-3) au lieu du ticket. */
@@ -99,8 +99,9 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
   onCreateMatch: (prefill: MatchPrefill) => void;
   /** Lot « Match libre », phase 5 (W1/W2) : en mode « match », un lieu hors des centres partenaires a été choisi — la suite (W3, W4)
       est FreeMatchFlow. `freeQuery` : le texte saisi, repris au retour de W3. */
-  onFreeMatch?: ((place: { name: string; wilaya: string; lat?: number; lng?: number }, query: string) => void) | undefined;
-  freeQuery?: string | undefined;
+  onFreeMatch?: ((place: FreePlaceInput, query: string) => void) | undefined;
+  /** Lot B, phase 1 : le lieu déjà choisi (retour par « Modifier » depuis « Ton match ») — la carte se rouvre dessus. */
+  freePlace?: FreePlaceInput | undefined;
   onExit?: (() => void) | undefined;
   /** Cible REELLE du CTA « Retour a l'accueil » du recap — onExit revient au
       dernier onglet visite, ce qui dementait le libelle (revue Premium). */
@@ -153,26 +154,15 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       avant même le premier rendu) mais figerait à tort le sport d'un centre PRÉCÉDENT quand R1
       vient de charger le nouveau. Même geste que selectSport (remet aussi créneau/format
       à zéro) — changer de centre ne doit jamais laisser une sélection de l'ancien. */
-  /* Phase adresses (18/11/2026) : la recherche OpenStreetMap de W2 (attente de 350 ms après la dernière lettre, seulement la dernière
-     réponse compte) et l'étape carte avant W3. */
-  const [lieuQuery, setLieuQuery] = useState(freeQuery ?? '');
-  const [lieuPlaces, setLieuPlaces] = useState<PlaceSuggestion[]>([]);
-  const [lieuSearching, setLieuSearching] = useState(false);
-  const [lieuMap, setLieuMap] = useState<{ center: LatLng; zoom: number; name: string; query: string } | null>(null);
+  /* Lot B, phase 1 (cas limites) : une limite connue d'avance s'explique dès « Où tu joues ? », pas après avoir tout rempli. Créer un match
+     exige l'accord « numéro visible » (règle 32) : s'il est coupé, la fenêtre « Pas possible » s'ouvre tout de suite. Les autres limites
+     (restriction après absences, chevauchement) ne sont connues que du serveur : elles s'expliquent à la publication, même fenêtre. */
+  useEffect(() => { if (matchMode && onFreeMatch && !store.profileSummary) void store.loadProfileSummary(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const accordOff = Boolean(matchMode && onFreeMatch && screen === 'venues' && store.profileSummary?.profile.phoneVisible === false);
+  const accordShown = useRef(false);
   useEffect(() => {
-    const q = lieuQuery.trim();
-    if (!(matchMode && onFreeMatch) || q.length < 3) { setLieuPlaces([]); setLieuSearching(false); return undefined; }
-    let alive = true;
-    setLieuSearching(true);
-    const timer = window.setTimeout(() => {
-      void store.searchPlaces(q, cityCenter(store.identity.city)).then((res) => {
-        if (!alive) return;
-        setLieuPlaces(res.results);
-        setLieuSearching(false);
-      });
-    }, 350);
-    return () => { alive = false; window.clearTimeout(timer); };
-  }, [lieuQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (accordOff && !accordShown.current) { accordShown.current = true; reportRefusal({ ok: false, code: 'PHONE_VISIBLE_OFF', message: '' }); }
+  }, [accordOff]);
   const [lieuOpening, setLieuOpening] = useState<string | null>(null);
   const [lieuError, setLieuError] = useState<string | null>(null);
   async function pickPartner(venueId: string) {
@@ -442,30 +432,24 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
 
   if (screen === 'venues') {
     if (matchMode && onFreeMatch) {
-      /* W1/W2 : « Où tu joues ? » — un centre partenaire mène à sa réservation (S3, le match naît de la réservation) ; un autre lieu, au
-         match libre. La ville du match libre est celle du joueur (réponse 12 d'Aymen), Alger s'il n'en a pas choisi. */
+      /* Lot B, phase 1 — « Où tu joues ? » sur la carte (CreerOu) : un centre partenaire mène à sa réservation (S3, le match naît de la
+         réservation, parcours inchangé) ; un terrain posé à l'épingle ou une adresse, au match libre. La carte s'ouvre sur la ville du
+         joueur (Alger s'il n'en a pas choisi) ; la wilaya enregistrée est celle d'OpenStreetMap si c'est une ville de l'app, sinon la sienne. */
       const city = store.identity.city;
       const wilaya = city && city !== 'AUTRE' ? cityLabel(city) : 'Alger';
-      const partners = store.venues.map((v) => ({ id: v.id, name: v.name, wilaya: v.wilaya, photo: store.venuePhoto(v.id, 'card') }));
-      const nearby = partners.filter((v) => inPlayerCity(v.wilaya, city));
-      if (lieuMap) {
-        return (
-          <CreerCarte
-            key={`${lieuMap.center.lat},${lieuMap.center.lng}`} center={lieuMap.center} zoom={lieuMap.zoom} initialName={lieuMap.name}
-            onReverse={(lat, lng) => store.reversePlace(lat, lng)}
-            onConfirm={(pl) => onFreeMatch({ name: pl.name, wilaya: wilayaForPlace(pl.osmWilaya, wilaya), lat: pl.lat, lng: pl.lng }, lieuMap.query)}
-            onBack={() => setLieuMap(null)}
-          />
-        );
-      }
+      const partners = store.venues.map((v) => ({ id: v.id, name: v.name, lat: v.lat, lng: v.lng, wilaya: v.wilaya, photo: store.venuePhoto(v.id, 'card') }));
       return (
-        <CreerLieu
-          nearby={nearby.length > 0 ? nearby : partners} venues={partners} wilayaLabel={t(wilaya)} initialQuery={freeQuery}
+        <CreerOu
+          partners={partners} nearbyPartners={partners.filter((v) => inPlayerCity(v.wilaya, city))} city={cityCenter(city)}
+          initial={freePlace ? { name: freePlace.name, area: freePlace.area ?? null, address: freePlace.address ?? null, wilaya: freePlace.wilaya, ...(freePlace.lat !== undefined && freePlace.lng !== undefined ? { lat: freePlace.lat, lng: freePlace.lng } : {}) } : null}
+          search={(q, near) => store.searchPlaces(q, near)} reverse={(lat, lng) => store.reversePlace(lat, lng)}
           openingId={lieuOpening} error={lieuError}
-          onPickVenue={(id) => { void pickPartner(id); }}
-          places={lieuPlaces} placesBusy={lieuSearching} onQuery={setLieuQuery}
-          onPickPlace={(pl, query) => setLieuMap({ center: { lat: pl.lat, lng: pl.lng }, zoom: 17, name: pl.name, query })}
-          onFreePlace={(name, query) => setLieuMap({ center: cityCenter(city), zoom: 13, name: name ?? '', query })}
+          onPickPartner={(id) => { void pickPartner(id); }}
+          onConfirm={(pl) => onFreeMatch({
+            name: pl.name, wilaya: wilayaForPlace(pl.wilaya, wilaya),
+            ...(pl.area ? { area: pl.area.slice(0, 60) } : {}), ...(pl.address ? { address: pl.address.slice(0, 120) } : {}),
+            ...(pl.lat !== undefined && pl.lng !== undefined ? { lat: pl.lat, lng: pl.lng } : {}),
+          }, '')}
           onBack={() => onExit?.()}
         />
       );

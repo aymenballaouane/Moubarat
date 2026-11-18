@@ -132,6 +132,8 @@ export type MatchStatus = 'DRAFT' | 'OPEN' | 'FULL' | 'LOCKED' | 'PLAYED' | 'CAN
 export interface FreePlace {
   name: string;
   area?: string;
+  /** Lot B, phase 1 (18/11/2026) : l'adresse sous l'épingle (« Rue Ali Khodja »), facultative, 120 signes au plus. */
+  address?: string;
   wilaya: string;
   /** Phase adresses (18/11/2026) : la position du lieu (adresse OpenStreetMap choisie, ou épingle posée), facultative. */
   lat?: number;

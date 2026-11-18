@@ -1,21 +1,22 @@
 import { useState } from 'react';
 import { FORMAT_CAPACITY, type MatchFormat, type SkillLevel } from '@moubarat/core';
-import { CreerLibreCreneau, CreerLibreDetails } from './CreerLibre.js';
+import { CreerTonMatch } from './CreerTonMatch.js';
 import { CreerPublie } from './CreerMatch.js';
 import { OrganizerMatchView } from './OrganizerMatchView.js';
 import { copyText } from '../lib/clipboard.js';
 import { inviteHref, matchLink, matchLinkLabel } from '../lib/matchLink.js';
-import { firstOpenPeriod, freeMatchTitle, freeStarts } from '../lib/freeMatch.js';
+import { firstOpenPeriod, freeMatchTitle, freeStarts, type FreePlaceInput } from '../lib/freeMatch.js';
 import { reportRefusal } from '../lib/pasPossible.js';
 import type { PeriodKey } from '../lib/reserverCreneau.js';
 import { useToast } from '../lib/useToast.js';
 import type { AppStore } from '../state/useAppStore.js';
 
-/* Créer un match libre (lot « Match libre », phase 5 — planches W3, W4, puis S8 / S8P sans prix) : le lieu vient de W1/W2 (BookingFlow,
-   mode « match »). Rien n'est réservé : « Publier » crée le match directement (POST /matches/free, règle core `createFreeMatch`).
-   Retour à chaque étape (dossier §8) : W4 → W3 → W1 (le texte saisi est repris). */
+/* Créer un match libre — le lieu vient de « Où tu joues ? » (BookingFlow, mode « match », CreerOu). Lot B, phase 1 (18/11/2026) : une seule
+   page « Ton match » (CreerTonMatch) remplace les écrans Créneau et Détails ; puis l'écran « match en ligne » inchangé (S8 / S8P sans
+   prix). Rien n'est réservé : « Publier » crée le match directement (POST /matches/free, règle core `createFreeMatch`) ; le bouton se
+   désactive pendant l'envoi (un seul match même touché deux fois). « Modifier » et le retour rouvrent la carte sur le lieu choisi. */
 
-type Screen = 'creneau' | 'details' | 'publie' | 'mymatch';
+type Screen = 'page' | 'publie' | 'mymatch';
 
 function dayStartOf(index: number): number {
   const d = new Date();
@@ -24,8 +25,8 @@ function dayStartOf(index: number): number {
 
 export function FreeMatchFlow({ store, place, onBackToPlace, onExit }: {
   store: AppStore;
-  place: { name: string; wilaya: string; lat?: number; lng?: number };
-  /** Retour de W3 vers W1/W2. */
+  place: FreePlaceInput;
+  /** Retour vers « Où tu joues ? » (« Modifier », ou le bouton retour). */
   onBackToPlace: () => void;
   onExit: () => void;
 }) {
@@ -36,7 +37,7 @@ export function FreeMatchFlow({ store, place, onBackToPlace, onExit }: {
   const [duration, setDuration] = useState(90);
   const [period, setPeriod] = useState<PeriodKey>(() => firstOpenPeriod(dayStartOf(dayIndex), now) ?? 'soir');
   const [startMin, setStartMin] = useState<number | null>(null);
-  const [screen, setScreen] = useState<Screen>('creneau');
+  const [screen, setScreen] = useState<Screen>('page');
   const [format, setFormat] = useState<MatchFormat>('5v5');
   const [level, setLevel] = useState<SkillLevel>('LOISIR');
   const [note, setNote] = useState('');
@@ -57,7 +58,7 @@ export function FreeMatchFlow({ store, place, onBackToPlace, onExit }: {
   }
 
   async function publish(chosen: 'OPEN' | 'PRIVATE') {
-    if (publishing || startMin === null) return;
+    if (publishing || startMin === null) return;   // un seul envoi à la fois
     setVisibility(chosen);
     setPublishing(true);
     const res = await store.publishFreeMatch({
@@ -66,7 +67,7 @@ export function FreeMatchFlow({ store, place, onBackToPlace, onExit }: {
     });
     setPublishing(false);
     if (!res.ok) {
-      if (res.code === 'MATCH_LOCKED' || res.code === 'SLOT_IN_PAST') { setStartMin(null); setScreen('creneau'); }
+      if (res.code === 'MATCH_LOCKED' || res.code === 'SLOT_IN_PAST') setStartMin(null);
       if (reportRefusal(res)) return;   // chevauchement, restriction, accord retiré : la fenêtre « Pas possible »
       toast.show(res.message);
       return;
@@ -77,25 +78,16 @@ export function FreeMatchFlow({ store, place, onBackToPlace, onExit }: {
 
   const toastEl = <div className={`mb-toast${toast.message ? ' on' : ''}`} role="status" aria-live="polite">{toast.message ?? ''}</div>;
 
-  if (screen === 'creneau') {
+  if (screen === 'page') {
     return (
-      <>
-        <CreerLibreCreneau
-          dayIndex={dayIndex} onDay={pickDay} duration={duration} onDuration={setDuration}
-          period={period} onPeriod={(k) => { setPeriod(k); setStartMin(null); }}
-          starts={starts} startMin={startMin} onStart={setStartMin}
-          onContinue={() => setScreen('details')} onBack={onBackToPlace}
-        />
-        {toastEl}
-      </>
-    );
-  }
-
-  if (screen === 'details') {
-    return (
-      <CreerLibreDetails
+      <CreerTonMatch
+        placeName={place.name} placeSub={[place.address ?? place.area ?? '', place.wilaya].map((x) => x.trim()).filter(Boolean).join(', ')}
+        onEditPlace={onBackToPlace} onBack={onBackToPlace}
+        dayIndex={dayIndex} onDay={pickDay} duration={duration} onDuration={setDuration}
+        period={period} onPeriod={(k) => { setPeriod(k); setStartMin(null); }}
+        starts={starts} startMin={startMin} onStart={setStartMin}
         format={format} onFormat={setFormat} level={level} onLevel={setLevel} note={note} onNote={setNote}
-        publishing={publishing} error={null} onPublish={(v) => { void publish(v); }} onBack={() => setScreen('creneau')} toast={toastEl}
+        publishing={publishing} onPublish={(v) => { void publish(v); }} toast={toastEl}
       />
     );
   }

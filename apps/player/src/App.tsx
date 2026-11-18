@@ -307,7 +307,7 @@ function renderRoute(
           onMyMatches={() => setRoute({ name: 'tab', tab: 'matches' })}
           onCreateMatch={(prefill) => setRoute({ name: 'match', mode: 'create', prefill })}
           onFreeMatch={(place, query) => setRoute({ name: 'match', mode: 'free', place, query })}
-          freeQuery={route.freeQuery}
+          freePlace={route.freePlace}
           onExit={goBack}
           onHome={() => setRoute(HOME)}
         />
@@ -317,7 +317,21 @@ function renderRoute(
         return (
           <FreeMatchFlow
             store={store} place={route.place} onExit={goBack}
-            onBackToPlace={() => setRoute({ name: 'booking', mode: 'match', freeQuery: route.query })}
+            onBackToPlace={() => setRoute({ name: 'booking', mode: 'match', freePlace: route.place })}
+          />
+        );
+      }
+      /* Lot B, phase 1 : « Créer un match » (tuile de l'accueil, menu « + », Jouer) ouvre directement la carte « Où tu joues ? ». La liste
+         « Ton créneau » des réservations sans match reste ouverte après « C'est bien moi » (règle 21, `pickReservation`) et depuis une
+         réservation (Mes matchs → « Créer un match »). */
+      if (route.mode === 'create' && !route.prefill && !route.pickReservation) {
+        return (
+          <BookingFlow
+            store={store} mode="match"
+            onMyMatches={() => setRoute({ name: 'tab', tab: 'matches' })}
+            onCreateMatch={(prefill) => setRoute({ name: 'match', mode: 'create', prefill })}
+            onFreeMatch={(place, query) => setRoute({ name: 'match', mode: 'free', place, query })}
+            onExit={goBack} onHome={() => setRoute(HOME)}
           />
         );
       }

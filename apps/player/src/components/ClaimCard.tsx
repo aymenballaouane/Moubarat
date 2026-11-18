@@ -45,7 +45,7 @@ export function useClaimAnswer(store: AppStore, onNavigate: (route: Route) => vo
             <div className="rsv-taken__actions">
               <button type="button" className="mb-btn mb-btn--block" onClick={() => setDone(null)}>{t('OK')}</button>
               {done.kind === 'confirm' ? (
-                <button type="button" className="mb-btn mb-btn--secondary mb-btn--block" onClick={() => { setDone(null); onNavigate({ name: 'match', mode: 'create' }); }}>
+                <button type="button" className="mb-btn mb-btn--secondary mb-btn--block" onClick={() => { setDone(null); onNavigate({ name: 'match', mode: 'create', pickReservation: true }); }}>
                   {t('Créer un match sur ce créneau')}
                 </button>
               ) : null}

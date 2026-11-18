@@ -561,43 +561,38 @@ async function run() {
       await p.click('button[aria-label="Retour"]').catch(() => {});
       await p.waitForTimeout(400);
     }
-    // « + » → Créer un match : « Ton créneau » s'il reste des réservations sans match (puis « Réserver un autre créneau »), et toujours
-    // W1 « Où tu joues ? » (lot « Match libre », phase 5) → W2 (saisie) → W3 (créneau) → W4 (détails). Rien n'est publié : le board ne
-    // crée aucun match libre.
+    // « + » → Créer un match (lot B, phase 1 — proposition B) : la carte « Où tu joues ? » s'ouvre tout de suite → recherche « Ben Aknoun »
+    // → « Mon terrain n'est pas dans la liste » (mode épingle) → « C'est ici » → « Ton match » (une seule page) ; puis retour et un centre
+    // partenaire → sa réservation. Rien n'est publié : le board ne crée aucun match libre.
     try {
       await p.click('.bottom-nav button[aria-label="Créer ou réserver"]');
       await p.click('.xp-cob__row:has-text("Créer un match")');
-      await p.waitForSelector('#s-creer-lieu, #s-creer-creneau', { timeout: 6000 }).catch(() => {});
-      if (await p.locator('#s-creer-creneau').count()) {
-        await capture(p, { id: 'create-match-creneau', label: 'Créer un match — Ton créneau', journey: 'creer-match', surface: 'player', path: '« + » → Créer un match (réservations sans match)', waitFor: '#s-creer-creneau' });
-        await p.click('#s-creer-creneau .cr-other').catch(() => {});
-        await p.waitForSelector('#s-creer-lieu', { timeout: 6000 }).catch(() => {});
-      }
-      if (await p.locator('#s-creer-lieu').count()) {
-        await capture(p, { id: 'create-match-terrain', label: 'Créer un match — W1 · Où tu joues ?', journey: 'creer-match', surface: 'player', path: '« + » → Créer un match', waitFor: '#s-creer-lieu' });
-        await p.fill('#s-creer-lieu input', 'Ben Aknoun');
-        await capture(p, { id: 'create-libre-saisie', label: 'Créer un match — W2 · Lieux et adresses', journey: 'creer-match', surface: 'player', path: 'W1 → saisie « Ben Aknoun »', waitFor: '.cl-row--place' });
-        await p.click('#s-creer-lieu .cl-row--place');
-        // Phase adresses (18/11/2026) : un lieu choisi ouvre la carte à épingle avant le créneau.
-        await p.waitForSelector('#s-creer-carte', { timeout: 6000 });
-        await p.waitForSelector('#s-creer-carte .leaflet-tile-loaded', { timeout: 15000 }).catch(() => {});
-        await p.waitForTimeout(1500);
-        await capture(p, { id: 'create-libre-carte', label: 'Créer un match — Où exactement ? (carte)', journey: 'creer-match', surface: 'player', path: 'W2 → un lieu choisi', waitFor: '#s-creer-carte' });
-        await p.click('#s-creer-carte .cl-foot .mv-cta');
-        await p.waitForSelector('#s-creer-libre-creneau', { timeout: 6000 });
-        await p.locator('#s-creer-libre-creneau .rsv-r3__day').nth(2).click();
-        await p.locator('#s-creer-libre-creneau .rsv-r3__hour').nth(3).click();
-        await capture(p, { id: 'create-libre-creneau', label: 'Créer un match — W3 · Créneau', journey: 'creer-match', surface: 'player', path: 'W2 → lieu libre', waitFor: '#s-creer-libre-creneau' });
-        await p.click('#s-creer-libre-creneau .cl-foot .mv-cta');
-        await p.fill('#s-creer-libre-details #cr-note', 'Rendez-vous à l’entrée principale. On joue à la cool.').catch(() => {});
-        await capture(p, { id: 'create-libre-details', label: 'Créer un match — W4 · Détails', journey: 'creer-match', surface: 'player', path: 'W3 → Continuer', waitFor: '#s-creer-libre-details' });
-        await p.click('#s-creer-libre-details button[aria-label="Retour"]').catch(() => {});   // W4 → W3
-        await p.click('#s-creer-libre-creneau button[aria-label="Retour"]').catch(() => {});   // W3 → W1
-        await p.waitForSelector('#s-creer-lieu', { timeout: 6000 }).catch(() => {});
-        await p.fill('#s-creer-lieu input', '').catch(() => {});
-        await p.locator('#s-creer-lieu .cl-row').first().click().catch(() => {});   // un centre partenaire → sa réservation (S3)
-        await capture(p, { id: 'create-match-slots', label: 'Créer un match — centre partenaire → réservation', journey: 'creer-match', surface: 'player', path: 'W1 → centre partenaire (mode match)', waitFor: '#s-slots' });
-      } else notReached.push({ id: 'create-match-terrain', reason: '« + » → Créer un match n’a ouvert ni « Ton créneau » ni « Où tu joues ? »' });
+      await p.waitForSelector('#s-creer-ou', { timeout: 8000 }).catch(() => {});
+      if (await p.locator('#s-creer-ou').count()) {
+        await p.waitForSelector('#s-creer-ou .leaflet-tile-loaded', { timeout: 15000 }).catch(() => {});
+        await p.waitForTimeout(1200);
+        await capture(p, { id: 'create-match-terrain', label: 'Créer un match — Où tu joues ? (carte)', journey: 'creer-match', surface: 'player', path: '« + » → Créer un match', waitFor: '#s-creer-ou' });
+        await p.fill('#s-creer-ou .co-search input', 'Ben Aknoun');
+        await p.waitForTimeout(3500);
+        await capture(p, { id: 'create-libre-saisie', label: 'Créer un match — recherche d’un terrain ou d’une adresse', journey: 'creer-match', surface: 'player', path: 'Où tu joues ? → « Ben Aknoun »', waitFor: '#s-creer-ou .co-list' });
+        await p.fill('#s-creer-ou .co-search input', '');
+        await p.locator('#s-creer-ou .co-free').last().click();
+        await p.waitForTimeout(2500);
+        await capture(p, { id: 'create-libre-carte', label: 'Créer un match — mode épingle', journey: 'creer-match', surface: 'player', path: '« Mon terrain n’est pas dans la liste »', waitFor: '#s-creer-ou .co-name' });
+        await p.click('#s-creer-ou .mv-cta');
+        await p.waitForTimeout(1000);
+        if (await p.locator('.co-ask').count()) await p.click('.co-ask__no');
+        await p.waitForSelector('#s-creer-ton-match', { timeout: 6000 });
+        await p.locator('#s-creer-ton-match .rsv-r3__day').nth(2).click();
+        await p.locator('#s-creer-ton-match .rsv-r3__hour').nth(3).click();
+        await capture(p, { id: 'create-libre-creneau', label: 'Créer un match — Ton match (une seule page)', journey: 'creer-match', surface: 'player', path: 'C’est ici → Ton match', waitFor: '#s-creer-ton-match' });
+        await p.click('#s-creer-ton-match .ctm-back').catch(() => {});   // → la carte, en mode épingle
+        await p.waitForSelector('#s-creer-ou', { timeout: 6000 }).catch(() => {});
+        await p.click('#s-creer-ou button[aria-label="Retour"]').catch(() => {});   // mode épingle → liste
+        await p.waitForTimeout(600);
+        await p.locator('#s-creer-ou .co-row').first().click().catch(() => {});   // un centre partenaire → sa réservation (S3)
+        await capture(p, { id: 'create-match-slots', label: 'Créer un match — centre partenaire → réservation', journey: 'creer-match', surface: 'player', path: 'Où tu joues ? → centre partenaire', waitFor: '#s-slots' });
+      } else notReached.push({ id: 'create-match-terrain', reason: '« + » → Créer un match n’a pas ouvert « Où tu joues ? »' });
       // Retour : R3 → R2 → R1 → sortie du flux (jusqu'à retrouver la barre de navigation).
       for (let i = 0; i < 6 && (await p.locator('.bottom-nav').count()) === 0; i++) {
         await p.click('button[aria-label="Retour"]').catch(() => {});

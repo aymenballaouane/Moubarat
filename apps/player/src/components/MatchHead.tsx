@@ -50,7 +50,7 @@ export function MatchHead({ match, venueName, centre, now, onBack, onShare, onMo
   const price = match.pricePerPlayer.amount;
   const free = match.venueId === null ? (match.place ?? null) : null;
   const address = free
-    ? [free.area ?? '', free.wilaya].map((s) => s.trim()).filter(Boolean).join(', ')   // lot B : en arabe aussi, l'adresse reste en lettres latines (Ar-Dv1)
+    ? [free.address ?? free.area ?? '', free.wilaya].map((s) => s.trim()).filter(Boolean).join(', ')   // lot B : en arabe aussi, l'adresse reste en lettres latines (Ar-Dv1)
     : centre ? [centre.address, centre.wilaya].map((s) => s.trim()).filter(Boolean).join(', ') : '';
   const mapsHref = free ? placeMapsUrl(free) : centre ? venueMapsUrl(centre) : null;
   return (

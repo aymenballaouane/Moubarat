@@ -6714,3 +6714,38 @@ Source : le dossier « Match libre » mis à jour (`Moubarat-pack-Claude-Code.zi
 - La fiche d'un centre (Réserver, S3) gardait l'ancienne ligne d'adresse avec les mêmes classes : elle est conservée telle quelle sous
   des noms à part (`mv-addrline`, `mv-routebtn`), hors lot.
 - 2 textes arabes ajoutés, repris des maquettes (« {n} دقيقة », « الاتجاهات في خرائط غوغل ») ; « jusqu’à {fin} · {duree} » retiré.
+
+### Phase 1 — « Créer un match » en deux écrans (proposition B, branche `lot-b/phase-1-creer`)
+
+Maquettes `1_Creer_un_match` (Cm-B1, Cm-B1b, Cm-B2). Pour le match libre, deux écrans remplacent les quatre (Lieu, « Où exactement ? »,
+Créneau, Détails) : `CreerLibre.tsx` et `CreerCarte.tsx` sont retirés.
+- **« Où tu joues ? »** (`CreerOu.tsx`) : la carte s'ouvre dès « Créer un match » (accueil, menu « + », Jouer), sur la ville du profil ;
+  la position n'est demandée qu'au toucher de « Ma position » (refus : rien de bloquant). Centres partenaires sur la carte (logo
+  Moubarat) et dans le tiroir « TERRAINS MOUBARAT PRÈS DE TOI », du plus proche au plus loin (depuis la position si elle est connue,
+  sinon depuis le centre de la ville) ; section absente sans centre dans la ville. Recherche : 3 centres au plus, puis 5 adresses au
+  plus ; sans résultat, « Aucun lieu trouvé » et « Montrer mon terrain sur la carte ». Un centre (ligne ou épingle) mène au parcours
+  partenaire actuel, inchangé.
+- **Mode épingle** : par « Mon terrain n'est pas dans la liste », une adresse choisie ou un simple glissement de la carte. Épingle fixe,
+  adresse sous la carte (rue, quartier · wilaya), « Nom du terrain » obligatoire, proposé « Terrain · {quartier} » (jamais le nom du
+  commerce le plus proche ; une adresse choisie dans la recherche garde son propre nom). « C'est ici » enregistre le nom, le quartier,
+  l'adresse et la position. Épingle à moins de 120 m d'un centre : « C'est {centre} ? » (oui : parcours partenaire, non : match libre).
+- **« Ton match »** (`CreerTonMatch.tsx`), une seule page avec les rangées de la page Réserver : lieu et « Modifier » (retour à la carte,
+  rouverte sur le lieu), Quand ?, Durée 1 h 30, À quelle heure ? (aucune heure d'avance), Format 5V5, Niveau Loisir, mot replié ; pied de
+  page toujours visible (rappel, « Choisis une heure » inactif puis « Publier mon match », « Publier en privé ») ; bouton inactif pendant
+  l'envoi (un seul match). À 360 pt, les six formats tiennent sur une ligne (vérifié), sinon la rangée défile.
+- **Carte isolée** : `MatchMap.tsx` est le SEUL composant lié à une bibliothèque de carte (Leaflet aujourd'hui) ; le passage à Google
+  Maps ne touchera que lui. **Aucune image de tile.openstreetmap.org en production** (décision d'Aymen) : sans `VITE_MAP_TILES_URL`, la
+  production affiche « Carte indisponible. Réessaie. » (le tiroir reste utilisable : centres, recherche d'adresses) ; les images
+  d'OpenStreetMap ne servent qu'en développement. En thème sombre, elles sont assombries par un filtre en attendant un vrai style Google.
+- **Serveur** : migration 0051 (`matches.place_address`, retour arrière testé), core `createFreeMatch` garde l'adresse (120 signes,
+  +2 tests, core **200**) ; la recherche d'adresses renvoie aussi la rue et le quartier (capitales d'OpenStreetMap remises en forme).
+- **Cas limites** : accord « numéro visible » coupé : la fenêtre « Pas possible » s'ouvre dès « Où tu joues ? ». Les plafonds de
+  réservations (règle 23) ne concernent pas le match libre (acté en phase 5) ; restriction après absences et chevauchement ne sont connus
+  que du serveur : ils s'expliquent à la publication (même fenêtre), faute de route de vérification préalable — à décider si Aymen veut
+  mieux. « Créer un match » n'ouvre plus « Ton créneau » d'abord : cette liste reste ouverte après « C'est bien moi » (règle 21) et depuis
+  une réservation (Mes matchs).
+- **Détail du match libre** : la carte d'adresse montre la rue sous l'épingle quand elle existe, sinon le quartier.
+- **Textes arabes** : 20 ajoutés depuis `textes-fr-ar-lot-B.json` (à faire relire, comme le dit le pack) ; « Réessayer » garde la
+  traduction déjà dans l'app (« أعد المحاولة »).
+- **À savoir** : la version en ligne (phase adresses, 18/11 à 2 h 07) charge encore les images de tile.openstreetmap.org. Cette phase les
+  retire de la production ; elle ne partira en ligne qu'après le test d'Aymen et avec un fond de carte réglé (Google).

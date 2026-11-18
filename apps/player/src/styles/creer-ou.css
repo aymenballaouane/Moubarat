@@ -1,0 +1,106 @@
+/* Lot B, phase 1 — « Où tu joues ? » et le mode épingle (CreerOu.tsx), mesures des maquettes Cm-B1 et Cm-B1b. Positions logiques :
+   en arabe, l'écran se lit en miroir ; la carte, elle, ne se retourne jamais. */
+.co { position: relative; height: 100dvh; min-height: 560px; overflow: hidden; background: var(--ink); color: var(--text); }
+.co-map { position: absolute; left: 0; right: 0; top: 0; height: var(--co-map-h, 440px); transition: height .2s ease; }
+.co-map__down {
+  position: absolute; inset: 0 0 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  background: var(--ink-3); color: var(--text-2); font-size: 15px; font-weight: 600; text-align: center; padding: 0 22px;
+}
+.co-map__down .mb-ic { width: 28px; height: 28px; }
+.co-retry { height: 44px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--ink-2); color: var(--text); font: 600 15px/1 var(--font-body); cursor: pointer; }
+
+.co-top { position: absolute; top: 22px; inset-inline: 22px; display: flex; align-items: center; gap: 12px; z-index: 600; pointer-events: none; }
+.co-top > * { pointer-events: auto; }
+.co-round {
+  width: 44px; height: 44px; border-radius: 999px; border: 1px solid rgba(138,148,166,.16); background: rgba(10,10,15,.86); color: #F5F7FA;
+  display: flex; align-items: center; justify-content: center; flex: none; padding: 0; cursor: pointer;
+}
+.co-round .mb-ic { width: 18px; height: 18px; }
+[dir="rtl"] .co-round svg:has(> use[href="#i-back"]) { transform: scaleX(-1); }
+.co-round:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.co-hint {
+  background: rgba(10,10,15,.86); border: 1px solid rgba(138,148,166,.16); color: #F5F7FA; font-size: 13px; font-weight: 600;
+  border-radius: 999px; padding: 9px 14px; line-height: 18px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* « Ma position » : à droite, au-dessus du tiroir (356 px en liste, 522 px en mode épingle). */
+.co-locate { position: absolute; inset-inline-end: 22px; bottom: 40px; z-index: 600; }
+.co--pin .co-locate { bottom: 44px; }
+
+/* L'épingle fixe : sa pointe tombe au centre de la carte. */
+.co-pin { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -100%); z-index: 590; pointer-events: none; display: flex; flex-direction: column; align-items: center; transition: transform .15s ease; }
+.co-pin[data-moving="true"] { transform: translate(-50%, calc(-100% - 8px)); }
+.co-pin__tag { background: #F5F7FA; color: #0A0A0F; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 4px 10px; line-height: 16px; white-space: nowrap; }
+.co-pin__tagtip { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #F5F7FA; }
+.co-pin svg { margin-top: 4px; filter: drop-shadow(0 3px 4px rgba(0,0,0,.45)); }
+
+/* Le tiroir du bas. */
+.co-drawer {
+  position: absolute; left: 0; right: 0; bottom: 0; top: calc(var(--co-map-h, 440px) - 26px); z-index: 700;
+  background: var(--ink); border-radius: 24px 24px 0 0; box-shadow: 0 -14px 34px rgba(0,0,0,.55);
+  display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; padding: 10px 22px 22px; overflow-y: auto;
+  transition: top .2s ease;
+}
+.co--pin .co-drawer { gap: 12px; }
+body[data-theme="clair"] .co-drawer { box-shadow: 0 -10px 28px rgba(10,10,15,.14); }
+.co-grab { width: 40px; height: 4px; border-radius: 2px; background: rgba(138,148,166,.35); align-self: center; flex: none; }
+.co-head { display: flex; align-items: center; gap: 10px; }
+.co-h1 { margin: 0; font-size: 26px; font-weight: 700; line-height: 34px; letter-spacing: -0.3px; }
+[dir="rtl"] .co-h1 { letter-spacing: 0; }
+.co-step { margin-inline-start: auto; font-size: 13px; font-weight: 700; color: var(--text-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; line-height: 16px; }
+.co-search {
+  height: 52px; flex: none; border-radius: 14px; background: var(--ink-2); border: 1px solid var(--line); display: flex; align-items: center; gap: 10px;
+  padding: 0 14px; box-sizing: border-box; color: var(--text-3);
+}
+.co-search .mb-ic { width: 20px; height: 20px; flex: none; }
+.co-search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--text); font: 400 15px/1.2 var(--font-body); padding: 0; }
+.co-search input::placeholder { color: var(--text-4); }
+.co-search:focus-within { border-color: var(--primary); }
+.co-label { font-size: 12px; font-weight: 700; letter-spacing: 1.1px; color: var(--text-3); line-height: 16px; }
+[dir="rtl"] .co-label { letter-spacing: 0; }
+.co-list { display: flex; flex-direction: column; gap: 8px; }
+.co-row {
+  min-height: 64px; width: 100%; box-sizing: border-box; border-radius: 14px; border: 1px solid var(--line); background: var(--ink-2); color: var(--text);
+  font-family: inherit; padding: 10px 12px; padding-inline-start: 10px; display: flex; align-items: center; gap: 12px; text-align: start; cursor: pointer;
+  box-shadow: var(--card-shadow);
+}
+.co-row:disabled { opacity: .6; cursor: progress; }
+.co-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.co-row__ic { width: 44px; height: 44px; border-radius: 12px; flex: none; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.co-row__ic--logo { background: linear-gradient(160deg, #3A0C04 0%, #0A0202 65%); }
+.co-row__ic--logo img { width: 100%; height: 100%; object-fit: cover; }
+.co-row__ic--pin { background: rgba(255,43,0,.14); color: var(--primary-glow); }
+.co-row__ic--pin .mb-ic { width: 20px; height: 20px; }
+.co-row__txt { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.co-row__txt > b { font-size: 16px; font-weight: 700; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-row__txt > span { font-size: 13px; color: var(--text-3); line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.co-row__meta { display: flex; align-items: center; gap: 8px; }
+.co-badge { font-size: 11px; font-weight: 700; letter-spacing: .8px; color: var(--primary-glow); background: rgba(255,43,0,.14); border-radius: 6px; padding: 1px 6px; }
+[dir="rtl"] .co-badge { letter-spacing: 0; }
+.co-row__go { width: 18px; height: 18px; color: var(--text-3); flex: none; }
+[dir="rtl"] .co-row__go { transform: scaleX(-1); }
+.co-free {
+  min-height: 54px; width: 100%; flex: none; border-radius: 14px; border: 1px dashed rgba(138,148,166,.40); background: transparent; color: var(--text);
+  font: 600 15px/1.25 var(--font-body); display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; cursor: pointer;
+}
+.co-free .mb-ic { width: 18px; height: 18px; color: var(--primary-glow); flex: none; }
+.co-meta { margin: 2px 0; font-size: 14px; color: var(--text-3); text-align: center; }
+.co-none { display: flex; flex-direction: column; gap: 10px; }
+.co-err { margin: 0; font-size: 14px; color: var(--danger); }
+
+/* Mode épingle : l'adresse sous l'épingle, le nom du terrain, « C'est ici ». */
+.co-addr { display: flex; align-items: center; gap: 12px; min-height: 40px; }
+.co-addr__ic { width: 22px; height: 22px; color: var(--primary-glow); flex: none; }
+.co-addr__txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.co-addr__txt > b { font-size: 16px; font-weight: 700; line-height: 21px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.co-addr__txt > span { font-size: 13px; color: var(--text-3); line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.co-name {
+  height: 50px; flex: none; border-radius: 12px; background: var(--ink-2); border: 1px solid var(--line); color: var(--text); font: 600 16px/1.2 var(--font-body);
+  padding: 0 14px; box-sizing: border-box; width: 100%;
+}
+.co-name:focus { outline: none; border-color: var(--primary); }
+.co .mv-cta { flex: none; }
+
+/* « C'est {centre} ? » */
+.co-ask { display: flex; flex-direction: column; gap: 12px; padding-bottom: 22px; }
+.co-ask__t { margin: 4px 0 6px; font-size: 20px; font-weight: 700; line-height: 26px; text-align: center; }
+.co-ask__no { height: 48px; border: 0; background: transparent; color: var(--text); font: 600 15px/1 var(--font-body); cursor: pointer; }

@@ -11,6 +11,10 @@ export interface PlaceSuggestion {
   detail: string;
   /** La wilaya telle qu'OpenStreetMap la nomme (partie latine), `null` si inconnue. */
   wilaya: string | null;
+  /** Lot B, phase 1 : la rue (« Rue Ali Khodja », numéro compris s'il est connu), `null` si OpenStreetMap n'en donne pas. */
+  street: string | null;
+  /** Lot B, phase 1 : le quartier ou la commune (« Ben Aknoun ») — préremplit « Terrain · {quartier} ». */
+  area: string | null;
   lat: number;
   lng: number;
 }
@@ -36,6 +40,12 @@ export function latinPart(name: string | null): string | null {
   return latin.length >= 2 ? latin : null;
 }
 
+/** « BEN AKNOUN » (certaines fiches OpenStreetMap sont en capitales) → « Ben Aknoun » ; un nom déjà en casse mixte reste tel quel. */
+export function tidyCase(v: string | null): string | null {
+  if (!v || v !== v.toUpperCase() || !/\p{Lu}/u.test(v)) return v;
+  return v.toLowerCase().replace(/(^|[\s'’-])(\p{Ll})/gu, (_m, sep: string, c: string) => sep + c.toUpperCase());
+}
+
 export function suggestionsFromPhoton(body: unknown, max = 6): PlaceSuggestion[] {
   const features = (body as { features?: PhotonFeature[] } | null)?.features;
   if (!Array.isArray(features)) return [];
@@ -59,7 +69,9 @@ export function suggestionsFromPhoton(body: unknown, max = 6): PlaceSuggestion[]
     const key = `${name}|${detail}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ id, name, detail, wilaya: latinPart(str(p.state) ?? str(p.county)), lat: coords[1], lng: coords[0] });
+    const fullStreet = street ? [str(p.housenumber), street].filter(Boolean).join(' ') : null;
+    const area = tidyCase(str(p.city) ?? str(p.district) ?? str(p.locality));
+    out.push({ id, name, detail, wilaya: latinPart(str(p.state) ?? str(p.county)), street: fullStreet, area, lat: coords[1], lng: coords[0] });
     if (out.length >= max) break;
   }
   return out;

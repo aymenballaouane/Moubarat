@@ -380,6 +380,8 @@ export interface MatchesTable {
   /** Migration 0050 — position du lieu libre (adresse OpenStreetMap choisie ou épingle), facultative. */
   place_lat: number | null;
   place_lng: number | null;
+  /** Migration 0051 (lot B, phase 1) : l'adresse sous l'épingle d'un match libre. */
+  place_address: string | null;
   time_range: string;                 // tstzrange
   capacity: number;
   price_per_player_da: number;

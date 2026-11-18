@@ -1,0 +1,59 @@
+/* Lot B, phase 1 — « Ton match » (CreerTonMatch.tsx), mesures de la planche Cm-B2. Les rangées (jours, segments, heures) sont celles de
+   la page Réserver (reserver.css) ; ici seulement ce qui est propre à la page. */
+.ctm { padding-bottom: 0; }
+.ctm-head { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.ctm-back {
+  width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text);
+  display: flex; align-items: center; justify-content: center; flex: none; padding: 0; cursor: pointer;
+}
+.ctm-back .mb-ic { width: 18px; height: 18px; }
+[dir="rtl"] .ctm-back svg { transform: scaleX(-1); }
+.ctm-title { font-size: 18px; font-weight: 700; line-height: 24px; }
+.ctm-step { margin-inline-start: auto; font-size: 13px; font-weight: 700; color: var(--text-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; line-height: 16px; }
+
+.ctm-place { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); margin-top: 22px; }
+.ctm-place__ic { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,43,0,.14); color: var(--primary-glow); display: flex; align-items: center; justify-content: center; flex: none; }
+.ctm-place__ic .mb-ic { width: 18px; height: 18px; }
+.ctm-place__txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.ctm-place__txt > b { font-size: 15px; font-weight: 700; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctm-place__txt > span { font-size: 13px; color: var(--text-3); line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctm-place__edit { flex: none; background: transparent; border: 0; color: var(--text-2); font: 600 14px/1 var(--font-body); text-decoration: underline; min-height: 44px; padding: 0 2px; cursor: pointer; }
+
+/* Format : six cases sur une ligne (5V5 … 11V11) ; sur un écran très étroit, la rangée défile. */
+.ctm-formats {
+  display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--ink-2); border: 1px solid var(--line);
+  overflow-x: auto; scrollbar-width: none;
+}
+.ctm-formats::-webkit-scrollbar { display: none; }
+.ctm-formats > button {
+  flex: 1 0 0; min-width: 46px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--text-2);
+  font-family: var(--font-display); font-size: 22px; padding: 0; cursor: pointer;
+}
+.ctm-formats > button[aria-checked="true"] {
+  border: 1px solid rgba(255,43,0,.45); border-bottom: 3px solid var(--primary); background: rgba(255,43,0,.14); color: var(--primary-glow);
+}
+.ctm-formats > button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.ctm-levels .rsv-r3__seg-b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+.ctm-addnote {
+  margin-top: 24px; height: 52px; width: 100%; flex: none; border-radius: 12px; border: 1px dashed rgba(138,148,166,.40); background: transparent;
+  color: var(--text); font: 600 15px/1.2 var(--font-body); display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; cursor: pointer;
+}
+.ctm-addnote svg { color: var(--primary-glow); flex: none; }
+.ctm-note { display: flex; flex-direction: column; }
+.ctm-addnote, .ctm-note { margin-bottom: 20px; }
+
+/* Pied de page toujours visible : le rappel, « Publier mon match », « Publier en privé ». */
+.ctm-foot {
+  position: sticky; bottom: 0; margin: auto -22px 0; padding: 12px 22px calc(8px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line); background: var(--ink); display: flex; flex-direction: column; gap: 10px; z-index: 5;
+}
+.ctm-recap { margin: 0; font-size: 14px; font-weight: 600; line-height: 20px; min-height: 20px; }
+.ctm-foot .mv-cta:disabled { background: var(--ink-3); color: var(--text-3); opacity: 1; cursor: default; }
+.ctm-private {
+  align-self: center; background: transparent; border: 0; color: var(--text-2); font: 600 14px/1 var(--font-body); min-height: 40px; padding: 0 14px;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.ctm-private span { text-decoration: underline; }
+.ctm-private .mb-ic { width: 14px; height: 14px; }
+.ctm-private:disabled { opacity: .5; cursor: default; }

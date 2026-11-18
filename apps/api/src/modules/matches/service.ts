@@ -12,10 +12,11 @@ export type MatchRow = Selectable<MatchesTable>;
 export type MatchPlayerRow = Selectable<MatchPlayersTable>;
 
 /** Le lieu d'un match libre (migration 0047), `null` pour un match de centre. */
-export function placeOf(row: Pick<MatchRow, 'venue_id' | 'place_name' | 'place_area' | 'place_wilaya' | 'place_lat' | 'place_lng'>): { name: string; area?: string; wilaya: string; lat?: number; lng?: number } | null {
+export function placeOf(row: Pick<MatchRow, 'venue_id' | 'place_name' | 'place_area' | 'place_address' | 'place_wilaya' | 'place_lat' | 'place_lng'>): { name: string; area?: string; address?: string; wilaya: string; lat?: number; lng?: number } | null {
   if (row.venue_id !== null || row.place_name === null || row.place_wilaya === null) return null;
   return {
-    name: row.place_name, ...(row.place_area !== null ? { area: row.place_area } : {}), wilaya: row.place_wilaya,
+    name: row.place_name, ...(row.place_area !== null ? { area: row.place_area } : {}),
+    ...(row.place_address !== null ? { address: row.place_address } : {}), wilaya: row.place_wilaya,   // lot B, phase 1 (0051)
     ...(row.place_lat !== null && row.place_lng !== null ? { lat: row.place_lat, lng: row.place_lng } : {}),   // phase adresses (0050)
   };
 }

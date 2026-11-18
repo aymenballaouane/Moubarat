@@ -243,7 +243,7 @@ Fronts (au **build**, pas à l'exécution — la valeur est figée dans `dist/`)
 | Variable | Apps | Production |
 |---|---|---|
 | `VITE_API_BASE_URL` | player, crm, superadmin | URL publique HTTPS de l'API (défaut `http://127.0.0.1:3001` sinon) |
-| `VITE_MAP_TILES_URL` / `VITE_MAP_TILES_ATTRIBUTION` | player | Images de la carte de « Créer un match » (§4.21) et leur mention obligatoire. Défaut : serveurs d'OpenStreetMap (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`, « © OpenStreetMap »), **autorisés pour un faible usage seulement** : à remplacer par un fournisseur (ou un serveur à nous) quand l'app grossit — figées au build comme `VITE_API_BASE_URL` |
+| `VITE_MAP_TILES_URL` / `VITE_MAP_TILES_ATTRIBUTION` | player | Images de la carte de « Créer un match » (§4.21, §4.22) et leur mention obligatoire. **Aucun défaut en production** depuis le lot B (décision d'Aymen) : sans valeur, la carte affiche « Carte indisponible » ; les serveurs d'OpenStreetMap ne servent qu'en développement. Figées au build comme `VITE_API_BASE_URL` |
 
 Secrets à créer côté hébergeur avant tout déploiement : mot de passe Postgres, clé smssak,
 mot de passe du superadmin, mots de passe des comptes CRM du centre pilote. Aucun de ces
@@ -930,6 +930,19 @@ services extérieurs gratuits, sans compte ni clé :
 **Position du lieu** : migration 0050, colonnes `matches.place_lat` / `place_lng` (les deux ou aucune, seulement pour un match libre ;
 contrainte `matches_place_position`). Additive, sans coupure. Retour arrière à la main : `apps/api/migrations/retour/0050_match_place_position.sql`
 (refusé tant qu'un match à venir porte une position). **Ordre des retours si l'on revient avant tout le lot** : 0050, puis 0049, 0048, 0047.
+
+### 4.22 Créer un match sur la carte (lot B, phase 1, migration 0051, 18/11/2026)
+
+- **Migration 0051** : `matches.place_address` (adresse sous l'épingle d'un match libre, 120 signes au plus, jamais sur un match de centre ;
+  contrainte `matches_place_address`). Additive, sans coupure. Retour arrière à la main :
+  `apps/api/migrations/retour/0051_match_place_address.sql` (refusé tant qu'un match à venir porte une adresse). Ordre si l'on revient
+  avant tout le lot « Match libre » : 0051, 0050, 0049, 0048, 0047.
+- **Fond de carte en production** : `VITE_MAP_TILES_URL` (§3) n'a PLUS de valeur par défaut en production — décision d'Aymen, aucune
+  image de tile.openstreetmap.org pour un service commercial. Sans réglage, « Créer un match » affiche « Carte indisponible. Réessaie. »
+  et reste utilisable par le tiroir (centres, recherche d'adresses). Le fournisseur retenu est Google Maps (compte d'Aymen en cours) :
+  le passage ne touche que `apps/player/src/components/MatchMap.tsx`, seul composant lié à une bibliothèque de carte.
+- **Position du joueur** : demandée par le navigateur seulement au toucher de « Ma position » ; jamais envoyée au serveur (elle sert à
+  trier les centres et à recentrer la carte).
 
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 

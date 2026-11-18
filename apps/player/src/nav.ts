@@ -6,6 +6,7 @@
    onglet visite (memorise par App), jamais a une cible codee en dur. */
 
 import type { Booking, MatchFormat, Quote, Sport } from '@moubarat/core';
+import type { FreePlaceInput } from './lib/freeMatch.js';
 
 export type Tab = 'home' | 'explorer' | 'matches' | 'profile';
 
@@ -66,10 +67,13 @@ export type Route =
   /** `viewReservationId` : consultation du ticket d'une réservation existante (R4, depuis Mes matchs). `mode: 'match'` : Réserver
       en mode « Créer un match » (maquette Reserver mode=match) — le CTA mène à la configuration au lieu du ticket ; `resume` :
       retour de la configuration vers le créneau (R3). */
-  | { name: 'booking'; venuePicked?: boolean; viewReservationId?: string; mode?: 'match'; resume?: BookingResume; freeQuery?: string }
-  | { name: 'match'; mode: 'create'; prefill?: MatchPrefill }
+  /** `freePlace` (lot B, phase 1) : « Modifier » depuis « Ton match » — la carte se rouvre sur le lieu déjà choisi. */
+  | { name: 'booking'; venuePicked?: boolean; viewReservationId?: string; mode?: 'match'; resume?: BookingResume; freeQuery?: string; freePlace?: FreePlaceInput }
+  /** Sans `prefill` : « Créer un match » ouvre directement la carte « Où tu joues ? » (lot B, phase 1) ; `pickReservation` : la liste
+      « Ton créneau » des réservations sans match (après « C'est bien moi », règle 21). */
+  | { name: 'match'; mode: 'create'; prefill?: MatchPrefill; pickReservation?: boolean }
   /** Lot « Match libre », phase 5 : W3 → W4 → publié, pour un lieu choisi en W1/W2 (`query` : le texte saisi, repris au retour). */
-  | { name: 'match'; mode: 'free'; place: { name: string; wilaya: string; lat?: number; lng?: number }; query: string }
+  | { name: 'match'; mode: 'free'; place: FreePlaceInput; query: string }
   /** Detail « rejoindre » d'un match du flux (matchId resolu via
       matchesFeedDemo.findMatch) ; sans matchId, premier match ouvert. */
   | { name: 'match'; mode: 'detail'; matchId?: string }
