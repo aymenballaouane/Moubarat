@@ -31,92 +31,87 @@ export interface ClientSummary {
   noShow: number;
 }
 
-interface ClientBookingRow {
-  user_id: string;
-  name: string;
-  phone: string;
-  status: string;
-  price_total_da: number;
-  time_range: string;
-  cancelled_at: Date | null;
-  cancel_reason: string | null;
-}
+/* MS-071 (audit final, Lot 2b, 18/11/2026) — la fiabilité d'un client ne charge plus TOUT son historique : un club qui réserve
+   chaque semaine depuis des années (mesuré : 5 000 réservations) occupait une connexion et le processus à chaque ouverture de
+   sa fiche. Les comptes par statut et la dépense sont calculés EN BASE ; seules ses ANNULATIONS remontent, parce que « tôt » ou
+   « tard » est une règle du core (`cancellationKind`) qu'on ne recopie jamais en SQL ; le score sort toujours du core
+   (`clientReliabilityV1`). Mêmes règles qu'avant, inchangées :
+   - périmètre d'un joueur de l'app : ni blocage (CENTER), ni comptoir (WALK_IN), ni réservation posée par un compte PLATEFORME
+     (téléphone saisi par le staff, by_user_id = son compte : jamais le client réel — Lot 3, 15/09/2026) ;
+   - une annulation STAFF_ERROR disparaît ENTIÈREMENT (ni pénalité, ni comptée dans bookingsCount) — ce n'est pas l'erreur du
+     client (15/09/2026, confirmé par Aymen) ;
+   - cancelled_at inconnue (annulations antérieures à la migration 0002) : « tôt » par défaut, jamais une pénalité sur une
+     donnée absente (docs/DECISIONS.md). */
+const KEEP = sql`NOT (b.status = 'CANCELLED' AND b.cancel_reason IS NOT DISTINCT FROM 'STAFF_ERROR')`;
+const COUNTS = sql`count(*) FILTER (WHERE ${KEEP})::int AS bookings,
+  count(*) FILTER (WHERE b.status = 'HONORED')::int AS honored,
+  count(*) FILTER (WHERE b.status = 'PAID')::int AS paid,
+  count(*) FILTER (WHERE b.status = 'NO_SHOW')::int AS no_show,
+  COALESCE(sum(b.price_total_da) FILTER (WHERE b.status = 'PAID'), 0)::bigint AS spent`;
+const appScope = (venueId: string) => sql`f.venue_id = ${venueId}::uuid
+  AND b.source NOT IN ('CENTER', 'WALK_IN')
+  AND NOT EXISTS (SELECT 1 FROM platform_accounts pa WHERE pa.id = b.by_user_id)`;
 
-async function loadClientBookingRows(db: Db, venueId: string, userIds?: string | readonly string[]): Promise<ClientBookingRow[]> {
-  if (Array.isArray(userIds) && userIds.length === 0) return [];
-  let q = db.selectFrom('bookings')
-    .innerJoin('fields', 'fields.id', 'bookings.field_id')
-    .innerJoin('users', 'users.id', 'bookings.by_user_id')
-    .select([
-      'bookings.by_user_id as user_id', 'users.name as name', 'users.phone as phone',
-      'bookings.status as status', 'bookings.price_total_da as price_total_da',
-      'bookings.time_range as time_range', 'bookings.cancelled_at as cancelled_at',
-      'bookings.cancel_reason as cancel_reason',
-    ])
-    .where('fields.venue_id', '=', venueId)
-    // `CENTER` (blocage) et `WALK_IN` (comptoir) : bug de données réel,
-    // trouvé en câblant l'écran Clients (06/09/2026) — `by_user_id` y est le
-    // compte PLATEFORME du membre du staff qui a créé la réservation
-    // (modules/bookings/routes.ts, POST /bookings), jamais le client réel
-    // (aucune identité comptoir n'existe dans ce modèle au-delà du texte
-    // libre `reservation_name`/`customer_phone`). Sans cette exclusion, un
-    // membre du staff dont l'id `platform_accounts` coïncide avec une vraie
-    // ligne `users` (constaté sur le centre pilote) apparaîtrait comme un
-    // client — score de fiabilité inclus — pour des réservations qu'il a
-    // lui-même saisies, jamais faites en son nom.
-    // Lot 3 (15/09/2026, signalé par Aymen) : le canal Téléphone créé depuis
-    // le CRM (source PHONE, forceVerified) a EXACTEMENT le même défaut, et
-    // `source not in (...)` ne peut pas l'exclure sans exclure AUSSI le
-    // PHONE déclaré par un vrai joueur (qui doit, lui, compter). Exclusion
-    // structurelle à la place : `by_user_id` est un compte plateforme
-    // (jamais un vrai joueur) → NOT EXISTS sur platform_accounts, qui
-    // couvre CENTER/WALK_IN/PHONE-staff en une seule règle générale, plutôt
-    // que trois cas particuliers qui dérivent à chaque nouveau canal staff.
-    .where('bookings.source', 'not in', ['CENTER', 'WALK_IN'])
-    .where(({ not, exists, selectFrom }) => not(exists(
-      selectFrom('platform_accounts').select('id').whereRef('platform_accounts.id', '=', 'bookings.by_user_id'),
-    )));
-  if (typeof userIds === 'string') q = q.where('bookings.by_user_id', '=', userIds);
-  else if (userIds) q = q.where('bookings.by_user_id', 'in', [...userIds]);
-  return q.execute();
-}
-
-/** Agrège la fiabilité pondérée (core `clientReliabilityV1`, ops.ts) d'UN
-    client à partir de son historique réel de réservations sur ce centre.
-    `cancelled_at` inconnue (réservations annulées avant l'ajout de la colonne,
-    migration 0002) : traitée comme EARLY par défaut — décision documentée
-    (docs/DECISIONS.md), on ne pénalise jamais sur une donnée absente.
-
-    Motif d'annulation (15/09/2026, prérequis avant le premier centre réel,
-    confirmé par Aymen) : une annulation STAFF_ERROR disparaît ENTIÈREMENT
-    de cet historique — ni pénalité, ni comptée dans `bookingsCount` — filtrée
-    ici, avant toute agrégation, jamais dans `clientReliabilityV1` (core,
-    gelé, intouché) ni `cancellationKind`. Ce n'est pas l'erreur du client :
-    un total gonflé par une faute qui n'est pas la sienne ne serait pas plus
-    honnête qu'une pénalité injustifiée. */
-type ScoredRow = Pick<ClientBookingRow, 'status' | 'price_total_da' | 'time_range' | 'cancelled_at' | 'cancel_reason'>;
+interface ClientAgg { key: string; name: string; phone: string; bookings: number; honored: number; paid: number; no_show: number; spent: string | number }
+interface CancelRow { key: string; time_range: string; cancelled_at: Date | null }
 type ClientIdentity = Pick<ClientSummary, 'clientKey' | 'kind' | 'userId'>;
 const appIdentity = (userId: string): ClientIdentity => ({ clientKey: userId, kind: 'APP', userId });
 
-function summarize(who: ClientIdentity, name: string, phone: string, allRows: readonly ScoredRow[]): ClientSummary {
-  const rows = allRows.filter((r) => !(r.status === 'CANCELLED' && r.cancel_reason === 'STAFF_ERROR'));
-  let honored = 0, paid = 0, cancelledEarly = 0, cancelledLate = 0, noShow = 0, totalSpentDa = 0;
-  for (const r of rows) {
-    if (r.status === 'HONORED') honored++;
-    else if (r.status === 'PAID') { paid++; totalSpentDa += r.price_total_da; }
-    else if (r.status === 'NO_SHOW') noShow++;
-    else if (r.status === 'CANCELLED') {
-      const kind = r.cancelled_at
-        ? cancellationKind(fromPgRange(r.time_range).start, r.cancelled_at.getTime())
-        : 'EARLY';
-      if (kind === 'LATE') cancelledLate++; else cancelledEarly++;
-    }
+function summarizeAgg(who: ClientIdentity, name: string, phone: string, agg: ClientAgg, cancels: readonly CancelRow[]): ClientSummary {
+  let cancelledEarly = 0, cancelledLate = 0;
+  for (const c of cancels) {
+    const kind = c.cancelled_at ? cancellationKind(fromPgRange(c.time_range).start, c.cancelled_at.getTime()) : 'EARLY';
+    if (kind === 'LATE') cancelledLate++; else cancelledEarly++;
   }
+  const honored = agg.honored, paid = agg.paid, noShow = agg.no_show;
   return {
-    ...who, name, phone, bookingsCount: rows.length, totalSpentDa,
+    ...who, name, phone, bookingsCount: agg.bookings, totalSpentDa: Number(agg.spent),
     honored, paid, cancelledEarly, cancelledLate, noShow,
     reliability: clientReliabilityV1({ honored, paid, cancelledEarly, cancelledLate, noShow }),
   };
+}
+
+function groupCancels(rows: readonly CancelRow[]): Map<string, CancelRow[]> {
+  const out = new Map<string, CancelRow[]>();
+  for (const r of rows) { const l = out.get(r.key); if (l) l.push(r); else out.set(r.key, [r]); }
+  return out;
+}
+
+/** Le résumé des joueurs de l'app donnés (un compte sans réservation retenue sur ce centre est absent de la réponse). */
+async function loadAppClients(db: Db, venueId: string, userIds: readonly string[]): Promise<Map<string, ClientSummary>> {
+  const out = new Map<string, ClientSummary>();
+  if (userIds.length === 0) return out;
+  const ids = [...userIds];
+  // Trois lectures indépendantes. Le nom et le numéro sont lus À PART, sur les seuls comptes demandés : joints à l'agrégat,
+  // le planificateur (qui sous-estime le nombre de groupes) parcourait les 100 000 joueurs pour en retrouver un — mesuré
+  // 50 ms sur 60 pour la fiche d'un seul client. Un compte absent de `users` reste hors du résultat, comme avant (jointure).
+  const [aggs, cancels, people] = await Promise.all([
+    sql<Omit<ClientAgg, 'name' | 'phone'>>`
+      SELECT b.by_user_id::text AS key, ${COUNTS}
+      FROM bookings b JOIN fields f ON f.id = b.field_id
+      WHERE ${appScope(venueId)} AND b.by_user_id = ANY(${ids}::uuid[])
+      GROUP BY b.by_user_id`.execute(db),
+    sql<CancelRow>`
+      SELECT b.by_user_id::text AS key, b.time_range, b.cancelled_at
+      FROM bookings b JOIN fields f ON f.id = b.field_id
+      WHERE ${appScope(venueId)} AND b.by_user_id = ANY(${ids}::uuid[])
+        AND b.status = 'CANCELLED' AND b.cancel_reason IS DISTINCT FROM 'STAFF_ERROR'`.execute(db),
+    db.selectFrom('users').select(['id', 'name', 'phone']).where('id', 'in', ids).execute(),
+  ]);
+  const who = new Map(people.map((p) => [p.id, p]));
+  const byKey = groupCancels(cancels.rows);
+  for (const a of aggs.rows) {
+    const person = who.get(a.key);
+    if (person) out.set(a.key, summarizeAgg(appIdentity(a.key), person.name, person.phone, { ...a, name: person.name, phone: person.phone }, byKey.get(a.key) ?? []));
+  }
+  return out;
+}
+
+/** MS-073 (Lot 2b) : la fiabilité de plusieurs joueurs en UN appel (Dashboard : un par organisateur de match du jour, jusqu'ici
+    un appel HTTP chacun). Mêmes règles que la fiche client. */
+export async function loadClientsReliability(db: Db, venueId: string, userIds: readonly string[]): Promise<Record<string, ReliabilityV1>> {
+  const map = await loadAppClients(db, venueId, userIds);
+  return Object.fromEntries([...map].map(([k, v]) => [k, v.reliability]));
 }
 
 /* --- Clients du comptoir et du téléphone (P0-2, audit stratégique CRM, 15/11/2026 — choix d'Aymen : « regrouper par numéro ») ---
@@ -127,7 +122,7 @@ function summarize(who: ClientIdentity, name: string, phone: string, allRows: re
    numéro réduit à ses chiffres, sans indicatif ni zéro initial (`0555 12 34 56` = `+213555123456` = `555123456`). Une
    réservation sans numéro (ou de moins de 8 chiffres) reste hors du fichier : rien ne dit à qui elle appartient. Le nom et le
    numéro affichés sont ceux de la réservation la plus récente. Fiabilité : EXACTEMENT la même règle que pour un joueur
-   (`summarize`, core `clientReliabilityV1`) — même exclusion des erreurs de saisie du centre. Une réservation rattachée puis
+   (`summarizeAgg`, core `clientReliabilityV1`) — même exclusion des erreurs de saisie du centre. Une réservation rattachée puis
    confirmée par un joueur (« C'est moi », règle 21) passe à son compte (`by_user_id`) et quitte ce regroupement d'elle-même.
    Aucune table, aucune migration : le regroupement se calcule à la lecture. */
 
@@ -151,24 +146,33 @@ export function counterPhoneKey(clientKey: string): string | null {
   return m ? m[1]! : null;
 }
 
-interface CounterRow extends ScoredRow { pk: string; reservation_name: string | null; customer_phone: string }
-
-async function loadCounterRows(db: Db, venueId: string, keys: readonly string[]): Promise<CounterRow[]> {
-  if (keys.length === 0) return [];
-  const res = await sql<CounterRow>`
-    SELECT ${COUNTER_KEY} AS pk, b.reservation_name, b.customer_phone, b.status, b.price_total_da, b.time_range,
-           b.cancelled_at, b.cancel_reason
-    FROM bookings b JOIN fields f ON f.id = b.field_id
-    WHERE ${counterScope(venueId)} AND ${COUNTER_KEY} = ANY(${[...keys]}::text[])
-    ORDER BY lower(b.time_range) DESC, b.id DESC`.execute(db);
-  return res.rows;
-}
-
-function summarizeCounter(pk: string, rows: readonly CounterRow[]): ClientSummary {
-  // Lignes triées de la plus récente à la plus ancienne : le nom et le numéro affichés sont les derniers saisis.
-  const latest = rows[0]!;
-  const name = rows.find((r) => r.reservation_name && r.reservation_name.trim() !== '')?.reservation_name?.trim() ?? 'Client du comptoir';
-  return summarize({ clientKey: `tel:${pk}`, kind: 'COUNTER', userId: null }, name, latest.customer_phone.trim(), rows);
+/** Le résumé des clients du comptoir donnés (numéros réduits). Nom et numéro affichés : ceux de la réservation la plus récente
+    (le dernier nom non vide saisi), y compris une annulation STAFF_ERROR — seule sa place dans le score disparaît. */
+async function loadCounterClients(db: Db, venueId: string, keys: readonly string[]): Promise<Map<string, ClientSummary>> {
+  const out = new Map<string, ClientSummary>();
+  if (keys.length === 0) return out;
+  const ks = [...keys];
+  const [aggs, cancels] = await Promise.all([
+    sql<ClientAgg>`
+      SELECT ${COUNTER_KEY} AS key,
+        (array_agg(b.reservation_name ORDER BY lower(b.time_range) DESC, b.id DESC) FILTER (WHERE b.reservation_name ~ '\\S'))[1] AS name,
+        (array_agg(b.customer_phone ORDER BY lower(b.time_range) DESC, b.id DESC))[1] AS phone,
+        ${COUNTS}
+      FROM bookings b JOIN fields f ON f.id = b.field_id
+      WHERE ${counterScope(venueId)} AND ${COUNTER_KEY} = ANY(${ks}::text[])
+      GROUP BY ${COUNTER_KEY}`.execute(db),
+    sql<CancelRow>`
+      SELECT ${COUNTER_KEY} AS key, b.time_range, b.cancelled_at
+      FROM bookings b JOIN fields f ON f.id = b.field_id
+      WHERE ${counterScope(venueId)} AND ${COUNTER_KEY} = ANY(${ks}::text[])
+        AND b.status = 'CANCELLED' AND b.cancel_reason IS DISTINCT FROM 'STAFF_ERROR'`.execute(db),
+  ]);
+  const byKey = groupCancels(cancels.rows);
+  for (const a of aggs.rows) {
+    const name = a.name?.trim() || 'Client du comptoir';
+    out.set(a.key, summarizeAgg({ clientKey: `tel:${a.key}`, kind: 'COUNTER', userId: null }, name, a.phone.trim(), a, byKey.get(a.key) ?? []));
+  }
+  return out;
 }
 
 export type ClientSort = 'bookings' | 'spent';
@@ -245,35 +249,21 @@ export async function listClients(
 
   const appIds = pageRows.filter((r) => r.kind === 'APP').map((r) => r.key);
   const counterKeys = pageRows.filter((r) => r.kind === 'COUNTER').map((r) => r.key.slice(4));
-  const [appRows, counterRows] = await Promise.all([
-    loadClientBookingRows(db, venueId, appIds),
-    loadCounterRows(db, venueId, counterKeys),
-  ]);
-  const byUser = new Map<string, ClientBookingRow[]>();
-  for (const r of appRows) byUser.set(r.user_id, [...(byUser.get(r.user_id) ?? []), r]);
-  const byPhone = new Map<string, CounterRow[]>();
-  for (const r of counterRows) byPhone.set(r.pk, [...(byPhone.get(r.pk) ?? []), r]);
+  const [apps, counters] = await Promise.all([loadAppClients(db, venueId, appIds), loadCounterClients(db, venueId, counterKeys)]);
   const clients = pageRows.flatMap(({ key, kind }) => {
-    if (kind === 'COUNTER') {
-      const rs = byPhone.get(key.slice(4));
-      return rs ? [summarizeCounter(key.slice(4), rs)] : [];
-    }
-    const rs = byUser.get(key);
-    return rs ? [summarize(appIdentity(key), rs[0]!.name, rs[0]!.phone, rs)] : [];
+    const found = kind === 'COUNTER' ? counters.get(key.slice(4)) : apps.get(key);
+    return found ? [found] : [];
   });
   return { clients, nextCursor };
 }
 
 /** P0-2 : la carte d'un client du comptoir (`pk` = numéro réduit), ou `null` s'il n'a aucune réservation retenue sur ce centre. */
 export async function loadCounterClient(db: Db, venueId: string, pk: string): Promise<ClientSummary | null> {
-  const rows = await loadCounterRows(db, venueId, [pk]);
-  return rows.length === 0 ? null : summarizeCounter(pk, rows);
+  return (await loadCounterClients(db, venueId, [pk])).get(pk) ?? null;
 }
 
 export async function loadClient(db: Db, venueId: string, userId: string): Promise<ClientSummary | null> {
-  const rows = await loadClientBookingRows(db, venueId, userId);
-  if (rows.length === 0) return null;
-  return summarize(appIdentity(userId), rows[0]!.name, rows[0]!.phone, rows);
+  return (await loadAppClients(db, venueId, [userId])).get(userId) ?? null;
 }
 
 /** Une ligne de l'historique d'un client sur ce centre (CRM-3). `date` = jour d'EXPLOITATION (BUG-9) : celui que le
@@ -285,7 +275,7 @@ export interface ClientBookingHistoryRow {
 }
 
 /** Historique des réservations d'UN client sur ce centre, les plus récentes d'abord (heure de début décroissante),
-    paginé par curseur [début ISO µs, id]. EXACTEMENT le même périmètre que `loadClientBookingRows` (ce qui compte dans
+    paginé par curseur [début ISO µs, id]. EXACTEMENT le même périmètre que `loadAppClients` (ce qui compte dans
     sa fiabilité) : jamais un blocage, jamais une résa comptoir/téléphone saisie par le staff dont `by_user_id` serait
     par coïncidence cet identifiant. Une annulation STAFF_ERROR EST listée (avec son motif) — elle n'entre pas dans le
     score, mais l'accueil doit pouvoir la voir. Une résa dont le client n'a rien sur ce centre : liste vide, pas 404 —

@@ -4,8 +4,11 @@ import type { PlatformGuards } from '../../auth/platform-guards.js';
 import { writeAudit } from '../../audit/log.js';
 import {
   buildOccupancyReport, buildOriginReport, buildRevenueReport, loadPeriodBookings,
-  parseExportPeriod, parsePeriod, previousPeriod,
+  parseExportPeriod, parsePeriod, previousPeriod, type Period,
 } from './service.js';
+import { algiersDateOf, dayStartMs, operatingPeriodWindow } from '../../lib/algiers.js';
+
+const DAY_MS = 86_400_000;
 import { sessionsAsBookings, sessionsForPeriod } from '../recurring-bookings/sessions.js';
 import { PassThrough } from 'node:stream';
 import { exportFilename, exportRows, writeExportWorkbook } from './export.js';
@@ -101,6 +104,44 @@ export async function registerAnalyticsRoutes(app: FastifyInstance, { db, guards
           changePct: pctChange(occupancy.overall, priorOccupancy.overall),
         },
         origin: { current: origin, previous: priorOrigin },
+      });
+    });
+
+  /* MS-073 (audit final, Lot 2b, 18/11/2026) — l'écran Analytics faisait 21 appels à l'ouverture (aujourd'hui, 7 j, 7 j
+     précédents, 30 j, 30 j précédents, occupation et origine sur 7 j, puis un CA par jour sur 14 j) : 21 fois la même lecture
+     des réservations, qui occupaient la base une à deux secondes à l'échelle visée. Ici, UNE lecture des 60 jours (réservations
+     et séances d'abonnés), puis chaque vue est calculée par les MÊMES fonctions que les routes unitaires, sur les réservations
+     dont le début tombe dans ses jours d'exploitation (même fenêtre que `loadPeriodBookings`). Réponse : les mêmes objets que
+     les routes unitaires. `today` : le jour d'exploitation de référence (celui de l'écran). */
+  app.get<{ Params: { venueId: string }; Querystring: { today?: string } }>(
+    '/venues/:venueId/analytics/overview',
+    { preHandler: (req) => guards.requirePlatformAuth(req) }, async (req, reply) => {
+      await guards.requireCenterAction(req, req.params.venueId, 'VIEW_ANALYTICS');
+      const today = parsePeriod(req.query.today, req.query.today).toDay;
+      const shift = (d: number) => algiersDateOf(dayStartMs(today) + d * DAY_MS + 12 * 3_600_000);
+      const span: Period = { fromDay: shift(-59), toDay: today };
+      const [bookings, sessions] = await Promise.all([
+        loadPeriodBookings(db, req.params.venueId, span),
+        sessionsForPeriod(db, req.params.venueId, span.fromDay, span.toDay),
+      ]);
+      const withSessions = [...bookings, ...sessionsAsBookings(sessions)];
+      const within = <T extends { range: { start: number } }>(rows: readonly T[], p: Period): T[] => {
+        const win = operatingPeriodWindow(p.fromDay, p.toDay);
+        return rows.filter((b) => b.range.start >= win.start && b.range.start < win.end);
+      };
+      const revenue = (p: Period) => ({ period: p, ...buildRevenueReport(within(withSessions, p)) });
+      const curr7: Period = { fromDay: shift(-6), toDay: today };
+      const occ7 = await buildOccupancyReport(db, req.params.venueId, curr7, within(bookings, curr7));
+      const trendDays = Array.from({ length: 14 }, (_, i) => shift(i - 13));
+      return reply.send({
+        today: revenue({ fromDay: today, toDay: today }),
+        curr7: revenue(curr7),
+        prev7: revenue({ fromDay: shift(-13), toDay: shift(-7) }),
+        curr30: revenue({ fromDay: shift(-29), toDay: today }),
+        prev30: revenue({ fromDay: shift(-59), toDay: shift(-30) }),
+        occ7: { period: curr7, ...occ7 },
+        origin7: { period: curr7, ...buildOriginReport(within(bookings, curr7)) },
+        trend: trendDays.map((d) => ({ date: d, collectedDa: buildRevenueReport(within(withSessions, { fromDay: d, toDay: d })).overall.collected })),
       });
     });
 

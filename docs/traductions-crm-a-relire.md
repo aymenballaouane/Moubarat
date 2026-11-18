@@ -1,6 +1,6 @@
 # CRM Moubarat en arabe — traductions à faire relire
 
-*Document produit par `pnpm --filter @moubarat/crm traductions:relire` (ne pas modifier à la main : il est régénéré). 922 textes.*
+*Document produit par `pnpm --filter @moubarat/crm traductions:relire` (ne pas modifier à la main : il est régénéré). 924 textes.*
 
 Toutes les traductions arabes du CRM ont été rédigées par Claude (choix d’Aymen du 15/11/2026) : **aucune n’a été relue par un
 arabophone**. Elles sont affichées telles quelles aux postes réglés en arabe. Merci de les relire en pensant à un gérant ou un
@@ -935,6 +935,8 @@ voit qu’en cas de bug.
 | declaredClosingDa est un entier positif. | declaredClosingDa عدد صحيح موجب. | |
 | Session de caisse introuvable pour ce centre. | جلسة الصندوق غير موجودة لهذا المركز. | |
 | Tri invalide : bookings ou spent. | ترتيب غير صالح: bookings أو spent. | |
+| 50 identifiants au plus. | 50 معرّفًا على الأكثر. | |
+| Identifiant de compte invalide. | معرّف الحساب غير صالح. | |
 | Aucune réservation de ce client sur ce centre. | لا يوجد أي حجز لهذا الزبون في هذا المركز. | |
 | Client introuvable sur ce centre. | الزبون غير موجود في هذا المركز. | |
 | Motif invalide : {1}. | سبب غير صالح: {1}. | |

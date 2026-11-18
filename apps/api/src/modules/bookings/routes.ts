@@ -843,24 +843,31 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       const refLike = containsLike(q);
       const phones = phoneSearchPatterns(q);
 
-      const alternatives = [
-        sql<boolean>`bookings.reservation_name ~* ${nameRe}`,
-        sql<boolean>`bookings.reference ILIKE ${refLike} ESCAPE '\\'`,
+      /* MS-072 (audit final, Lot 2b, 18/11/2026) : les réservations trouvées sont l'UNION de recherches que les index
+         trigrammes servent chacune (migration 0047) — nom saisi, référence, numéro saisi, numéro du compte joueur. Écrites en
+         un seul « OU » mêlé à la jointure des joueurs, Postgres relisait toutes les réservations du centre et les 100 000
+         joueurs à chaque recherche (310 ms pour « 0555 »). Mêmes critères qu'avant, mot pour mot ; les expressions
+         `regexp_replace(coalesce(…), '\D', '', 'g')` sont celles des index : ne pas les reformuler sans eux. */
+      const digits = (col: string) => sql`regexp_replace(coalesce(${sql.ref(col)}, ''), '\\D', '', 'g')`;
+      const anyLike = (expr: ReturnType<typeof digits>, patterns: readonly string[]) =>
+        sql.join(patterns.map((p) => sql`${expr} LIKE ${p}`), sql` OR `);
+      const arms = [
+        sql`SELECT id FROM bookings WHERE reservation_name ~* ${nameRe}`,
+        sql`SELECT id FROM bookings WHERE reference ILIKE ${refLike} ESCAPE '\\'`,
       ];
       if (phones) {
-        alternatives.push(sql<boolean>`regexp_replace(coalesce(bookings.customer_phone, ''), '\\D', '', 'g') LIKE ANY(${phones}::text[])`);
+        arms.push(sql`SELECT id FROM bookings WHERE ${anyLike(digits('customer_phone'), phones)}`);
         if (seesClientPhones) {
-          alternatives.push(sql<boolean>`(
-            bookings.source <> 'WALK_IN'
-            AND NOT EXISTS (SELECT 1 FROM platform_accounts pa WHERE pa.id = bookings.by_user_id)
-            AND regexp_replace(coalesce(users.phone, ''), '\\D', '', 'g') LIKE ANY(${phones}::text[])
-          )`);
+          arms.push(sql`SELECT b.id FROM bookings b JOIN users u ON u.id = b.by_user_id
+            WHERE b.source <> 'WALK_IN'
+              AND NOT EXISTS (SELECT 1 FROM platform_accounts pa WHERE pa.id = b.by_user_id)
+              AND (${anyLike(digits('u.phone'), phones)})`);
         }
       }
+      const hits = sql.join(arms, sql` UNION `);
 
       let query = db.selectFrom('bookings')
         .innerJoin('fields', 'fields.id', 'bookings.field_id')
-        .leftJoin('users', 'users.id', 'bookings.by_user_id')
         .select([
           'bookings.id', 'bookings.time_range', 'bookings.status', 'bookings.source',
           'bookings.verified_by_center', 'bookings.reservation_name', 'bookings.customer_phone', 'bookings.claim_status',
@@ -870,7 +877,7 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
         .select(isoMicros(sql`lower(bookings.time_range)`).as('start_cursor'))
         .where('fields.venue_id', '=', req.params.venueId)
         .where('bookings.source', '!=', 'CENTER')
-        .where(sql<boolean>`(${sql.join(alternatives, sql` OR `)})`)
+        .where(sql<boolean>`bookings.id IN (${hits})`)
         .orderBy(sql`lower(bookings.time_range)`, 'desc')
         .orderBy('bookings.id', 'desc')
         .limit(limit + 1);

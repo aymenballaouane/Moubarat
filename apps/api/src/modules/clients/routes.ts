@@ -3,7 +3,7 @@ import type { Db } from '../../db/client.js';
 import type { PlatformGuards } from '../../auth/platform-guards.js';
 import { badRequest, notFound } from '../../lib/http.js';
 import { decodeCursor, pageLimit } from '../../lib/cursor.js';
-import { counterPhoneKey, listClientBookings, listClients, listCounterClientBookings, listTeamsAtVenue, loadClient, loadCounterClient, type ClientSort } from './service.js';
+import { counterPhoneKey, listClientBookings, listClients, listCounterClientBookings, listTeamsAtVenue, loadClient, loadClientsReliability, loadCounterClient, type ClientSort } from './service.js';
 
 interface Deps { db: Db; guards: PlatformGuards; }
 
@@ -31,6 +31,18 @@ export async function registerClientRoutes(app: FastifyInstance, { db, guards }:
       if (q.length > 80) throw badRequest('Recherche trop longue (80 caractères au plus).');
       const page = await listClients(db, req.params.venueId, { limit, cursor, sort: sort as ClientSort, ...(q !== '' ? { q } : {}) });
       return reply.send(page);
+    });
+
+  /* MS-073 (audit final, Lot 2b, 18/11/2026) : la fiabilité de plusieurs joueurs en un appel — le Dashboard en faisait un par
+     organisateur de match du jour. `ids` : identifiants de comptes séparés par des virgules, 50 au plus. Réponse :
+     `{ reliability: { [userId]: ReliabilityV1 } }` ; un joueur sans réservation retenue sur ce centre est absent. */
+  app.get<{ Params: { venueId: string }; Querystring: { ids?: string } }>('/venues/:venueId/clients/reliability',
+    { preHandler: (req) => guards.requirePlatformAuth(req) }, async (req, reply) => {
+      await guards.requireCenterAction(req, req.params.venueId, 'VIEW_CLIENTS');
+      const ids = [...new Set((req.query.ids ?? '').split(',').map((s) => s.trim()).filter((s) => s !== ''))];
+      if (ids.length > 50) throw badRequest('50 identifiants au plus.');
+      if (ids.some((id) => !UUID.test(id))) throw badRequest('Identifiant de compte invalide.');
+      return reply.send({ reliability: await loadClientsReliability(db, req.params.venueId, ids) });
     });
 
   app.get<{ Params: { venueId: string; userId: string } }>('/venues/:venueId/clients/:userId',

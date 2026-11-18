@@ -184,7 +184,9 @@
     "Cette caisse est déjà clôturée.": "تم إغلاق هذا الصندوق مسبقًا.",
     "Trop de tentatives. Réessayez dans {1} min.": "محاولات كثيرة جدًا. أعيدوا المحاولة بعد {1} د.",
     "Un centre « {1} » ne peut pas passer à « {2} ».": "لا يمكن لمركز في حالة «{1}» أن ينتقل إلى «{2}».",
-    "Un export couvre 3 mois au plus. Pour une période plus longue, faites plusieurs exports.": "يغطي التصدير 3 أشهر على الأكثر. لفترة أطول، قوموا بعدة عمليات تصدير."
+    "Un export couvre 3 mois au plus. Pour une période plus longue, faites plusieurs exports.": "يغطي التصدير 3 أشهر على الأكثر. لفترة أطول، قوموا بعدة عمليات تصدير.",
+    "50 identifiants au plus.": "50 معرّفًا على الأكثر.",
+    "Identifiant de compte invalide.": "معرّف الحساب غير صالح."
   },
   "fragments": {
     "il est déjà publié": "المركز منشور بالفعل",

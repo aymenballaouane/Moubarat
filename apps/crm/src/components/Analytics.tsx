@@ -115,23 +115,16 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
   const fetchOverview = useCallback(async () => {
     setOverviewLoad({ kind: 'loading' });
     try {
-      const curr7From = shiftDate(today, -6);
-      const prev7From = shiftDate(today, -13), prev7To = shiftDate(today, -7);
-      const curr30From = shiftDate(today, -29);
-      const prev30From = shiftDate(today, -59), prev30To = shiftDate(today, -30);
-      const trendDays = Array.from({ length: 14 }, (_, i) => shiftDate(today, i - 13));
-
-      const [venueRes, todayRev, curr7, prev7, curr30, prev30, occ7, origin7, ...trendRevs] = await Promise.all([
+      // MS-073 (audit final, Lot 2b, 18/11/2026) : une route agrégée au lieu de 21 lectures (aujourd'hui, 7 j et 30 j avec
+      // leurs périodes précédentes, occupation et origine sur 7 j, CA jour par jour sur 14 j) — mêmes objets, mêmes calculs.
+      const [venueRes, overview] = await Promise.all([
         apiFetch<{ venue: ApiVenueDetail }>(`/venues/${venueId}?includeArchived=1`, { token }),
-        apiFetch<RevenueReportApi>(`/venues/${venueId}/analytics/revenue?${RQ(today, today)}`, { token }),
-        apiFetch<RevenueReportApi>(`/venues/${venueId}/analytics/revenue?${RQ(curr7From, today)}`, { token }),
-        apiFetch<RevenueReportApi>(`/venues/${venueId}/analytics/revenue?${RQ(prev7From, prev7To)}`, { token }),
-        apiFetch<RevenueReportApi>(`/venues/${venueId}/analytics/revenue?${RQ(curr30From, today)}`, { token }),
-        apiFetch<RevenueReportApi>(`/venues/${venueId}/analytics/revenue?${RQ(prev30From, prev30To)}`, { token }),
-        apiFetch<OccupancyReportApi>(`/venues/${venueId}/analytics/occupancy?${RQ(curr7From, today)}`, { token }),
-        apiFetch<OriginReportApi>(`/venues/${venueId}/analytics/origin?${RQ(curr7From, today)}`, { token }),
-        ...trendDays.map((d) => apiFetch<RevenueReportApi>(`/venues/${venueId}/analytics/revenue?${RQ(d, d)}`, { token })),
+        apiFetch<{
+          today: RevenueReportApi; curr7: RevenueReportApi; prev7: RevenueReportApi; curr30: RevenueReportApi; prev30: RevenueReportApi;
+          occ7: OccupancyReportApi; origin7: OriginReportApi; trend: { date: string; collectedDa: number }[];
+        }>(`/venues/${venueId}/analytics/overview?today=${today}`, { token }),
       ]);
+      const { today: todayRev, curr7, prev7, curr30, prev30, occ7, origin7 } = overview;
 
       const fields = venueRes.venue.fields
         .filter((f) => asFieldStatus(f.status) === 'ACTIVE')
@@ -140,7 +133,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
       setOverview({
         today: todayRev.overall, curr7, prev7, curr30: curr30.overall, prev30: prev30.overall,
         occ7, origin7,
-        trend: trendDays.map((d, i) => ({ date: d, collectedDa: trendRevs[i]!.overall.collected })),
+        trend: overview.trend,
         fields,
       });
       setOverviewLoad({ kind: 'ready' });

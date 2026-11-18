@@ -6369,4 +6369,23 @@ charge**, les réglages Render/Vercel et la préproduction restent aux développ
   Mesuré sur le centre de démo (1 082 réservations sur 90 jours, 9 essais après chauffe, `apps/api/scripts/bench-export.ts`) :
   médiane ~280 → ~180 ms, plus long blocage des autres requêtes ~260 → ~90 ms. Une erreur au milieu du flux ne peut plus devenir
   une 500 (l'en-tête est parti) : le flux est coupé et l'erreur journalisée (`export_stream_failed`).
+- **2b — Lenteurs (MS-071, MS-072, MS-073)**, mesuré sur la base de l'audit à l'échelle visée (`moubarat_perf` : 100 000
+  joueurs, ~66 000 réservations, plus un club fictif de 5 000 réservations sur son propre terrain pour représenter « un gros
+  client » ; banc `apps/api/scripts/bench-routes.ts`, médianes) :
+  - **Fiabilité** (fiche client, liste des clients, profil joueur) : les comptes par statut et la dépense viennent de la base ;
+    seules les annulations remontent, classées « tôt / tard » par le core (`cancellationKind`) — jamais cette règle en SQL, et
+    le score sort toujours de `clientReliabilityV1`. Nom et numéro lus à part (le planificateur parcourait les 100 000 joueurs
+    pour en retrouver un). Fiche du gros client 181 → 19 ms ; liste des clients 238 → 123 ms ; profil 44 → 23 ms. Règles
+    inchangées (clients.test.ts et profile-data.test.ts verts sans modification) ; un test vérifie en plus le score du profil
+    avec une annulation STAFF_ERROR, une annulation tardive et une annulation sans date.
+  - **Dashboard** : la fiabilité des organisateurs du jour en UN appel (`GET /venues/:id/clients/reliability?ids=…`, 50 au plus,
+    VIEW_CLIENTS) au lieu d'un appel par organisateur ; test : même score que la fiche de chaque client.
+  - **Analytics** : `GET /venues/:id/analytics/overview?today=` — une lecture des 60 jours, puis chaque vue calculée par les
+    MÊMES fonctions que les routes unitaires (inchangées) ; l'écran passe de 22 appels à 2. 304 → 138 ms, et une connexion au
+    lieu de dix. Test : chaque vue identique à sa route unitaire.
+  - **Recherches** : migration 0047 (extension `pg_trgm`, six index trigrammes — PASSATION §4.19) ; la recherche de
+    réservations du CRM devient une UNION de recherches indexées (mêmes critères mot pour mot). CRM par nom 104 → 7 ms, par
+    numéro « 0555 » 264 → 115 ms (ce début de numéro est porté par beaucoup de comptes : beaucoup de candidats) ; joueurs de la
+    console 120 → 7 ms. La liste des centres de la console n'a pas de recherche côté serveur (filtre dans le navigateur) : coût
+    fixe pour ~15 centres, laissée telle quelle.
 

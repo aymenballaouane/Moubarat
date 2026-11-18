@@ -844,7 +844,7 @@ variable d'un front exige de redéployer le projet Vercel concerné.
 ### 4.18 Départ de Render vers l'hébergeur suivant (prévu environ un mois après le lancement)
 
 **Ce qu'il faut chez le nouvel hébergeur** (mêmes exigences qu'ici, à vérifier avant de signer) : PostgreSQL 16 avec
-`btree_gist` et le support ICU (§4.12) ; exécution d'une image Docker (ou Node 22) dont le processus principal reçoit
+`btree_gist`, `pg_trgm` (§4.19) et le support ICU (§4.12) ; exécution d'une image Docker (ou Node 22) dont le processus principal reçoit
 `SIGTERM` ; HTTPS ; pour les fronts, repli sur `index.html` en `200` qui laisse passer les fichiers existants
 (`/.well-known/…`, §4.16) ; sauvegardes de la base.
 
@@ -866,6 +866,28 @@ variable d'un front exige de redéployer le projet Vercel concerné.
    Les sessions vivent en base : joueurs et personnel restent connectés. Contrôles : SMS réel, §4.6, `SIGTERM` (encadré).
 7. Refermer `ipAllowList` de la base Render. Garder Render arrêté mais intact une semaine (retour arrière = rebasculer le
    DNS), puis supprimer la base Render **après accord d'Aymen** — c'est aussi la fin du transfert de données à l'étranger.
+
+### 4.19 Index de recherche : extension `pg_trgm` (migration 0047, audit final Lot 2b, 18/11/2026)
+
+La migration `0047_search_trigram_indexes` crée l'extension `pg_trgm` puis six index GIN « trigrammes » qui servent les
+recherches texte : réservations du CRM (nom saisi, référence, numéro saisi et numéro du compte joueur réduits à leurs chiffres)
+et joueurs de la console (nom, numéro). Sans eux, ces recherches relisaient toute la table à chaque frappe.
+
+1. **Droits** : `pg_trgm` est une extension « trusted » depuis PostgreSQL 13 — le propriétaire de la base la crée sans
+   superutilisateur. Chez Render, l'utilisateur de `DATABASE_URL` est propriétaire : rien à faire. Chez un autre hébergeur,
+   vérifier avant le déploiement : `SELECT * FROM pg_available_extensions WHERE name = 'pg_trgm';` doit répondre une ligne.
+   Si la migration échoue sur `CREATE EXTENSION`, la faire créer une fois par l'administrateur de la base
+   (`CREATE EXTENSION pg_trgm;`), puis relancer `pnpm db:migrate`.
+2. **Verrou** : les index sont construits dans la transaction de la migration (pas `CONCURRENTLY`) : les écritures sur
+   `bookings` et `users` attendent la fin de la construction — quelques secondes aux volumes du lancement. Sur une base déjà
+   volumineuse (au-delà de quelques centaines de milliers de réservations), à trancher par les développeurs : déployer à une
+   heure creuse, ou créer ces index à la main avec `CREATE INDEX CONCURRENTLY` (mêmes noms, mêmes expressions) avant
+   la migration, qui les trouvera alors existants (`IF NOT EXISTS`).
+3. **Ne pas reformuler** une expression de recherche sans son index : un index sur une expression ne sert que si la requête
+   écrit EXACTEMENT la même expression (`regexp_replace(coalesce(customer_phone, ''), 'D', '', 'g')`…). Les deux endroits
+   sont signalés dans le code (`modules/bookings/routes.ts`, recherche ; `platform/users/routes.ts`).
+4. **Mesure** (base à l'échelle visée, 100 000 joueurs, `apps/api/scripts/bench-routes.ts`) : recherche CRM par nom 104 → 7 ms,
+   par numéro « 0555 » 264 → 115 ms ; recherche de joueurs de la console 120 → 7 ms.
 
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 

@@ -76,19 +76,28 @@ export async function registerProfileRoutes(app: FastifyInstance, { db, guards }
     }
     const mates = [...mateCount.values()].sort((a, b) => b.matches - a.matches || a.name.localeCompare(b.name, 'fr')).slice(0, MATES_MAX);
 
-    const bookingRows = await db.selectFrom('bookings')
-      .select(['status', 'time_range', 'cancelled_at', 'cancel_reason'])
-      .where('by_user_id', '=', userId).execute();
-    let honored = 0, paid = 0, cancelledEarly = 0, cancelledLate = 0, noShow = 0;
-    for (const r of bookingRows) {
-      if (r.status === 'CANCELLED' && r.cancel_reason === 'STAFF_ERROR') continue;   // l'erreur du centre n'est pas la sienne (même règle que le CRM)
-      if (r.status === 'HONORED') honored++;
-      else if (r.status === 'PAID') paid++;
-      else if (r.status === 'NO_SHOW') noShow++;
-      else if (r.status === 'CANCELLED') {
-        const kind = r.cancelled_at ? cancellationKind(fromPgRange(r.time_range).start, r.cancelled_at.getTime()) : 'EARLY';
-        if (kind === 'LATE') cancelledLate++; else cancelledEarly++;
-      }
+    /* MS-071 (audit final, Lot 2b, 18/11/2026) : les comptes par statut viennent de la base ; seules les annulations remontent,
+       classées « tôt » ou « tard » par le core (`cancellationKind`) — jamais l'historique entier d'un gros compte en mémoire.
+       Même règle qu'avant : une annulation STAFF_ERROR ne compte pas (l'erreur du centre n'est pas la sienne, comme au CRM). */
+    const [counts, cancelRows] = await Promise.all([
+      db.selectFrom('bookings')
+        .select((eb) => [
+          eb.fn.count<string>('id').filterWhere('status', '=', 'HONORED').as('honored'),
+          eb.fn.count<string>('id').filterWhere('status', '=', 'PAID').as('paid'),
+          eb.fn.count<string>('id').filterWhere('status', '=', 'NO_SHOW').as('no_show'),
+        ])
+        .where('by_user_id', '=', userId).executeTakeFirstOrThrow(),
+      db.selectFrom('bookings')
+        .select(['time_range', 'cancelled_at'])
+        .where('by_user_id', '=', userId).where('status', '=', 'CANCELLED')
+        .where((eb) => eb.or([eb('cancel_reason', 'is', null), eb('cancel_reason', '!=', 'STAFF_ERROR')]))
+        .execute(),
+    ]);
+    const honored = Number(counts.honored), paid = Number(counts.paid), noShow = Number(counts.no_show);
+    let cancelledEarly = 0, cancelledLate = 0;
+    for (const r of cancelRows) {
+      const kind = r.cancelled_at ? cancellationKind(fromPgRange(r.time_range).start, r.cancelled_at.getTime()) : 'EARLY';
+      if (kind === 'LATE') cancelledLate++; else cancelledEarly++;
     }
     const leaves = await db.selectFrom('match_players')
       .innerJoin('matches', 'matches.id', 'match_players.match_id')

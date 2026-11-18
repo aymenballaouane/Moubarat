@@ -115,22 +115,22 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
       const dayStart = dayStartMs(day);
       const now = Date.now();
 
-      // Un fetch par ORGANISATEUR distinct (jamais par joueur — avgPlayerReliability
+      // La fiabilité des ORGANISATEURS distincts (jamais par joueur — avgPlayerReliability
       // abandonné, matchHealth gère nativement son absence), et seulement si
       // le rôle a VIEW_CLIENTS — sinon le score reste réel mais « partiel »
       // (lib/dashboardDetail.ts), jamais une requête tentée pour rien.
+      // MS-073 (audit final, Lot 2b, 18/11/2026) : UN appel pour tous (jusqu'ici un par organisateur) ; 50 au plus par appel.
+      // Un organisateur absent de la réponse (aucune réservation retenue sur ce centre), ou un appel en échec : score inconnu.
       const organizerIds = [...new Set(rows.filter((r) => r.match && r.match.status !== 'CANCELLED').map((r) => r.match!.organizerId))];
-      let reliabilityById = new Map<string, number | null>();
+      const reliabilityById = new Map<string, number | null>(organizerIds.map((id) => [id, null]));
       if (hasViewClients && organizerIds.length > 0) {
-        const results = await Promise.all(organizerIds.map(async (id) => {
+        for (let i = 0; i < organizerIds.length; i += 50) {
+          const chunk = organizerIds.slice(i, i + 50);
           try {
-            const res = await apiFetch<{ client: { reliability: ClientReliabilityApi } }>(`/venues/${venueId}/clients/${id}`, { token });
-            return [id, res.client.reliability.visible ? res.client.reliability.score : null] as const;
-          } catch {
-            return [id, null] as const;
-          }
-        }));
-        reliabilityById = new Map(results);
+            const res = await apiFetch<{ reliability: Record<string, ClientReliabilityApi> }>(`/venues/${venueId}/clients/reliability?ids=${chunk.join(',')}`, { token });
+            for (const [id, r] of Object.entries(res.reliability)) reliabilityById.set(id, r.visible ? r.score : null);
+          } catch { /* scores inconnus pour ce lot : le Dashboard reste utilisable */ }
+        }
       }
 
       const healthActions = matchHealthActionsFromApi(rows, dayStart, now, reliabilityById, hasViewClients);
