@@ -67,3 +67,11 @@ si la conversation est résumée ou relancée.
 - À surveiller : GitHub Actions ne démarre plus les vérifications (#22 en file depuis le 17/11 23 h 40) — Render n'installe le serveur
   qu'après une vérification verte, donc tout prochain déploiement automatique est bloqué tant que ce n'est pas réglé (piste : minutes ou
   facturation GitHub Actions, les builds iPhone sur macOS en consomment beaucoup).
+
+## Après la mission : recherche d'adresses (18/11/2026, demande d'Aymen « Oui, lance »)
+
+- Branche `match-libre/phase-8-adresses` (part de `phase-7-photos`) : recherche d'adresses OpenStreetMap (via Photon, par notre
+  serveur) et carte Leaflet à épingle fixe dans « Créer un match » ; position gardée (migration 0050) ; « Itinéraire » vise la position.
+- Gratuit, sans compte ni clé. Limites : petits terrains mal couverts par OpenStreetMap ; images de carte OpenStreetMap pour faible
+  usage seulement (réglable : `VITE_MAP_TILES_URL`) ; Photon public sans garantie (réglable : `PLACES_SEARCH_URL`).
+- Base de dev : les 2 matchs libres de capture (annulés) supprimés.

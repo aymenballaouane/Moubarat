@@ -103,8 +103,11 @@ export function venueMapsUrl(v: Pick<VenueDetail, 'name' | 'wilaya' | 'address'>
 
 /** Lot « Match libre », phase 5 (réponse 15 d'Aymen) : « Itinéraire » d'un match libre = Google Maps sur le texte saisi et la ville —
     aucun service de cartes, aucune coordonnée. */
-export function placeMapsUrl(place: { name: string; area?: string | undefined; wilaya: string }): string {
-  const query = [place.name, place.area ?? '', place.wilaya].map((s) => s.trim()).filter((s) => s.length > 0).join(', ');
+export function placeMapsUrl(place: { name: string; area?: string | undefined; wilaya: string; lat?: number | undefined; lng?: number | undefined }): string {
+  // Phase adresses : avec une position (adresse OpenStreetMap ou épingle), l'itinéraire mène au point exact.
+  const query = place.lat !== undefined && place.lng !== undefined
+    ? `${place.lat},${place.lng}`
+    : [place.name, place.area ?? '', place.wilaya].map((s) => s.trim()).filter((s) => s.length > 0).join(', ');
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 

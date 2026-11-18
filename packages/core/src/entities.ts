@@ -133,6 +133,9 @@ export interface FreePlace {
   name: string;
   area?: string;
   wilaya: string;
+  /** Phase adresses (18/11/2026) : la position du lieu (adresse OpenStreetMap choisie, ou épingle posée), facultative. */
+  lat?: number;
+  lng?: number;
 }
 
 export interface Match {

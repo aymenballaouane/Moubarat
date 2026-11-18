@@ -164,6 +164,8 @@ racine : `.env.example`). En hébergement, les fournir par l'environnement du se
 | `TEAM_INVITE_MAX_PER_HOUR` | Invitations d'équipe (`POST /teams/:id/invite`) **par joueur et par heure**, comptées à chaque appel (refusé ou non) ; `429 RATE_LIMITED` au-delà. La route cherche un joueur par son nom d'affichage exact : sans plafond, elle permettrait de sonder quels noms existent (audit du 25/09/2026, P0-6 ; jamais de numéro). Compteur partagé en base (clé = l'identifiant du joueur), fenêtre fixe. Entier ≥ 1 | non | 20 (défaut). Sans effet tant que `TEAMS_CHALLENGES_ENABLED` n'est pas `true` (les routes des équipes ne sont alors pas servies) |
 | `TEAMS_CHALLENGES_ENABLED` | Audit final, MS-011 (12/11/2026) : sert ou non les routes des équipes (`/teams`, `/me/teams`) et des défis (`/challenges`). Éteintes, elles répondent 404 comme une route inexistante. Avant ce correctif elles répondaient à des appels directs alors que la fonction est masquée dans l'app, et **accepter un défi créait une réservation au nom du capitaine émetteur sans plafonds (règle 23), sans horizon de 60 jours et sans restriction (règle 25)**, sans lien avec son match. **Ne l'allumer qu'après** avoir fait passer l'acceptation par la création de réservation standard (`createBooking` avec la garde du joueur) — chantier non fait, à trancher avec Aymen à la réactivation. Seule la chaîne exacte `true` allume | non | `false` (défaut) — ne pas définir |
 | `NAME_CHANGE_MAX_PER_HOUR` | Changements de nom d'affichage (`PATCH /me`) **par joueur et par heure**, comptés à chaque appel (refusé ou non : chaque essai révèle si un nom est pris) ; `429 RATE_LIMITED` au-delà. Compteur partagé en base (clé = l'identifiant du joueur), fenêtre fixe. Entier ≥ 1 | non | 10 (défaut). Voir §4.12 |
+| `PLACES_SEARCH_URL` | Adresse du service de recherche d'adresses (Photon, moteur d'OpenStreetMap) que le serveur interroge pour `GET /places/search` et `/places/reverse` (« Créer un match » → recherche d'un lieu, §4.21). Vide = recherche coupée (l'app propose alors seulement « Je ne trouve pas mon terrain » et la carte). Le service public est gratuit, sans garantie ni clé ; un Photon hébergé chez nous se brancherait ici sans toucher au code | non | `https://photon.komoot.io` (défaut) |
+| `PLACES_MAX_PER_HOUR` | Recherches d'adresses **par joueur et par heure** (compteur partagé en base, nom `places`) ; `429 PLACES_RATE_LIMITED` au-delà. Garde-fou pour ne pas abuser du service public. Entier ≥ 1 | non | 120 (défaut) |
 | `BOOKING_HORIZON_DAYS` | Horizon maximal (jours) d'une réservation posée par un **joueur** (App, ou téléphonique déclarée dans l'app) ; au-delà, `400 BOOKING_TOO_FAR`. Le comptoir et le téléphone saisi au CRM ne sont pas concernés (abonnements, événements). Audit pré-lancement BUG-4 (27/09/2026) : une réservation à +400 jours était acceptée. Entier 1–730 | non | 60 (défaut) |
 | `BOOKING_MAX_PER_DAY` | Règle 23 (refonte app joueur, 26/10/2026) : nombre maximal de réservations **vivantes le même jour d'Alger**, **par joueur** (App ou téléphonique déclarée ; jamais le comptoir/CRM) ; au-delà, `409 BOOKING_LIMIT_DAY`. Une annulation libère une place. Entier ≥ 1 | non | 2 (défaut) |
 | `BOOKING_MAX_UPCOMING` | Même règle : nombre maximal de réservations vivantes **à venir**, par joueur ; au-delà, `409 BOOKING_LIMIT_UPCOMING`. L'app n'explique la limite en fenêtre que pour les valeurs 2 et 4 de la règle : pour un autre réglage, elle affiche le message du serveur. Entier ≥ 1 | non | 4 (défaut) |
@@ -241,6 +243,7 @@ Fronts (au **build**, pas à l'exécution — la valeur est figée dans `dist/`)
 | Variable | Apps | Production |
 |---|---|---|
 | `VITE_API_BASE_URL` | player, crm, superadmin | URL publique HTTPS de l'API (défaut `http://127.0.0.1:3001` sinon) |
+| `VITE_MAP_TILES_URL` / `VITE_MAP_TILES_ATTRIBUTION` | player | Images de la carte de « Créer un match » (§4.21) et leur mention obligatoire. Défaut : serveurs d'OpenStreetMap (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`, « © OpenStreetMap »), **autorisés pour un faible usage seulement** : à remplacer par un fournisseur (ou un serveur à nous) quand l'app grossit — figées au build comme `VITE_API_BASE_URL` |
 
 Secrets à créer côté hébergeur avant tout déploiement : mot de passe Postgres, clé smssak,
 mot de passe du superadmin, mots de passe des comptes CRM du centre pilote. Aucun de ces
@@ -908,6 +911,25 @@ envoi). Le corps de `PUT /venues/:id/photo` monte à ~1,6 Mo (limite fixée sur 
 les corps de plus de 1 Mo ferait échouer l'envoi depuis le CRM. Si un jour les photos se comptent par milliers (galeries), passer à un
 stockage d'objets (Cloudflare R2 étudié le 17/11/2026) : l'adresse lue par l'app ne changerait pas. Retour arrière :
 `apps/api/migrations/retour/0049_venue_photo.sql` (refusé tant qu'un centre a une photo).
+
+### 4.21 Recherche d'adresses et carte (match libre, migration 0050, 18/11/2026)
+
+« Créer un match » → « Où tu joues ? » propose de vraies adresses (OpenStreetMap) et une carte où le joueur pose une épingle. Deux
+services extérieurs gratuits, sans compte ni clé :
+
+1. **Recherche d'adresses** : le SERVEUR interroge Photon (`PLACES_SEARCH_URL`, §3) — jamais l'app directement. Routes
+   `GET /places/search?q=&lat=&lng=` et `GET /places/reverse?lat=&lng=` (compte joueur exigé, `apps/api/src/modules/places/`). Limité à
+   l'Algérie, 6 résultats, cache mémoire de 10 minutes par instance, délai de 4 s, plafond par joueur (`PLACES_MAX_PER_HOUR`). Panne :
+   `{ results: [], unavailable: true }` (200), l'app continue sans suggestions. Le serveur doit pouvoir sortir vers
+   `photon.komoot.io` en HTTPS (pare-feu sortant). Envoyé à Photon : le texte tapé et la position de la ville, jamais l'identité.
+2. **Images de la carte** : chargées par le NAVIGATEUR du joueur (`VITE_MAP_TILES_URL`, §3), serveurs d'OpenStreetMap par défaut. Leur
+   règle d'usage interdit un usage intensif : **à trancher par les développeurs avant une forte croissance** (fournisseur payant ou
+   serveur à nous). Aucune politique de sécurité de contenu (CSP) n'est posée sur `app.moubarat.app` aujourd'hui ; si on en ajoute une,
+   autoriser ces images (`img-src`).
+
+**Position du lieu** : migration 0050, colonnes `matches.place_lat` / `place_lng` (les deux ou aucune, seulement pour un match libre ;
+contrainte `matches_place_position`). Additive, sans coupure. Retour arrière à la main : `apps/api/migrations/retour/0050_match_place_position.sql`
+(refusé tant qu'un match à venir porte une position). **Ordre des retours si l'on revient avant tout le lot** : 0050, puis 0049, 0048, 0047.
 
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 

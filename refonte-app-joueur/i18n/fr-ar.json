@@ -1172,7 +1172,12 @@
     "Il a peut-être été retiré, ou le lien n’est plus valable.": "ربما حُذفت، أو أن الرابط لم يعد صالحًا.",
     "Moubarat ne répond pas": "مبارات لا تستجيب",
     "Mise à jour ou panne de notre côté, ou connexion trop faible. On réessaie tout seul dans quelques secondes.": "تحديث أو عطل من جهتنا، أو اتصال ضعيف جدًا. سنعيد المحاولة تلقائيًا بعد ثوانٍ.",
-    "Dans": "بعد"
+    "Dans": "بعد",
+    "Où exactement ?": "أين بالضبط؟",
+    "Déplace la carte pour poser l’épingle sur le terrain.": "حرّك الخريطة لتضع الدبوس على الملعب.",
+    "Recherche de l’adresse…": "جارٍ البحث عن العنوان…",
+    "Nom du lieu": "اسم المكان",
+    "C’est ici": "هنا بالضبط"
   },
   "par_ecran": {},
   "pluriels": {

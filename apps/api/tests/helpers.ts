@@ -57,6 +57,8 @@ export const LOOSE_LIMITS = {
   otpIpMaxPerHour: 100_000, otpGlobalMaxPerHour: 100_000, otpGlobalMaxPerDay: 100_000, loginIpMaxPerHour: 100_000, playerLoginIpMaxPerHour: 100_000,
   requestIpMaxPerHour: 100_000, requestGlobalMaxPerDay: 100_000, teamInviteMaxPerHour: 100_000, nameChangeMaxPerHour: 100_000,
   availabilitySummaryCacheMs: 0, // jamais de cache entre deux assertions d'un même test
+  // Phase adresses : jamais d'appel au vrai service Photon depuis les tests (places.test.ts monte son propre faux serveur).
+  placesSearchUrl: '', placesMaxPerHour: 100_000,
   // BUG-4 (c), 27/09/2026 : l'horizon de réservation (60 jours en production) est desserré ici — plusieurs suites réservent à
   // +70/+90 jours pour isoler leurs créneaux (analytics, clients, promos…). `match-guards-p1.test.ts` le reserre explicitement.
   bookingHorizonDays: 3_650,

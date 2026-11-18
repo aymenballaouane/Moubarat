@@ -6652,3 +6652,40 @@ CRM ».
   propre sur les 5 paquets.
 - **Vérification en vrai** (base de démo) : le gérant de Green Arena envoie une photo depuis le CRM (version 1, aperçu immédiat) ; l'app
   la montre en FR et en AR sur Réserver, la fiche, Jouer › Terrains, une carte de match et le détail ; aucune erreur console.
+
+### Phase adresses — « Trouver un lieu comme dans une appli de VTC » (branche `match-libre/phase-8-adresses`, 18/11/2026)
+
+Demande d'Aymen (18/11/2026, écran W1/W2 de « Créer un match ») : une recherche d'adresses « comme Google Maps, InDrive ou Yassir ».
+Choix d'Aymen : **OpenStreetMap + Leaflet, gratuit** (« Oui, lance »). Aucun compte, aucune clé, aucun abonnement.
+
+- **Recherche** : `GET /places/search?q=&lat=&lng=` et `GET /places/reverse?lat=&lng=` (`apps/api/src/modules/places/`). L'app ne parle
+  jamais directement au service d'adresses : notre serveur interroge **Photon** (moteur de recherche d'OpenStreetMap, service public de
+  Komoot), limité à l'Algérie (cadre géographique), près de la ville choisie, en français. Il écarte le bruit (distributeurs, banques…),
+  dédoublonne, garde 6 résultats, et retient la réponse 10 minutes en mémoire. Compte joueur exigé ; plafond de 120 recherches par joueur
+  et par heure (`PLACES_MAX_PER_HOUR`, compteur partagé en base) → `429 PLACES_RATE_LIMITED`. Service en panne ou lent (4 s) : liste vide
+  et `unavailable: true`, jamais une erreur — le joueur peut toujours écrire son lieu à la main et poser l'épingle.
+- **Carte** (`apps/player/src/components/CreerCarte.tsx`, Leaflet 1.9.4) : comme dans une appli de VTC, la carte bouge sous une **épingle
+  fixe** ; sous l'épingle, le nom de l'endroit (recherche inverse) ; le « Nom du lieu » reste modifiable (c'est lui que voient les
+  joueurs). On y arrive en choisissant une adresse (zoom rue) ou par « Je ne trouve pas mon terrain » (carte sur la ville). « C'est ici »
+  garde le nom, la position et la wilaya ; W3/W4 inchangés.
+- **Position gardée** : migration 0050 (`matches.place_lat/place_lng`, les deux ou aucune, seulement pour un match libre) ; la règle core
+  `createFreeMatch` vérifie la position (+2 tests core, **198**). Le bouton « Itinéraire » du détail vise la position exacte quand elle
+  existe, le nom sinon (matchs libres d'avant cette phase).
+- **Décisions prises seul (à revoir si Aymen préfère)** : (1) les images de la carte viennent des serveurs d'OpenStreetMap, autorisés pour
+  un faible usage seulement — adresse réglable sans toucher au code (`VITE_MAP_TILES_URL`, `VITE_MAP_TILES_ATTRIBUTION`) le jour où
+  l'app grossit (fournisseur payant ou serveur à nous) ; (2) Photon public, sans garantie de service, « usage raisonnable » — adresse
+  réglable (`PLACES_SEARCH_URL`, vide = recherche coupée) ; (3) le texte tapé par le joueur et la position de la ville sont envoyés à
+  Photon (Komoot, Allemagne) **par notre serveur**, jamais l'identité ni le numéro du joueur — à signaler à l'avocat pour la politique de
+  confidentialité ; (4) mention « © OpenStreetMap » affichée sur la carte (obligatoire).
+- **Limite connue** : OpenStreetMap couvre bien les quartiers et les grands stades d'Alger, beaucoup moins les petits terrains de
+  quartier. D'où l'épingle à poser à la main et le nom libre.
+- **Textes arabes** : 5 ajoutés, PROVISOIRES (« أين بالضبط؟ », « حرّك الخريطة لتضع الدبوس على الملعب. », « جارٍ البحث عن العنوان… »,
+  « اسم المكان », « هنا بالضبط »).
+- **Tests** : API `places.test.ts` (faux Photon local, jamais le vrai depuis les tests : lecture des réponses, cache, recherche inverse,
+  panne, plafond, position gardée ou refusée à moitié) ; retour arrière de 0050 joué par `migrations-retour.test.ts` ; app
+  `places.test.ts` (4). Au passage, `claims.test.ts` rendu indépendant de la date (il réservait T1 à 20:00 un mardi, jour de l'abonnement
+  du seed — échec le 18/11/2026, sans lien avec cette phase). **Core 198 · API 1128 · app 344 · CRM 98 · console 27**, typecheck
+  propre sur les 5 paquets.
+- **Vérification en vrai** (base de dev, vrai Photon, vraies images OpenStreetMap) : « Stade Bab Ezzouar » → 3 adresses réelles → carte →
+  épingle déplacée → nom mis à jour → match publié → « Itinéraire » ouvre Google Maps sur la position exacte ; en arabe, « Je ne trouve pas
+  mon terrain » → carte d'Alger. Liseré blanc entre deux images de carte trouvé sur les captures et corrigé. Aucune erreur console.

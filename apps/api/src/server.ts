@@ -21,6 +21,7 @@ import { registerPlatformMatchRoutes } from './platform/matches/routes.js';
 import { registerPlatformBookingRoutes } from './platform/bookings/routes.js';
 import { registerPlatformAuditRoutes } from './platform/audit/routes.js';
 import { registerVenueRoutes } from './modules/venues/routes.js';
+import { registerPlaceRoutes } from './modules/places/routes.js';
 import { registerSupportRoutes } from './modules/support/routes.js';
 import { registerStaffRoutes } from './modules/staff/routes.js';
 import { registerLegalRoutes } from './modules/legal/routes.js';
@@ -266,6 +267,8 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
   // Par JOUEUR (clé = son identifiant, jamais une donnée personnelle dans les journaux : pas de `logKey`).
   const teamInviteLimiter = createSharedRateLimiter(db, { name: 'team-invite', max: env.teamInviteMaxPerHour, window: 'hour', log: limiterLog });
   const nameChangeLimiter = createSharedRateLimiter(db, { name: 'name-change', max: env.nameChangeMaxPerHour, window: 'hour', log: limiterLog });
+  // Phase adresses (18/11/2026) : recherches d'adresses par joueur (le service OpenStreetMap public est gratuit mais limité).
+  const placesLimiter = createSharedRateLimiter(db, { name: 'places', max: env.placesMaxPerHour, window: 'hour', log: limiterLog });
 
   await registerAuthRoutes(app, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter });
   await registerPlatformAuthRoutes(app, { db, guards: platformGuards, loginIpLimiter });
@@ -294,6 +297,7 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
   // MS-011 (audit final, 12/11/2026) : équipes et défis servis seulement si la fonction est allumée (env.ts).
   if (env.teamsChallengesEnabled) await registerTeamRoutes(app, { db, guards, inviteLimiter: teamInviteLimiter });
   await registerMatchRoutes(app, { db, guards });
+  await registerPlaceRoutes(app, { guards, baseUrl: env.placesSearchUrl, limiter: placesLimiter });
   await registerNotificationRoutes(app, { db, guards });
   await registerPushRoutes(app, { db, guards });
   await registerAccountRoutes(app, { db, guards, nameLimiter: nameChangeLimiter });

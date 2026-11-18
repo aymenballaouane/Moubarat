@@ -9,6 +9,8 @@ import { CancelReservationSheet } from './CancelReservationSheet.js';
 import { ReserverTicket, type TicketState } from './ReserverTicket.js';
 import { VenuesTerrains } from './VenuesTerrains.js';
 import { CreerLieu } from './CreerLibre.js';
+import { CreerCarte } from './CreerCarte.js';
+import { cityCenter, wilayaForPlace, type LatLng, type PlaceSuggestion } from '../lib/places.js';
 import { inPlayerCity } from '../lib/venueFilters.js';
 import { cityLabel } from '../lib/labels.js';
 import { useT } from '../lib/i18n.js';
@@ -97,7 +99,7 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
   onCreateMatch: (prefill: MatchPrefill) => void;
   /** Lot « Match libre », phase 5 (W1/W2) : en mode « match », un lieu hors des centres partenaires a été choisi — la suite (W3, W4)
       est FreeMatchFlow. `freeQuery` : le texte saisi, repris au retour de W3. */
-  onFreeMatch?: ((place: { name: string; wilaya: string }, query: string) => void) | undefined;
+  onFreeMatch?: ((place: { name: string; wilaya: string; lat?: number; lng?: number }, query: string) => void) | undefined;
   freeQuery?: string | undefined;
   onExit?: (() => void) | undefined;
   /** Cible REELLE du CTA « Retour a l'accueil » du recap — onExit revient au
@@ -151,6 +153,26 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       avant même le premier rendu) mais figerait à tort le sport d'un centre PRÉCÉDENT quand R1
       vient de charger le nouveau. Même geste que selectSport (remet aussi créneau/format
       à zéro) — changer de centre ne doit jamais laisser une sélection de l'ancien. */
+  /* Phase adresses (18/11/2026) : la recherche OpenStreetMap de W2 (attente de 350 ms après la dernière lettre, seulement la dernière
+     réponse compte) et l'étape carte avant W3. */
+  const [lieuQuery, setLieuQuery] = useState(freeQuery ?? '');
+  const [lieuPlaces, setLieuPlaces] = useState<PlaceSuggestion[]>([]);
+  const [lieuSearching, setLieuSearching] = useState(false);
+  const [lieuMap, setLieuMap] = useState<{ center: LatLng; zoom: number; name: string; query: string } | null>(null);
+  useEffect(() => {
+    const q = lieuQuery.trim();
+    if (!(matchMode && onFreeMatch) || q.length < 3) { setLieuPlaces([]); setLieuSearching(false); return undefined; }
+    let alive = true;
+    setLieuSearching(true);
+    const timer = window.setTimeout(() => {
+      void store.searchPlaces(q, cityCenter(store.identity.city)).then((res) => {
+        if (!alive) return;
+        setLieuPlaces(res.results);
+        setLieuSearching(false);
+      });
+    }, 350);
+    return () => { alive = false; window.clearTimeout(timer); };
+  }, [lieuQuery]); // eslint-disable-line react-hooks/exhaustive-deps
   const [lieuOpening, setLieuOpening] = useState<string | null>(null);
   const [lieuError, setLieuError] = useState<string | null>(null);
   async function pickPartner(venueId: string) {
@@ -426,12 +448,24 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
       const wilaya = city && city !== 'AUTRE' ? cityLabel(city) : 'Alger';
       const partners = store.venues.map((v) => ({ id: v.id, name: v.name, wilaya: v.wilaya, photo: store.venuePhoto(v.id, 'card') }));
       const nearby = partners.filter((v) => inPlayerCity(v.wilaya, city));
+      if (lieuMap) {
+        return (
+          <CreerCarte
+            key={`${lieuMap.center.lat},${lieuMap.center.lng}`} center={lieuMap.center} zoom={lieuMap.zoom} initialName={lieuMap.name}
+            onReverse={(lat, lng) => store.reversePlace(lat, lng)}
+            onConfirm={(pl) => onFreeMatch({ name: pl.name, wilaya: wilayaForPlace(pl.osmWilaya, wilaya), lat: pl.lat, lng: pl.lng }, lieuMap.query)}
+            onBack={() => setLieuMap(null)}
+          />
+        );
+      }
       return (
         <CreerLieu
           nearby={nearby.length > 0 ? nearby : partners} venues={partners} wilayaLabel={t(wilaya)} initialQuery={freeQuery}
           openingId={lieuOpening} error={lieuError}
           onPickVenue={(id) => { void pickPartner(id); }}
-          onFreePlace={(name, query) => onFreeMatch({ name, wilaya }, query)}
+          places={lieuPlaces} placesBusy={lieuSearching} onQuery={setLieuQuery}
+          onPickPlace={(pl, query) => setLieuMap({ center: { lat: pl.lat, lng: pl.lng }, zoom: 17, name: pl.name, query })}
+          onFreePlace={(name, query) => setLieuMap({ center: cityCenter(city), zoom: 13, name: name ?? '', query })}
           onBack={() => onExit?.()}
         />
       );

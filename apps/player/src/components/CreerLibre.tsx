@@ -11,6 +11,7 @@ import { hhmm } from '../lib/format.js';
 import { levelLabel } from '../lib/labels.js';
 import { NOTE_MAX, formatBadge } from '../lib/createMatch.js';
 import { FREE_DURATIONS, FREE_FORMATS, freePlaceName, partnerSuggestions } from '../lib/freeMatch.js';
+import { placeSubtitle, type PlaceSuggestion } from '../lib/places.js';
 import { durationText, useLang } from '../lib/i18n.js';
 import '../styles/create.css';
 import '../styles/match-view.css';
@@ -56,19 +57,26 @@ export function CreerLieu(p: {
   openingId: string | null;
   error: string | null;
   onPickVenue: (venueId: string) => void;
-  onFreePlace: (name: string, query: string) => void;
+  /** Phase adresses (18/11/2026) : lieux et adresses d'OpenStreetMap pour le texte tapé (cherchés par le conteneur). */
+  places?: readonly PlaceSuggestion[] | undefined;
+  placesBusy?: boolean | undefined;
+  onQuery?: ((query: string) => void) | undefined;
+  onPickPlace?: ((place: PlaceSuggestion, query: string) => void) | undefined;
+  /** Saisie libre ou « Je ne trouve pas mon terrain » : la carte pour poser l'épingle (`name` : le texte tapé, s'il en est un). */
+  onFreePlace: (name: string | null, query: string) => void;
   onBack: () => void;
 }) {
   const t = useT();
-  const [query, setQuery] = useState(p.initialQuery ?? '');
+  const [query, setQueryRaw] = useState(p.initialQuery ?? '');
+  const setQuery = (q: string) => { setQueryRaw(q); p.onQuery?.(q); };
   const input = useRef<HTMLInputElement>(null);
   const typing = query.trim() !== '';
   const free = freePlaceName(query);
   const suggestions = partnerSuggestions(p.venues, query);
 
+  /* Phase adresses : « Je ne trouve pas mon terrain » ouvre la carte pour poser l'épingle, avec le texte tapé comme nom s'il y en a un. */
   function notFound() {
-    if (free) p.onFreePlace(free, query);
-    else input.current?.focus();
+    p.onFreePlace(free, query);
   }
 
   const partnerRow = (v: PartnerVenue) => (
@@ -104,6 +112,17 @@ export function CreerLieu(p: {
         {typing ? (
           <>
             {suggestions.map(partnerRow)}
+            {(p.places ?? []).map((s) => (
+              <button key={s.id} type="button" className="cl-row cl-row--place mb-tap" onClick={() => p.onPickPlace?.(s, query)}>
+                <span className="cl-pin" aria-hidden="true"><Icon id="i-pin" /></span>
+                <span className="cl-row__col">
+                  <bdi className="cl-row__name" dir="auto">{s.name}</bdi>
+                  <span className="cl-row__sub"><bdi dir="auto">{placeSubtitle(s) || t(p.wilayaLabel)}</bdi></span>
+                </span>
+                <Icon id="i-arrow" className="cl-row__go" />
+              </button>
+            ))}
+            {p.placesBusy && (p.places ?? []).length === 0 ? <p className="mb-meta cl-busy">{t('Recherche de l’adresse…')}</p> : null}
             {free ? (
               <button type="button" className="cl-row cl-row--place mb-tap" onClick={() => p.onFreePlace(free, query)}>
                 <span className="cl-pin" aria-hidden="true"><Icon id="i-pin" /></span>

@@ -578,6 +578,12 @@ async function run() {
         await p.fill('#s-creer-lieu input', 'Ben Aknoun');
         await capture(p, { id: 'create-libre-saisie', label: 'Créer un match — W2 · Lieux et adresses', journey: 'creer-match', surface: 'player', path: 'W1 → saisie « Ben Aknoun »', waitFor: '.cl-row--place' });
         await p.click('#s-creer-lieu .cl-row--place');
+        // Phase adresses (18/11/2026) : un lieu choisi ouvre la carte à épingle avant le créneau.
+        await p.waitForSelector('#s-creer-carte', { timeout: 6000 });
+        await p.waitForSelector('#s-creer-carte .leaflet-tile-loaded', { timeout: 15000 }).catch(() => {});
+        await p.waitForTimeout(1500);
+        await capture(p, { id: 'create-libre-carte', label: 'Créer un match — Où exactement ? (carte)', journey: 'creer-match', surface: 'player', path: 'W2 → un lieu choisi', waitFor: '#s-creer-carte' });
+        await p.click('#s-creer-carte .cl-foot .mv-cta');
         await p.waitForSelector('#s-creer-libre-creneau', { timeout: 6000 });
         await p.locator('#s-creer-libre-creneau .rsv-r3__day').nth(2).click();
         await p.locator('#s-creer-libre-creneau .rsv-r3__hour').nth(3).click();

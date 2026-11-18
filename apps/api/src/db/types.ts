@@ -377,6 +377,9 @@ export interface MatchesTable {
   place_name: string | null;
   place_area: string | null;
   place_wilaya: string | null;
+  /** Migration 0050 — position du lieu libre (adresse OpenStreetMap choisie ou épingle), facultative. */
+  place_lat: number | null;
+  place_lng: number | null;
   time_range: string;                 // tstzrange
   capacity: number;
   price_per_player_da: number;

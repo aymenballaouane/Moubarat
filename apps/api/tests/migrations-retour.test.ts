@@ -7,7 +7,7 @@ import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { migrate } from '../src/db/migrate.js';
 import { toPgRange } from '../src/lib/pgrange.js';
 
-/* Lot « Match libre » : les migrations 0047 (match libre) et 0048 (9v9) sont RÉVERSIBLES (décision d'Aymen : « rien de destructif »).
+/* Lot « Match libre » : les migrations 0047 (match libre), 0048 (9v9) et 0050 (position du lieu, phase adresses) sont RÉVERSIBLES (décision d'Aymen : « rien de destructif »).
    Leurs scripts de retour arrière (migrations/retour/, jamais lus par le migrateur) sont joués ici sur une base jetable : ils refusent
    tant qu'une ligne utilise la nouveauté, défont la migration sinon, et le migrateur la réapplique ensuite à l'identique.
    SQL brut seulement : le type énuméré est recréé, les lecteurs de tableaux d'enum du serveur ne sont plus valables après. */
@@ -32,6 +32,30 @@ beforeAll(async () => {
   seed = await seedDemo(stack.db);
 });
 afterAll(() => stack.teardown());
+
+describe('retour arrière de 0050 (position d’un match libre)', () => {
+  it('refuse tant qu’un match à venir porte une position ; défait la migration sinon ; le migrateur la réapplique', async () => {
+    const start = Date.now() + 30 * 86_400_000;
+    await q(
+      `INSERT INTO matches (sport, format, level, title, venue_id, field_id, place_name, place_wilaya, place_lat, place_lng, time_range, capacity, price_per_player_da, organizer_id)
+       VALUES ('FOOTBALL', '5v5', 'LOISIR', 'Libre', NULL, NULL, 'Stade du quartier', 'Alger', 36.72, 3.19, $1::tstzrange, 10, 0, $2)`,
+      [toPgRange({ start, end: start + 5_400_000 }), seed.users.sofiane],
+    );
+    await expect(runRetour('0050_match_place_position.sql')).rejects.toThrow(/0050 refusé/);
+    expect(await migrationsApplied()).toContain('0050_match_place_position');
+
+    await q('DELETE FROM matches WHERE venue_id IS NULL');
+    await runRetour('0050_match_place_position.sql');
+    const cols = (await q<{ c: string }>(`SELECT column_name AS c FROM information_schema.columns WHERE table_name = 'matches'`)).map((r) => r.c);
+    expect(cols).not.toContain('place_lat');
+    expect(cols).toContain('place_name');   // 0047 intacte
+    expect(await migrationsApplied()).not.toContain('0050_match_place_position');
+
+    expect(await migrate(stack.pool)).toEqual(['0050_match_place_position']);
+    const back = (await q<{ c: string }>(`SELECT column_name AS c FROM information_schema.columns WHERE table_name = 'matches'`)).map((r) => r.c);
+    expect(back).toEqual(expect.arrayContaining(['place_lat', 'place_lng']));
+  });
+});
 
 describe('retour arrière de 0048 (9v9)', () => {
   it('refuse tant qu’un terrain propose le 9v9 ; défait la migration sinon ; le migrateur la réapplique', async () => {

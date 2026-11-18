@@ -12,9 +12,12 @@ export type MatchRow = Selectable<MatchesTable>;
 export type MatchPlayerRow = Selectable<MatchPlayersTable>;
 
 /** Le lieu d'un match libre (migration 0047), `null` pour un match de centre. */
-export function placeOf(row: Pick<MatchRow, 'venue_id' | 'place_name' | 'place_area' | 'place_wilaya'>): { name: string; area?: string; wilaya: string } | null {
+export function placeOf(row: Pick<MatchRow, 'venue_id' | 'place_name' | 'place_area' | 'place_wilaya' | 'place_lat' | 'place_lng'>): { name: string; area?: string; wilaya: string; lat?: number; lng?: number } | null {
   if (row.venue_id !== null || row.place_name === null || row.place_wilaya === null) return null;
-  return { name: row.place_name, ...(row.place_area !== null ? { area: row.place_area } : {}), wilaya: row.place_wilaya };
+  return {
+    name: row.place_name, ...(row.place_area !== null ? { area: row.place_area } : {}), wilaya: row.place_wilaya,
+    ...(row.place_lat !== null && row.place_lng !== null ? { lat: row.place_lat, lng: row.place_lng } : {}),   // phase adresses (0050)
+  };
 }
 
 /** Lot « Match libre », phase 5 (décision d'Aymen du 16/11/2026) : « le serveur n'envoie pas les matchs libres aux versions 1.0 et

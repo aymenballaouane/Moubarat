@@ -17,6 +17,7 @@ import { bootFailureKind, type BootFailureKind } from '../lib/bootFailure.js';
 import type { MatchContact } from '../lib/contacts.js';
 import { epochDateStamp } from '../lib/format.js';
 import type { BookingLimits } from '../lib/bookingLimits.js';
+import type { PlaceSuggestion } from '../lib/places.js';
 import { venuePhotoUrl, type VenuePhotoSize } from '../lib/venuePhoto.js';
 import type { ProfileSummary } from '../lib/profileView.js';
 import type { NotificationSettings } from '../lib/notificationSettings.js';
@@ -1062,8 +1063,24 @@ export function useAppStore() {
     },
     /** Lot « Match libre », phase 5 — POST /matches/free : un match AILLEURS que chez un centre partenaire (rien n'est réservé).
         Le serveur rejoue la règle core `createFreeMatch` ; le match est inséré avec l'id réel renvoyé. */
+    /** Phase adresses (18/11/2026) — GET /places/search : lieux et adresses d'OpenStreetMap en Algérie, proches de `near`. Jamais
+        une erreur pour l'écran : en cas de souci, une liste vide et `unavailable` (la saisie libre et l'épingle restent). */
+    searchPlaces: async (q: string, near?: { lat: number; lng: number }): Promise<{ results: PlaceSuggestion[]; unavailable: boolean }> => {
+      try {
+        const qs = new URLSearchParams({ q, ...(near ? { lat: String(near.lat), lng: String(near.lng) } : {}) });
+        const res = await apiFetch<{ results: PlaceSuggestion[]; unavailable?: boolean }>(`/places/search?${qs}`, { token });
+        return { results: res.results ?? [], unavailable: res.unavailable === true };
+      } catch { return { results: [], unavailable: true }; }
+    },
+    /** GET /places/reverse — le lieu sous l'épingle de la carte (`null` si rien de connu à cet endroit). */
+    reversePlace: async (lat: number, lng: number): Promise<PlaceSuggestion | null> => {
+      try {
+        const res = await apiFetch<{ place: PlaceSuggestion | null }>(`/places/reverse?lat=${lat}&lng=${lng}`, { token });
+        return res.place ?? null;
+      } catch { return null; }
+    },
     publishFreeMatch: async (input: {
-      place: { name: string; wilaya: string }; format: MatchFormat; level: SkillLevel; start: number; durationMin: number;
+      place: { name: string; wilaya: string; lat?: number | undefined; lng?: number | undefined }; format: MatchFormat; level: SkillLevel; start: number; durationMin: number;
       title: string; note?: string | undefined; visibility: 'OPEN' | 'PRIVATE';
     }): Promise<ActionResult & { matchId?: string; code?: string | undefined }> => {
       try {

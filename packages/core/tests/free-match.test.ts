@@ -82,3 +82,17 @@ describe('createFreeMatch — match libre', () => {
     expect(canRate({ match: played, players: after, raterId: 'karim', targetType: 'PLAYER', targetId: 'aymen', now: later }).ok).toBe(true);
   });
 });
+
+describe('createFreeMatch — position du lieu (phase adresses, 18/11/2026)', () => {
+  const at = (place: Record<string, unknown>) => createFreeMatch({ ...base, place: { name: 'Stade du quartier', wilaya: 'Alger', ...place } as never });
+  it('une position entière et plausible est gardée avec le lieu', () => {
+    const r = at({ lat: 36.7538, lng: 3.0588 });
+    expect(r.result.ok).toBe(true);
+    expect(r.match!.place).toEqual({ name: 'Stade du quartier', wilaya: 'Alger', lat: 36.7538, lng: 3.0588 });
+  });
+  it('refusée si elle est à moitié donnée ou impossible', () => {
+    expect(at({ lat: 36.7 }).result).toMatchObject({ ok: false, code: 'PLACE_INVALID' });
+    expect(at({ lat: 120, lng: 3 }).result).toMatchObject({ ok: false, code: 'PLACE_INVALID' });
+    expect(at({ lat: Number.NaN, lng: 3 }).result).toMatchObject({ ok: false, code: 'PLACE_INVALID' });
+  });
+});

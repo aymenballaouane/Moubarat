@@ -24,7 +24,7 @@ function dayStartOf(index: number): number {
 
 export function FreeMatchFlow({ store, place, onBackToPlace, onExit }: {
   store: AppStore;
-  place: { name: string; wilaya: string };
+  place: { name: string; wilaya: string; lat?: number; lng?: number };
   /** Retour de W3 vers W1/W2. */
   onBackToPlace: () => void;
   onExit: () => void;

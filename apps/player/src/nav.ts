@@ -69,7 +69,7 @@ export type Route =
   | { name: 'booking'; venuePicked?: boolean; viewReservationId?: string; mode?: 'match'; resume?: BookingResume; freeQuery?: string }
   | { name: 'match'; mode: 'create'; prefill?: MatchPrefill }
   /** Lot « Match libre », phase 5 : W3 → W4 → publié, pour un lieu choisi en W1/W2 (`query` : le texte saisi, repris au retour). */
-  | { name: 'match'; mode: 'free'; place: { name: string; wilaya: string }; query: string }
+  | { name: 'match'; mode: 'free'; place: { name: string; wilaya: string; lat?: number; lng?: number }; query: string }
   /** Detail « rejoindre » d'un match du flux (matchId resolu via
       matchesFeedDemo.findMatch) ; sans matchId, premier match ouvert. */
   | { name: 'match'; mode: 'detail'; matchId?: string }
