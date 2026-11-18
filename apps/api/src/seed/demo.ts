@@ -3,8 +3,13 @@
 
 import { createDb, createPool, primeEnumArrayParsers } from '../db/client.js';
 import { seedDemo } from './fixtures.js';
+import { assertLocalDatabase } from '../scripts/local-database-guard.js';
 
 const url = process.env.DATABASE_URL ?? 'postgres://postgres@localhost:5432/moubarat';
+// MS-081 (audit final, Lot 2c, 18/11/2026) : ce script VIDE la base (TRUNCATE) avant de la remplir. Même garde que demo:seed et
+// demo:catalogue : seule une base locale passe sans confirmation explicite (DEMO_SEED_FORCE_REMOTE=true), en plus du contrôle
+// de contenu de fixtures.ts (assertSafeToReset).
+assertLocalDatabase(url, 'db:seed');
 const pool = createPool(url);
 const db = createDb(pool);
 

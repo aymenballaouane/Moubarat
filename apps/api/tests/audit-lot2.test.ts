@@ -115,3 +115,20 @@ describe('MS-073 — Analytics en un appel', () => {
     expect((await get(`/venues/${seed.venueId}/analytics/overview?today=hier`, yacine)).statusCode).toBe(400);
   });
 });
+
+describe('MS-081 — db:seed, demo:seed et demo:catalogue refusent une base qui n’est pas locale', () => {
+  it('localhost passe ; une adresse distante est refusée, sauf confirmation explicite DEMO_SEED_FORCE_REMOTE=true', async () => {
+    const { assertLocalDatabase } = await import('../src/scripts/local-database-guard.js');
+    const before = process.env.DEMO_SEED_FORCE_REMOTE;
+    delete process.env.DEMO_SEED_FORCE_REMOTE;
+    try {
+      expect(() => assertLocalDatabase('postgres://u:p@localhost:5432/moubarat', 'db:seed')).not.toThrow();
+      expect(() => assertLocalDatabase('postgres://u:p@127.0.0.1:5432/moubarat', 'db:seed')).not.toThrow();
+      expect(() => assertLocalDatabase('postgres://u:p@dpg-xyz.frankfurt-postgres.render.com/moubarat', 'db:seed')).toThrow(/db:seed refusé/);
+      process.env.DEMO_SEED_FORCE_REMOTE = 'true';
+      expect(() => assertLocalDatabase('postgres://u:p@dpg-xyz.frankfurt-postgres.render.com/moubarat', 'db:seed')).not.toThrow();
+    } finally {
+      if (before === undefined) delete process.env.DEMO_SEED_FORCE_REMOTE; else process.env.DEMO_SEED_FORCE_REMOTE = before;
+    }
+  });
+});

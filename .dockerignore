@@ -15,3 +15,33 @@ design
 docs
 tools/ui-board/output
 **/*.log
+
+# MS-081 (audit final, Lot 2c, 18/11/2026) : l'image ne contient que l'API et le core.
+# Clés et paquets signés de l'app Android (ignorés par git, mais présents sur un poste qui construit l'image) : JAMAIS dans
+# l'image. Une construction depuis le dépôt (Render) ne les voit déjà pas ; une construction locale les embarquait.
+**/*.keystore
+**/*.jks
+**/*.apk
+**/*.aab
+**/*.idsig
+apps/android
+# Les fronts, l'app iOS et les outils : seul leur package.json reste (pnpm lit l'espace de travail entier pour vérifier le
+# fichier de verrouillage ; aucune de leurs dépendances n'est installée — filtre « @moubarat/api... » du Dockerfile).
+apps/crm/*
+!apps/crm/package.json
+apps/player/*
+!apps/player/package.json
+apps/superadmin/*
+!apps/superadmin/package.json
+apps/ios/*
+!apps/ios/package.json
+tools/ui-board/*
+!tools/ui-board/package.json
+# Tests, bancs de mesure, exports et documents de travail : rien qui serve à l'API en production.
+apps/api/tests
+apps/api/scripts
+packages/core/tests
+scripts
+store-assets
+export-*
+MATIN.md

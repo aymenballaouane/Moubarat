@@ -6388,4 +6388,12 @@ charge**, les réglages Render/Vercel et la préproduction restent aux développ
     numéro « 0555 » 264 → 115 ms (ce début de numéro est porté par beaucoup de comptes : beaucoup de candidats) ; joueurs de la
     console 120 → 7 ms. La liste des centres de la console n'a pas de recherche côté serveur (filtre dans le navigateur) : coût
     fixe pour ~15 centres, laissée telle quelle.
+- **2c — Image et seed (MS-081)** : image avec les seules dépendances de PRODUCTION (`--prod`), `tsx` passé en dépendance
+  d'exécution (c'est lui qui lance l'API) ; `.dockerignore` réduit le contexte à l'API et au core (≈ 2 Mo : ni tests, ni
+  sources des fronts, ni outils). Trouvé au passage : la clé de signature de l'app Android (`apps/android/android.keystore`)
+  et les APK signés, ignorés par git (donc absents de GitHub et de la construction Render), auraient été copiés dans une
+  image construite depuis ce poste — exclus explicitement. Docker n'est pas installé ici : contexte reproduit dans un dossier,
+  installation identique à l'image (`--frozen-lockfile --prod --filter "@moubarat/api..."`, sans vitest ni dépendance des
+  fronts), API démarrée sur une base jetable (`/health` 200) — un vrai `docker build` reste à faire par les développeurs.
+  `db:seed` (qui vide la base) refuse désormais une base distante, comme `demo:seed` et `demo:catalogue` ; test ajouté.
 

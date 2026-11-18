@@ -10,7 +10,10 @@ RUN npm install -g pnpm@11.23.0
 WORKDIR /app
 COPY . .
 # Seulement l'API et ce dont elle dépend (@moubarat/core) : ni les fronts, ni Playwright (tools/ui-board).
-RUN pnpm install --frozen-lockfile --filter "@moubarat/api..."
+# MS-081 (audit final, Lot 2c, 18/11/2026) : dépendances de PRODUCTION seulement (--prod : ni vitest, ni typescript, ni les
+# types) ; `tsx`, qui exécute l'API (CMD ci-dessous), est une dépendance d'exécution de @moubarat/api. Le contexte copié est
+# réduit par .dockerignore : ni tests, ni sources des fronts, ni clés de l'app Android.
+RUN pnpm install --frozen-lockfile --prod --filter "@moubarat/api..."
 
 USER node
 WORKDIR /app/apps/api

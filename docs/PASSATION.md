@@ -755,6 +755,13 @@ pendant ce mois. Rien de technique n'en dépend.
 - `apps/api/Dockerfile` (+ `.dockerignore` à la racine) — image standard Node 22, construite depuis la racine
   (`docker build -f apps/api/Dockerfile .`), démarrage en forme exec `node --import tsx src/index.ts` : `SIGTERM`
   atteint directement le processus Node (piège de l'encadré en tête). La même image sert chez l'hébergeur suivant.
+  **Depuis le 18/11/2026 (MS-081, audit final Lot 2c)** : dépendances de production seulement (`pnpm install --prod`) —
+  `tsx`, qui exécute l'API, est une dépendance d'exécution de `@moubarat/api` (ne jamais la repasser en dépendance de
+  développement : l'image ne démarrerait plus). Le contexte est réduit par `.dockerignore` à l'API et au core (≈ 2 Mo) :
+  ni tests, ni sources des fronts, ni clés ou paquets signés de l'app Android. **Pas de Docker sur le poste de
+  développement** : vérifié en reproduisant ce contexte dans un dossier, installation identique à l'image, API démarrée
+  (`/health` 200) — à confirmer par un vrai `docker build` chez les développeurs. Garde « base locale » ajoutée à
+  `db:seed` (comme `demo:seed` et `demo:catalogue`) : refusé sur une base distante sauf `DEMO_SEED_FORCE_REMOTE=true`.
 - `render.yaml` (« Blueprint ») — l'API (`moubarat-api`) et la base (`moubarat-db`, PostgreSQL 16, aucune connexion depuis
   Internet). **Les trois fronts n'y figurent plus : ils sont sur Vercel (voir « Fronts sur Vercel » ci-dessous).** Migrations par
   `preDeployCommand` : une seule exécution par déploiement, avant le nouveau code (§4.2). Les secrets n'y figurent pas
