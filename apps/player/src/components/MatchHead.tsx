@@ -3,7 +3,7 @@ import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
 import { VenuePhoto } from './VenuePhoto.js';
 import { venuePhotoUrl } from '../lib/venuePhoto.js';
-import { countdownText, durationText, useLang, useT } from '../lib/i18n.js';
+import { countdownText, useLang, useT } from '../lib/i18n.js';
 import { fmt, hhmm, epochMinutesOfDay } from '../lib/format.js';
 import { levelLabel } from '../lib/labels.js';
 import { fillTemplate } from '../lib/reserverCreneau.js';
@@ -16,6 +16,9 @@ import '../styles/match-view.css';
    centre, sinon le logo Moubarat sur fond rouge sombre — la photo arrive en phase 6), retour à gauche, partager et « Plus » (signaler)
    à droite, badge « Centre partenaire » ; le calendrier, le compte à rebours, l'heure et la fin ; « FOOT · 5V5 · LOISIR », le nom du
    lieu, l'adresse et « Itinéraire » ; le bandeau de prix. Même mise en page pour le joueur et l'organisateur.
+   Lot B, phase 0 bis (dossier du 18/11/2026, §7, planches Dv1 et Dp2 mises à jour) : l'heure est seule sur sa ligne (plus de « jusqu'à
+   21:00 · 1 h 30 ») ; « FOOT · 5V5 · LOISIR » devient une fine capsule (ballon · format · barres de niveau et niveau · chrono et durée
+   en minutes) ; l'adresse devient une carte arrondie (petit plan, quartier et wilaya, « Itinéraire »), entièrement touchable.
    Match libre (phase 5 ; aucune planche, dossier §7 et réponse d'Aymen) : même écran sans badge « Centre partenaire » ni bandeau de
    prix, le logo sur la bande ; le nom et l'adresse sont ceux saisis, « Itinéraire » cherche ce texte et la ville dans Google Maps. */
 
@@ -42,14 +45,12 @@ export function MatchHead({ match, venueName, centre, now, onBack, onShare, onMo
     : new Intl.DateTimeFormat('fr-FR', { weekday: 'long' }).format(start).toUpperCase();
   const cd = countdown(match.range.start, now);
   const startHour = hhmm(epochMinutesOfDay(match.range.start));
-  const endHour = hhmm(epochMinutesOfDay(match.range.end));
   const level = t(levelLabel(match.level));
   const levelBars = match.level === 'COMPETITION' ? 3 : match.level === 'INTERMEDIAIRE' ? 2 : 1;
-  const sport = match.sport === 'PADEL' ? t('PADEL') : t('FOOT');
   const price = match.pricePerPlayer.amount;
   const free = match.venueId === null ? (match.place ?? null) : null;
   const address = free
-    ? [free.area ?? '', t(free.wilaya)].map((s) => s.trim()).filter(Boolean).join(lang === 'ar' ? '، ' : ', ')   // la wilaya est enregistrée en français (« Alger »)
+    ? [free.area ?? '', free.wilaya].map((s) => s.trim()).filter(Boolean).join(', ')   // lot B : en arabe aussi, l'adresse reste en lettres latines (Ar-Dv1)
     : centre ? [centre.address, centre.wilaya].map((s) => s.trim()).filter(Boolean).join(', ') : '';
   const mapsHref = free ? placeMapsUrl(free) : centre ? venueMapsUrl(centre) : null;
   return (
@@ -81,32 +82,35 @@ export function MatchHead({ match, venueName, centre, now, onBack, onShare, onMo
           <div className="mv-when__txt">
             {cd ? <span className="mv-count">{countdownText(cd, lang)}</span> : null}
             <span className="mv-hour"><Ltr>{startHour}</Ltr></span>
-            <span className="mv-until">{fillTemplate(t('jusqu’à {fin} · {duree}'), { fin: endHour, duree: durationText(durationMinutes(match.range), lang) })}</span>
           </div>
         </div>
 
         <div className="mv-place">
           <div className="mv-tags">
-            {sport} · <Ltr>{match.format.toUpperCase()}</Ltr> ·{' '}
-            <span className="mv-level">
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M5 20v-5" opacity={levelBars >= 1 ? 1 : 0.3} /><path d="M12 20v-9" opacity={levelBars >= 2 ? 1 : 0.3} /><path d="M19 20V4" opacity={levelBars >= 3 ? 1 : 0.3} />
-              </svg>
-              {lang === 'ar' ? level : level.toUpperCase()}
+            <span className="mv-caps">
+              <span className="mv-caps__sport" role="img" aria-label={match.sport === 'PADEL' ? t('Padel') : t('Foot')}><Icon id={match.sport === 'PADEL' ? 'i-padel' : 'i-ball'} /></span>
+              <span className="mv-caps__sep" aria-hidden="true" />
+              <span className="mv-caps__fmt"><Ltr>{match.format}</Ltr></span>
+              <span className="mv-caps__sep" aria-hidden="true" />
+              <span className="mv-caps__item">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14">
+                  <rect x="1.2" y="8.4" width="3.2" height="5" rx="1" className={levelBars >= 1 ? 'on' : 'off'} />
+                  <rect x="5.4" y="4.9" width="3.2" height="8.5" rx="1" className={levelBars >= 2 ? 'on' : 'off'} />
+                  <rect x="9.6" y="1.4" width="3.2" height="12" rx="1" className={levelBars >= 3 ? 'on' : 'off'} />
+                </svg>
+                {level}
+              </span>
+              <span className="mv-caps__sep" aria-hidden="true" />
+              <span className="mv-caps__item">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="14" r="7.6" /><path d="M9.6 2.6h4.8M12 2.6v3.8M18.2 7.2l1.6-1.6M12 14v-3.4" /></svg>
+                <span>{fillTemplate(t('{n} min'), { n: String(durationMinutes(match.range)) })}</span>
+              </span>
             </span>
           </div>
           <h1 className="mv-name" dir="auto">{venueName.toUpperCase()}</h1>
-          <div className="mv-addr">
-            <Icon id="i-pin" className="mv-addr__ic" />
-            <span className="mv-addr__txt">{address ? (free ? <bdi dir="auto">{address}</bdi> : <Ltr>{address}</Ltr>) : null}</span>
-            {mapsHref ? (
-              <a className="mv-route mb-tap" href={mapsHref} target="_blank" rel="noopener noreferrer" aria-label={t('Itinéraire')}>
-                <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-8-8 18-2-8z" /></svg>
-                {t('Itinéraire')}
-              </a>
-            ) : null}
-          </div>
         </div>
+
+        {address || mapsHref ? <AddressCard address={address} href={mapsHref} routeLabel={t('Itinéraire')} ariaLabel={t('Itinéraire dans Google Maps')} /> : null}
 
         {price > 0 ? (
           <div className="mv-price">
@@ -120,4 +124,31 @@ export function MatchHead({ match, venueName, centre, now, onBack, onShare, onMo
       </div>
     </>
   );
+}
+
+/* La carte de l'adresse (Dv1) : un petit plan dessiné avec un repère rouge, le quartier et la wilaya, puis « Itinéraire ». Toute la
+   carte se touche et ouvre Google Maps (sur la position de l'épingle pour un match libre qui en a une — venueView.placeMapsUrl). */
+function AddressCard({ address, href, routeLabel, ariaLabel }: { address: string; href: string | null; routeLabel: string; ariaLabel: string }) {
+  const body = (
+    <>
+      <span className="mv-addr__map" aria-hidden="true">
+        <svg width="62" height="62" viewBox="0 0 62 62"><path d="M-4 40L70 22M-4 10L70 52M18 -4L34 64M44 -4L50 64" className="mv-addr__roads" /><path d="M-4 28L70 36" className="mv-addr__main" /></svg>
+        <span className="mv-addr__pin">
+          <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z" fill="currentColor" /><circle cx="12" cy="10" r="2.6" className="mv-addr__hole" /></svg>
+        </span>
+      </span>
+      <span className="mv-addr__col">
+        {address ? <span className="mv-addr__txt"><Ltr>{address}</Ltr></span> : null}
+        {href ? (
+          <span className="mv-route">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-8-8 18-2-8z" /></svg>
+            {routeLabel}
+          </span>
+        ) : null}
+      </span>
+    </>
+  );
+  return href
+    ? <a className="mv-addr mb-tap" href={href} target="_blank" rel="noopener noreferrer" aria-label={address ? `${ariaLabel} · ${address}` : ariaLabel}>{body}</a>
+    : <div className="mv-addr">{body}</div>;
 }

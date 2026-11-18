@@ -18,9 +18,9 @@
 [dir="rtl"] .mv-round svg:has(> use[href="#i-back"]) { transform: scaleX(-1); }
 .mv-partner {
   position: absolute; inset-inline-start: 22px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
-  border-radius: 999px; background: rgba(10,10,15,.78); border: 1px solid rgba(0,200,150,.40); font-size: 12px; font-weight: 700; color: var(--text);
+  border-radius: 999px; background: rgba(10,10,15,.78); border: 1px solid rgba(0,200,150,.40); font-size: 12px; font-weight: 700; color: #F5F7FA;   /* fond toujours sombre : texte clair FIXE (lot B, mode clair) */
 }
-.mv-partner__ic { width: 14px; height: 14px; color: var(--success); }
+.mv-partner__ic { width: 14px; height: 14px; color: #00C896; }
 
 /* --- Date et heure --- */
 .mv-when { display: flex; align-items: center; gap: 18px; }
@@ -32,18 +32,43 @@
 .mv-when__txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .mv-count { align-self: flex-start; font-size: 13px; font-weight: 700; color: var(--success); background: rgba(0,200,150,.12); border-radius: 999px; padding: 4px 10px; }
 .mv-hour { font-family: var(--font-display); font-size: 76px; line-height: 70px; }
-.mv-until { font-size: 15px; color: var(--text-2); }
 
-/* --- Lieu --- */
-.mv-place { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
-.mv-tags { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; letter-spacing: 1.2px; color: var(--text-2); }
-[dir="rtl"] .mv-tags { letter-spacing: 0; }
-.mv-level { display: inline-flex; align-items: center; gap: 6px; }
+/* --- Lieu (lot B, phase 0 bis : capsule et carte d'adresse, planches Dv1 et Dp2 du 18/11/2026) --- */
+.mv-place { display: flex; flex-direction: column; gap: 10px; margin-top: 2px; }
+.mv-tags { display: flex; }
+.mv-caps {
+  display: inline-flex; align-items: center; gap: 10px; height: 30px; padding: 0 14px; border-radius: 999px; box-sizing: border-box;
+  background: var(--ink-2); border: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--text-2); max-width: 100%;
+}
+.mv-caps__sport { display: flex; color: var(--text); }
+.mv-caps__sport .mb-ic { width: 16px; height: 16px; }
+.mv-caps__sep { width: 1px; height: 14px; background: var(--line-strong); flex: none; }
+.mv-caps__fmt { color: var(--text); }
+.mv-caps__item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.mv-caps__item rect { fill: currentColor; }
+.mv-caps__item rect.on { fill: var(--text); }
+.mv-caps__item rect.off { opacity: .25; }
 .mv-name { margin: 0; font-family: var(--font-display); font-size: 36px; line-height: 36px; font-weight: 400; }
-.mv-addr { display: flex; align-items: center; gap: 10px; }
-.mv-addr__ic { width: 18px; height: 18px; color: var(--text-2); flex: none; }
-.mv-addr__txt { font-size: 15px; color: var(--text-2); min-width: 0; flex: 1; }
-.mv-route {
+.mv-addr {
+  display: flex; align-items: center; gap: 14px; padding: 8px; border-radius: 14px; background: var(--ink-2); border: 1px solid var(--line);
+  text-decoration: none; color: var(--text); box-shadow: var(--card-shadow);
+}
+a.mv-addr:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.mv-addr__map { position: relative; width: 62px; height: 62px; border-radius: 12px; overflow: hidden; background: var(--ink); border: 1px solid var(--line); flex: none; display: block; }
+.mv-addr__map > svg { position: absolute; inset: 0; }
+.mv-addr__roads { stroke: rgba(138,148,166,.30); stroke-width: 1.6; fill: none; }
+.mv-addr__main { stroke: rgba(138,148,166,.18); stroke-width: 4; fill: none; }
+.mv-addr__pin { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -62%); color: var(--primary); display: flex; }
+.mv-addr__hole { fill: var(--ink); }
+.mv-addr__col { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.mv-addr__txt { font-size: 15px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.mv-route { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--primary-glow); }
+
+/* La ligne d'adresse de la fiche d'un centre (ReserverCreneau, S3) : l'ancienne mise en page, inchangée (hors lot B). */
+.mv-addrline { display: flex; align-items: center; gap: 10px; }
+.mv-addrline__ic { width: 18px; height: 18px; color: var(--text-2); flex: none; }
+.mv-addrline__txt { font-size: 15px; color: var(--text-2); min-width: 0; flex: 1; }
+.mv-routebtn {
   margin-inline-start: auto; height: 36px; padding: 0 12px 0 10px; border-radius: 8px; border: 1px solid var(--line-strong); color: var(--text);
   font-size: 14px; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 6px; flex: none; position: relative;
 }
@@ -62,7 +87,9 @@
 .mv-pitch__lines { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: rgba(245,247,250,.5); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .mv-pitch__lines * { vector-effect: non-scaling-stroke; }
 .mv-pitch__circle { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; transform: translate(-50%, -50%); border-radius: 999px; border: 1.5px solid rgba(245,247,250,.5); }
-.mv-team { position: absolute; top: 10px; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--text-2); }
+/* Le terrain reste vert dans les deux thèmes : ses textes, ses ronds et ses « + » gardent des couleurs claires FIXES (lot B : en clair,
+   « ÉQUIPE A » et les « + » tombaient à un contraste de 1,0 et 1,9 pour 1 avec les couleurs du thème). */
+.mv-team { position: absolute; top: 10px; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #C5CCD6; }
 [dir="rtl"] .mv-team { letter-spacing: 0; }
 .mv-team--a { inset-inline-start: 14px; }
 .mv-team--b { inset-inline-end: 14px; }
@@ -70,15 +97,15 @@
 .mv-slot {
   position: absolute; width: 40px; height: 40px; border-radius: 999px; box-sizing: border-box; padding: 0; font-family: inherit;
   display: flex; align-items: center; justify-content: center;
-  background: var(--ink-4); border: 1px solid rgba(245,247,250,.35); box-shadow: 0 2px 6px rgba(0,0,0,.35); font-size: 16px; font-weight: 600; color: var(--text);
+  background: #262F3F; border: 1px solid rgba(245,247,250,.35); box-shadow: 0 2px 6px rgba(0,0,0,.35); font-size: 16px; font-weight: 600; color: #F5F7FA;
 }
-.mv-slot--me { border: 2px solid var(--primary); box-shadow: 0 0 0 3px var(--ink); font-size: 13px; font-weight: 700; }
+.mv-slot--me { border: 2px solid var(--primary); box-shadow: 0 0 0 3px #0C3E26; font-size: 13px; font-weight: 700; }
 .mv-slot--plus { background: rgba(10,10,15,.45); border: 2px dashed rgba(245,247,250,.75); box-shadow: none; font-size: 20px; font-weight: 700; }
 button.mv-slot--plus { cursor: pointer; }
 button.mv-slot--plus:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .mv-help {
   position: absolute; left: 50%; transform: translateX(-50%); bottom: 7px; white-space: nowrap; background: rgba(6,28,18,.88);
-  padding: 2px 10px; border-radius: 6px; font-size: 12px; color: var(--text-2);
+  padding: 2px 10px; border-radius: 6px; font-size: 12px; color: #C5CCD6;
 }
 .mv-help-below { margin: -4px 0 0; text-align: center; font-size: 12px; color: var(--text-2); }
 

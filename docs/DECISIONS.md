@@ -6689,3 +6689,28 @@ Choix d'Aymen : **OpenStreetMap + Leaflet, gratuit** (« Oui, lance »). Aucun c
 - **Vérification en vrai** (base de dev, vrai Photon, vraies images OpenStreetMap) : « Stade Bab Ezzouar » → 3 adresses réelles → carte →
   épingle déplacée → nom mis à jour → match publié → « Itinéraire » ouvre Google Maps sur la position exacte ; en arabe, « Je ne trouve pas
   mon terrain » → carte d'Alger. Liseré blanc entre deux images de carte trouvé sur les captures et corrigé. Aucune erreur console.
+
+## Lot B « Créer un match (B), inviter un ami, alertes, bloquer un joueur » (pack du 18/11/2026, GO d'Aymen)
+
+Pack `Moubarat-pack-lot-B.zip` (consignes, textes FR/AR, maquettes). Une branche par phase, chaînée depuis `match-libre/phase-8-adresses`.
+Réponses d'Aymen à l'état des lieux (phase 0, 18/11/2026) : en-tête du détail d'abord (phase 0 bis) ; carte Google Maps à terme, la phase 1
+construite sur la carte actuelle mais isolée dans UN composant, et aucune image de tile.openstreetmap.org en production ; le prénom
+existe déjà (`profiles.first_name`, rempli par /me/access-setup) — /matches/by-code le renverra, le pseudo en secours ; alertes : web et
+Android d'abord (vérifier la délégation des notifications et POST_NOTIFICATIONS de l'app Play Store), iPhone plus tard ; filtre des
+insultes ajouté au lot, côté serveur, liste montrée à Aymen avant activation, et vérification des conditions d'utilisation.
+
+### Phase 0 bis — Le nouvel en-tête du détail du match (branche `lot-b/phase-0bis-entete`)
+
+Source : le dossier « Match libre » mis à jour (`Moubarat-pack-Claude-Code.zip`, 18/11/2026 2 h 35, §7 et planches Dv1/Dp2 révisées).
+- L'heure est seule sur sa ligne : « jusqu'à 21:00 · 1 h 30 » disparaît.
+- « FOOT · 5V5 · LOISIR » devient une fine capsule : ballon (raquette pour le padel), format, barres de niveau et niveau, chrono et
+  durée en minutes (« 90 min », arabe « 90 دقيقة »). Le mot « FOOT » n'est plus écrit.
+- L'adresse devient une carte arrondie : petit plan dessiné avec un repère rouge, adresse, « Itinéraire » en rouge ; toute la carte
+  se touche et ouvre Google Maps (position de l'épingle pour un match libre qui en a une).
+- Arabe : l'adresse reste en lettres latines, y compris la wilaya d'un match libre (avant : « الجزائر ») — consigne du lot B.
+- Mode clair : le terrain vert garde des couleurs claires FIXES (« ÉQUIPE A », phrase d'aide, ronds des joueurs, « + ») — contraste
+  mesuré par le pack à 1,0 et 1,9 pour 1 avant ; le badge « Centre partenaire » (fond toujours sombre) garde un texte clair fixe, il
+  était illisible en clair (défaut trouvé sur les captures, corrigé dans la même phase).
+- La fiche d'un centre (Réserver, S3) gardait l'ancienne ligne d'adresse avec les mêmes classes : elle est conservée telle quelle sous
+  des noms à part (`mv-addrline`, `mv-routebtn`), hors lot.
+- 2 textes arabes ajoutés, repris des maquettes (« {n} دقيقة », « الاتجاهات في خرائط غوغل ») ; « jusqu’à {fin} · {duree} » retiré.

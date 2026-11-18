@@ -124,11 +124,11 @@ export function ReserverCreneau(p: ReserverCreneauProps) {
       <div className="rv3-head">
         {p.sport ? <span className="rv3-sport">{p.sport === 'PADEL' ? t('PADEL') : t('FOOT')}</span> : null}
         <h1 className="rv3-name">{p.venueName.toUpperCase()}</h1>
-        <div className="mv-addr">
-          <Icon id="i-pin" className="mv-addr__ic" />
-          <span className="mv-addr__txt">{p.venueAddress ? <Ltr>{p.venueAddress}</Ltr> : null}</span>
+        <div className="mv-addrline">
+          <Icon id="i-pin" className="mv-addrline__ic" />
+          <span className="mv-addrline__txt">{p.venueAddress ? <Ltr>{p.venueAddress}</Ltr> : null}</span>
           {p.mapsUrl ? (
-            <a className="mv-route mb-tap" href={p.mapsUrl} target="_blank" rel="noopener noreferrer" aria-label={t('Itinéraire')}>
+            <a className="mv-routebtn mb-tap" href={p.mapsUrl} target="_blank" rel="noopener noreferrer" aria-label={t('Itinéraire')}>
               <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-8-8 18-2-8z" /></svg>
               {t('Itinéraire')}
             </a>
