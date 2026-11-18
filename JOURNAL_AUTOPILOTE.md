@@ -75,3 +75,8 @@ si la conversation est résumée ou relancée.
 - Gratuit, sans compte ni clé. Limites : petits terrains mal couverts par OpenStreetMap ; images de carte OpenStreetMap pour faible
   usage seulement (réglable : `VITE_MAP_TILES_URL`) ; Photon public sans garantie (réglable : `PLACES_SEARCH_URL`).
 - Base de dev : les 2 matchs libres de capture (annulés) supprimés.
+- Mise en ligne le 18/11 à 2 h 07 : `master` = `936ddba` (avance rapide), Render déployé à la main (« Deploy succeeded », migration
+  0050 appliquée), Vercel republié ; contrôles en ligne 17/17 OK (dont `/places/search` → 401 sans compte). Sauvegarde : Render a refusé
+  un nouvel export (« Failed to create export », sans raison) — couverture par la restauration à un instant des 3 derniers jours + export
+  du 17/11 23 h 41 ; migration purement additive. Non vérifié en ligne : une vraie recherche (il faut un compte joueur — jamais de mot de
+  passe saisi sur la production par l'assistant).
