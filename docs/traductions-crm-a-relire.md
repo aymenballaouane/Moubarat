@@ -1,6 +1,6 @@
 # CRM Moubarat en arabe — traductions à faire relire
 
-*Document produit par `pnpm --filter @moubarat/crm traductions:relire` (ne pas modifier à la main : il est régénéré). 921 textes.*
+*Document produit par `pnpm --filter @moubarat/crm traductions:relire` (ne pas modifier à la main : il est régénéré). 922 textes.*
 
 Toutes les traductions arabes du CRM ont été rédigées par Claude (choix d’Aymen du 15/11/2026) : **aucune n’a été relue par un
 arabophone**. Elles sont affichées telles quelles aux postes réglés en arabe. Merci de les relire en pensant à un gérant ou un
@@ -414,7 +414,7 @@ Chacun revient dans de nombreux textes : une correction ici sera reportée parto
 
 | Français | Arabe (provisoire) | Correction |
 |---|---|---|
-| La plage ne peut pas dépasser 12 mois. | لا يمكن أن تتجاوز الفترة 12 شهرًا. | |
+| Un export couvre 3 mois au plus. Pour une période plus longue, faites plusieurs exports. | يغطي التصدير 3 أشهر على الأكثر. لفترة أطول، قوموا بعدة عمليات تصدير. | |
 | Analytics | التحليلات | |
 | Vue d’ensemble | نظرة عامة | |
 | Rapport du mois | تقرير الشهر | |
@@ -888,6 +888,7 @@ voit qu’en cas de bug.
 | Paramètres from/to attendus au format YYYY-MM-DD. | يُنتظر المعاملان from/to بصيغة YYYY-MM-DD. | |
 | to doit être postérieur ou égal à from. | يجب أن يكون to مساويًا لـ from أو بعده. | |
 | La période ne peut pas dépasser 366 jours. | لا يمكن أن تتجاوز الفترة 366 يومًا. | |
+| Un export couvre 3 mois au plus. Pour une période plus longue, faites plusieurs exports. | يغطي التصدير 3 أشهر على الأكثر. لفترة أطول، قوموا بعدة عمليات تصدير. | |
 | Ce centre est actuellement indisponible. | هذا المركز غير متاح حاليًا. | |
 | Durée invalide : entre 30 et 360 minutes. | مدة غير صالحة: بين 30 و360 دقيقة. | |
 | Pas invalide : entre 5 et 60 minutes. | خطوة غير صالحة: بين 5 و60 دقيقة. | |

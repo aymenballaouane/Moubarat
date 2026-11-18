@@ -6353,3 +6353,20 @@ leurs nombres isolés.
   mode clair, écran de connexion. **Reste hors code** : la relecture par un arabophone (le document est prêt à être envoyé) ;
   le board visuel (`pnpm ui:board`) n'a pas été relancé sur les lots A à E (il régénère les données de démo — à faire avec
   l'accord d'Aymen).
+
+### Audit final — Lot 2 « exploitation et capacité » (18/11/2026, GO d'Aymen « Oui, Lot 2 »)
+
+Choix d'Aymen avant de commencer : export limité à **3 mois** ; **version minimale de l'app** construite dans ce lot (demande
+de nouveaux builds Android et iPhone) ; déploiement et capacité (MS-031, 032, 034, 074) : **documentation + script de test de
+charge**, les réglages Render/Vercel et la préproduction restent aux développeurs. MS-070 (planning qui se met à jour seul)
+était déjà réglé par le P1-13 de l'audit stratégique du CRM.
+
+- **2a — Export Excel (MS-030)** : 92 jours au plus (un trimestre entier ; `EXPORT_MAX_DAYS` côté API et côté CRM, 400
+  `EXPORT_PERIOD_TOO_LONG` « Un export couvre 3 mois au plus… ») ; classeur écrit EN FLUX dans la réponse
+  (`writeExportWorkbook`, exceljs `WorkbookWriter`) avec une pause de la boucle d'événements toutes les 100 lignes ; les
+  SÉANCES d'abonnés entrent dans l'export (absentes depuis le P1-12) : source « Abonnement », nom de l'abonné, statut posé ou
+  « Réservé », prix figé ou prix par séance (cellule vide pour un abonnement sans prix), sans référence ni date de création.
+  Mesuré sur le centre de démo (1 082 réservations sur 90 jours, 9 essais après chauffe, `apps/api/scripts/bench-export.ts`) :
+  médiane ~280 → ~180 ms, plus long blocage des autres requêtes ~260 → ~90 ms. Une erreur au milieu du flux ne peut plus devenir
+  une 500 (l'en-tête est parti) : le flux est coupé et l'erreur journalisée (`export_stream_failed`).
+

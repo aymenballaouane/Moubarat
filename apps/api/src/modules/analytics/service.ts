@@ -29,6 +29,19 @@ export function parsePeriod(from?: string, to?: string): Period {
   return { fromDay, toDay };
 }
 
+/** MS-030 (audit final, Lot 2a, 18/11/2026, choix d'Aymen : 3 mois) : un export Excel couvre 92 jours au plus — un trimestre
+    entier, quel qu'il soit. Au-delà, plusieurs exports. Le CRM applique la même borne avant d'appeler (bookingsDetail.ts,
+    `EXPORT_MAX_DAYS`). */
+export const EXPORT_MAX_DAYS = 92;
+
+export function parseExportPeriod(from?: string, to?: string): Period {
+  const p = parsePeriod(from, to);
+  if (dayStartMs(p.toDay) - dayStartMs(p.fromDay) > EXPORT_MAX_DAYS * DAY_MS) {
+    throw badRequest('Un export couvre 3 mois au plus. Pour une période plus longue, faites plusieurs exports.', 'EXPORT_PERIOD_TOO_LONG');
+  }
+  return p;
+}
+
 /** La période immédiatement précédente, de même durée — base des tendances. */
 export function previousPeriod(p: Period): Period {
   const from = dayStartMs(p.fromDay);

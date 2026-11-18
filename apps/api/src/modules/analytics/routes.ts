@@ -4,10 +4,11 @@ import type { PlatformGuards } from '../../auth/platform-guards.js';
 import { writeAudit } from '../../audit/log.js';
 import {
   buildOccupancyReport, buildOriginReport, buildRevenueReport, loadPeriodBookings,
-  parsePeriod, previousPeriod,
+  parseExportPeriod, parsePeriod, previousPeriod,
 } from './service.js';
 import { sessionsAsBookings, sessionsForPeriod } from '../recurring-bookings/sessions.js';
-import { buildExportWorkbook, exportFilename, exportRowsFromBookings, loadBookingsForExport } from './export.js';
+import { PassThrough } from 'node:stream';
+import { exportFilename, exportRows, writeExportWorkbook } from './export.js';
 
 interface Deps { db: Db; guards: PlatformGuards; }
 
@@ -108,17 +109,16 @@ export async function registerAnalyticsRoutes(app: FastifyInstance, { db, guards
      `parsePeriod` fait déjà respecter la borne de 12 mois (366 jours) avec
      un message clair — jamais une seconde validation qui pourrait diverger.
      Le nombre de lignes tracé dans `audit_log` est `rows.length`, LE MÊME
-     tableau que celui écrit dans le classeur (`buildExportWorkbook(rows)`)
+     tableau que celui écrit dans le classeur (`writeExportWorkbook(rows)`)
      — jamais un comptage séparé qui pourrait diverger de ce qui est
      réellement dans le fichier téléchargé. */
   app.get<{ Params: { venueId: string }; Querystring: Query }>(
     '/venues/:venueId/analytics/export',
     { preHandler: (req) => guards.requirePlatformAuth(req) }, async (req, reply) => {
       const role = await guards.requireCenterAction(req, req.params.venueId, 'VIEW_ANALYTICS');
-      const period = parsePeriod(req.query.from, req.query.to);
-      const bookings = await loadBookingsForExport(db, req.params.venueId, period);
-      const rows = exportRowsFromBookings(bookings);
-      const buffer = Buffer.from(await buildExportWorkbook(rows));
+      // MS-030 (Lot 2a, 18/11/2026) : 3 mois au plus (`parseExportPeriod`), séances d'abonnés comprises, classeur écrit en flux.
+      const period = parseExportPeriod(req.query.from, req.query.to);
+      const rows = await exportRows(db, req.params.venueId, period);
       const filename = exportFilename(period.fromDay, period.toDay);
 
       await writeAudit(db, {
@@ -127,9 +127,13 @@ export async function registerAnalyticsRoutes(app: FastifyInstance, { db, guards
         summary: `a exporté les réservations du ${period.fromDay} au ${period.toDay} (${rows.length} lignes)`,
       });
 
+      const body = new PassThrough();
+      // Une erreur d'écriture au milieu du flux ne peut plus devenir une réponse 500 (l'en-tête est parti) : le flux est
+      // détruit, le client reçoit un fichier tronqué, illisible par Excel — et l'erreur est journalisée.
+      writeExportWorkbook(rows, body).catch((err: unknown) => { req.log.error({ err }, 'export_stream_failed'); body.destroy(err as Error); });
       return reply
         .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         .header('Content-Disposition', `attachment; filename="${filename}"`)
-        .send(buffer);
+        .send(body);
     });
 }

@@ -48,9 +48,10 @@ describe('Lot 4 — export Excel : firstOfMonthAlgiers / exportRangeTooLong (15/
     expect(firstOfMonthAlgiers('2026-01-31')).toBe('2026-01-01');
   });
 
-  it('exportRangeTooLong : faux sous 366 jours, vrai largement au-delà — même borne que parsePeriod (serveur)', () => {
-    expect(exportRangeTooLong('2025-01-01', '2026-01-01')).toBe(false); // 365 jours
-    expect(exportRangeTooLong('2024-01-01', '2026-06-01')).toBe(true); // > 2 ans
+  it('exportRangeTooLong : un trimestre entier passe (92 jours), un jour de plus non — même borne que parseExportPeriod (serveur, MS-030)', () => {
+    expect(exportRangeTooLong('2026-07-01', '2026-10-01')).toBe(false); // 92 jours
+    expect(exportRangeTooLong('2026-07-01', '2026-10-02')).toBe(true); // 93 jours
+    expect(exportRangeTooLong('2025-01-01', '2026-01-01')).toBe(true); // 1 an
   });
 
   it('exportRangeTooLong : faux pour un seul jour', () => {

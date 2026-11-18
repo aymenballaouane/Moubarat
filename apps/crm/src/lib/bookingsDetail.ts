@@ -53,12 +53,13 @@ export function firstOfMonthAlgiers(dateIso: string): string {
   return `${dateIso.slice(0, 8)}01`;
 }
 
-/** Même borne que `parsePeriod` côté serveur (analytics/service.ts,
-    366 jours) — validation préalable côté CRM pour éviter l'aller-retour
-    réseau sur une plage visiblement trop large ; le serveur reste la seule
-    autorité réelle (revalidé là-bas quoi qu'il arrive). */
+/** Même borne que `parseExportPeriod` côté serveur (analytics/service.ts, `EXPORT_MAX_DAYS` : 92 jours, un trimestre
+    entier — MS-030, audit final, Lot 2a, 18/11/2026, choix d'Aymen « 3 mois ») — validation préalable côté CRM pour éviter
+    l'aller-retour réseau ; le serveur reste la seule autorité réelle (revalidé là-bas quoi qu'il arrive). */
+export const EXPORT_MAX_DAYS = 92;
+
 export function exportRangeTooLong(fromIso: string, toIso: string): boolean {
-  return dayStartMs(toIso) - dayStartMs(fromIso) > 366 * 86_400_000;
+  return dayStartMs(toIso) - dayStartMs(fromIso) > EXPORT_MAX_DAYS * 86_400_000;
 }
 
 export function shiftDate(dateIso: string, deltaDays: number): string {

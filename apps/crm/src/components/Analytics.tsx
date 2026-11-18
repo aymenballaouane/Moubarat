@@ -92,7 +92,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
   const runExport = useCallback(async () => {
     setExportError(null);
     if (exportRangeTooLong(exportFrom, exportTo)) {
-      setExportError(t('La plage ne peut pas dépasser 12 mois.'));
+      setExportError(t('Un export couvre 3 mois au plus. Pour une période plus longue, faites plusieurs exports.'));
       return;
     }
     setExportBusy(true);

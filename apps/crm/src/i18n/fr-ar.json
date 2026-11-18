@@ -658,7 +658,6 @@
     "Hier": "أمس",
     "Plateforme": "المنصة",
     "Joueur": "لاعب",
-    "La plage ne peut pas dépasser 12 mois.": "لا يمكن أن تتجاوز الفترة 12 شهرًا.",
     "Vue d’ensemble": "نظرة عامة",
     "Rapport du mois": "تقرير الشهر",
     "Chargement des statistiques…": "جارٍ تحميل الإحصائيات…",
@@ -708,6 +707,7 @@
     "Chargement des équipes…": "جارٍ تحميل الفرق…",
     "Aucune équipe n'a encore joué de match issu d'un défi sur ce centre.": "لم يلعب أي فريق بعد مباراة ناتجة عن تحدٍّ في هذا المركز.",
     "Matchs joués sur ce centre": "المباريات الملعوبة في هذا المركز",
-    "Membres actifs": "الأعضاء النشطون"
+    "Membres actifs": "الأعضاء النشطون",
+    "Un export couvre 3 mois au plus. Pour une période plus longue, faites plusieurs exports.": "يغطي التصدير 3 أشهر على الأكثر. لفترة أطول، قوموا بعدة عمليات تصدير."
   }
 }

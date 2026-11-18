@@ -156,7 +156,9 @@ describe('rappel la veille', () => {
 
 describe('la liste du CRM', () => {
   it('porte le statut du rattachement pour chaque réservation', async () => {
-    const b = await centerBooking(seed.phones.sofiane, 1200);
+    // 22:00 et non 20:00 (18/11/2026) : le seed pose un abonnement sur T1 chaque mardi à 20:00 (fixtures.ts) — le jour tiré
+    // tombait un mardi, d'où un 409 SLOT_TAKEN selon la date. Aucune réservation du seed à 22:00.
+    const b = await centerBooking(seed.phones.sofiane, 1320);
     const day = (await stack.db.selectFrom('bookings').select('time_range').where('id', '=', b.id).executeTakeFirstOrThrow()).time_range;
     expect(day).toBeTruthy();
     const search = await call('GET', nadia, `/venues/${seed.venueId}/bookings/search?q=${encodeURIComponent('Saidi')}`);

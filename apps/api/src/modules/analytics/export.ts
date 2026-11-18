@@ -1,10 +1,12 @@
 import { sql } from 'kysely';
+import type { Writable } from 'node:stream';
 import ExcelJS from 'exceljs';
 import type { Db } from '../../db/client.js';
 import type { BookingSourceDb, BookingStatusDb } from '../../db/types.js';
 import { fromPgRange } from '../../lib/pgrange.js';
 import { algiersDateOf, algiersHHMM, hhmm, operatingDateOf, operatingMinutesOfDay, operatingPeriodWindow } from '../../lib/algiers.js';
 import type { Period } from './service.js';
+import { sessionsForPeriod, type Session } from '../recurring-bookings/sessions.js';
 
 /* Lot 4 — export Excel (15/09/2026). Requête dédiée, distincte de
    `loadPeriodBookings` (service.ts) : celle-ci ne porte ni `reference` ni
@@ -81,7 +83,8 @@ export interface ExportRow {
   source: string;
   nom: string;
   telephone: string;
-  montantDa: number;
+  /** null : séance d'un abonnement sans prix par séance (créé avant le P1-12) — cellule vide, jamais un 0 inventé. */
+  montantDa: number | null;
   creeLe: string;
 }
 
@@ -113,6 +116,44 @@ export function exportRowsFromBookings(bookings: readonly ExportBookingRow[]): E
     }));
 }
 
+/* MS-030 (audit final, Lot 2a, 18/11/2026) : les SÉANCES d'abonnés entrent dans l'export (absentes depuis le P1-12, alors
+   qu'elles comptent dans le chiffre d'affaires du CRM) — une ligne par séance de la période, source « Abonnement », nom de
+   l'abonné, statut posé (ou « Réservé » s'il ne l'est pas), prix figé à l'enregistrement sinon prix par séance. Pas de
+   référence ni de date de création : une séance n'est pas une réservation enregistrée. */
+const SESSION_STATUS_LABELS: Record<Session['status'], string> = { RESERVED: 'Réservé', HONORED: 'Honoré', PAID: 'Payé', NO_SHOW: 'No-show' };
+
+export function exportRowsFromSessions(sessions: readonly Session[]): (ExportRow & { startMs: number })[] {
+  return sessions.map((x) => ({
+    startMs: x.range.start,
+    reference: '',
+    date: operatingDateOf(x.range.start),
+    heureDebut: hhmm(operatingMinutesOfDay(x.range.start)),
+    heureFin: hhmm(operatingMinutesOfDay(x.range.start) + Math.round((x.range.end - x.range.start) / 60_000)),
+    terrain: x.fieldName,
+    statut: SESSION_STATUS_LABELS[x.status],
+    motifAnnulation: '',
+    source: 'Abonnement',
+    nom: x.holderName,
+    telephone: '',
+    montantDa: x.priceDa,
+    creeLe: '',
+  }));
+}
+
+/** Toutes les lignes de l'export : réservations ET séances d'abonnés de la période, dans l'ordre chronologique. */
+export async function exportRows(db: Db, venueId: string, period: Period): Promise<ExportRow[]> {
+  const [bookings, sessions] = await Promise.all([
+    loadBookingsForExport(db, venueId, period),
+    sessionsForPeriod(db, venueId, period.fromDay, period.toDay),
+  ]);
+  const byStart = new Map<ExportRow, number>();
+  const fromBookings = bookings.slice().sort((a, b) => a.startMs - b.startMs);
+  const bRows = exportRowsFromBookings(fromBookings);
+  bRows.forEach((r, i) => byStart.set(r, fromBookings[i]!.startMs));
+  const sRows = exportRowsFromSessions(sessions).map(({ startMs, ...row }) => { byStart.set(row, startMs); return row; });
+  return [...bRows, ...sRows].sort((a, b) => byStart.get(a)! - byStart.get(b)!);
+}
+
 const COLUMNS: { header: string; key: keyof ExportRow; width: number }[] = [
   { header: 'Référence', key: 'reference', width: 14 },
   { header: 'Date', key: 'date', width: 12 },
@@ -128,19 +169,24 @@ const COLUMNS: { header: string; key: keyof ExportRow; width: number }[] = [
   { header: 'Créée le', key: 'creeLe', width: 18 },
 ];
 
-/** Construit le classeur — jamais de Date JS confiée à exceljs (elle
-    l'écrirait en UTC par défaut, exigence n°1 d'Aymen) : toutes les colonnes
-    date/heure sont déjà des chaînes formatées Alger par `exportRowsFromBookings`.
-    Type de retour non annoté à dessein : le `Buffer` d'exceljs (ambient,
-    non exporté par le module) n'est pas le `Buffer` Node — l'appelant
-    (routes.ts) repasse par `Buffer.from(...)` avant `reply.send`. */
-export async function buildExportWorkbook(rows: readonly ExportRow[]) {
-  const wb = new ExcelJS.Workbook();
+/** MS-030 (audit final, Lot 2a, 18/11/2026) : le classeur est ÉCRIT EN FLUX dans `out` (la réponse HTTP) au lieu d'être
+    construit entier en mémoire, et la boucle d'événements est rendue tous les `YIELD_EVERY` lignes : un gros export ne
+    fige plus les autres requêtes servies par le même processus. Jamais de Date JS confiée à exceljs (elle l'écrirait en UTC,
+    exigence n°1 d'Aymen) : date et heures sont déjà des chaînes formatées Alger par `exportRowsFromBookings`. */
+const YIELD_EVERY = 100;
+
+export async function writeExportWorkbook(rows: readonly ExportRow[], out: Writable): Promise<void> {
+  const wb = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: out, useStyles: true, useSharedStrings: false });
   const sheet = wb.addWorksheet('Réservations');
   sheet.columns = COLUMNS;
   sheet.getRow(1).font = { bold: true };
-  for (const row of rows) sheet.addRow(row);
-  return wb.xlsx.writeBuffer();
+  sheet.getRow(1).commit();
+  for (let i = 0; i < rows.length; i++) {
+    sheet.addRow(rows[i]).commit();
+    if ((i + 1) % YIELD_EVERY === 0) await new Promise<void>((r) => setImmediate(r));
+  }
+  sheet.commit();
+  await wb.commit();
 }
 
 export function exportFilename(fromDay: string, toDay: string): string {

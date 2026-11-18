@@ -125,11 +125,45 @@ describe('permissions (VIEW_ANALYTICS = Manager+)', () => {
   });
 });
 
-describe('plage — réutilise parsePeriod (analytics/service.ts), même borne 366 jours', () => {
-  it('plage > 12 mois refusée avec un message clair', async () => {
+describe('plage — 3 mois au plus (MS-030, audit final, Lot 2a, 18/11/2026, choix d’Aymen)', () => {
+  it('plage > 12 mois refusée (contrôle de parsePeriod, inchangé)', async () => {
     const res = await exportRange(hamid, '2024-01-01', '2026-06-01'); // > 366 jours
     expect(res.statusCode).toBe(400);
     expect((res.json() as { message: string }).message).toContain('366 jours');
+  });
+
+  it('un trimestre entier passe (92 jours d’écart), un jour de plus est refusé avec un message clair', async () => {
+    const ok = await exportRange(hamid, '2026-07-01', '2026-10-01'); // 92 jours d'écart
+    expect(ok.statusCode, ok.body).toBe(200);
+    const tooLong = await exportRange(hamid, '2026-07-01', '2026-10-02'); // 93 jours
+    expect(tooLong.statusCode).toBe(400);
+    const body = tooLong.json() as { error: string; message: string };
+    expect(body.error).toBe('EXPORT_PERIOD_TOO_LONG');
+    expect(body.message).toContain('3 mois');
+  });
+});
+
+describe('séances d’abonnés dans l’export (MS-030, Lot 2a, 18/11/2026)', () => {
+  it('une séance de la période sort en ligne « Abonnement », nom de l’abonné, prix par séance, sans référence', async () => {
+    const day = freshDay();
+    const weekday = weekdayOfDayStart(dayStartMs(day));
+    const created = await stack.app.inject({
+      method: 'POST', url: `/venues/${seed.venueId}/recurring-bookings`, headers: bearer(yacine),
+      payload: { fieldId: seed.fields.t2, weekday, startMin: 1260, durationMin: 60, holderName: 'TEST Export Abonné', activeFrom: day, activeUntil: day, pricePerSessionDa: 2700 },
+    });
+    expect(created.statusCode, created.body).toBe(201);
+
+    const res = await exportRange(hamid, day, day);
+    expect(res.statusCode, res.body).toBe(200);
+    const rows = await rowsFromXlsx(res.rawPayload);
+    const row = rows.find((r) => r['Nom'] === 'TEST Export Abonné');
+    expect(row).toBeDefined();
+    expect(row!['Source']).toBe('Abonnement');
+    expect(row!['Statut']).toBe('Réservé');
+    expect(row!['Montant (DA)']).toBe(2700);
+    expect(row!['Date']).toBe(day);
+    expect(row!['Heure début']).toBe('21:00');
+    expect(row!['Référence'] ?? '').toBe('');
   });
 });
 
@@ -254,7 +288,8 @@ describe('ligne par ligne — loadBookingsForExport ne filtre ni ne plafonne (15
     const rows = await rowsFromXlsx(res.rawPayload);
 
     for (const ref of refs) expect(rows.some((r) => r['Référence'] === ref)).toBe(true);
-    expect(rows.length).toBe(refs.length); // ni plus (le blocage), ni moins (aucun statut filtré)
+    // Les séances d'abonnés (source « Abonnement », MS-030) ont leur propre test : on compte ici les réservations.
+    expect(rows.filter((r) => r['Source'] !== 'Abonnement').length).toBe(refs.length); // ni plus (le blocage), ni moins (aucun statut filtré)
     expect(rows.some((r) => r['Terrain'] === 'T2' && r['Montant (DA)'] === 0)).toBe(false);
     expect(rows.find((r) => r['Référence'] === phoneRef)!['Source']).toBe('Téléphone');
     expect(rows.find((r) => r['Référence'] === moubaratRef)!['Source']).toBe('Moubarat');
