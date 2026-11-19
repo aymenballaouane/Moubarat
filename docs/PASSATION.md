@@ -952,7 +952,7 @@ contrainte `matches_place_position`). Additive, sans coupure. Retour arrière à
   (supprime les abonnements web). Ordre complet des retours du lot : 0053, 0052, 0051, 0050, 0049, 0048, 0047.
 - **Alertes web — à faire AVANT la mise en ligne** : générer une fois les clés `pnpm --filter @moubarat/api web-push:keys`, puis poser sur
   le serveur `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY` (secret : jamais dans le code ni sur GitHub) et `WEB_PUSH_SUBJECT`
-  (`mailto:contact@moubarat.app`). Sans elles : aucune alerte web, l'app n'affiche pas la carte (rien ne casse). Changer de clés
+  (`mailto:contact@moubaratsport.com`). Sans elles : aucune alerte web, l'app n'affiche pas la carte (rien ne casse). Changer de clés
   oblige chaque téléphone à réactiver ses alertes. Le serveur doit pouvoir sortir en HTTPS vers les services de notification des
   navigateurs (fcm.googleapis.com, updates.push.services.mozilla.com, web.push.apple.com…).
 - **Aperçu des liens** : `apps/player/middleware.ts` (Routing Middleware Vercel) lit `VITE_API_BASE_URL` à l'exécution ; il doit donc être
