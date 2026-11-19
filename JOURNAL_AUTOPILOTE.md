@@ -80,3 +80,22 @@ si la conversation est résumée ou relancée.
   un nouvel export (« Failed to create export », sans raison) — couverture par la restauration à un instant des 3 derniers jours + export
   du 17/11 23 h 41 ; migration purement additive. Non vérifié en ligne : une vraie recherche (il faut un compte joueur — jamais de mot de
   passe saisi sur la production par l'assistant).
+
+## Mise en ligne du lot B (19/11/2026, demande d'Aymen « Oui, prépare-la » puis « Oui, je me connecte »)
+
+- Contenu : phases 0 bis à 7 du lot B (en-tête du match, « Créer un match » en deux écrans, inviter un ami, alertes web, bloquer un
+  joueur + filtre des insultes éteint, Google en réserve éteint, « Nos lieux d'abord », carte Moubarat MapLibre + OpenFreeMap).
+- Sauvegarde : Render a de nouveau refusé un export (« Failed to create export », sans raison) ; couverture = restauration à un instant
+  des 3 derniers jours + export du 18/11 à 2 h 07 ; migrations 0051 à 0055 purement additives.
+- `master` = `f2b95da` (avance rapide depuis `936ddba`, 19/11 vers 18 h). Vercel : les trois sites republiés (carte Moubarat présente
+  dans l'app en ligne). Render : déploiement manuel (GitHub Actions toujours bloqué), « Deploy succeeded / Live », `/ready` = prêt (aucune
+  migration en attente : 0051 à 0055 appliquées).
+- Contrôles en ligne sans compte : /health et /ready OK ; nouvelles routes présentes (`/places/community`, `/me/blocks`,
+  `/places/map-config` → 401 sans compte) ; `/og/m/:code` répond ; CORS de l'app OK.
+- Alertes web : clés VAPID générées en local (`apps/api/.env.production-alertes.local`, jamais commité), collées dans Render par Aymen
+  (`WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, `WEB_PUSH_SUBJECT` = mailto:contact@moubaratsport.com) ; redéploiement « Environment
+  updated » ; `/push/web-key` sert la clé publique, identique au fichier.
+- Non posé, volontairement : `CONTENT_FILTER_ENABLED` (liste à relire), clés Google (décision : OpenStreetMap).
+- Retour arrière : Render → moubarat-api → Events → « Rollback » sur le déploiement de `936ddba` ; Vercel → Instant Rollback ; scripts de
+  retour des migrations dans `apps/api/migrations/retour/` (0055 → 0051).
+- Reste à Aymen : son test sur téléphone en ligne ; Android 1.0.5 (délégation des notifications, `apps/android/twa-manifest.json`) ; iPhone.
