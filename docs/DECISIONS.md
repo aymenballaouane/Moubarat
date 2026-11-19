@@ -6405,4 +6405,13 @@ charge**, les réglages Render/Vercel et la préproduction restent aux développ
   impossibles à forcer), une valeur illisible aussi ; sondes, support et textes juridiques restent ouverts. Vérifié en direct
   (API locale relancée avec un minimum à 9.0.0) : écran en français et en arabe, sans traduction manquante. **Pour que ce soit
   utile sur iPhone, il faut un nouveau build** (le build 1.0 n'envoie pas sa version) — PASSATION §4.20.
+- **2e — Déploiement et capacité (MS-031, MS-032, MS-034, MS-074)** : choix d'Aymen « documentation + script » — rien n'est
+  réglé dans Render, Vercel ni GitHub (aucun accès aux comptes ici). PASSATION §4.21, à l'intention des développeurs : mettre
+  l'API en ligne avant les fronts (Deploy Hooks Vercel appelés par la vérification GitHub une fois l'API à jour ; en attendant,
+  tout changement d'API reste compatible avec les fronts en ligne) ; sauvegarde avant migration (vérifier la restauration à un
+  instant donné de l'offre Render, sinon `pg_dump` avant un déploiement qui migre) ; préproduction par copie du Blueprint —
+  avec, à signaler à Aymen, l'offre Vercel « Hobby » réservée à un usage non commercial et le coût d'une préproduction ;
+  test de charge `apps/api/scripts/load-test.mjs` (lectures seulement, sans dépendance, refuse la production sauf
+  confirmation explicite), essayé sur une API locale (10 utilisateurs simultanés : 158 requêtes/s, médiane 55 ms, 0 erreur) —
+  la vraie mesure est à faire sur la préproduction et à reporter dans §4.21.
 

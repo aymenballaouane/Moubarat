@@ -924,6 +924,54 @@ et joueurs de la console (nom, numéro). Sans eux, ces recherches relisaient tou
 Code : `apps/api/src/lib/app-version.ts` (règles), contrôle global dans `apps/api/src/server.ts` ; tests
 `apps/api/tests/app-version-gate.test.ts`, `apps/player/tests/miseAJourRequise.test.tsx`.
 
+### 4.21 Déploiement sûr et capacité : ordre de mise en ligne, sauvegarde avant migration, préproduction, test de charge (audit final Lot 2e, 18/11/2026)
+
+Quatre points de l'audit final (MS-031, MS-032, MS-034, MS-074) qui relèvent de l'hébergement, pas du code : **à trancher et
+à régler par les développeurs**, dans les comptes Render, Vercel et GitHub. Ce qui suit dit le problème, ce qui est déjà en
+place, et une façon de faire ; aucune de ces étapes n'a été essayée en vrai (aucun accès aux comptes depuis le poste de
+développement).
+
+**1. Mettre en ligne l'API AVANT les fronts (MS-031).** Aujourd'hui, Vercel publie les fronts dès le push sur `master`,
+alors que Render attend la vérification GitHub, la construction de l'image et les migrations (`autoDeployTrigger:
+checksPass`) : pendant plusieurs minutes — ou indéfiniment si la vérification échoue — un front récent parle à une API
+ancienne. Règle de conduite en attendant : **tout changement de l'API doit rester compatible avec les fronts en ligne**
+(ajouter, ne pas renommer ni retirer). Pour l'imposer :
+- dans chaque projet Vercel, couper le déploiement automatique de la branche de production (Settings → Git → « Ignored
+  Build Step » qui répond « ne pas construire » sur `master`), et créer un **Deploy Hook** par projet ;
+- dans `.github/workflows/ci.yml`, un dernier job (après la vérification) qui attend que l'API annonce le nouveau code —
+  `GET https://api.moubarat.app/ready?ignoreLatency=1` en 200 avec le nouveau déploiement (Render → Deploys, ou un numéro
+  de version servi par l'API, à ajouter si besoin) — puis appelle les trois Deploy Hooks (secrets GitHub
+  `VERCEL_HOOK_APP`, `VERCEL_HOOK_CRM`, `VERCEL_HOOK_ADMIN`).
+
+**2. Une sauvegarde juste avant chaque migration (MS-032).** `preDeployCommand` (render.yaml) applique les migrations sans
+sauvegarde préalable, et les migrations n'ont pas de retour arrière : une migration fautive ne laisse que la sauvegarde
+automatique de la base. À vérifier dans l'offre Render de `moubarat-db` : la **restauration à un instant donné**
+(point-in-time recovery) et sa durée de rétention — si elle existe, elle couvre ce risque à condition de noter l'heure du
+déploiement. Sinon, ou en plus, avant un déploiement qui contient une migration (`apps/api/migrations` modifié) :
+`pg_dump --format=custom` depuis une machine autorisée (même procédure que §4.18 points 4-5), conservé jusqu'au
+déploiement suivant.
+
+**3. Une préproduction (MS-034).** Aucun environnement ne permet aujourd'hui d'essayer un déploiement, une migration ou une
+charge ailleurs qu'en production. Le plus simple : une copie du Blueprint (`render.yaml` → services suffixés
+`-staging`, sa propre base, `OTP_DEV_MODE=true` ou un fournisseur SMS de test, `MIN_PLAYER_APP_VERSION` vide), et dans
+Vercel un environnement de prévisualisation des trois fronts pointé sur l'API de préproduction (`VITE_API_BASE_URL`). Y
+restaurer une copie de la production (§4.18 points 4-5) pour essayer migrations et charge sur des volumes réels. **À
+signaler à Aymen** : l'offre Vercel « Hobby » est réservée à un usage personnel et non commercial — un usage commercial
+demande l'offre « Pro » (coût à décider) ; une préproduction double aussi le coût Render (API + base).
+
+**4. Mesurer la capacité (MS-074).** `apps/api/scripts/load-test.mjs` (aucune dépendance, Node 22) envoie des LECTURES
+seulement (centres, disponibilités, fil des matchs ; écrans du CRM si `CRM_TOKEN` ; écrans du joueur si `PLAYER_TOKEN`)
+par paliers d'utilisateurs simultanés, et affiche requêtes par seconde, médiane, 95e et 99e centiles, erreurs et 429. Il
+refuse `api.moubarat.app` sauf `LOAD_TEST_ALLOW_PROD=true`. Mode d'emploi en tête du fichier. Sur la préproduction,
+avec une copie de la production :
+`BASE_URL=… VENUE_ID=… CRM_TOKEN=… PLAYER_TOKEN=… node apps/api/scripts/load-test.mjs`.
+Jetons : une session créée pour l'occasion (ligne dans `platform_sessions` / `sessions`, `token_hash` = sha256 du jeton),
+supprimée après. Les limites anti-abus par adresse (§3.2) peuvent répondre 429 si toute la charge vient d'une seule
+machine : c'est attendu, la colonne 429 les compte à part. **Reporter ici** la date, l'offre Render, le nombre d'instances et
+le tableau obtenu ; décider ensuite d'une deuxième instance (`numInstances` dans render.yaml, §4.10) si la médiane monte
+nettement avant le nombre de centres visé (15). Mesure locale indicative (base à l'échelle visée, 18/11/2026, routes servies
+dans le processus, `apps/api/scripts/bench-routes.ts`) : voir docs/DECISIONS.md (Lot 2b).
+
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 
 Chaque point ci-dessous a été soit vérifié (test automatisé, ou vérification manuelle décrite),
