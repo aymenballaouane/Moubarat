@@ -59,6 +59,8 @@ type PageCursors = Record<PagedList, string | null>;
 const NO_CURSORS: PageCursors = { notifications: null, reservations: null, myMatches: null };
 /** Taille d'une page demandée par « Afficher plus » (les listes du joueur : notifications, réservations, matchs). */
 const LIST_PAGE_SIZE = 30;
+/** Lot B, phase 5 : la clé de la carte Google, demandée une fois (`undefined` = pas encore demandée). */
+let mapKeyCache: string | null | undefined;
 
 /** Fil des matchs de l'Explorer (filtres côté serveur) : les identifiants dans l'ordre reçu — les matchs eux-mêmes
     vivent dans `state.matches`, une seule source. */
@@ -1096,12 +1098,29 @@ export function useAppStore() {
         Le serveur rejoue la règle core `createFreeMatch` ; le match est inséré avec l'id réel renvoyé. */
     /** Phase adresses (18/11/2026) — GET /places/search : lieux et adresses d'OpenStreetMap en Algérie, proches de `near`. Jamais
         une erreur pour l'écran : en cas de souci, une liste vide et `unavailable` (la saisie libre et l'épingle restent). */
-    searchPlaces: async (q: string, near?: { lat: number; lng: number }): Promise<{ results: PlaceSuggestion[]; unavailable: boolean }> => {
+    searchPlaces: async (q: string, near?: { lat: number; lng: number }, session?: string): Promise<{ results: PlaceSuggestion[]; unavailable: boolean }> => {
       try {
-        const qs = new URLSearchParams({ q, ...(near ? { lat: String(near.lat), lng: String(near.lng) } : {}) });
+        const qs = new URLSearchParams({ q, ...(near ? { lat: String(near.lat), lng: String(near.lng) } : {}), ...(session ? { session } : {}) });
         const res = await apiFetch<{ results: PlaceSuggestion[]; unavailable?: boolean }>(`/places/search?${qs}`, { token });
         return { results: res.results ?? [], unavailable: res.unavailable === true };
       } catch { return { results: [], unavailable: true }; }
+    },
+    /** Lot B, phase 5 — GET /places/details : la position d'une suggestion Google (`null` si Google ne répond pas). */
+    placeDetails: async (s: PlaceSuggestion, session?: string): Promise<PlaceSuggestion | null> => {
+      try {
+        const qs = new URLSearchParams({ id: s.id, name: s.name, ...(session ? { session } : {}) });
+        const res = await apiFetch<{ place: PlaceSuggestion | null }>(`/places/details?${qs}`, { token });
+        return res.place ?? null;
+      } catch { return null; }
+    },
+    /** Lot B, phase 5 — GET /places/map-config : la clé de la carte Google (`null` : carte de secours). Demandée une fois par session. */
+    mapConfig: async (): Promise<string | null> => {
+      if (mapKeyCache !== undefined) return mapKeyCache;
+      try {
+        const res = await apiFetch<{ googleMapsKey: string | null }>('/places/map-config', { token });
+        mapKeyCache = res.googleMapsKey ?? null;
+      } catch { return null; }
+      return mapKeyCache;
     },
     /** GET /places/reverse — le lieu sous l'épingle de la carte (`null` si rien de connu à cet endroit). */
     reversePlace: async (lat: number, lng: number): Promise<PlaceSuggestion | null> => {

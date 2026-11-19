@@ -442,7 +442,8 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
         <CreerOu
           partners={partners} nearbyPartners={partners.filter((v) => inPlayerCity(v.wilaya, city))} city={cityCenter(city)}
           initial={freePlace ? { name: freePlace.name, area: freePlace.area ?? null, address: freePlace.address ?? null, wilaya: freePlace.wilaya, ...(freePlace.lat !== undefined && freePlace.lng !== undefined ? { lat: freePlace.lat, lng: freePlace.lng } : {}) } : null}
-          search={(q, near) => store.searchPlaces(q, near)} reverse={(lat, lng) => store.reversePlace(lat, lng)}
+          search={(q, near, session) => store.searchPlaces(q, near, session)} reverse={(lat, lng) => store.reversePlace(lat, lng)}
+          details={(s, session) => store.placeDetails(s, session)} mapConfig={() => store.mapConfig()}
           openingId={lieuOpening} error={lieuError}
           onPickPartner={(id) => { void pickPartner(id); }}
           onConfirm={(pl) => onFreeMatch({

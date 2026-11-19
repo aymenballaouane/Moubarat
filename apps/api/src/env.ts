@@ -132,6 +132,10 @@ export interface Env {
   placesSearchUrl: string;
   /** Recherches d'adresses par joueur et par heure (garde-fou : le service public est gratuit mais limité). */
   placesMaxPerHour: number;
+  /** Lot B, phase 5 (19/11/2026) : clé serveur Google (Places API (New) + Geocoding API), secrète. `null` = recherche chez Photon seul. */
+  googlePlacesServerKey: string | null;
+  /** Clé navigateur de la carte Google (Maps JavaScript API) — publique par nature, limitée au site dans la console Google. `null` = carte de secours. */
+  googleMapsBrowserKey: string | null;
   /** Arrêt propre (mise à l'échelle L4, 25/09/2026 — lib/lifecycle.ts, docs/PASSATION.md §4.10). `shutdownDrainMs` :
       après SIGTERM/SIGINT, durée pendant laquelle l'instance se déclare « en cours d'arrêt » (`/ready` → 503) tout en
       CONTINUANT de servir — le temps que le répartiteur de charge la retire de la rotation. `shutdownTimeoutMs` : délai
@@ -257,6 +261,8 @@ export function readEnv(overrides: Partial<Env> = {}): Env {
     availabilitySummaryCacheMs: intEnv('AVAILABILITY_SUMMARY_CACHE_MS', 30_000),
     placesSearchUrl: (process.env.PLACES_SEARCH_URL ?? 'https://photon.komoot.io').trim().replace(/\/+$/, ''),
     placesMaxPerHour: intEnv('PLACES_MAX_PER_HOUR', 120, { min: 1 }),
+    googlePlacesServerKey: process.env.GOOGLE_PLACES_SERVER_KEY?.trim() || null,
+    googleMapsBrowserKey: process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null,
     shutdownDrainMs: intEnv('SHUTDOWN_DRAIN_MS', 5_000, { max: 300_000 }),
     shutdownTimeoutMs: intEnv('SHUTDOWN_TIMEOUT_MS', 20_000, { min: 1, max: 300_000 }),
     requestTimeoutMs: intEnv('REQUEST_TIMEOUT_MS', 30_000, { max: 3_600_000 }),

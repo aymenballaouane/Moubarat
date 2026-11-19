@@ -4,7 +4,10 @@ import { cityLabel } from './labels.js';
 import { fold } from './venueFilters.js';
 
 export interface PlaceSuggestion {
-  id: string; name: string; detail: string; wilaya: string | null; lat: number; lng: number;
+  id: string; name: string; detail: string; wilaya: string | null;
+  /** Lot B, phase 5 : `null` pour une suggestion de Google — la position arrive au toucher (`needsDetails`, GET /places/details). */
+  lat: number | null; lng: number | null;
+  needsDetails?: boolean;
   /** Lot B, phase 1 : la rue et le quartier (ou la commune) d'OpenStreetMap, quand ils sont connus. */
   street?: string | null; area?: string | null;
 }
@@ -86,4 +89,11 @@ export function cityCodeOf(wilaya: string | null | undefined): string | null {
   if (!wilaya) return null;
   const key = fold(wilaya.trim());
   return Object.keys(CITY_CENTERS).find((code) => fold(cityLabel(code)) === key) ?? null;
+}
+
+/** Lot B, phase 5 : un jeton de « session » de recherche (Google facture la recherche et le choix de l'adresse ensemble). */
+export function newPlacesSession(): string {
+  const c = globalThis.crypto as Crypto | undefined;
+  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
 }

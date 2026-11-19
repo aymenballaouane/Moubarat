@@ -306,7 +306,7 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
   // MS-011 (audit final, 12/11/2026) : équipes et défis servis seulement si la fonction est allumée (env.ts).
   if (env.teamsChallengesEnabled) await registerTeamRoutes(app, { db, guards, inviteLimiter: teamInviteLimiter, contentFilter: env.contentFilterEnabled });
   await registerMatchRoutes(app, { db, guards, contentFilter: env.contentFilterEnabled });
-  await registerPlaceRoutes(app, { guards, baseUrl: env.placesSearchUrl, limiter: placesLimiter });
+  await registerPlaceRoutes(app, { guards, baseUrl: env.placesSearchUrl, limiter: placesLimiter, googleKey: env.googlePlacesServerKey, mapsBrowserKey: env.googleMapsBrowserKey });
   await registerOgRoutes(app, { db });   // lot B, phase 2 : aperçu des liens de match (balises og:* et image)
   await registerBlockRoutes(app, { db, guards });   // lot B, phase 4 : bloquer un joueur
   await registerNotificationRoutes(app, { db, guards });

@@ -5,7 +5,7 @@ import { MatchMap, type MapMarker, type MapTarget } from './MatchMap.js';
 import { useT } from '../lib/i18n.js';
 import { fillTemplate } from '../lib/reserverCreneau.js';
 import { freePlaceName, partnerSuggestions } from '../lib/freeMatch.js';
-import { defaultFieldName, kmText, partnerUnderPin, partnersByDistance, placeSubtitle, type LatLng, type PlaceSuggestion } from '../lib/places.js';
+import { defaultFieldName, kmText, newPlacesSession, partnerUnderPin, partnersByDistance, placeSubtitle, type LatLng, type PlaceSuggestion } from '../lib/places.js';
 import '../styles/match-view.css';
 import '../styles/creer-ou.css';
 
@@ -31,7 +31,11 @@ export function CreerOu(p: {
   city: LatLng;
   /** Le lieu déjà choisi (retour par « Modifier ») : la carte s'ouvre dessus, en mode épingle. */
   initial?: ChosenPlace | null;
-  search: (q: string, near: LatLng) => Promise<{ results: PlaceSuggestion[]; unavailable: boolean }>;
+  search: (q: string, near: LatLng, session: string) => Promise<{ results: PlaceSuggestion[]; unavailable: boolean }>;
+  /** Lot B, phase 5 : la position d'une suggestion de Google (elle n'en a pas), au toucher. */
+  details: (s: PlaceSuggestion, session: string) => Promise<PlaceSuggestion | null>;
+  /** Lot B, phase 5 : la clé de la carte Google (`null` : carte de secours). */
+  mapConfig: () => Promise<string | null>;
   reverse: (lat: number, lng: number) => Promise<PlaceSuggestion | null>;
   openingId: string | null;
   error: string | null;
@@ -48,6 +52,8 @@ export function CreerOu(p: {
   const seq = useRef(0);
   const goTo = (center: LatLng, zoom: number) => { seq.current += 1; setTarget({ center, zoom, seq: seq.current }); };
   const [me, setMe] = useState<LatLng | null>(null);
+  const [googleKey, setGoogleKey] = useState<string | null | undefined>(undefined);
+  useEffect(() => { let alive = true; void p.mapConfig().then((k) => { if (alive) setGoogleKey(k); }); return () => { alive = false; }; }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [locating, setLocating] = useState(false);
   const centerRef = useRef<LatLng>(startPin ? { lat: p.initial!.lat!, lng: p.initial!.lng! } : p.city);
 
@@ -57,13 +63,16 @@ export function CreerOu(p: {
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const q = query.trim();
+  // Une « session » de recherche (Google facture ensemble la frappe et le choix de l'adresse) : neuve après chaque adresse choisie.
+  const session = useRef(newPlacesSession());
+  const [resolving, setResolving] = useState<string | null>(null);
   useEffect(() => {
     setSearched(false);
     if (q.length < 3) { setAddresses([]); setSearching(false); return undefined; }
     let alive = true;
     setSearching(true);
     const timer = window.setTimeout(() => {
-      void p.search(q, me ?? p.city).then((res) => {
+      void p.search(q, me ?? p.city, session.current).then((res) => {
         if (!alive) return;
         setAddresses(res.results.slice(0, MAX_ADDRESSES));
         setSearching(false);
@@ -111,6 +120,19 @@ export function CreerOu(p: {
     }
     if (at) { centerRef.current = at; goTo(at, 17); }
     if (!suggestion) lookUp(at ?? centerRef.current);
+  }
+
+  /** Une adresse touchée : sa position tout de suite (OpenStreetMap), ou demandée à Google d'abord. Google muet : l'épingle se pose
+      là où est la carte, avec le nom de l'adresse — le joueur la fait glisser sur son terrain. */
+  async function pickAddress(a: PlaceSuggestion) {
+    if (resolving) return;
+    if (a.lat !== null && a.lng !== null && !a.needsDetails) { enterPin({ lat: a.lat, lng: a.lng }, a); return; }
+    setResolving(a.id);
+    const full = await p.details(a, session.current);
+    session.current = newPlacesSession();
+    setResolving(null);
+    if (full && full.lat !== null && full.lng !== null) enterPin({ lat: full.lat, lng: full.lng }, full);
+    else enterPin(null, a);
   }
 
   function locate() {
@@ -164,7 +186,7 @@ export function CreerOu(p: {
           </div>
         ) : (
           <MatchMap
-            key={mapKey} label={t('Où tu joues ?')}
+            key={mapKey} label={t('Où tu joues ?')} googleKey={googleKey}
             center={centerRef.current} zoom={startPin ? 17 : 13} target={target}
             markers={markers} dimMarkers={mode === 'pin'} me={me}
             onMarker={(id) => p.onPickPartner(id)}
@@ -219,7 +241,7 @@ export function CreerOu(p: {
               <div className="co-list">
                 {partnerHits.map((v) => <PartnerRow key={v.id} v={v} km={null} busy={p.openingId === v.id} onPick={p.onPickPartner} />)}
                 {addresses.map((a) => (
-                  <button key={a.id} type="button" className="co-row co-row--place mb-tap" onClick={() => enterPin({ lat: a.lat, lng: a.lng }, a)}>
+                  <button key={a.id} type="button" className="co-row co-row--place mb-tap" aria-busy={resolving === a.id || undefined} disabled={resolving !== null} onClick={() => { void pickAddress(a); }}>
                     <span className="co-row__ic co-row__ic--pin"><Icon id="i-pin" /></span>
                     <span className="co-row__txt">
                       <b dir="auto">{a.name}</b>
