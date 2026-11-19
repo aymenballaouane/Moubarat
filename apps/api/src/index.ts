@@ -42,6 +42,8 @@ const app = await buildServer({ db, env, lifecycle });
 const trustMode = env.trustProxyCidrs.length > 0 ? 'cidrs' : env.trustProxy ? 'all' : 'off';
 app.log.info({
   event: 'startup_config', instance: env.instanceName, host: env.host, port: env.port, node: process.version,
+  // MS-041 (Lot 2d) : la version minimale de l'app joueur réellement appliquée (null = aucun contrôle).
+  minPlayerAppVersion: env.minPlayerAppVersion, playerStoreUrls: env.playerStoreUrls,
   db: { poolMax: env.dbPoolMax, connectionTimeoutMs: env.dbConnectionTimeoutMs, statementTimeoutMs: env.dbStatementTimeoutMs },
   trustProxy: { mode: trustMode, ...(trustMode === 'cidrs' ? { cidrs: env.trustProxyCidrs } : {}) },
   limits: {

@@ -18,7 +18,7 @@ import type { MatchContact } from '../lib/contacts.js';
 import type { ProfileSummary } from '../lib/profileView.js';
 import type { NotificationSettings } from '../lib/notificationSettings.js';
 import type { Claim } from '../lib/claimView.js';
-import { apiFetch, setUnauthorizedHandler, ApiError, actionResultFromError, type ActionResult } from '../lib/api.js';
+import { apiFetch, setUnauthorizedHandler, setUpdateRequiredHandler, ApiError, actionResultFromError, type ActionResult, type UpdateRequiredInfo } from '../lib/api.js';
 import { setCurrentUserId } from '../data/identity.js';
 import {
   FEED_PAGE_SIZE, dayCountsQueryString, feedQueryString, feedTotalAllDaysQueryString, mergeById, type FeedParams,
@@ -250,6 +250,13 @@ export function useAppStore() {
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   /** MS-028 (audit final) : quelle panne — le téléphone hors ligne, ou Moubarat qui ne répond pas. */
   const [bootstrapErrorKind, setBootstrapErrorKind] = useState<BootFailureKind>('server');
+  /** MS-041 (audit final, Lot 2d) : non-`null` dès qu'un appel a reçu 426 APP_UPDATE_REQUIRED — App.tsx affiche
+      MiseAJourRequise à la place de tout le reste. Jamais remis à zéro dans la session : seule une version à jour en sort. */
+  const [updateRequired, setUpdateRequired] = useState<UpdateRequiredInfo | null>(null);
+  useEffect(() => {
+    setUpdateRequiredHandler(setUpdateRequired);
+    return () => setUpdateRequiredHandler(null);
+  }, []);
   /* C7 (audit produit 21/09/2026) : volontairement HORS de StoreState (pas besoin de reducer testable
      pour un simple booléen posé par le bootstrap et remis à zéro par une seule action serveur). */
   const [needsLegalConsent, setNeedsLegalConsent] = useState(false);
@@ -663,6 +670,7 @@ export function useAppStore() {
         rendre le Home avec les données de démo restées en place. */
     bootstrapError,
     bootstrapErrorKind,
+    updateRequired,
     retryBootstrap,
     retryBootstrapQuietly,
     /** C7 (audit produit 21/09/2026) : App.tsx affiche LegalConsentGate tant que c'est vrai, avant

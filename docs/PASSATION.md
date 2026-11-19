@@ -159,6 +159,8 @@ racine : `.env.example`). En hébergement, les fournir par l'environnement du se
 | `SESSION_TTL_DAYS` | Inactivité avant expiration de session | non | 30 (défaut) |
 | `DB_POOL_MAX` / `DB_CONNECTION_TIMEOUT_MS` / `DB_STATEMENT_TIMEOUT_MS` | Pool de connexions Postgres (voir `db/client.ts`) — **le seul appelant à en tenir compte est le serveur réel** (`index.ts`) ; les scripts et les tests gardent le comportement historique (aucun timeout). Budget recommandé : instances × `DB_POOL_MAX` ≤ 60 % de `max_connections` côté Postgres. **Noms exacts** : le brief d'hébergement du 22/09/2026 donnait un nom provisoire `DB_CONNECT_TIMEOUT_MS` — **il n'existe pas dans le code et serait ignoré sans erreur** ; le nom lu par l'API est `DB_CONNECTION_TIMEOUT_MS` (dépassé, une requête en attente d'une connexion libre échoue en erreur plutôt que d'attendre sans fin) | non | 10 / 5000 / 15000 (défauts). **À trancher par les développeurs** : `DB_POOL_MAX` (voir le budget) |
 | `SUPPORT_PHONE` / `SUPPORT_WHATSAPP` / `SUPPORT_EMAIL` | Coordonnées de support servies par `GET /support` (publique) : app joueur (Profil > Aide & Support, écran de connexion d'un compte suspendu) et CRM (bouton « Aide »). Un canal vide n'est pas affiché. **OBLIGATOIRE hors développement (décision d'Aymen, 27/10/2026, audit P1-4) : sans `OTP_DEV_MODE=true`, l'API REFUSE DE DÉMARRER si aucun des trois canaux n'est valide** (au moins un ; les trois sont recommandés — la restriction « contacte le support Moubarat » de la règle 25 n'a de sens qu'avec un canal réel). Un canal invalide (e-mail sans @, numéro trop court) compte pour absent. Numéros au format national algérien acceptés (convertis pour `wa.me`) | **oui** (hors développement) | vide (aucun) |
+| `MIN_PLAYER_APP_VERSION` | Version minimale de l'app joueur (« 1.1.0 », 1 à 3 nombres). En dessous, l'API répond `426 APP_UPDATE_REQUIRED` et l'app affiche « Mets à jour Moubarat ». **Vide = aucun contrôle.** Une valeur mal écrite empêche l'API de démarrer. Mode d'emploi et limites : §4.20 | non | vide (à poser seulement quand un changement de l'API casse les anciennes versions de l'app) |
+| `PLAYER_APP_STORE_URL_IOS` / `PLAYER_APP_STORE_URL_ANDROID` | Liens https des fiches de l'app sur l'App Store et le Play Store, servis avec le refus 426 (le bouton « Ouvrir l'App Store » de l'app iPhone). Changeables sans nouveau build ; une adresse non https empêche l'API de démarrer | non | le lien de la fiche App Store, dès qu'elle est publiée |
 | `INSTANCE_NAME` | Nom de CETTE instance d'API, posé comme `application_name` sur toutes ses connexions Postgres : `pg_stat_activity` et les journaux de la base disent alors **quelle instance** tient un verrou ou une requête lente. Tronqué à 63 caractères par Postgres ; aucune donnée personnelle dedans. Absent ou vide = `moubarat-api` | non | Une valeur **distincte par instance** : `moubarat-api-1`, `moubarat-api-2`… (sinon les deux instances se confondent dans les diagnostics) |
 | `REQUEST_IP_MAX_PER_HOUR` / `REQUEST_GLOBAL_MAX_PER_DAY` | Limites du formulaire public d'inscription d'un centre (`POST /public/venue-requests`) : par IP et par heure / globale et par jour d'Alger ; `429 RATE_LIMITED` au-delà. **Compteurs partagés en base** entre instances (fenêtres fixes, voir §3.2). Les demandes écartées en silence (piège à robots, remplissage trop rapide) ne consomment pas le plafond global. **Exigent une lecture correcte de l'adresse du client** (`TRUST_PROXY` / `TRUST_PROXY_CIDRS`) derrière un proxy, sinon toutes les demandes semblent venir de l'IP du proxy | non | 3 / 30 (défauts) |
 | `TEAM_INVITE_MAX_PER_HOUR` | Invitations d'équipe (`POST /teams/:id/invite`) **par joueur et par heure**, comptées à chaque appel (refusé ou non) ; `429 RATE_LIMITED` au-delà. La route cherche un joueur par son nom d'affichage exact : sans plafond, elle permettrait de sonder quels noms existent (audit du 25/09/2026, P0-6 ; jamais de numéro). Compteur partagé en base (clé = l'identifiant du joueur), fenêtre fixe. Entier ≥ 1 | non | 20 (défaut). Sans effet tant que `TEAMS_CHALLENGES_ENABLED` n'est pas `true` (les routes des équipes ne sont alors pas servies) |
@@ -895,6 +897,32 @@ et joueurs de la console (nom, numéro). Sans eux, ces recherches relisaient tou
    sont signalés dans le code (`modules/bookings/routes.ts`, recherche ; `platform/users/routes.ts`).
 4. **Mesure** (base à l'échelle visée, 100 000 joueurs, `apps/api/scripts/bench-routes.ts`) : recherche CRM par nom 104 → 7 ms,
    par numéro « 0555 » 264 → 115 ms ; recherche de joueurs de la console 120 → 7 ms.
+
+### 4.20 Version de l'app joueur et version minimale (MS-041, audit final Lot 2d, 18/11/2026)
+
+**Ce qui est envoyé** : chaque appel de l'app joueur porte `X-Moubarat-App-Version`, la version de SON CODE
+(`apps/player/src/lib/appVersion.ts`, aujourd'hui `1.1.0`). C'est ce numéro qui compte, pas celui du store :
+- **app Android** (Trusted Web Activity) et **site** : ils affichent le site en ligne, donc toujours le dernier code ; une
+  version minimale ne les bloque que le temps d'un rechargement (bouton « Recharger » de l'écran) ;
+- **app iPhone** (Capacitor) : le code est EMBARQUÉ dans le build, figé jusqu'à la mise à jour suivante ; l'écran propose
+  « Ouvrir l'App Store » (lien `PLAYER_APP_STORE_URL_IOS`) — sans lien, seulement le texte.
+
+**Quand s'en servir** : seulement si un changement de l'API casse le contrat qu'utilisent les anciennes versions de l'app
+(préférer toujours un changement rétrocompatible). Procédure :
+1. Dans l'app joueur, monter `APP_VERSION` (ex. `1.1.0` → `1.2.0`) avec le changement ; publier le build iPhone.
+2. Attendre que la mise à jour soit disponible sur l'App Store (et laisser le temps aux joueurs).
+3. Poser `MIN_PLAYER_APP_VERSION=1.2.0` sur l'API (Render → Environment) : redémarrage, vérifier la ligne
+   `startup_config` (champ `minPlayerAppVersion`).
+
+**Limites, assumées** :
+- une requête SANS l'en-tête passe toujours : le CRM, la console, et **les builds d'avant ce lot** (iPhone 1.0 build 6,
+  soumis le 11/11/2026) ne l'envoient pas — ils ne pourront jamais être forcés ; seuls les builds construits à partir de ce
+  code (version `1.1.0` et suivantes) le pourront. D'où l'intérêt de publier un build iPhone avec ce lot ;
+- une valeur illisible passe (jamais un joueur bloqué par une faute de frappe) ;
+- toujours ouverts, même à une app trop ancienne : `/health`, `/ready`, `/support`, `/legal`.
+
+Code : `apps/api/src/lib/app-version.ts` (règles), contrôle global dans `apps/api/src/server.ts` ; tests
+`apps/api/tests/app-version-gate.test.ts`, `apps/player/tests/miseAJourRequise.test.tsx`.
 
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 

@@ -1,4 +1,5 @@
 import { GENERIC_ERROR_MESSAGE } from '@moubarat/core';
+import { APP_VERSION } from './appVersion.js';
 /* Client HTTP minimal vers apps/api (Lot 3B, socle auth/session) — un seul
    point de contact réseau pour tout apps/player, pour ne jamais dupliquer la
    gestion d'erreur. Forme réelle du corps d'erreur vérifiée dans
@@ -43,6 +44,17 @@ export function actionResultFromError(e: unknown): ActionResult {
     déconnecté en silence comme pour une simple session expirée. */
 export interface UnauthorizedInfo { suspended: boolean; message: string }
 
+/** MS-041 (Lot 2d) : réponse 426 du serveur — l'app est trop ancienne. Les liens des stores viennent du serveur. */
+export interface UpdateRequiredInfo { minVersion: string | null; storeUrls: { ios: string | null; android: string | null } }
+type UpdateRequiredHandler = (info: UpdateRequiredInfo) => void;
+let onUpdateRequired: UpdateRequiredHandler | null = null;
+
+/** Point d'écoute unique pour « mise à jour obligatoire » (426 sur n'importe quel appel) — useAppStore.ts s'y abonne, App.tsx
+    affiche alors MiseAJourRequise à la place de tout le reste. */
+export function setUpdateRequiredHandler(handler: UpdateRequiredHandler | null): void {
+  onUpdateRequired = handler;
+}
+
 type UnauthorizedHandler = (info: UnauthorizedInfo) => void;
 let onUnauthorized: UnauthorizedHandler | null = null;
 
@@ -73,6 +85,7 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
   const headers: Record<string, string> = {};
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
+  headers['X-Moubarat-App-Version'] = APP_VERSION; // MS-041 : la version du code, pour la version minimale (lib/appVersion.ts)
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? API_TIMEOUT_MS);
@@ -102,6 +115,10 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
   if (!res.ok) {
     const body = (json ?? {}) as { error?: string; message?: string; details?: unknown };
     if (res.status === 401) onUnauthorized?.({ suspended: body.error === 'ACCOUNT_SUSPENDED', message: body.message ?? '' });
+    if (res.status === 426 && body.error === 'APP_UPDATE_REQUIRED') {
+      const d = (body.details ?? {}) as Partial<UpdateRequiredInfo>;
+      onUpdateRequired?.({ minVersion: d.minVersion ?? null, storeUrls: { ios: d.storeUrls?.ios ?? null, android: d.storeUrls?.android ?? null } });
+    }
     throw new ApiError(res.status, body.error ?? 'UNKNOWN', body.message ?? GENERIC_ERROR_MESSAGE, body.details);
   }
   return json as T;

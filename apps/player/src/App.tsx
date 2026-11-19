@@ -39,12 +39,14 @@ import { useAppStore, type AppStore } from './state/useAppStore.js';
 import { loadToken } from './lib/session.js';
 import { clearPendingMatch, codeFromPath, loadPendingMatch, savePendingMatch } from './lib/matchLink.js';
 import { installNativeBridge, on, post } from './lib/native.js';
+import { APP_VERSION } from './lib/appVersion.js';
+import { MiseAJourRequise } from './components/MiseAJourRequise.js';
 
 /* Chantier iOS — annoncée au natif dans le message `ready` (native.ts). Pas
    de source unique de vérité pour la version côté web aujourd'hui (aucun
    numéro de version affiché ailleurs dans l'app) : une constante suffit,
    purement informative pour le natif (jamais lue pour une décision). */
-const APP_VERSION = '1.0.0';
+// MS-041 (Lot 2d) : une seule source, lib/appVersion.ts — aussi envoyée à l'API pour la version minimale.
 
 /** Le code d'un lien de match ouvert à l'arrivée (« /m/CODE ») — lu UNE fois, avant tout rendu. */
 const LINK_AT_LOAD = typeof window !== 'undefined' ? codeFromPath(window.location.pathname) : null;
@@ -193,6 +195,17 @@ export function App() {
      un nouvel habillage. */
   /* Lot 13 : une page juridique publique s'affiche AVANT tout le reste (chargement de session, erreur réseau, consentement) — elle se lit sans compte, pour les stores comme pour un joueur. */
   if (route.name === 'public-legal') return <PublicLegalPage doc={route.doc} />;
+
+  /* MS-041 (audit final, Lot 2d) : le serveur a refusé cette version de l'app (426) — rien d'autre ne s'affiche, l'app ne
+     pourrait que se tromper sur un contrat qui a changé. */
+  if (store.updateRequired) {
+    return (
+      <>
+        <IconSprite />
+        <MiseAJourRequise storeUrls={store.updateRequired.storeUrls} />
+      </>
+    );
+  }
 
   if (store.bootstrapping) {
     return (

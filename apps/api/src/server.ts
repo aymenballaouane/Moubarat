@@ -50,6 +50,7 @@ import { trustProxySetting } from './lib/proxy.js';
 import { Lifecycle } from './lib/lifecycle.js';
 import { ConsoleSmsProvider, NullSmsProvider, SmssakSmsProvider, type SmsProvider } from './lib/sms.js';
 import { ApnsPushProvider, NullPushProvider, type PushProvider } from './lib/push.js';
+import { APP_VERSION_HEADER, isBelowMinVersion, isVersionGateExempt } from './lib/app-version.js';
 import { PushDispatcher, registerPushDispatcher } from './notifications/push.js';
 
 export interface ServerDeps {
@@ -169,6 +170,23 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
     reply.header('x-request-id', req.id);
     if (lifecycle.draining) reply.header('connection', 'close');
   });
+
+  /* MS-041 (audit final, Lot 2d, 18/11/2026) : version minimale de l'app joueur — règles dans lib/app-version.ts. Contrôlé
+     avant toute route (même une route publique : une app trop ancienne peut lire un contrat qui a changé). */
+  if (env.minPlayerAppVersion) {
+    const min = env.minPlayerAppVersion;
+    app.addHook('onRequest', async (req, reply) => {
+      if (req.method === 'OPTIONS' || isVersionGateExempt(req.url)) return;
+      const raw = req.headers[APP_VERSION_HEADER];
+      const version = Array.isArray(raw) ? raw[0] : raw;
+      if (!isBelowMinVersion(version, min)) return;
+      return reply.code(426).send({
+        error: 'APP_UPDATE_REQUIRED',
+        message: 'Une nouvelle version de Moubarat est disponible : mets à jour l’app pour continuer.',
+        details: { minVersion: min, storeUrls: env.playerStoreUrls },
+      });
+    });
+  }
 
   app.setErrorHandler((err: unknown, req, reply) => {
     if (err instanceof ApiError) {

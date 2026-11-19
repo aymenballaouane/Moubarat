@@ -141,12 +141,36 @@ export interface Env {
       connexion ouverte indéfiniment — Fastify n'en impose AUCUN par défaut. Ne borne pas le TRAITEMENT (c'est le rôle
       de `dbStatementTimeoutMs`) ni l'envoi de la réponse. 0 = aucun délai (comportement historique). */
   requestTimeoutMs: number;
+  /** MS-041 (audit final, Lot 2d, 18/11/2026) : version minimale de l'app joueur (« 1.1.0 ») ; `null` = aucun contrôle.
+      Voir lib/app-version.ts et docs/PASSATION.md §4.20. Les liens des stores sont servis avec le refus (426) : changeables
+      sans nouveau build. */
+  minPlayerAppVersion: string | null;
+  playerStoreUrls: { ios: string | null; android: string | null };
 }
 
 /** Variable d'environnement texte : espaces retirés, vide → `null`. */
 function optionalEnv(name: string): string | null {
   const v = process.env[name]?.trim();
   return v ? v : null;
+}
+
+/** MS-041 : une version « 1.2.3 » (1 à 3 nombres) ; vide → `null` ; autre chose → l'API refuse de démarrer (jamais une version
+    minimale mal écrite qui bloquerait tout le monde, ou personne, sans le dire). */
+function versionEnv(name: string): string | null {
+  const v = optionalEnv(name);
+  if (v === null) return null;
+  if (!/^\d{1,4}(\.\d{1,4}){0,2}$/.test(v)) throw new Error(`${name} invalide : « ${v} » — attendu une version comme 1.1.0, ou rien.`);
+  return v;
+}
+
+/** MS-041 : une adresse https ; vide → `null` ; autre chose → l'API refuse de démarrer. */
+function httpsUrlEnv(name: string): string | null {
+  const v = optionalEnv(name);
+  if (v === null) return null;
+  let ok = false;
+  try { ok = new URL(v).protocol === 'https:'; } catch { ok = false; }
+  if (!ok) throw new Error(`${name} invalide : « ${v} » — attendu une adresse https (lien de la fiche de l'app sur le store).`);
+  return v;
 }
 
 /** Variable d'environnement ENTIÈRE : absente = défaut ; présente = entier nu compris entre `min` et `max` (espaces
@@ -241,6 +265,8 @@ export function readEnv(overrides: Partial<Env> = {}): Env {
     shutdownTimeoutMs: intEnv('SHUTDOWN_TIMEOUT_MS', 20_000, { min: 1, max: 300_000 }),
     requestTimeoutMs: intEnv('REQUEST_TIMEOUT_MS', 30_000, { max: 3_600_000 }),
     periodicSweepIntervalMs: intEnv('PERIODIC_SWEEP_INTERVAL_MS', 60_000, { max: 3_600_000 }),
+    minPlayerAppVersion: versionEnv('MIN_PLAYER_APP_VERSION'),
+    playerStoreUrls: { ios: httpsUrlEnv('PLAYER_APP_STORE_URL_IOS'), android: httpsUrlEnv('PLAYER_APP_STORE_URL_ANDROID') },
     ...overrides,
   };
 }

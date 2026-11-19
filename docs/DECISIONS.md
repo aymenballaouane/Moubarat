@@ -6396,4 +6396,13 @@ charge**, les réglages Render/Vercel et la préproduction restent aux développ
   installation identique à l'image (`--frozen-lockfile --prod --filter "@moubarat/api..."`, sans vitest ni dépendance des
   fronts), API démarrée sur une base jetable (`/health` 200) — un vrai `docker build` reste à faire par les développeurs.
   `db:seed` (qui vide la base) refuse désormais une base distante, comme `demo:seed` et `demo:catalogue` ; test ajouté.
+- **2d — Version de l'app (MS-041)** : l'app joueur envoie la version de son code (`X-Moubarat-App-Version`,
+  `APP_VERSION` = 1.1.0, une seule source : `apps/player/src/lib/appVersion.ts`, aussi annoncée à l'habillage iPhone) ; l'API
+  peut exiger un minimum (`MIN_PLAYER_APP_VERSION`, vide = aucun contrôle) et répond alors 426 `APP_UPDATE_REQUIRED` avec les
+  liens des stores (variables, changeables sans build) ; l'app affiche « Mets à jour Moubarat » à la place de tout le reste
+  (sur le gabarit de l'écran réseau, aucune maquette ne couvre cet écran) : « Recharger » sur le site et l'app Android,
+  « Ouvrir l'App Store » dans l'app iPhone. Une requête sans en-tête passe toujours (CRM, console, builds d'avant ce lot —
+  impossibles à forcer), une valeur illisible aussi ; sondes, support et textes juridiques restent ouverts. Vérifié en direct
+  (API locale relancée avec un minimum à 9.0.0) : écran en français et en arabe, sans traduction manquante. **Pour que ce soit
+  utile sur iPhone, il faut un nouveau build** (le build 1.0 n'envoie pas sa version) — PASSATION §4.20.
 
