@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { setupTestStack, loginAs, loginAsPlatform, bearer, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
-import { makeSafeDayPicker } from './helpers/dates.js';
+import { makeSafeDayPicker, SEED_SUBSCRIPTION_WEEKDAY } from './helpers/dates.js';
 import { toPgRange } from '../src/lib/pgrange.js';
 import { runPeriodicSweep } from '../src/jobs/periodic-sweep.js';
 
@@ -13,7 +13,9 @@ let nadia = '';        // RECEPTION du centre de démo
 let sofiane = '';      // joueur dont le numéro est connu
 let karim = '';        // un autre joueur
 const H = 3_600_000;
-const nextNonFriday = makeSafeDayPicker();
+// Jamais le mardi : le seed y a l'abonnement de T1 à 20:00 (le test « liste du CRM » réserve T1 à 20:00 — échouait les jours où le
+// curseur tombait un mardi, 18/11/2026).
+const nextNonFriday = makeSafeDayPicker([SEED_SUBSCRIPTION_WEEKDAY.T1]);
 let dayCursor = 30;
 const freshDay = () => { const d = nextNonFriday(dayCursor); dayCursor += 10; return d; };
 const call = (method: 'GET' | 'POST', token: string, url: string, payload?: unknown) =>

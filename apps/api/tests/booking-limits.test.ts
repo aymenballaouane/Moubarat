@@ -159,3 +159,32 @@ describe('règle 32 — accord « numéro visible » retiré', () => {
     expect((await stack.app.inject({ method: 'POST', url: `/matches/${matchId}/join`, headers: bearer(karim) })).statusCode).toBe(200);
   });
 });
+
+/* Lot « Match libre », phase 4 (planche S3L) : l'écran de réservation lit les plafonds réellement appliqués et ce que le joueur a déjà,
+   pour afficher « Limite atteinte » avant d'essayer. */
+describe('GET /me/booking-limits', () => {
+  it('donne les plafonds réglés et les réservations vivantes du joueur, par jour d’Alger et à venir ; une annulation sort du compte', async () => {
+    const me = await fresh('+213661299077', 'plafond_lecture');
+    const empty = await stack.app.inject({ method: 'GET', url: '/me/booking-limits', headers: bearer(me.token) });
+    expect(empty.statusCode, empty.body).toBe(200);
+    expect(empty.json()).toEqual({ limits: { maxPerDay: 2, maxUpcoming: 4, upcoming: 0, perDay: {} } });
+
+    const D = nextNonFriday(14);
+    const a = await book(me.token, { date: D, startMin: 600 });
+    const b = await book(me.token, { date: D, startMin: 720 });
+    expect(a.statusCode, a.body).toBe(201);
+    expect(b.statusCode, b.body).toBe(201);
+    const full = (await stack.app.inject({ method: 'GET', url: '/me/booking-limits', headers: bearer(me.token) })).json() as { limits: { upcoming: number; perDay: Record<string, number> } };
+    expect(full.limits.upcoming).toBe(2);
+    expect(full.limits.perDay[D]).toBe(2);
+
+    await stack.app.inject({ method: 'POST', url: `/bookings/${(a.json() as { booking: { id: string } }).booking.id}/cancel`, headers: bearer(me.token) });
+    const after = (await stack.app.inject({ method: 'GET', url: '/me/booking-limits', headers: bearer(me.token) })).json() as { limits: { upcoming: number; perDay: Record<string, number> } };
+    expect(after.limits.upcoming).toBe(1);
+    expect(after.limits.perDay[D]).toBe(1);
+  });
+
+  it('sans compte : 401', async () => {
+    expect((await stack.app.inject({ method: 'GET', url: '/me/booking-limits' })).statusCode).toBe(401);
+  });
+});

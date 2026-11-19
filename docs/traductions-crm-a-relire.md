@@ -1,6 +1,6 @@
 # CRM Moubarat en arabe — traductions à faire relire
 
-*Document produit par `pnpm --filter @moubarat/crm traductions:relire` (ne pas modifier à la main : il est régénéré). 925 textes.*
+*Document produit par `pnpm --filter @moubarat/crm traductions:relire` (ne pas modifier à la main : il est régénéré). 932 textes.*
 
 Toutes les traductions arabes du CRM ont été rédigées par Claude (choix d’Aymen du 15/11/2026) : **aucune n’a été relue par un
 arabophone**. Elles sont affichées telles quelles aux postes réglés en arabe. Merci de les relire en pensant à un gérant ou un
@@ -99,7 +99,6 @@ Chacun revient dans de nombreux textes : une correction ici sera reportée parto
 | Recommandé : {liste}. | يُنصح بـ: {liste}. | |
 | Votre centre est complet et attend la validation de Moubarat. | مركزكم مكتمل وينتظر موافقة مبارات. | |
 | Signalé prêt {quand}. | تم الإشعار بالجاهزية يوم {quand}. | |
-| Envoi… | جارٍ الإرسال… | |
 | Signaler à nouveau | الإشعار من جديد | |
 | Signaler que c’est prêt | الإشعار بالجاهزية | |
 | Abonnement Moubarat en retard de paiement — contactez Moubarat pour régulariser. | اشتراك مبارات متأخر الدفع — اتصلوا بمبارات لتسوية الوضعية. | |
@@ -603,6 +602,8 @@ Chacun revient dans de nombreux textes : une correction ici sera reportée parto
 
 | Français | Arabe (provisoire) | Correction |
 |---|---|---|
+| Photo enregistrée : elle apparaît maintenant dans l'app. | حُفظت الصورة: أصبحت تظهر الآن في التطبيق. | |
+| Photo retirée : l'app affiche de nouveau le logo Moubarat. | أُزيلت الصورة: يعرض التطبيق شعار مبارات من جديد. | |
 | Enregistré. | تم الحفظ. | |
 | Donnez un nom au terrain (ex. T4). | أدخلوا اسم الملعب (مثال: T4). | |
 | Ce nom de terrain existe déjà. | اسم الملعب هذا موجود مسبقًا. | |
@@ -654,12 +655,13 @@ Chacun revient dans de nombreux textes : une correction ici sera reportée parto
 | Terrains | الملاعب | |
 | Vestiaires | غرف تبديل الملابس | |
 | Vue extérieure | منظر خارجي | |
-| L'ajout de photos arrive bientôt. En attendant, l'app affiche le logo Moubarat sur la fiche du centre. | إضافة الصور متاحة قريبًا. في الأثناء، يعرض التطبيق شعار مبارات على بطاقة المركز. | |
+| Envoi… | جارٍ الإرسال… | |
+| Retirer | إزالة | |
+| La photo d'ambiance est la photo du centre dans l'app : cartes, fiche du centre, réservation, matchs. Sans photo, l'app affiche le logo Moubarat. Les trois autres emplacements arriveront plus tard. | صورة الأجواء هي صورة المركز في التطبيق: في البطاقات وصفحة المركز والحجز والمباريات. ومن دون صورة، يعرض التطبيق شعار مبارات. وستتوفر الخانات الثلاث الأخرى لاحقًا. | |
 | Tarifs — appliqués partout : création, modification, abonnements | الأسعار — تُطبَّق في كل مكان: الإنشاء، التعديل، الاشتراكات | |
 | Aucun terrain, donc aucun tarif. | لا يوجد ملعب، وبالتالي لا يوجد سعر. | |
 | Même tarif que {formats} — jamais différencié, à régler si ce format doit coûter autre chose | نفس سعر {formats} — لم يُميَّز بعد، اضبطوه إن كان لهذه الصيغة سعر مختلف | |
 | Un terrain propose toujours au moins un format | يقترح كل ملعب صيغة واحدة على الأقل | |
-| Retirer | إزالة | |
 | Prix de base | السعر الأساسي | |
 | Toutes heures sans règle | كل الساعات دون قاعدة خاصة | |
 | Prix de base {format} {terrain} | السعر الأساسي {format} {terrain} | |
@@ -740,6 +742,7 @@ Chacun revient dans de nombreux textes : une correction ici sera reportée parto
 | Abonnements | الاشتراكات | |
 | Afficher le CRM en arabe | عرض الواجهة بالعربية | |
 | Afficher le CRM en français | عرض الواجهة بالفرنسية | |
+| Ajouter la photo | إضافة الصورة | |
 | Annulé | ملغى | |
 | App Moubarat | تطبيق مبارات | |
 | Archivé | مؤرشف | |
@@ -754,10 +757,13 @@ Chacun revient dans de nombreux textes : une correction ici sera reportée parto
 | Caisse | الصندوق | |
 | Casiers | خزائن | |
 | Ce compte n’est rattaché à aucun centre. | هذا الحساب غير مرتبط بأي مركز. | |
+| Ce fichier n'est pas une image lisible : choisissez une photo JPEG, PNG ou WebP. | هذا الملف ليس صورة قابلة للقراءة: اختاروا صورة بصيغة JPEG أو PNG أو WebP. | |
 | Centre | المركز | |
 | Centre → adresse, téléphone, description et équipements : c’est ce que voient les joueurs dans l’app. | المركز ← العنوان والهاتف والوصف والتجهيزات: هذا ما يراه اللاعبون في التطبيق. | |
 | Centre → Horaires d’ouverture, jour par jour. Les jours fériés ou travaux : Fermetures exceptionnelles. | المركز ← أوقات العمل، يومًا بيوم. أيام العطل أو الأشغال: الإغلاقات الاستثنائية. | |
 | Centre → Terrains : un terrain par surface, avec ses formats (5v5, padel…). Puis Tarifs : un prix de base par format, et les heures pleines si besoin. | المركز ← الملاعب: ملعب لكل أرضية، مع صيغه (5v5، بادل…). ثم الأسعار: سعر أساسي لكل صيغة، وساعات الذروة عند الحاجة. | |
+| Cette photo est trop lourde, même réduite : choisissez-en une autre. | هذه الصورة ثقيلة جدًا حتى بعد تصغيرها: اختاروا صورة أخرى. | |
+| Cette photo est trop petite : choisissez une image d'au moins 320 pixels de large. | هذه الصورة صغيرة جدًا: اختاروا صورة لا يقل عرضها عن 320 بكسل. | |
 | Chaque terrain actif a un tarif | لكل ملعب نشط سعر | |
 | Chasubles | صدريات | |
 | Choisissez au moins un sport. | اختاروا رياضة واحدة على الأقل. | |
@@ -821,6 +827,7 @@ Chacun revient dans de nombreux textes : une correction ici sera reportée parto
 | Publication | النشر | |
 | Quand la liste ci-dessus est complète : « Signaler que c’est prêt » dans le bandeau. Moubarat valide, et le centre apparaît dans l’app joueur. | عند اكتمال القائمة أعلاه: «الإشعار بالجاهزية» في الشريط. تصادق مبارات، فيظهر المركز في تطبيق اللاعبين. | |
 | Réception | الاستقبال | |
+| Remplacer la photo | استبدال الصورة | |
 | Réservation annulée. | تم إلغاء الحجز. | |
 | Réservation marquée honorée. | تم تسجيل الحضور لهذا الحجز. | |
 | Réservation marquée no-show. | تم تسجيل الغياب لهذا الحجز. | |

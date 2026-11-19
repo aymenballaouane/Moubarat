@@ -22,7 +22,8 @@ export async function registerPlatformMatchRoutes(app: FastifyInstance, { db, gu
       .leftJoin('venues', 'venues.id', 'matches.venue_id')
       .leftJoin('users', 'users.id', 'matches.organizer_id')
       .selectAll('matches')
-      .select(['venues.name as venue_name', 'users.name as organizer_name'])
+      // Match libre (phase 5) : pas de centre — la console montre le lieu saisi à la place.
+      .select([sql<string | null>`coalesce(venues.name, matches.place_name)`.as('venue_name'), 'users.name as organizer_name'])
       .orderBy('matches.created_at', 'desc')
       .limit(200);
 

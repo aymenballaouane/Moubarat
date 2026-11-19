@@ -33,6 +33,9 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
   const headers: Record<string, string> = {};
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
+  /* Lot « Match libre » : ce client est à jour — il reçoit les matchs libres et le format 9v9 (le serveur les cache aux anciennes apps de
+     téléphone, qui n'envoient pas cet en-tête : apps/api/src/lib/client-features.ts). */
+  headers['X-Moubarat-Features'] = 'match-libre,format-9v9';
 
   let res: Response;
   try {

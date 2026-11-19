@@ -40,7 +40,7 @@ export async function registerPlatformUserRoutes(app: FastifyInstance, { db, gua
     let playersQuery = db.selectFrom('users')
       .select(['id', 'name', 'phone', 'role', 'status', 'created_at'])
       .select(isoMicros(sql.ref('users.created_at')).as('created_at_cursor'));
-    // MS-072 (Lot 2b, 18/11/2026) : servi par les index trigrammes users_name_trgm / users_phone_trgm (migration 0047) —
+    // MS-072 (Lot 2b, 18/11/2026) : servi par les index trigrammes users_name_trgm / users_phone_trgm (migration 0051) —
     // garder ces colonnes nues dans le ILIKE, sans fonction autour, sinon les index ne servent plus.
     if (like) playersQuery = playersQuery.where(sql<boolean>`(users.name ILIKE ${like} ESCAPE '\\' OR users.phone ILIKE ${like} ESCAPE '\\')`);
     if (cursor) playersQuery = playersQuery.where(sql<boolean>`(users.created_at, users.id) < (${cursor[0]}::timestamptz, ${cursor[1]}::uuid)`);

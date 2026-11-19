@@ -4,7 +4,8 @@ import { DAY_NAMES, WEEKDAY_ORDER } from '../data/subscriptionsDemo.js';
 import { SURFACES, EQUIPMENT_DEMO } from '../data/centreDemo.js';
 import { hhmm } from '../lib/time.js';
 import { algiersDateOf, dayLabel, dayStartMs, todayAlgiers } from '../lib/bookingsDetail.js';
-import { apiFetch, ApiError, errorText } from '../lib/api.js';
+import { apiFetch, apiUrl, ApiError, errorText } from '../lib/api.js';
+import { preparePhoto, PhotoError } from '../lib/photoResize.js';
 import {
   SPORT_LABELS, SPORT_VALUES, FIELD_STATUS_LABELS, formatLabel, formatsLabel, formatOptionsFor, identicalTariffPeers,
   fieldRowsFromApi, fieldRowFromApiWrite, mergeFieldFromApiWrite, withUpdatedRule, mergeEquipment, hoursFromApi, daysWithMultipleRanges, ruleScopeNote,
@@ -86,6 +87,8 @@ function closureMinuteRange(c: ClosureItem): [number, number] {
 
 interface CentreData {
   address: string;
+  /** Phase photos (option A d'Aymen, 17/11/2026) : version de la photo principale du centre, `null` sans photo. */
+  photoVersion: number | null;
   /** Téléphone affiché aux joueurs (22/09/2026) — vide = aucun. */
   phone: string;
   description: string;
@@ -127,6 +130,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
       const { venue } = await apiFetch<{ venue: ApiVenueDetail }>(`/venues/${venueId}`, { token });
       setData({
         address: venue.address,
+        photoVersion: venue.photoVersion ?? null,
         phone: venue.phone ?? '',
         description: venue.description ?? '',
         fields: fieldRowsFromApi(venue.fields),
@@ -141,6 +145,45 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
   }, [venueId, token]);
 
   useEffect(() => { void fetchVenue(); }, [fetchVenue]);
+
+  /* Phase photos (option A d'Aymen, 17/11/2026) : la photo est réduite dans CE navigateur (lib/photoResize.ts), puis envoyée en deux
+     tailles. EDIT_PROFILE, comme la fiche du centre (lockedProfile). */
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const photoSrc = photoPreview ?? (data?.photoVersion ? apiUrl(`/venues/${venueId}/photo/card?v=${data.photoVersion}`) : null);
+  async function uploadPhoto(file: File) {
+    setPhotoBusy(true);
+    try {
+      const photo = await preparePhoto(file);
+      const res = await apiFetch<{ photoVersion: number }>(`/venues/${venueId}/photo`, {
+        method: 'PUT', token, body: { mime: photo.mime, large: photo.large, card: photo.card },
+      });
+      setPhotoPreview(photo.previewUrl);
+      setData((d) => d && ({ ...d, photoVersion: res.photoVersion }));
+      onToast(t('Photo enregistrée : elle apparaît maintenant dans l\'app.'));
+    } catch (e) {
+      if (e instanceof PhotoError) {
+        onToast(t(e.kind === 'too-small' ? 'Cette photo est trop petite : choisissez une image d\'au moins 320 pixels de large.'
+          : e.kind === 'too-heavy' ? 'Cette photo est trop lourde, même réduite : choisissez-en une autre.'
+            : 'Ce fichier n\'est pas une image lisible : choisissez une photo JPEG, PNG ou WebP.'));
+      } else onToast(errText(errorText(e)));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+  async function removePhoto() {
+    setPhotoBusy(true);
+    try {
+      await apiFetch(`/venues/${venueId}/photo`, { method: 'DELETE', token });
+      setPhotoPreview(null);
+      setData((d) => d && ({ ...d, photoVersion: null }));
+      onToast(t('Photo retirée : l\'app affiche de nouveau le logo Moubarat.'));
+    } catch (e) {
+      onToast(errText(errorText(e)));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   /* Chantier Centre, É2 (04/09/2026) — écriture réelle des terrains
      (PATCH/POST /venues/:id/fields, EDIT_FIELDS). Optimiste : l'écran change
@@ -813,13 +856,28 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
           <div className="cm-card cf-sec">
             <p className="cm-sec">{t('Photos du centre')}</p>
             <div className="cf-photos">
-              <div>{t('Photo d\'ambiance')}</div>
+              {/* Phase photos (option A d'Aymen, 17/11/2026) : UNE photo principale, dans le premier emplacement. */}
+              <div className="cf-photo-main" data-filled={photoSrc ? 'true' : undefined}>
+                {photoSrc ? <img src={photoSrc} alt={t('Photo d\'ambiance')} /> : <span>{t('Photo d\'ambiance')}</span>}
+              </div>
               <div>{t('Terrains')}</div>
               <div>{t('Vestiaires')}</div>
               <div>{t('Vue extérieure')}</div>
             </div>
+            <div className="cf-photo-actions">
+              <label className="mb-btn mb-btn--secondary mb-btn--sm" aria-disabled={lockedProfile || photoBusy ? 'true' : undefined}>
+                {photoBusy ? t('Envoi…') : t(photoSrc ? 'Remplacer la photo' : 'Ajouter la photo')}
+                <input
+                  type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={lockedProfile || photoBusy}
+                  onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ''; if (file) void uploadPhoto(file); }}
+                />
+              </label>
+              {photoSrc ? (
+                <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" disabled={lockedProfile || photoBusy} onClick={() => { void removePhoto(); }}>{t('Retirer')}</button>
+              ) : null}
+            </div>
             <p className="cm-note" style={{ margin: '8px 0 0' }}>
-              {t('L\'ajout de photos arrive bientôt. En attendant, l\'app affiche le logo Moubarat sur la fiche du centre.')}
+              {t('La photo d\'ambiance est la photo du centre dans l\'app : cartes, fiche du centre, réservation, matchs. Sans photo, l\'app affiche le logo Moubarat. Les trois autres emplacements arriveront plus tard.')}
             </p>
           </div>
 
@@ -889,7 +947,12 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
                       <span className="fn" style={{ minWidth: 150 }}>{t('Ajouter un format')}</span>
                       <select
                         className="mb-field__control" value={draft.format} aria-label={t('Format à ajouter à {terrain}', { terrain: f.name })}
-                        onChange={(e) => setFmtAdd((m) => ({ ...m, [f.id]: { ...draft, format: e.target.value as MatchFormat | '' } }))}
+                        onChange={(e) => {
+                          const format = e.target.value as MatchFormat | '';
+                          /* 9v9 (phase 9v9 du lot « Match libre », décision d'Aymen : aucun prix par défaut) — ses bandes ne sont JAMAIS
+                             recopiées d'office d'un autre format : le gérant saisit son prix, et choisit lui-même de copier des bandes. */
+                          setFmtAdd((m) => ({ ...m, [f.id]: { ...draft, format, ...(format === '9v9' ? { copyFrom: '' as const } : {}) } }));
+                        }}
                       >
                         <option value="">{t('Format…')}</option>
                         {addable.map((x) => <option key={x} value={x}>{lf(x)}</option>)}

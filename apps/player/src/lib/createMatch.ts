@@ -9,14 +9,15 @@ import { WEEKDAY_KEYS } from './calendar.js';
 /** « Un petit mot pour les joueurs » : même plafond que la colonne `matches.note` (migration 0033 puis 0035, 280 signes). */
 export const NOTE_MAX = 280;
 
-/** Les trois étapes du suivi (maquette : Créneau · Détails · Publié). */
-export const CREATE_STEPS = ['Créneau', 'Détails', 'Publié'] as const;
+/** Les trois étapes du suivi (lot « Match libre », planches W1 à W4 et S7 : Lieu · Créneau · Détails). « Ton match est en ligne » n'a plus
+    de barre d'étapes (S8). */
+export const CREATE_STEPS = ['Lieu', 'Créneau', 'Détails'] as const;
 
 export interface StepState { done: boolean; current: boolean }
 
-/** État de chaque rond du suivi. Étape 3 = « Publié » : les trois ronds sont cochés, aucun n'est courant (maquette). */
+/** État de chaque rond du suivi : les étapes passées cochées, l'étape en cours numérotée (S7 : Lieu et Créneau cochés, « 3 Détails »). */
 export function stepStates(step: 1 | 2 | 3): StepState[] {
-  return [1, 2, 3].map((k) => ({ done: k < step || step === 3, current: k === step && step !== 3 }));
+  return [1, 2, 3].map((k) => ({ done: k < step, current: k === step }));
 }
 
 /** « Tes réservations sans match » : celles où un match peut s'ouvrir (règle core `canCreateMatchOn` — vivante, à venir,

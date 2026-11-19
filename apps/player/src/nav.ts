@@ -58,15 +58,18 @@ export type Route =
   /** Lot 13 : page publique d'un texte juridique (« /confidentialite », « /conditions »), lisible sans compte — hors de la pile de navigation. */
   | { name: 'public-legal'; doc: 'CONFIDENTIALITE' | 'CGU' }
   /** `matchesTab: 'passes'` : Mes matchs s'ouvre sur « Passés » (un match annulé, règle 39). */
-  | { name: 'tab'; tab: Tab; explorerTab?: ExplorerTabName; matchesTab?: 'passes' }
+  /** `explorerDay` (lot « Match libre ») : l'onglet Jouer s'ouvre sur ce jour (début du jour, ms) — « Voir les autres jours ». */
+  | { name: 'tab'; tab: Tab; explorerTab?: ExplorerTabName; explorerDay?: number; matchesTab?: 'passes' }
   /** `venuePicked` : le centre est déjà résolu avant d'entrer (carte Explorer/Home déjà
       tapée, store.venue déjà chargé) — BookingFlow saute alors R1 ("Trouve ton terrain",
       Lot 5) et ouvre directement la fiche du centre. Absent : BookingFlow montre R1 lui-même. */
   /** `viewReservationId` : consultation du ticket d'une réservation existante (R4, depuis Mes matchs). `mode: 'match'` : Réserver
       en mode « Créer un match » (maquette Reserver mode=match) — le CTA mène à la configuration au lieu du ticket ; `resume` :
       retour de la configuration vers le créneau (R3). */
-  | { name: 'booking'; venuePicked?: boolean; viewReservationId?: string; mode?: 'match'; resume?: BookingResume }
+  | { name: 'booking'; venuePicked?: boolean; viewReservationId?: string; mode?: 'match'; resume?: BookingResume; freeQuery?: string }
   | { name: 'match'; mode: 'create'; prefill?: MatchPrefill }
+  /** Lot « Match libre », phase 5 : W3 → W4 → publié, pour un lieu choisi en W1/W2 (`query` : le texte saisi, repris au retour). */
+  | { name: 'match'; mode: 'free'; place: { name: string; wilaya: string; lat?: number; lng?: number }; query: string }
   /** Detail « rejoindre » d'un match du flux (matchId resolu via
       matchesFeedDemo.findMatch) ; sans matchId, premier match ouvert. */
   | { name: 'match'; mode: 'detail'; matchId?: string }
@@ -101,7 +104,8 @@ export interface NavItem { tab: Tab; label: string; icon: string }
 
 export const NAV_ITEMS: NavItem[] = [
   { tab: 'home', label: 'Accueil', icon: 'i-home' },
-  { tab: 'explorer', label: 'Explorer', icon: 'i-search' },
+  /* Lot « Match libre » (16/11/2026, dossier §5) : l'onglet Explorer devient « Jouer » (« العب »), icône ballon (Acc5 / Jo1). */
+  { tab: 'explorer', label: 'Jouer', icon: 'i-ball' },
   { tab: 'matches', label: 'Mes matchs', icon: 'i-cal' },
   { tab: 'profile', label: 'Profil', icon: 'i-user1' },
 ];

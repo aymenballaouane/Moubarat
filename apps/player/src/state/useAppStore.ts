@@ -6,7 +6,7 @@ import {
   applyRegisterBooking, applyRateMatch, applySetIdentity,
   applyNextBookingSeq, applySetToken, applySetMe, applySetProfile, applyReplaceMatches,
   applyReplaceReservations, applyReplaceNotifications, applySetMatchResults, applySetVenue, applySetVenues,
-  venueNameOf, venueSummaryOf, fieldInfoOf, type VenueDetail, type VenueSummary,
+  venueNameOf, venueSummaryOf, fieldInfoOf, matchPlaceOf, matchWilayaOf, type VenueDetail, type VenueSummary,
   applyUpsertMatch, applyMergePlayerNames, applyPatchBookingStatus, applyLinkReservationToMatch,
   type StoreState, type Identity, type MatchRecord,
 } from './store.js';
@@ -15,6 +15,10 @@ import { loadPushToken, savePushToken, clearPushToken } from '../lib/native.js';
 import { fetchMatchPreview } from '../lib/matchPreview.js';
 import { bootFailureKind, type BootFailureKind } from '../lib/bootFailure.js';
 import type { MatchContact } from '../lib/contacts.js';
+import { epochDateStamp } from '../lib/format.js';
+import type { BookingLimits } from '../lib/bookingLimits.js';
+import type { PlaceSuggestion } from '../lib/places.js';
+import { venuePhotoUrl, type VenuePhotoSize } from '../lib/venuePhoto.js';
 import type { ProfileSummary } from '../lib/profileView.js';
 import type { NotificationSettings } from '../lib/notificationSettings.js';
 import type { Claim } from '../lib/claimView.js';
@@ -296,6 +300,12 @@ export function useAppStore() {
   const [feedTotalAllDays, setFeedTotalAllDays] = useState<number | null>(null);
   /** Nombre de matchs du fil par jour (bandeau de jours) : `null` tant que non lu ou en échec — jamais un « 0 » inventé. */
   const [feedDayCounts, setFeedDayCounts] = useState<Record<string, number> | null>(null);
+  /* Lot « Match libre », phase 2 (dossier §5) : la liste « Matchs à rejoindre » de l'accueil = TOUS les matchs publics d'aujourd'hui
+     dans la ville du joueur, complets compris, lus au serveur (jamais les 50 premiers du fil gardés en mémoire). */
+  const [homeToday, setHomeToday] = useState<{ ids: string[]; status: 'idle' | 'loading' | 'ready' | 'error' }>({ ids: [], status: 'idle' });
+  /* Lot « Match libre », phase 4 (S3L) : plafonds de réservation appliqués par le serveur et ce que le joueur a déjà. `null` = inconnus. */
+  const [bookingLimits, setBookingLimits] = useState<BookingLimits | null>(null);
+  const homeRequest = useRef(0);
 
   function applyBootstrapped(b: Bootstrapped) {
     setNeedsLegalConsent(b.needsLegalConsent);
@@ -469,8 +479,17 @@ export function useAppStore() {
     /** Nom du centre / infos du terrain d'après leur ID (un match, une réservation, une notification) —
         jamais « le centre courant ». */
     venueName: (venueId: string) => venueNameOf(state, venueId),
-    venueSummary: (venueId: string) => venueSummaryOf(state, venueId),
-    fieldInfo: (fieldId: string) => fieldInfoOf(state, fieldId),
+    venueSummary: (venueId: string | null) => venueSummaryOf(state, venueId),
+    fieldInfo: (fieldId: string | null) => fieldInfoOf(state, fieldId),
+    /** Phase 5 : le lieu d'un match (centre ou lieu libre saisi) et sa wilaya. */
+    matchPlace: (m: Parameters<typeof matchPlaceOf>[1]) => matchPlaceOf(state, m),
+    matchWilaya: (m: Parameters<typeof matchWilayaOf>[1]) => matchWilayaOf(state, m),
+    /** Phase photos (17/11/2026) : l'adresse de la photo principale d'un centre (`null` sans photo, ou pour un match libre). */
+    venuePhoto: (venueId: string | null | undefined, size: VenuePhotoSize): string | null => {
+      if (!venueId) return null;
+      const version = venueSummaryOf(state, venueId)?.photoVersion ?? (state.venue?.id === venueId ? state.venue.photoVersion : null);
+      return venuePhotoUrl(venueId, version, size);
+    },
     /** Ouvre un centre : charge sa fiche complète (GET /venues/:id) si ce n'est pas déjà celui d'ouvert —
         BookingFlow/CreateMatchFlow lisent `store.venue`. */
     selectVenue: async (venueId: string): Promise<ActionResult> => {
@@ -816,6 +835,41 @@ export function useAppStore() {
       setState((s) => records.reduce((acc, r) => applyUpsertMatch(acc, r), s));
       return records.map((r) => ({ match: r.match, players: r.players }));
     },
+    /** Accueil › « Matchs à rejoindre » (lot « Match libre », phase 2) : les matchs publics d'AUJOURD'HUI, dans la ville du joueur si
+        elle est connue, complets compris, triés par le serveur (heure de début, puis identifiant : ordre stable). Toutes les pages
+        (au plus 10 × 100) — l'accueil montre les 4 premiers et « Voir N matchs de plus » compte le reste réel. Matchs commencés exclus
+        par le serveur (phase 1). */
+    homeToday: {
+      entries: homeToday.ids.flatMap((id) => { const r = state.matches[id]; return r ? [{ match: r.match, players: r.players }] : []; }),
+      status: homeToday.status,
+    },
+    loadHomeToday: async (city: string | null): Promise<void> => {
+      const meId = state.me?.id ?? '';
+      const request = ++homeRequest.current;
+      setHomeToday((h) => ({ ...h, status: 'loading' }));
+      const now = Date.now();
+      const qs = new URLSearchParams({ day: epochDateStamp(now), limit: '100' });
+      if (city) qs.set('city', city);
+      try {
+        const ids: string[] = [];
+        let cursor: string | null = null;
+        for (let page = 0; page < 10; page++) {
+          if (cursor) qs.set('cursor', cursor);
+          const res: { matches: ApiMatchWithRoster[]; nextCursor: string | null } = await apiFetch(`/matches?${qs.toString()}`, { token });
+          if (request !== homeRequest.current) return;
+          const records = res.matches.map((w) => recordFromApi(w, meId, now));
+          setState((s) => records.reduce((acc, r) => applyUpsertMatch(acc, r), s));
+          ids.push(...records.map((r) => r.match.id));
+          cursor = res.nextCursor;
+          if (!cursor) break;
+        }
+        setHomeToday({ ids: mergeById([], ids, (id) => id), status: 'ready' });
+      } catch (e) {
+        if (request !== homeRequest.current) return;
+        console.error('GET /matches (accueil)', e);
+        setHomeToday((h) => ({ ...h, status: 'error' }));
+      }
+    },
     /** Décompte des matchs du fil par jour pour le bandeau (sport seulement). Échec silencieux : `null` conservé. */
     loadFeedDayCounts: async (sport: Sport | null, fromDayStartMs: number, days: number): Promise<void> => {
       try {
@@ -907,6 +961,25 @@ export function useAppStore() {
         return { ok: true };
       } catch (e) { return actionResultFromError(e); }
     },
+    /** Lot « Match libre » (Dv3, Dt3) : « Qui peut voir ce match ? » — l'organisateur le passe en privé (hors des listes, rejoint par le
+        lien) ou le rend public. Le serveur tranche (organisateur seul, avant le coup d'envoi). */
+    bookingLimits,
+    /** GET /me/booking-limits — relu à l'ouverture de l'écran de réservation et après chaque réservation ou annulation. Échec silencieux :
+        l'écran ne prévient pas, le serveur refuse quand même à la création (fenêtre « Pas possible pour l'instant »). */
+    loadBookingLimits: async (): Promise<void> => {
+      if (!token) return;
+      try {
+        const res = await apiFetch<{ limits: BookingLimits | null }>('/me/booking-limits', { token });
+        setBookingLimits(res.limits);
+      } catch (e) { console.error('GET /me/booking-limits', e); }
+    },
+    setMatchVisibility: async (matchId: string, visibility: 'OPEN' | 'PRIVATE'): Promise<ActionResult> => {
+      try {
+        await apiFetch(`/matches/${matchId}/visibility`, { method: 'PUT', token, body: { visibility } });
+        await refreshMatchDetail(matchId);
+        return { ok: true };
+      } catch (e) { return actionResultFromError(e); }
+    },
     /** Règle 10 : le groupe WhatsApp du match (lien https://chat.whatsapp.com/…) ; `null` le retire. */
     setWhatsappGroup: async (matchId: string, url: string | null): Promise<ActionResult> => {
       try {
@@ -994,6 +1067,42 @@ export function useAppStore() {
         // La réservation locale reçoit son `matchId` (BUG-8) — même vérité que la base après POST /matches.
         setState((s) => applyLinkReservationToMatch(applyUpsertMatch(s, record), input.bookingId, match.id));
         return { ok: true, matchId: match.id };
+      } catch (e) { return actionResultFromError(e); }
+    },
+    /** Lot « Match libre », phase 5 — POST /matches/free : un match AILLEURS que chez un centre partenaire (rien n'est réservé).
+        Le serveur rejoue la règle core `createFreeMatch` ; le match est inséré avec l'id réel renvoyé. */
+    /** Phase adresses (18/11/2026) — GET /places/search : lieux et adresses d'OpenStreetMap en Algérie, proches de `near`. Jamais
+        une erreur pour l'écran : en cas de souci, une liste vide et `unavailable` (la saisie libre et l'épingle restent). */
+    searchPlaces: async (q: string, near?: { lat: number; lng: number }): Promise<{ results: PlaceSuggestion[]; unavailable: boolean }> => {
+      try {
+        const qs = new URLSearchParams({ q, ...(near ? { lat: String(near.lat), lng: String(near.lng) } : {}) });
+        const res = await apiFetch<{ results: PlaceSuggestion[]; unavailable?: boolean }>(`/places/search?${qs}`, { token });
+        return { results: res.results ?? [], unavailable: res.unavailable === true };
+      } catch { return { results: [], unavailable: true }; }
+    },
+    /** GET /places/reverse — le lieu sous l'épingle de la carte (`null` si rien de connu à cet endroit). */
+    reversePlace: async (lat: number, lng: number): Promise<PlaceSuggestion | null> => {
+      try {
+        const res = await apiFetch<{ place: PlaceSuggestion | null }>(`/places/reverse?lat=${lat}&lng=${lng}`, { token });
+        return res.place ?? null;
+      } catch { return null; }
+    },
+    publishFreeMatch: async (input: {
+      place: { name: string; wilaya: string; lat?: number | undefined; lng?: number | undefined }; format: MatchFormat; level: SkillLevel; start: number; durationMin: number;
+      title: string; note?: string | undefined; visibility: 'OPEN' | 'PRIVATE';
+    }): Promise<ActionResult & { matchId?: string; code?: string | undefined }> => {
+      try {
+        const res = await apiFetch<{ match: ApiPublicMatch }>('/matches/free', {
+          method: 'POST', token,
+          body: {
+            place: input.place, sport: 'FOOTBALL', format: input.format, level: input.level, start: input.start, durationMin: input.durationMin,
+            title: input.title, visibility: input.visibility, ...(input.note ? { note: input.note } : {}),
+          },
+        });
+        const match = matchFromApi(res.match);
+        const record: MatchRecord = { match, players: syntheticPlayersFromCount(match.id, 1, true, meId ?? '', Date.now()), code: res.match.code ?? undefined };
+        setState((s) => applyUpsertMatch(s, record));
+        return { ok: true, matchId: match.id, code: res.match.code ?? undefined };
       } catch (e) { return actionResultFromError(e); }
     },
 

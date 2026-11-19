@@ -144,19 +144,26 @@ describe('match — rejoindre / quitter / verrouiller', () => {
     const busy = canJoinMatch(mkMatch(), players(7), 'nassim', [range(NOW + 8 * H, 30)], NOW);
     expect(!busy.ok && busy.code).toBe('SCHEDULE_CONFLICT');
 
-    const soon = mkMatch({ range: range(NOW + H, 60) }); // dans 1 h → verrouillé
-    const locked = canJoinMatch(soon, players(7), 'nassim', [], NOW);
+    // 16/11/2026 (GO d'Aymen) : plus de verrou à H-1 — un match dans 1 h se rejoint encore ; seul le coup d'envoi ferme (assertion inversée).
+    const soon = mkMatch({ range: range(NOW + H, 60) });
+    expect(canJoinMatch(soon, players(7), 'nassim', [], NOW).ok).toBe(true);
+    expect(isLockedNow(soon, NOW)).toBe(false);
+    const started = mkMatch({ range: range(NOW, 60) });   // coup d'envoi → verrouillé
+    const locked = canJoinMatch(started, players(7), 'nassim', [], NOW);
     expect(!locked.ok && locked.code).toBe('MATCH_LOCKED');
-    expect(isLockedNow(soon, NOW)).toBe(true);
+    expect(isLockedNow(started, NOW)).toBe(true);
   });
   it('FULL redevient OPEN quand une place se libère', () => {
     expect(derivedStatus(mkMatch({ status: 'FULL' }), 9)).toBe('OPEN');
     expect(derivedStatus(mkMatch(), 10)).toBe('FULL');
   });
-  it('désinscription : gratuite avant H-2, refusée après', () => {
+  it('désinscription : gratuite avant H-2, encore possible ensuite (demi-absence) jusqu’au coup d’envoi, refusée après', () => {
     expect(canLeaveMatch(mkMatch(), players(7), 'u2', NOW).ok).toBe(true);
+    // 16/11/2026 (GO d'Aymen) : dans 1 h, la désinscription reste possible (assertion inversée) ; elle se ferme au coup d'envoi.
     const soon = mkMatch({ range: range(NOW + H, 60) });
-    expect(canLeaveMatch(soon, players(7), 'u2', NOW).ok).toBe(false);
+    expect(canLeaveMatch(soon, players(7), 'u2', NOW).ok).toBe(true);
+    const started = mkMatch({ range: range(NOW, 60) });
+    expect(canLeaveMatch(started, players(7), 'u2', NOW).ok).toBe(false);
   });
   it('capacité bornée par le format et le terrain', () => {
     expect(validateCapacity({ format: '5v5', capacity: 10, fieldId: 'f1' }, field).ok).toBe(true);

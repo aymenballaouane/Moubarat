@@ -24,6 +24,8 @@ export interface ApiVenueSummary {
   description: string | null; equipments: string[] | null;
   sports: string[]; formats: string[]; priceFromDa: number | null;
   rating: { avg: number | null; count: number; visible: boolean };
+  /** Phase photos (17/11/2026) : version de la photo principale, `null` sans photo ; absente d'un serveur plus ancien. */
+  photoVersion?: number | null;
   fields: VenueSummary['fields'];
 }
 
@@ -38,6 +40,7 @@ export function venueSummaryFromApi(w: ApiVenueSummary): VenueSummary {
     description: w.description, equipments: w.equipments ?? [],
     sports: [...w.sports].sort((a, b) => sportRank(a) - sportRank(b)), formats: w.formats, priceFromDa: w.priceFromDa,
     rating: { ...w.rating, minCount: VENUE_RATING_MIN_COUNT },
+    photoVersion: w.photoVersion ?? null,
     fields: w.fields,
   };
 }
@@ -53,7 +56,10 @@ export interface ApiAvailabilitySummary {
 
 export interface ApiPublicMatch {
   id: string; sport: string; format: string; level: string; title: string;
-  venueId: string; fieldId: string; start: number; end: number; capacity: number;
+  /** `null` pour un match libre (phase 5), qui porte alors `place`. */
+  venueId: string | null; fieldId: string | null; start: number; end: number; capacity: number;
+  /** Match libre : le lieu saisi par l'organisateur (absent ou `null` pour un match de centre). */
+  place?: { name: string; area?: string; wilaya: string } | null;
   pricePerPlayerDa: number; visibility: string; status: string; organizerId: string;
   coordination: string; whatsappUrl: string | null; createdAt: number;
   /** « Un petit mot pour les joueurs » (migration 0033) — lu par la fiche du match au lot 7. */
@@ -71,6 +77,7 @@ export function matchFromApi(w: ApiPublicMatch): Match {
     title: w.title,
     venueId: w.venueId,
     fieldId: w.fieldId,
+    ...(w.place ? { place: w.place } : {}),
     range: { start: w.start, end: w.end },
     capacity: w.capacity,
     // Règle 13 : prix par joueur AFFICHÉ à la dizaine supérieure (lib/price.ts) — un seul endroit pour tous les écrans.

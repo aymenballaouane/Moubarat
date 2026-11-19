@@ -1,11 +1,12 @@
 import { sql } from 'kysely';
 import type { FastifyInstance } from 'fastify';
 import {
-  RECIPIENTS, matchLeaveKind, activePlayers, canCancelBooking, cancellationKind, canOrganizerAct, canTransition, changeTeam, createMatch, defaultTeam, joinMatch, leaveMatch,
+  RECIPIENTS, matchLeaveKind, activePlayers, canCancelBooking, canChangeVisibility, cancellationKind, canOrganizerAct, canTransition, changeTeam, createMatch, createFreeMatch, defaultTeam, joinMatch, leaveMatch,
   removePlayer, MATCH_TRANSITIONS, MATCH_TEAMS,
   type MatchFormat, type MatchTeam, type SkillLevel,
 } from '@moubarat/core';
 import type { Db } from '../../db/client.js';
+import { hiddenFormats } from '../../lib/client-features.js';
 import type { Guards } from '../../auth/guards.js';
 import { writeNotifications } from '../../notifications/write.js';
 import { assertNotRestricted, recordAbsence } from '../absences/service.js';
@@ -22,7 +23,7 @@ import { playerCancelSummary } from '../bookings/cascade.js';
 import { writeAudit } from '../../audit/log.js';
 import {
   friendsUpcomingMatches, loadMatchForUpdate, markEndedMatchesPlayed, loadMatch, loadPlayers, publicMatch, rowToMatch, rowToMatchPlayer,
-  syncMatchLifecycle, userCommitments, withRosterCounts, describeConflict, assertPhoneVisible,
+  syncMatchLifecycle, userCommitments, withRosterCounts, describeConflict, assertPhoneVisible, knowsFreeMatches, assertVisibleToClient,
 } from './service.js';
 
 interface Deps { db: Db; guards: Guards; }
@@ -182,6 +183,76 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     return reply.code(201).send({ match: publicMatch(created, { group: true, code: true }) });
   });
 
+  /* Match libre (lot « Match libre », phase 5 — GO d'Aymen du 16/11/2026 ; planches W1 à W4). Un match qui se joue AILLEURS que
+     chez un centre partenaire : rien n'est réservé, il n'y a ni centre, ni terrain, ni prix. Règle : core `createFreeMatch`.
+     Corps : `place` { name, area?, wilaya }, `sport` (FOOTBALL par défaut), `format`, `level`, `start` (ms), `durationMin`,
+     `visibility`, `note`, `title` (facultatif : le nom du lieu, rallongé du format s'il est trop court).
+     Les mêmes garde-fous que rejoindre un match : accord « numéro visible » (règle 32), restriction après absences (règle 25), et
+     jamais deux engagements qui se chevauchent (l'organisateur joue son match). Les plafonds de réservations (règle 23) ne
+     s'appliquent PAS : ils ne concernent que les réservations chez un centre (valeur provisoire du dossier, section 11). */
+  app.post<{
+    Body: {
+      place?: { name?: unknown; area?: unknown; wilaya?: unknown; lat?: unknown; lng?: unknown }; sport?: string; format?: string; level?: string;
+      start?: number; durationMin?: number; visibility?: string; note?: string; title?: string;
+    };
+  }>('/matches/free', { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
+    const b = req.body ?? {};
+    const level = String(b.level ?? 'LOISIR');
+    if (!(SKILL_LEVELS as readonly string[]).includes(level)) throw badRequest('Niveau invalide : LOISIR, INTERMEDIAIRE ou COMPETITION.');
+    const sport = String(b.sport ?? 'FOOTBALL');
+    if (!(SPORTS as readonly string[]).includes(sport)) throw badRequest('Sport invalide.');
+    const p = b.place ?? {};
+    const str = (v: unknown) => (typeof v === 'string' ? v : '');
+    const placeName = str(p.name);
+    const placeArea = str(p.area).trim();
+    const placeWilaya = str(p.wilaya);
+    // Phase adresses : la position du lieu (adresse choisie ou épingle), facultative — le core vérifie qu'elle est entière et plausible.
+    const placeLat = p.lat === undefined || p.lat === null ? undefined : Number(p.lat);
+    const placeLng = p.lng === undefined || p.lng === null ? undefined : Number(p.lng);
+    const start = Number(b.start);
+    const durationMin = Number(b.durationMin);
+    if (!Number.isFinite(start)) throw badRequest('start manquant (ms).');
+    const visibility = b.visibility === 'PRIVATE' ? 'PRIVATE' : 'OPEN';
+    const note = parseNote(b.note);
+    const format = String(b.format ?? '') as MatchFormat;
+    const cleanName = placeName.trim().replace(/\s+/g, ' ');
+    const title = (typeof b.title === 'string' && b.title.trim() !== '' ? b.title.trim()
+      : cleanName.length >= 3 ? cleanName : `${cleanName} ${format.toUpperCase()}`).slice(0, 40);
+    const now = Date.now();
+
+    const result = createFreeMatch({
+      id: '', place: { name: placeName, ...(placeArea !== '' ? { area: placeArea } : {}), wilaya: placeWilaya, lat: placeLat, lng: placeLng },
+      sport: sport as (typeof SPORTS)[number], format, level: level as SkillLevel, start, durationMin, title, visibility,
+      organizerId: req.auth!.userId, now,
+    });
+    must(result.result);
+    const match = result.match!;
+
+    const created = await withCommittedPush(() => db.transaction().execute(async (trx) => {
+      await assertPhoneVisible(trx, req.auth!.userId);   // règle 32
+      await assertNotRestricted(trx, req.auth!.userId, now);   // règle 25
+      const conflict = await describeConflict(trx, req.auth!.userId, match.range);
+      if (conflict) throw new ApiError(409, 'SCHEDULE_CONFLICT', 'Tu as déjà un match ou une réservation sur ce créneau.', conflict);
+      const row = await trx.insertInto('matches').values({
+        sport: match.sport, format: match.format, level: match.level, title: match.title,
+        venue_id: null, field_id: null,
+        place_name: match.place!.name, place_area: match.place!.area ?? null, place_wilaya: match.place!.wilaya,
+        place_lat: match.place!.lat ?? null, place_lng: match.place!.lng ?? null,
+        time_range: toPgRange(match.range), capacity: match.capacity, price_per_player_da: 0,
+        visibility: match.visibility, status: match.status, organizer_id: match.organizerId,
+        booking_id: null, coordination: 'WHATSAPP', note: note === '' ? null : note,
+      }).returningAll().executeTakeFirstOrThrow();
+      await trx.insertInto('match_players').values({
+        match_id: row.id, user_id: req.auth!.userId, status: 'JOINED', joined_at: new Date(now), team: 'A',
+      }).execute();
+      // Lot 11 : « M'alerter si un match est créé » — comme pour un match de centre.
+      await notifyDayAlerts(trx, row, now);
+      return row;
+    }));
+
+    return reply.code(201).send({ match: publicMatch(created, { group: true, code: true }) });
+  });
+
   /* Un match OPEN se consulte sans compte (l'app doit pouvoir le montrer
      avant inscription, même logique que /venues et /fields/:id/availability
      en Phase 1). Un match PRIVATE (issu d'un défi) est réservé à
@@ -197,11 +268,13 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
       if (!/^[A-Z2-9]{4,10}$/.test(code)) throw notFound('Ce lien ne mène à aucun match.');
       const found = await db.selectFrom('matches').selectAll().where('code', '=', code).executeTakeFirst();
       if (!found) throw notFound('Ce lien ne mène à aucun match.');
+      assertVisibleToClient(found, req.headers);   // match libre : jamais à une ancienne app
       const synced = await syncMatchLifecycle(db, found, Date.now());
       const organizer = await db.selectFrom('users').select('name').where('id', '=', synced.organizer_id).executeTakeFirst();
       const organizerName = organizer?.name ?? null;
       // Ce que montre la page du lien à un visiteur (LienMatch) : le centre et le terrain — des informations publiques (GET /venues).
-      const place = await db.selectFrom('fields').innerJoin('venues', 'venues.id', 'fields.venue_id')
+      // Match libre (phase 5) : pas de centre ni de terrain — le lieu voyage dans `match.place`.
+      const place = synced.field_id === null ? undefined : await db.selectFrom('fields').innerJoin('venues', 'venues.id', 'fields.venue_id')
         .select(['venues.name as venueName', 'fields.name as fieldName']).where('fields.id', '=', synced.field_id).executeTakeFirst();
       if (!req.auth) {
         return reply.send({
@@ -220,6 +293,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
   app.get<{ Params: { id: string } }>('/matches/:id',
     { preHandler: (req) => guards.tryAuth(req) }, async (req, reply) => {
       const row = await loadMatch(db, req.params.id);
+      assertVisibleToClient(row, req.headers);   // match libre : jamais à une ancienne app
       if (row.visibility === 'PRIVATE') {
         const allowed = req.auth && (
           req.auth.userId === row.organizer_id
@@ -308,7 +382,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
   app.get<{ Querystring: FeedQuery & { limit?: string; cursor?: string } }>('/matches',
     { preHandler: (req) => guards.tryAuth(req) }, async (req, reply) => {
       const now = new Date();
-      const filters = parseFeedFilters(req.query);
+      const filters = { ...parseFeedFilters(req.query), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers) };
       const limit = pageLimit(req.query.limit, { def: 50, max: 100 });
       const cursor = decodeCursor(req.query.cursor, ['iso', 'uuid']);
       const conds = feedConditions(filters, now);
@@ -344,7 +418,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     let fromStart: number;
     try { fromStart = dayStartMs(req.query.from ?? algiersDateOf(now.getTime())); }
     catch { throw badRequest('Paramètre from attendu au format YYYY-MM-DD.'); }
-    const counts = await feedDayCounts(db, { ...(sport ? { sport } : {}), ...(venueId ? { venueId } : {}) }, fromStart, days, now);
+    const counts = await feedDayCounts(db, { ...(sport ? { sport } : {}), ...(venueId ? { venueId } : {}), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers) }, fromStart, days, now);
     return reply.send({ from: algiersDateOf(fromStart), days, counts });
   });
 
@@ -374,6 +448,9 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
         eb('match_players.user_id', '=', req.auth!.userId),
       ]));
     if (cursor) query = query.where(sql<boolean>`(lower(matches.time_range), matches.id) < (${cursor[0]}::timestamptz, ${cursor[1]}::uuid)`);
+    if (!knowsFreeMatches(req.headers)) query = query.where('matches.venue_id', 'is not', null);   // ancienne app : aucun match libre
+    const hiddenF = hiddenFormats(req.headers);
+    if (hiddenF.size > 0) query = query.where(sql<boolean>`matches.format::text NOT IN (${sql.join([...hiddenF])})`);   // ni de 9v9
     const rows = await query
       .orderBy(sql`lower(matches.time_range)`, 'desc').orderBy('matches.id', 'desc')
       .limit(limit + 1).execute();
@@ -385,7 +462,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
      packages/core : voir friendsUpcomingMatches, service.ts. Bornée (10 coéquipiers au plus,
      7 jours), donc pas de curseur ici. */
   app.get('/me/friends-matches', { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
-    const matches = await friendsUpcomingMatches(db, req.auth!.userId, new Date());
+    const matches = await friendsUpcomingMatches(db, req.auth!.userId, new Date(), { includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers) });
     return reply.send({ matches });
   });
 
@@ -481,6 +558,32 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
         await trx.updateTable('matches').set({ note: note === '' ? null : note }).where('id', '=', row.id).execute();
       });
       return reply.send({ ok: true, note: note === '' ? null : note });
+    });
+
+  /* Lot « Match libre » (décision d'Aymen du 16/11/2026) — « Qui peut voir ce match ? » : l'organisateur seul passe son match de public
+     (OPEN) à privé (PRIVATE), ou l'inverse, tant qu'il n'a pas commencé (core `canChangeVisibility`). En privé, le match quitte toutes les
+     listes (fil, décomptes par jour, « Tes amis jouent bientôt », alertes) ; les inscrits gardent leur place ; on le rejoint par son lien
+     (`/matches/by-code/:code`). Un match issu d'un défi reste privé : son effectif est fermé (voir la garde de /join). Aucune notification. */
+  app.put<{ Params: { id: string }; Body: { visibility?: unknown } }>('/matches/:id/visibility',
+    { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
+      const wanted = (req.body ?? {}).visibility;
+      if (wanted !== 'OPEN' && wanted !== 'PRIVATE') {
+        throw badRequest('Visibilité attendue : OPEN (public) ou PRIVATE (privé).', 'BAD_VISIBILITY');
+      }
+      const now = Date.now();
+      await db.transaction().execute(async (trx) => {
+        const row = await syncMatchLifecycle(trx, await loadMatchForUpdate(trx, req.params.id), now);
+        const verdict = canChangeVisibility(rowToMatch(row), req.auth!.userId, wanted, now);
+        if (!verdict.ok) {
+          const status = verdict.code === 'NOT_ORGANIZER' ? 403 : 409;
+          throw new ApiError(status, verdict.code, verdict.message);
+        }
+        if (row.challenge_id !== null) {
+          throw new ApiError(409, 'MATCH_PRIVATE', 'Un match de défi reste réservé aux deux équipes.');
+        }
+        await trx.updateTable('matches').set({ visibility: wanted }).where('id', '=', row.id).execute();
+      });
+      return reply.send({ ok: true, visibility: wanted });
     });
 
   /* Règle 3 — changer d'équipe tant que les inscriptions sont ouvertes : le core (changeTeam) tranche (inscrit, verrou, place dans
@@ -645,8 +748,9 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
               await recordAbsence(trx, { userId: req.auth!.userId, kind: 'HALF', source: 'LATE_CANCEL', bookingId: b.id, matchId: row.id, now });
             }
             // MS-020 : la même ligne de Journal que POST /bookings/:id/cancel.
+            // Seul un match de centre a une réservation (contrainte matches_place_kind) : venue_id est donc posé ici.
             await writeAudit(trx, {
-              venueId: row.venue_id, actorId: req.auth!.userId, actorRole: 'PLAYER',
+              venueId: row.venue_id!, actorId: req.auth!.userId, actorRole: 'PLAYER',
               action: 'BOOKING_CANCELLED', objectType: 'booking', objectId: b.id,
               summary: playerCancelSummary(b, late, row.title), before: b.status, after: 'CANCELLED',
             });

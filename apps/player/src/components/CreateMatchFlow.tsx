@@ -122,6 +122,7 @@ export function CreateMatchFlow({ store, onExit, onBookAnother, onChangeSlot, pr
   const summary: MatchSummary = {
     sport, format: shownFormat, startEpoch, endEpoch, venueName,
     fieldName: info?.field.name ?? '—', perPlayerDa: perPlayerShown(totalDa, places), places,
+    photoUrl: store.venuePhoto(info?.venueId ?? store.venue?.id, 'card'),   // phase photos
   };
   const formatError = knownFormat === null && (source !== null || pending !== null)
     ? `Le format de cette réservation n’est pas connu et ce terrain en propose plusieurs — contacte le centre${store.venue?.phone ? ` (${store.venue.phone})` : ''} pour créer le match.`
@@ -144,8 +145,9 @@ export function CreateMatchFlow({ store, onExit, onBookAnother, onChangeSlot, pr
       réservation réelle pour ouvrir un match). Créneau pris entre-temps : retour à R3 sur « Oups, il vient d'être pris »,
       rien n'a été réservé. Réservation posée mais match refusé : la réservation est réelle, elle reste ici (« Publier »
       réessaie SUR elle, jamais une deuxième) et visible dans Mes réservations. */
-  async function publish() {
+  async function publish(chosen: 'OPEN' | 'PRIVATE') {
     if (publishing || knownFormat === null) return;
+    setVisibility(chosen);
     if (!source && !pending) return;
     setPublishing(true);
     let bookingId = source?.booking.id ?? null;
@@ -166,7 +168,7 @@ export function CreateMatchFlow({ store, onExit, onBookAnother, onChangeSlot, pr
       bookingId = booked.booking!.id;
     }
     const res = await store.publishMatch({
-      bookingId: bookingId!, title: venueName, note: note.trim() || undefined, level, visibility,
+      bookingId: bookingId!, title: venueName, note: note.trim() || undefined, level, visibility: chosen,
     });
     setPublishing(false);
     if (!res.ok) { toast.show(res.message); return; }
@@ -191,11 +193,10 @@ export function CreateMatchFlow({ store, onExit, onBookAnother, onChangeSlot, pr
   if (screen === 'config') {
     return (
       <CreerConfig
-        summary={summary} level={level} onLevel={setLevel} visibility={visibility} onVisibility={setVisibility} note={note} onNote={setNote}
+        summary={summary} level={level} onLevel={setLevel} note={note} onNote={setNote}
         publishing={publishing} error={formatError}
-        onChangeSlot={() => changeSlot(false)}
         onBack={() => { if (pending) changeSlot(false); else if (prefill?.booking) onExit(); else setScreen('creneau'); }}
-        onPublish={() => { void publish(); }}
+        onPublish={(v) => { void publish(v); }}
         toast={toastEl}
       />
     );

@@ -9,6 +9,11 @@ import { localizeServerMessage } from './serverMessages.js';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3001';
 
+/** Adresse complète d'une ressource du serveur lue directement par le navigateur (une image : `<img src>`). */
+export function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly statusCode: number,
@@ -54,6 +59,9 @@ interface RequestOptions {
 export async function apiDownload(path: string, opts: { token?: string | null } = {}): Promise<{ blob: Blob; filename: string }> {
   const headers: Record<string, string> = {};
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
+  /* Lot « Match libre » : ce client est à jour — il reçoit les matchs libres et le format 9v9 (le serveur les cache aux anciennes apps de
+     téléphone, qui n'envoient pas cet en-tête : apps/api/src/lib/client-features.ts). */
+  headers['X-Moubarat-Features'] = 'match-libre,format-9v9';
 
   let res: Response;
   try {
@@ -80,6 +88,9 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
   const headers: Record<string, string> = {};
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
+  /* Lot « Match libre » : ce client est à jour — il reçoit les matchs libres et le format 9v9 (le serveur les cache aux anciennes apps de
+     téléphone, qui n'envoient pas cet en-tête : apps/api/src/lib/client-features.ts). */
+  headers['X-Moubarat-Features'] = 'match-libre,format-9v9';
 
   let res: Response;
   try {

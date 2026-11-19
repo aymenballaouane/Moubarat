@@ -484,6 +484,12 @@ body.mb {
   aspect-ratio: 4 / 3; border: 1px dashed var(--line-strong); border-radius: var(--r-2);
   display: grid; place-items: center; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-4); text-align: center; padding: 6px;
 }
+/* Phase photos (17/11/2026) : la photo principale remplit le premier emplacement (rognée, comme dans l'app). */
+.cf-photos .cf-photo-main[data-filled="true"] { padding: 0; border-style: solid; overflow: hidden; }
+.cf-photo-main img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cf-photo-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.cf-photo-actions label.mb-btn { cursor: pointer; }
+.cf-photo-actions label.mb-btn[aria-disabled="true"] { opacity: .5; pointer-events: none; }
 
 /* « Afficher plus » (L3, 25/09/2026) — Clients et Journal. */
 .cm-more { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 16px 0 6px; }

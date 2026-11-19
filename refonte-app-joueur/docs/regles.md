@@ -14,25 +14,25 @@ Aucune autre règle ne change.
 
 ## A. Matchs
 
-1. Un match naît toujours d’une réservation. L’organisateur est inscrit d’office. — *inchangée*
+1. Chez un centre partenaire, un match naît toujours d’une réservation. L’organisateur est inscrit d’office. — *modifiée* (lot « Match libre », phase 5, 17/11/2026, GO d’Aymen du 16/11/2026) : un match peut aussi se jouer AILLEURS (« match libre ») — le joueur saisit un lieu (nom ou adresse), un jour, une heure (par demi-heure, jamais à moins de 2 h), une durée (1 h, 1 h 30, 2 h), un format, un niveau ; rien n’est réservé, il n’y a ni centre, ni terrain, ni prix, et les plafonds de réservations (règle 23) ne s’y appliquent pas. Les autres règles du match (inscription, équipes, désistement, chevauchement — règle 5) sont les mêmes. Règle core `createFreeMatch`.
 2. Le format est choisi à la réservation et ne change plus. Un match ne change jamais de format. — *inchangée*
-3. Une seule place par joueur. On choisit son équipe (sa paire au padel), pas son poste. Changement d’équipe possible jusqu’à H-1. D’après la phase 0, ce n’est pas encore codé : à construire. À l’écran :
-   - « Rejoindre le match » ouvre le panneau « Choisis ton équipe », où l’équipe qui a le plus de places est choisie par défaut ;
-   - toucher un « + » dans une équipe fait rejoindre cette équipe directement ;
-   - une fois inscrit, « Changer jusqu’à H-1 » rouvre le panneau pour passer dans l’autre équipe, s’il y reste une place.
+3. Une seule place par joueur. On choisit son équipe (sa paire au padel), pas son poste. Changement d’équipe possible jusqu’au coup d’envoi (H-1 jusqu’au 16/11/2026, voir règle 4). D’après la phase 0, ce n’est pas encore codé : à construire. À l’écran (lot « Match libre » : l’écran change en phase 3, rejoindre sans choisir place le joueur dans l’équipe la moins remplie, A à égalité) :
+   - « Rejoindre le match » ne demande aucune équipe : le joueur est placé dans l’équipe la moins remplie (A à égalité) — lot « Match libre », phase 3, planche Dv1 ; le panneau « Choisis ton équipe » est retiré ;
+   - toucher un « + » choisit cette équipe (le « + » devient « Toi », le bouton devient « Rejoindre l’équipe A », Dv5) ;
+   - une fois inscrit, toucher un « + » de l’autre équipe y fait passer directement (Dv2), jusqu’au coup d’envoi.
 
    — *nouvelle*
 4. Deux verrous :
    - désistement libre jusqu’à H-2 ;
-   - entre H-2 et H-1, partir compte comme une demi-absence, et la place est reproposée (inscriptions ouvertes en remplacement) ;
-   - à H-1, la compo est figée et les inscriptions sont fermées.
+   - entre H-2 et le coup d’envoi, partir compte comme une demi-absence, et la place est reproposée (inscriptions ouvertes en remplacement) ;
+   - au coup d’envoi, les inscriptions, le désistement et le changement d’équipe se ferment.
 
-   — *modifiée* (décision d’Aymen du 20/10/2026, confirmée le 26/10/2026 : le core passe aux trois temps)
+   — *modifiée* (décision d’Aymen du 20/10/2026, confirmée le 26/10/2026 : le core passe aux trois temps ; puis le 16/11/2026, lot « Match libre » : la « compo figée à H-1 » est abandonnée — « pas logique » —, plus rien ne ferme avant le coup d’envoi)
 5. Un joueur ne peut pas être inscrit à deux matchs qui se chevauchent. — *inchangée*
 6. Visibilité : un match « ouvert à tous » apparaît dans Explorer ; un match « sur invitation » n’est accessible que par son lien. — *inchangée*
 7. Annuler le match garde la réservation. Annuler la réservation annule aussi le match, et tous les inscrits sont prévenus. — *inchangée*
 8. Un joueur retiré par l’organisateur est prévenu, et sa place est reproposée. Aucune absence ne lui est comptée, mais il ne peut plus reprendre de place dans ce match. S’il essaie, une fenêtre le lui explique (`PasPossibleRetire`). — *nouvelle*
-9. Match complet : bouton « Préviens-moi si ça se libère ». Premier arrivé, premier servi, jusqu’à H-1. — *modifiée* (alerte par push et notification dans l’app, jamais par SMS ; lot 11)
+9. Match complet : bouton « Préviens-moi si ça se libère ». Premier arrivé, premier servi, jusqu’au coup d’envoi (H-1 jusqu’au 16/11/2026). — *modifiée* (alerte par push et notification dans l’app, jamais par SMS ; lot 11). Lot « Match libre » (16/11/2026) : le bouton ne sera plus affiché sur l’écran du match complet (Dv6, phase 3 du lot), la fonction reste côté serveur.
 10. Groupe WhatsApp du match :
     - il est facultatif ;
     - c’est l’organisateur qui ajoute le lien de son groupe, dans « Gérer le match » : une fenêtre où il colle le lien, avec l’avertissement « tous les membres voient ton numéro » (`GroupeWhatsApp.dc.html`) ; une fois ajouté, la ligne affiche « Groupe WhatsApp ajouté » et le lien (`OrgaMatchGroupe.dc.html`), et la même fenêtre permet de le changer ou de le retirer ;
@@ -44,8 +44,8 @@ Aucune autre règle ne change.
     - la bannière défile entre 4 cartes : Moubarat (« Le sport nous rassemble »), ton prochain match s’il existe, un stade partenaire mis en avant, « Crée ton match » ;
     - **stade partenaire** : pris parmi les centres de la ville du joueur qui ont un compte CRM et ont configuré leur centre (prêts à publier) ; un centre différent à chaque fois, en rotation entre eux ;
     - « Ton prochain match » montre seulement le centre, le moment, le format et un compte à rebours jusqu’au coup d’envoi ;
-    - « Matchs à rejoindre » montre seulement les matchs d’aujourd’hui de la ville du joueur qui ont encore des places, du plus tôt au plus tard ; à heure égale, le plus proche ; **6 au maximum, puis un lien « Voir tout » vers Explorer** ; la rangée défile au doigt ; cette règle remplace l’ancien calcul de `lib/homeMatches.ts` (fenêtre 48 h, seuils de remplissage), abandonné ;
-    - « Terrains à proximité » montre les centres de la ville, **du plus proche au plus loin, distance calculée sur le téléphone (règle 33) — jamais affichée en chiffres, elle ne sert qu’au tri** ;
+    - « Matchs à rejoindre » (lot « Match libre », 16/11/2026, remplace la version du 25/10) : **tous les matchs publics d’aujourd’hui** de la ville du joueur, **complets compris (en gris)**, du plus tôt au plus tard, ordre stable à heure égale ; **liste verticale** : 4 cartes, puis « Voir N matchs de plus » (N = nombre réel restant, pas de bouton à 4 ou moins) qui déroule la suite sur place, puis « Fin des matchs d’aujourd’hui » et « Voir les autres jours » (l’onglet Jouer, sur le jour suivant) ; un match commencé n’y est plus ;
+    - « Terrains à proximité » : **retiré** (lot « Match libre », 16/11/2026) ;
     - « Tes amis jouent bientôt », en bas, montre les matchs **des 7 prochains jours** où sont inscrits tes potes (règle 40 : les joueurs avec qui tu as le plus joué, pas un système d’amis) ; s’il n’y en a aucun, la section n’apparaît pas.
     - **Position refusée** : « Matchs à rejoindre » garde le même tri (heure, sans le départage par distance) ; « Terrains à proximité » montre quand même les centres de la ville, sans tri par distance, avec une invite « Active ta position pour voir les plus proches » ; même comportement dans Explorer (règle 33).
 
@@ -79,7 +79,7 @@ Aucune autre règle ne change.
 
 ## D. Garde-fous
 
-23. Au plus 2 réservations par jour, au plus 4 réservations à venir, jamais deux qui se chevauchent. D’après la phase 0, ce n’est pas encore codé : à construire. — *nouvelle*
+23. Au plus 2 réservations par jour, au plus 4 réservations à venir, jamais deux qui se chevauchent. Codé dans le core (26/10/2026). Depuis le lot « Match libre » (phase 4, 17/11/2026), les deux plafonds sont aussi annoncés AVANT d’essayer : sur l’écran de réservation, un encadré « Limite atteinte » remplace le formulaire et grise « Confirmer la réservation » (planche S3L ; route `GET /me/booking-limits`) ; le serveur reste juge au moment de réserver. — *nouvelle*
 24. Chaque refus s’explique dans une fenêtre « Pas possible pour l’instant ». Elle dit la limite et ce que le joueur peut faire. Il y en a 8 (écrans `PasPossible*.dc.html`) : 2 réservations par jour, 4 à venir, chevauchement, restriction après absences (3 cas), joueur retiré, accord « numéro visible » retiré. — *nouvelle*
 25. Restriction après 2 absences :
     - la 1re fois, pas de match ni de réservation pendant 7 jours ;

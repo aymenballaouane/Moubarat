@@ -6354,6 +6354,342 @@ leurs nombres isolés.
   le board visuel (`pnpm ui:board`) n'a pas été relancé sur les lots A à E (il régénère les données de démo — à faire avec
   l'accord d'Aymen).
 
+## Lot « Match libre et nouvelle app joueur » — phase 0 (audit) et phase 1 « Règles » (16/11/2026)
+
+Dossier d'Aymen du 16/11/2026 (« Moubarat — Match libre et nouvelle app joueur », PDF + `fr-ar-match-libre.json` + maquettes,
+hors dépôt). Phase 0 : audit en lecture seule (rapport hors dépôt). Réponses d'Aymen du 16/11/2026, toutes reprises ici :
+
+- **Accord explicite, règles gelées et base** : (1) la « composition figée une heure avant le match » (règle 4 du 20/10/2026) est
+  RETIRÉE, y compris dans le core : inscription, désistement et changement d'équipe restent possibles jusqu'au coup d'envoi ;
+  les assertions de tests qui affirmaient le verrou à H-1 sont inversées. (2) Désistement libre jusqu'à H-2, demi-absence
+  ensuite, jusqu'au coup d'envoi ; impossible après. (3) 9v9 : GO, dans une phase à part (règles, base, CRM, aucun prix par
+  défaut). (4) Match sans centre ni terrain : GO pour le changement de structure (migration réversible, rien de destructif) ;
+  le serveur n'envoie pas les matchs libres aux versions 1.0 et 1.0.1 de l'iPhone. (5) Matchs commencés retirés des listes ;
+  passage en privé après création construit côté serveur en phase 1. (6) Planche Cd2 : le texte du dossier et Acc5/Acc6
+  priment (pas de jauge, pas de niveau, pas de « Voir tous les matchs »).
+- **Écrans** : (7) « Fermer les inscriptions » n'est pas affiché (absent de Dv3) — la route serveur reste. (8) « M'alerter si une
+  place se libère » n'est pas affiché sur Dv6 — la fonction serveur reste. (9) « Tes amis jouent bientôt » garde sa place ; seuls
+  changements de l'accueil : retirer « Terrains à proximité », matchs à rejoindre en liste. (10) Niveau : « Compétition » (mot de
+  l'app), « Compétitif » est une erreur de maquette.
+- **Valeurs par défaut en attendant son avis** : (11) création d'un match à moins de 2 h du début toujours refusée ; (12) ville d'un
+  match libre = celle du joueur (sélecteur), pas de 58 wilayas ; (13) suggestions W2 = centres partenaires + saisie libre, aucun
+  service de cartes ; (14) « Je ne trouve pas mon terrain » place le curseur dans le champ, ou valide la saisie comme lieu libre si
+  le champ est rempli ; (15) « Itinéraire » d'un match libre = Google Maps sur le texte saisi et la ville ; (16) autres points de
+  la section 11 : valeurs provisoires du dossier.
+- **Photo du centre** (phase 6, en dernier) : aucun service de stockage ni aucune dépendance sans son accord ; lui proposer d'abord
+  2 ou 3 options chiffrées. Une seule photo principale par centre : le premier des 4 emplacements du CRM.
+- **Organisation** : une branche par phase, depuis `correctifs/lot-1`, rien fusionné dans `master`. Pas de build iPhone par phase
+  (une seule à la recette finale), rien soumis à l'App Store sans son accord.
+
+### Phase 1 — « Règles » (branche `match-libre/phase-1-regles`)
+
+- **Core** (GO explicite ci-dessus) : `MATCH_LOCK_BEFORE_MS` passe de 1 h à **0** — `isLockedNow`, `registrationPhase` (FROZEN au
+  coup d'envoi), `canJoinMatch`, `canLeaveMatch`, `canChangeTeam` se ferment au coup d'envoi, plus à H-1 ; messages « Le match a
+  commencé : … ». Nouvelle règle additive `canChangeVisibility` (organisateur seul, avant le coup d'envoi, match ni annulé ni joué,
+  code `SAME_VISIBILITY` si rien ne change). Tests du core : **184** (183 + 1). Assertions INVERSÉES (verrou H-1 → coup
+  d'envoi) : `match-phases.test.ts` (5 tests réécrits, chacun vérifie aussi la fermeture au coup d'envoi), `core.test.ts` (2 :
+  rejoindre et se désinscrire à 1 h du début), `match-team.test.ts` (1 : changer d'équipe à 30 min).
+- **API** : le fil `GET /matches` et `GET /matches/day-counts` excluent un match COMMENCÉ (`lower(time_range) > now`, ajouté à
+  côté du filtre existant pour garder l'index 0025), de même que `GET /me/friends-matches`. `syncMatchLifecycle` passe désormais
+  le match en LOCKED au coup d'envoi (même code, constante du core). Nouvelle route **`PUT /matches/:id/visibility`**
+  `{ visibility: 'OPEN' | 'PRIVATE' }` : organisateur seul (403 `NOT_ORGANIZER`), 409 si même visibilité / match commencé /
+  annulé / joué / issu d'un défi, 400 `BAD_VISIBILITY`. En privé : hors fil, inscrits gardés, rejoignable par le lien. Test inversé :
+  `match-three-phases.test.ts` (« à H-1 la composition est figée » → « à 40 min : départ, inscription, changement d'équipe
+  possibles » + nouveau test « au coup d'envoi tout se ferme »). Nouveau fichier `match-libre-phase1.test.ts` (fil sans match
+  commencé, décomptes cohérents, public ↔ privé et ses refus).
+- **App joueur** : aucun écran redessiné dans cette phase (le détail du match l'est en phase 3). La logique d'affichage suit le core
+  (`lib/matchDetail.ts` : « place libérée, à prendre jusqu'à » affiche désormais l'heure du coup d'envoi). Nouvelle fonction de
+  pluriel `pluralText` / `useTn` (`lib/i18n.ts`) : arabe en quatre cas (1, 2, 3 à 10, 11 et plus), français en deux ; formes dans
+  le nouveau bloc `pluriels` de `refonte-app-joueur/i18n/fr-ar.json`, arabe repris tel quel de `fr-ar-match-libre.json` (5 textes,
+  nouveaux, à relire par un arabophone). Tests inversés : `matchDetail.test.ts` (3), `homeFeed.test.ts` (1 : un match dans 30 min
+  est de nouveau proposé). Nouveau fichier `pluriels.test.ts`.
+- **Non fait dans cette phase, volontairement** : écran « Public / Privé » et Dt3 (phase 3, détail du match) ; retrait de
+  l'affichage de « M'alerter si une place se libère » (phase 3, Dv6) ; les 62 autres textes arabes nouveaux (ajoutés avec les
+  écrans qui les utilisent).
+
+### Phase 2 — « Carte de match, accueil en liste, onglet Jouer » (branche `match-libre/phase-2-cartes`, 16/11/2026)
+
+Construite dans une copie séparée du dépôt (`.claude/worktrees/match-libre`), partie de la phase 1 — le dossier partagé avec les
+autres sessions est revenu sur `correctifs/lot-1`. Aucun changement du core, de l'API ni de la base.
+
+- **Une seule carte de match** (`components/MatchListCard.tsx`, `lib/matchCardView.ts`, `styles/match-card.css`) pour l'accueil et
+  l'onglet Jouer, reprise des planches Acc5 / Acc6 / Jo1 (Cd2 telle que rendue — sans jauge, niveau ni « Voir tous les matchs »,
+  décision d'Aymen) : image de 120 px, format en haut à gauche (« 5v5 », « Padel · Simple / Double », en lettres latines aussi en
+  arabe), places en haut à droite (3+ vert, 2 or, 1 « Plus que 1 place » or, 0 « Complet » gris), heure en Bebas 38 px, lieu, wilaya,
+  « N DA / joueur ». Match complet : image et textes gris. Illustrations reprises telles quelles du canvas
+  (`components/MatchCardArt.tsx`) : stade de foot ; court de padel bleu (Simple) ou vert (Double), comme sur Acc5 / Acc6 ; logo sur
+  fond rouge sombre pour un sport sans illustration (et, en phase 5, le match libre). Photo du centre : phase 6. Mise en page
+  logique (début / fin) : l'arabe se lit en miroir (Ar-Acc5, Ar-Acc6).
+- **Accueil** : « Matchs à rejoindre » = tous les matchs publics d'aujourd'hui dans la ville du joueur, complets compris, lus au
+  serveur (`store.loadHomeToday`, `GET /matches?day=…&city=…`, toutes les pages) ; 4 cartes, « Voir N matchs de plus », puis « Fin
+  des matchs d'aujourd'hui » et « Voir les autres jours » (onglet Jouer sur le jour suivant) ; écran vide : le message actuel, avec
+  « Voir les autres jours ». « Terrains à proximité » retiré. Les matchs du joueur lui-même (inscrit ou organisateur) y figurent
+  aussi, le dossier ne les excluant pas (avant : exclus). `lib/homeFeed.ts` et ses tests supprimés (règle 11 du 25/10 remplacée).
+- **Onglet Jouer** (ex-Explorer) : titre et barre du bas « Jouer » / « العب », icône ballon (`i-ball`, ajoutée au sprite, extraite
+  telle quelle d'Acc5) ; puce « Foot » au ballon ; la même carte ; un jour choisi : plus de bouton « Afficher plus », les pages
+  suivantes se chargent seules jusqu'à la dernière, puis « Fin des matchs d'aujourd'hui » (aujourd'hui seulement) ; « Tous les
+  jours » (page Filtres) garde son bouton. Écran vide : « Voir les autres jours » ajouté (jour suivant). `ExplorerMatchCard.tsx`
+  supprimé (plus utilisé). Route `{ tab: 'explorer', explorerDay }` pour ouvrir Jouer sur un jour.
+- **Textes** : 4 nouveaux textes arabes repris tels quels de `fr-ar-match-libre.json` (« Jouer », « Plus que 1 place », « Voir les
+  autres jours », « Fin des matchs d’aujourd’hui ») + les pluriels de la phase 1 (« {n} places », « Voir {n} matchs de plus ») —
+  à faire relire. Deux textes de l'Explorer qui n'étaient pas traduits passent par `t()` (traduction déjà présente).
+- **Tests** : `matchCardView.test.ts` (7) ; `homeFeed.test.ts` supprimé avec la règle qu'il testait. App joueur : 312 tests.
+- **Vérification** : captures plein écran 390 × 844, FR et AR, avant / après, horloge du navigateur réglée sur le lendemain 10:00
+  pour montrer une journée remplie (`.claude/captures/match-libre/phase-2/`, hors git) ; aucune erreur console ; « Voir les autres
+  jours » vérifié en direct. Le board visuel (`pnpm ui:board`) n'a PAS été relancé : il régénère les données de démo — accord
+  d'Aymen demandé.
+
+### Phase 3 — « Détail du match » (branche `match-libre/phase-3-detail`, 17/11/2026)
+
+Partie de la phase 2, dans la même copie séparée. Aucun changement du core, de l'API ni de la base : l'écran utilise les routes déjà là
+(rejoindre sans équipe, changer d'équipe, se désinscrire, numéros autorisés, mot, groupe WhatsApp, annulations) et celle de la phase 1
+(`PUT /matches/:id/visibility`).
+
+- **Un seul écran, joueur et organisateur** (planches Dv1 à Dv9, Dp2, Dt3) : `MatchHead.tsx` (bande de 160 px — logo Moubarat sur fond
+  rouge sombre tant qu'il n'y a pas de photo, phase 6 —, retour / partager / « Plus » = signaler, badge « Centre partenaire », calendrier,
+  compte à rebours « Dans 4 jours » → « Dans 1 h 40 » → « Dans 50 min », heure, « jusqu'à 21:00 · 1 h 30 », « FOOT · 5V5 · LOISIR »,
+  nom, adresse, « Itinéraire », « 410 DA chacun · à payer sur place ») et `MatchPitch.tsx` (terrain vert « Forêt », A / B, ronds,
+  « + », « Toi » cerclé de rouge ; horizontal jusqu'à 6 par équipe, vertical au-delà — positions des planches Dv1 / Dv4 / Fmt-Vue,
+  `lib/matchView.ts`). Arabe en miroir ; noms, heures, numéros isolés (`lib/fillNodes.ts`) ; texte libre (mot de l'organisateur) dans son
+  propre sens (`dir="auto"`).
+- **Joueur** (`MatchDetail.tsx`) : « Rejoindre le match » sans choix d'équipe (le serveur place dans la moins remplie) ; un « + » choisit
+  l'équipe (Dv5) ; inscrit, un « + » de l'autre équipe y fait passer (Dv2) ; « Tu joues · équipe B », « Se désinscrire », « Libre jusqu'à
+  17:30 » ou, à moins de 2 h, le texte rouge de la demi-absence (Dv7, Dv8) ; « Appeler l'organisateur » avec son numéro une fois inscrit
+  (si l'organisateur a l'accord « numéro visible ») ; match complet : bloc gris (Dv6). Retirés de cet écran : le « ticket », la feuille
+  « Choisis ton équipe » (`ChooseTeamSheet` supprimée), « D'autres matchs ce soir », la distance, et l'affichage de « M'alerter si une
+  place se libère » (décision d'Aymen ; la fonction serveur reste). Le groupe WhatsApp, quand l'organisateur en a ajouté un, reste
+  proposé à l'inscrit (règle 10 ; absent des planches parce qu'aucun groupe n'y est ajouté).
+- **Organisateur** (`OrganizerMatchView.tsx`) : « Joueurs inscrits » (nom · équipe, numéro, « Appeler » ; « Numéros visibles par toi
+  seul »), « Ton mot aux joueurs » + « Modifier », « Gérer le match » (« Qui peut voir ce match ? » Public / Privé — passer en privé
+  ouvre la confirmation Dt3, revenir en public non —, copier le lien, groupe WhatsApp, annuler le match, annuler la réservation),
+  « Trouver N joueurs ». Retirés : « TU ORGANISES » et la jauge. Le bouton « Retirer » un joueur (règle 8), absent de Dv3, est **gardé
+  sur décision d'Aymen du 17/11/2026** : une icône à côté de « Appeler », jusqu'au coup d'envoi, avec la confirmation existante. Après le match : « Absent » (règle 25) à la place de « Appeler ».
+- **Textes** : 34 textes arabes repris tels quels de `fr-ar-match-libre.json` ; « jusqu'à {fin} · {duree} » dérivé du texte
+  « jusqu'à {fin} · 1 h 30 » du même fichier. **Provisoires, à relire** (formes absentes du fichier) : « Dans {n} jours » (1, 2, 11+),
+  « {n} h » (2, 3-10, 11+), « {n} min » (1, 2, 3-10), les durées « 1 h » (ساعة) et « 2 h » (ساعتان), le mot « Dans » (بعد). Mois et jour
+  de la semaine en arabe : ceux du navigateur (`ar-DZ` : نوفمبر, الجمعة), comme sur la planche Ar-Dv1.
+- **Tests** : `matchView.test.ts` (10 : positions des planches Dv1 / Dv4, aucune place hors du terrain, compte à rebours et durées FR / AR
+  des maquettes, numéro affiché, phrases d'aide Dv1 à Dv9). App joueur : 322 tests.
+- **Vérification** : captures FR et AR de Dv1, Dv2, Dv4, Dv5, Dv7, Dv8, Dv9, Dt3 sur la base de démo (horloge du navigateur réglée pour
+  Dv7 / Dv8) ; aucune erreur console. Défauts trouvés et corrigés en vérifiant : en arabe, la page débordait de 21 px (deux règles de
+  zone tactile en conflit avec celle du design system, retirées — `.mb-tap` garantit déjà 44 px) ; un nom latin dans une phrase arabe
+  voyait son point sauter de l'autre côté. Dv6 (match complet) non capturé : aucun match complet dans la démo ; couvert par les tests.
+
+### Phase 4 — « Réserver un terrain et créer un match » (branche `match-libre/phase-4-reserver`, 17/11/2026)
+
+Partie de la phase 3, dans la même copie séparée. Aucun changement du core ni de la base. **Une route API ajoutée** (lecture seule) :
+`GET /me/booking-limits` — les plafonds de la règle 23 (2 réservations par jour, 4 à venir) et où en est le joueur (réservations à venir,
+nombre par jour d'Alger). Elle sert seulement à prévenir avant d'essayer : le serveur reste juge au moment de réserver (inchangé).
+
+- **Choix du centre** (planche S2B, `VenuesTerrains.tsx`) : « Où tu joues ? », recherche par nom, « AUTOUR DE TOI · ville du joueur »
+  (tous les centres si aucun dans sa ville ; la recherche porte sur tous), grandes cartes (bande au logo tant qu'il n'y a pas de photo —
+  phase 6 —, sport, nom, adresse · wilaya).
+- **Fiche du centre et réservation sur un seul écran** (S3, `ReserverCreneau.tsx`) : bande, retour / partager, sport, nom, adresse +
+  « Itinéraire », « N créneaux disponibles aujourd'hui », puis « Quand ? », « Format », « Durée », « Heure », « Au nom de », et le pied
+  « jeu. 19 · 18:00 → 19:30 · 5V5 » + prix + « Confirmer la réservation ». **L'écran « choisir un terrain » est supprimé** : le terrain
+  est attribué automatiquement (décision du 23/09/2026, inchangée). **Écart signalé** : un centre qui a deux sports (foot et padel)
+  perdait le choix du sport avec cet écran ; un sélecteur de sport est ajouté sous le bandeau vert, seulement quand le centre en a
+  plusieurs (aucune planche ne le montre). **Écart signalé** : seules les heures libres sont affichées (texte du dossier), pas les heures
+  barrées de la planche.
+- **Limite atteinte** (S3L) : si le joueur a déjà 2 réservations ce jour-là, ou 4 à venir, un encadré remplace Format / Durée / Heure /
+  Au nom de (« Limite atteinte », le texte du cas, « Voir mes matchs ») et « Confirmer la réservation » est grisé. Les plafonds sont
+  rechargés à l'ouverture, après une réservation et après une annulation.
+- **C'est réservé** (S6, `ReserverTicket.tsx`) : carte (logo, date, centre, « Terrain T1 · 5V5 · au nom de … », « À payer sur place » et
+  prix total, « Réf. … »), « Un empêchement ? Annule ici jusqu'à … » (H-2 ; le texte de la demi-absence reste pour une réservation faite
+  à moins de 2 h), « Créer mon match » et « Voir mes matchs ». Retiré : « Partager sur WhatsApp » (absent de la planche ; le partage se
+  fait depuis le match).
+- **Créer un match** (S7, S8, S8P, `CreerMatch.tsx`) : trois étapes « Lieu · Créneau · Détails » ; dernière étape = récapitulatif (terrain
+  et prix par joueur), « Niveau », « Description » (texte libre dans son propre sens), « Publier mon match » ou le lien « Publier en
+  privé » (remplace le choix public / privé de l'ancienne étape). Écran final : « Ton match est en ligne » (public) ou « Ton match est
+  prêt » + explication (privé), « Plus que N places », prix, WhatsApp / copier le lien / voir le match. **Écart signalé** : pas de jauge
+  sur l'écran final (la planche S8 en montre une ; principe du dossier « pas de jauge », déjà appliqué aux cartes en phase 2).
+- **Textes** : 19 textes arabes repris tels quels de `fr-ar-match-libre.json`. **Provisoires, à relire** : les formes plurielles absentes
+  du fichier pour « {n} créneaux disponibles aujourd'hui », « Tu as déjà {n} réservations ce jour-là… », « Tu as déjà {n} réservations à
+  venir… », « Plus que {n} places ». L'heure limite d'annulation en arabe s'écrit « الخميس 19، 19:30 » (une seule virgule arabe).
+- **Tests** : API `booking-limits.test.ts` (+2 : la route, avec et sans réservation) ; app `bookingLimits.test.ts` (5), `createMatch.test.ts`
+  (étapes), `reserverCreneau.test.ts` (+1 : heure limite en arabe), `pluriels.test.ts`. App joueur : 328 tests.
+- **Vérification** : parcours complet en vrai sur la base de démo, FR puis AR (S2B → S3 → réserver → S6 → S7 → publier → S8 en FR, S8P en
+  AR), puis S3L dans les deux langues (2 réservations le même jour → encadré affiché, bouton grisé) ; réservations et matchs créés annulés
+  à la fin ; aucune erreur console. Défauts trouvés et corrigés en vérifiant : l'heure limite d'annulation en arabe s'affichait dans le
+  désordre avec deux virgules ; sous l'encadré « Limite atteinte », le pied montrait encore un horaire qu'on ne pouvait pas réserver ;
+  la coche verte apparaissait aussi en consultation depuis Mes matchs (réservée désormais à « C'est réservé ») ; l'heure limite se
+  coupait en deux lignes.
+- **Board visuel** (`tools/ui-board/src/capture.mjs`) : parcours mis à jour pour les nouveaux écrans (la carte d'un centre ouvre
+  directement la fiche + réservation, « Créer mon match » sur le ticket, « Publier mon match », « Où tu joues ? » en mode match ;
+  « Ton créneau » capturé depuis le « + » quand il reste des réservations sans match). Les trois écrans non atteints restent ceux d'avant
+  (Équipes désactivées, Historique, Équipes du CRM).
+
+### Phase 5 — « Créer un match n'importe où » (match libre, branche `match-libre/phase-5-libre`, 17/11/2026)
+
+Partie de la phase 4, dans la même copie séparée. GO d'Aymen du 16/11/2026 : changement de structure accepté (« migration
+réversible, rien de destructif ») et « le serveur n'envoie pas les matchs libres aux versions 1.0 et 1.0.1 de l'iPhone ».
+
+- **Core** (additif) : `Match.venueId` / `fieldId` peuvent valoir `null` et `Match.place` porte le lieu d'un match libre ; nouvelle
+  règle `createFreeMatch` (lieu de 2 à 80 caractères, wilaya, formats du sport — 5v5 à 11v11 pour le foot, simple / double pour le
+  padel —, durée 1 h, 1 h 30 ou 2 h, heure par demi-heure, jamais à moins de 2 h ni à plus de 60 jours, nom 3 à 40 caractères,
+  prix 0, organisateur inscrit en équipe A) ; `canRate` refuse de noter un centre pour un match libre. Quatre codes d'erreur ajoutés
+  (`PLACE_INVALID`, `DURATION_INVALID`, `SLOT_INVALID`, `SLOT_TOO_FAR`). **Core : 192 tests** (184 + 8, `free-match.test.ts`) ; aucun
+  test existant modifié.
+- **Base** : migration 0047 (`venue_id`/`field_id` nullables, `place_name`/`place_area`/`place_wilaya`, contraintes
+  `matches_place_kind` et `matches_place_lengths`) ; aucune ligne existante modifiée ; retour arrière à la main
+  `apps/api/migrations/retour/0047_match_libre.sql`, qui refuse tant qu'un match libre existe. Appliquée à la base de développement
+  partagée (additive, sans effet sur le code des autres branches tant qu'aucun match libre n'y reste : les 4 matchs libres des essais, créés par le
+  compte de test local et annulés, ont été supprimés de cette base après les captures).
+- **API** : `POST /matches/free` (mêmes garde-fous que rejoindre : accord « numéro visible », restriction après absences, aucun
+  chevauchement — le lieu saisi apparaît dans « Tu joues déjà à cette heure-là ») ; `place` dans chaque match servi. **Anciennes apps** :
+  seul un appel avec l'en-tête `X-Moubarat-Features: match-libre` reçoit des matchs libres (une ancienne app n'envoie aucune version :
+  c'est donc la nouvelle qui se déclare) — sinon absents du fil, des décomptes, de Mes matchs, des matchs des amis, et fiche / lien
+  en `409 APP_UPDATE_REQUIRED`. Filtre « ville » du fil : la wilaya du centre OU celle saisie avec le lieu ; la recherche texte lit
+  aussi le lieu. Alerte « une place se libère » (joueurs de la ville), statistiques du profil (comptées, jamais dans « Tes centres »),
+  console et signalements (le lieu à la place du centre) adaptés. Détail pour les développeurs : `docs/PASSATION.md` §4.19.
+- **App** (planches W1 à W4) : « + » → Créer un match (après « Ton créneau » s'il reste des réservations sans match) → **W1** « Où tu
+  joues ? » (champ « Nom du terrain ou adresse », « AUTOUR DE TOI » : centres partenaires avec « PARTENAIRE », « Je ne trouve pas mon
+  terrain ») ; toucher un centre mène à sa réservation (S3, le match naît de la réservation) ; **W2** dès la saisie : « LIEUX ET
+  ADRESSES » — centres dont le nom correspond, puis la saisie telle quelle (« Ben Aknoun · Commune · Alger ») ; « Je ne trouve pas mon
+  terrain » met le curseur dans le champ s'il est vide, sinon valide la saisie (réponses 13 et 14) ; **W3** jours, durée, « À quelle
+  heure ? », heures par demi-heure, « Continuer » ; **W4** format, niveau, description, « Publier mon match » / « Publier en privé » ;
+  puis S8 / S8P **sans prix**. Retour possible à chaque étape (W3 → W1 garde le texte saisi). Carte de match libre (accueil, Jouer) :
+  fond rouge sombre et logo, lieu saisi, wilaya, sans prix (dossier §6). Fiche : même écran sans badge « Centre partenaire » ni prix,
+  logo sur la bande, adresse = quartier et ville, « Itinéraire » = Google Maps sur le texte saisi et la ville (réponse 15).
+- **Valeurs provisoires** (à confirmer par Aymen) : ville d'un match libre = celle du joueur, **Alger** s'il n'en a pas choisi ;
+  heures de W3 : matin 08:00 → 11:30, après-midi 12:00 → 17:30, soir 18:00 → 23:00 (la planche montre 18:00 → 21:30) ; le match porte
+  le nom du lieu saisi ; **aucun plafond** de matchs libres par joueur (dossier, section 11 : les limites ne concernent que les
+  réservations) — seule la règle « jamais deux engagements qui se chevauchent » s'applique.
+- **Écarts signalés** : seul le **foot** se crée en match libre (W4 ne montre que des formats de foot ; le core accepte déjà le padel) ;
+  pas de **9v9** avant sa phase ; l'icône de « Je ne trouve pas mon terrain » est le repère du sprite (pas de repère « + » dans le
+  sprite) ; « Commune » est le mot de la maquette même quand le texte saisi n'est pas une commune.
+- **Textes** : 6 textes arabes repris tels quels de `fr-ar-match-libre.json` ; la wilaya (enregistrée en français) est traduite à
+  l'affichage.
+- **Tests** : API `match-libre-phase5.test.ts` (7 : création, refus, chevauchement, privé, ancienne app, rejoindre / annuler,
+  contrainte en base) ; app `freeMatch.test.ts` (7), `matchCardView.test.ts` (+1). **Core 192 · API 1109 · app joueur 336** ;
+  typecheck propre sur les 5 paquets. Suite API complète : 3 fichiers en échec lors d'un passage chargé (tests de l'app lancés en même
+  temps) — `staff-crm` et `multi-instance` (délais de 30 s dépassés) passent entièrement relancés seuls ; `venues-availability-summary`
+  est l'échec connu, sans risque réel (CLAUDE.md, 25/10/2026).
+- **Board visuel** (`tools/ui-board/src/capture.mjs`) : « + » → Créer un match capture désormais W1, W2, W3, W4, puis un centre
+  partenaire → sa réservation ; rien n'est publié (le board ne crée aucun match libre). Board après : 62 écrans. Un écran non atteint de plus, sans lien
+  avec ce lot : « Rejoindre » (`match-team-sheet`) dépend de l'heure du passage — en fin d'après-midi, le premier match du jour dans
+  Jouer est celui que le board vient de créer (vue organisateur, sans « Rejoindre »), les plus tôt ayant commencé.
+- **Vérification** : parcours complet en vrai sur la base de démo, FR (public) puis AR (privé) : W1 → W2 → W3 → W4 → S8 / S8P → fiche
+  organisateur → onglet Jouer (la carte du match libre) ; puis, comme une ancienne app : le match n'est pas dans Mes matchs et sa fiche
+  répond 409 ; matchs annulés à la fin ; aucune erreur console. Défauts trouvés et corrigés en vérifiant : titres « Créer un match »,
+  « Où tu joues ? », « Niveau » et « Description » en gris au lieu de blanc (aussi sur S7) ; croix bleue du navigateur dans le champ de
+  recherche ; ville « Alger » non traduite en arabe sur la fiche et sur W1.
+
+### Phase 9v9 — « Le format 9 contre 9 » (branche `match-libre/phase-6-9v9`, 17/11/2026)
+
+Partie de la phase 5, dans la même copie séparée. GO d'Aymen du 16/11/2026 : « 9v9 dans une phase à part : règles, base, CRM, aucun prix
+par défaut ».
+
+- **Core** (additif) : `MatchFormat` gagne `'9v9'` (18 joueurs, entre le 8v8 et le 11v11) dans `FORMAT_CAPACITY`, `SPORT_FORMATS.FOOTBALL`
+  et les formats du match libre (planche W4). Nouveau `format-9v9.test.ts` (4 tests : capacité, foot oui / padel et basket non, match
+  de centre à 18 places et 750 DA chacun sur 13 500 DA, match libre). **Core : 196 tests.** Seul test modifié : un intitulé de
+  `free-match.test.ts` (ajouté en phase 5) qui disait « pas de 9v9 avant sa propre phase ».
+- **Base** : migration 0048, une seule valeur ajoutée au type `match_format` (le schéma gelé n'est pas touché), aucune ligne modifiée ;
+  aucun terrain ne propose le 9v9 tant qu'un centre ne l'ajoute pas. Retour arrière à la main `migrations/retour/0048_format_9v9.sql` :
+  il refuse tant qu'une ligne utilise le 9v9, sinon recrée le type sans lui et convertit chaque colonne (trouvées dans le catalogue).
+  **Les deux retours arrière (0047 et 0048) sont désormais testés** sur une base jetable (`migrations-retour.test.ts`) : refus quand
+  la nouveauté est utilisée, retour sinon, puis le migrateur réapplique la migration à l'identique.
+- **Aucun prix par défaut** : l'API refusait déjà d'ajouter un format sans tarif saisi (`POST /venues/:id/fields/:fieldId/formats`,
+  400) — vérifié pour le 9v9 (`format-9v9.test.ts`). Dans le CRM (Centre → Tarifs → « Ajouter un format »), le 9v9 apparaît dans la
+  liste ; choisir le 9v9 remet « Bandes » sur « aucune (tarif plat) » : les tarifs horaires d'un autre format ne sont jamais recopiés
+  d'office (le gérant peut toujours le choisir lui-même).
+- **CRM, test inversé** (GO ci-dessus) : `venueDetail.test.ts` affirmait que le foot ne proposait pas le 9v9 (décision du 04/09/2026,
+  « 9v9 a disparu ») — l'assertion vérifie désormais que le PADEL ne le propose pas, et la liste du foot le contient. CRM : 95 tests.
+- **App** : le filtre « Format » de Jouer propose le 9v9 ; le terrain du détail à 9 par équipe est à la verticale, trois rangées de trois
+  (aucune planche ne le dessine, valeur provisoire déjà en place depuis la phase 3) ; W4 montre les six formats sans défilement.
+  **Défaut trouvé en vérifiant et corrigé** : les formats d'un centre s'affichaient dans l'ordre de ses terrains (9V9 avant 5V5 quand
+  le 9v9 est ajouté au premier terrain) — ils sont désormais triés du plus petit au plus grand (`availabilityMerge.ts`,
+  `venueCatalog.ts`, +2 tests). App joueur : 338 tests.
+- **Vérification en vrai** (base de démo, Green Arena Sport) : CRM (FR) — 9v9 choisi sans tarif → refusé ; avec 9 000 DA/h → ajouté, sans
+  bande ; app (FR, AR) — Réserver → 9V9 à 13 500 DA (1 h 30) → réservé → « Créer mon match » → publié → fiche à 18 places et 750 DA
+  chacun ; W4 avec les six formats (FR, AR). Nettoyage : match et réservation annulés, format retiré du terrain. Aucune erreur console.
+  Le CRM n'a été capturé qu'en français (l'écran Tarifs n'a pas changé de mise en page : une option de plus dans une liste).
+- **Tests** : **core 196 · API 1115** (+4 `format-9v9` dont 2 « ancienne app », +2 `migrations-retour` ; 102 fichiers, tous verts) **· CRM 95 · app joueur 338** ;
+  typecheck propre sur les 5 paquets.
+- **Board visuel** : 65 écrans (seuls les trois écrans jamais atteints d'avant manquent). Le board dépendait de l'heure du passage : en soirée,
+  il réservait un créneau du jour à moins de 2 h (l'app retire alors « Créer mon match », à juste titre) et le fil du jour pouvait être
+  vide ou ne montrer que son propre match. `tools/ui-board/src/capture.mjs` réserve désormais toujours DEMAIN et ouvre le premier match
+  qui n'est pas le sien (le jour suivant si le fil du jour est vide). Base de développement : aucune ligne en 9v9 ni aucun match libre
+  n'y reste après les essais.
+- **Anciennes apps — décision d'Aymen du 17/11/2026 : « Le leur cacher »**. Même principe que le match libre, généralisé dans
+  `apps/api/src/lib/client-features.ts` : un client à jour se déclare par `X-Moubarat-Features` (`match-libre`, `format-9v9`) — l'app
+  joueur, et désormais aussi **le CRM et la console** (sites web, mis à jour avec le serveur), sans quoi le gérant ne verrait plus le
+  9v9 qu'il a ajouté. Sans l'en-tête (anciennes apps de téléphone) : aucun 9v9 dans le catalogue (`GET /venues` — format, prix, terrain
+  qui ne propose que lui, centre qui n'a plus que lui), la fiche d'un centre (`GET /venues/:id` — formats, prix, bandes), les
+  disponibilités (`GET /fields/:id/availability` — un départ libre seulement en 9v9 disparaît), le fil, les décomptes, Mes matchs et les
+  matchs des amis ; la fiche ou le lien d'un match en 9v9 répondent `409 APP_UPDATE_REQUIRED`. Non filtrés, volontairement : les
+  réservations d'un joueur (`/me/bookings` — cacher une réservation réelle serait pire) et le compteur de créneaux libres du jour
+  (`/venues/availability-summary`, un simple nombre). Tests : `format-9v9.test.ts` (+2 : ce que voit une ancienne app, ce que voit un
+  client à jour). Vérifié en vrai : le CRM ajoute et voit toujours le 9v9, la nouvelle app le réserve.
+
+### Phase photos — « La photo du centre » (branche `match-libre/phase-7-photos`, 17-18/11/2026)
+
+Mission autopilote d'Aymen (17/11/2026, « GO ») ; option de stockage choisie par lui à l'étape 0 : **A — dans la base actuelle**, coût 0,
+aucun service ni aucune dépendance. Consigne du dossier : « Une seule photo principale par centre : prends le premier des 4 emplacements du
+CRM ».
+
+- **Base** : migration 0049, table `venue_photos` (une ligne par centre : JPEG ou WebP, deux tailles — `large` ~1600×800 pour les bandes,
+  `card` ~640×320 pour les cartes —, une `version` qui change à chaque envoi, plafonds de poids). Additive ; retour arrière à la main
+  `migrations/retour/0049_venue_photo.sql` (refusé tant qu'un centre a une photo).
+- **API** (`modules/venues/photo.ts`) : `PUT /venues/:id/photo` et `DELETE` (permission EDIT_PROFILE, comme la fiche du centre ; tracé
+  dans le Journal « a changé / retiré la photo du centre ») ; `GET /venues/:id/photo/large|card` publique, cache d'un an (la version est
+  dans l'adresse). Le serveur vérifie les premiers octets du fichier (JPEG ou WebP réels, jamais le type annoncé seul). `photoVersion`
+  servie par `GET /venues` et `GET /venues/:id` (jamais les octets dans ces listes).
+- **CRM** (Centre → Photos du centre) : le premier emplacement, « Photo d'ambiance », reçoit la photo — « Ajouter la photo », « Remplacer
+  la photo », « Retirer ». La photo est réduite **dans le navigateur du gérant** (`lib/photoResize.ts` : rognage centré 2:1, deux tailles
+  JPEG, qualité abaissée si besoin), aucun envoi de l'original. Les trois autres emplacements restent des cadres vides (« arriveront plus
+  tard »). 9 textes arabes ajoutés au CRM en « provisoires » ; le texte « L'ajout de photos arrive bientôt » retiré.
+- **App** : la photo du centre partout où l'app montrait le logo ou l'image d'un centre — Réserver (S2B), fiche + réservation (S3), « C'est
+  réservé » (S6), « Créer un match » (S7, S8), W1/W2 (vignettes des partenaires), Jouer › Terrains, cartes de match (accueil, Jouer),
+  bannière « Stade partenaire » de l'accueil, détail du match. Sans photo (ou si l'image ne charge pas) : ce que l'écran affichait déjà
+  (`VenuePhoto.tsx`).
+- **Décision prise seul (mission autopilote)** : la consigne « sinon logo Moubarat, sur tous les écrans » est appliquée à tous les écrans
+  qui montraient déjà le logo ; deux écrans gardent leur repli validé avant : les cartes de match d'un centre sans photo gardent
+  l'illustration du sport (dossier §6, phase 2) et la bannière de l'accueil garde la photo nocturne. Simple à changer si Aymen préfère
+  le logo partout.
+- **Tests** : API `venue-photo.test.ts` (4 : sans photo, refus — sans compte, sans droit, faux fichier, format, trop lourd —, envoi et
+  versions, retrait) ; CRM `photoResize.test.ts` (3) ; app `venuePhoto.test.ts` (2). **Core 196 · API 1119 · app 340 · CRM 98 · console 27**, typecheck
+  propre sur les 5 paquets.
+- **Vérification en vrai** (base de démo) : le gérant de Green Arena envoie une photo depuis le CRM (version 1, aperçu immédiat) ; l'app
+  la montre en FR et en AR sur Réserver, la fiche, Jouer › Terrains, une carte de match et le détail ; aucune erreur console.
+
+### Phase adresses — « Trouver un lieu comme dans une appli de VTC » (branche `match-libre/phase-8-adresses`, 18/11/2026)
+
+Demande d'Aymen (18/11/2026, écran W1/W2 de « Créer un match ») : une recherche d'adresses « comme Google Maps, InDrive ou Yassir ».
+Choix d'Aymen : **OpenStreetMap + Leaflet, gratuit** (« Oui, lance »). Aucun compte, aucune clé, aucun abonnement.
+
+- **Recherche** : `GET /places/search?q=&lat=&lng=` et `GET /places/reverse?lat=&lng=` (`apps/api/src/modules/places/`). L'app ne parle
+  jamais directement au service d'adresses : notre serveur interroge **Photon** (moteur de recherche d'OpenStreetMap, service public de
+  Komoot), limité à l'Algérie (cadre géographique), près de la ville choisie, en français. Il écarte le bruit (distributeurs, banques…),
+  dédoublonne, garde 6 résultats, et retient la réponse 10 minutes en mémoire. Compte joueur exigé ; plafond de 120 recherches par joueur
+  et par heure (`PLACES_MAX_PER_HOUR`, compteur partagé en base) → `429 PLACES_RATE_LIMITED`. Service en panne ou lent (4 s) : liste vide
+  et `unavailable: true`, jamais une erreur — le joueur peut toujours écrire son lieu à la main et poser l'épingle.
+- **Carte** (`apps/player/src/components/CreerCarte.tsx`, Leaflet 1.9.4) : comme dans une appli de VTC, la carte bouge sous une **épingle
+  fixe** ; sous l'épingle, le nom de l'endroit (recherche inverse) ; le « Nom du lieu » reste modifiable (c'est lui que voient les
+  joueurs). On y arrive en choisissant une adresse (zoom rue) ou par « Je ne trouve pas mon terrain » (carte sur la ville). « C'est ici »
+  garde le nom, la position et la wilaya ; W3/W4 inchangés.
+- **Position gardée** : migration 0050 (`matches.place_lat/place_lng`, les deux ou aucune, seulement pour un match libre) ; la règle core
+  `createFreeMatch` vérifie la position (+2 tests core, **198**). Le bouton « Itinéraire » du détail vise la position exacte quand elle
+  existe, le nom sinon (matchs libres d'avant cette phase).
+- **Décisions prises seul (à revoir si Aymen préfère)** : (1) les images de la carte viennent des serveurs d'OpenStreetMap, autorisés pour
+  un faible usage seulement — adresse réglable sans toucher au code (`VITE_MAP_TILES_URL`, `VITE_MAP_TILES_ATTRIBUTION`) le jour où
+  l'app grossit (fournisseur payant ou serveur à nous) ; (2) Photon public, sans garantie de service, « usage raisonnable » — adresse
+  réglable (`PLACES_SEARCH_URL`, vide = recherche coupée) ; (3) le texte tapé par le joueur et la position de la ville sont envoyés à
+  Photon (Komoot, Allemagne) **par notre serveur**, jamais l'identité ni le numéro du joueur — à signaler à l'avocat pour la politique de
+  confidentialité ; (4) mention « © OpenStreetMap » affichée sur la carte (obligatoire).
+- **Limite connue** : OpenStreetMap couvre bien les quartiers et les grands stades d'Alger, beaucoup moins les petits terrains de
+  quartier. D'où l'épingle à poser à la main et le nom libre.
+- **Textes arabes** : 5 ajoutés, PROVISOIRES (« أين بالضبط؟ », « حرّك الخريطة لتضع الدبوس على الملعب. », « جارٍ البحث عن العنوان… »,
+  « اسم المكان », « هنا بالضبط »).
+- **Tests** : API `places.test.ts` (faux Photon local, jamais le vrai depuis les tests : lecture des réponses, cache, recherche inverse,
+  panne, plafond, position gardée ou refusée à moitié) ; retour arrière de 0050 joué par `migrations-retour.test.ts` ; app
+  `places.test.ts` (4). Au passage, `claims.test.ts` rendu indépendant de la date (il réservait T1 à 20:00 un mardi, jour de l'abonnement
+  du seed — échec le 18/11/2026, sans lien avec cette phase). **Core 198 · API 1128 · app 344 · CRM 98 · console 27**, typecheck
+  propre sur les 5 paquets.
+- **Vérification en vrai** (base de dev, vrai Photon, vraies images OpenStreetMap) : « Stade Bab Ezzouar » → 3 adresses réelles → carte →
+  épingle déplacée → nom mis à jour → match publié → « Itinéraire » ouvre Google Maps sur la position exacte ; en arabe, « Je ne trouve pas
+  mon terrain » → carte d'Alger. Liseré blanc entre deux images de carte trouvé sur les captures et corrigé. Aucune erreur console.
+
 ### Audit final — Lot 2 « exploitation et capacité » (18/11/2026, GO d'Aymen « Oui, Lot 2 »)
 
 Choix d'Aymen avant de commencer : export limité à **3 mois** ; **version minimale de l'app** construite dans ce lot (demande
@@ -6383,7 +6719,7 @@ charge**, les réglages Render/Vercel et la préproduction restent aux développ
   - **Analytics** : `GET /venues/:id/analytics/overview?today=` — une lecture des 60 jours, puis chaque vue calculée par les
     MÊMES fonctions que les routes unitaires (inchangées) ; l'écran passe de 22 appels à 2. 304 → 138 ms, et une connexion au
     lieu de dix. Test : chaque vue identique à sa route unitaire.
-  - **Recherches** : migration 0047 (extension `pg_trgm`, six index trigrammes — PASSATION §4.19) ; la recherche de
+  - **Recherches** : migration 0051 (extension `pg_trgm`, six index trigrammes — PASSATION §4.22) ; la recherche de
     réservations du CRM devient une UNION de recherches indexées (mêmes critères mot pour mot). CRM par nom 104 → 7 ms, par
     numéro « 0555 » 264 → 115 ms (ce début de numéro est porté par beaucoup de comptes : beaucoup de candidats) ; joueurs de la
     console 120 → 7 ms. La liste des centres de la console n'a pas de recherche côté serveur (filtre dans le navigateur) : coût
@@ -6404,14 +6740,14 @@ charge**, les réglages Render/Vercel et la préproduction restent aux développ
   « Ouvrir l'App Store » dans l'app iPhone. Une requête sans en-tête passe toujours (CRM, console, builds d'avant ce lot —
   impossibles à forcer), une valeur illisible aussi ; sondes, support et textes juridiques restent ouverts. Vérifié en direct
   (API locale relancée avec un minimum à 9.0.0) : écran en français et en arabe, sans traduction manquante. **Pour que ce soit
-  utile sur iPhone, il faut un nouveau build** (le build 1.0 n'envoie pas sa version) — PASSATION §4.20.
+  utile sur iPhone, il faut un nouveau build** (le build 1.0 n'envoie pas sa version) — PASSATION §4.23.
 - **2e — Déploiement et capacité (MS-031, MS-032, MS-034, MS-074)** : choix d'Aymen « documentation + script » — rien n'est
-  réglé dans Render, Vercel ni GitHub (aucun accès aux comptes ici). PASSATION §4.21, à l'intention des développeurs : mettre
+  réglé dans Render, Vercel ni GitHub (aucun accès aux comptes ici). PASSATION §4.24, à l'intention des développeurs : mettre
   l'API en ligne avant les fronts (Deploy Hooks Vercel appelés par la vérification GitHub une fois l'API à jour ; en attendant,
   tout changement d'API reste compatible avec les fronts en ligne) ; sauvegarde avant migration (vérifier la restauration à un
   instant donné de l'offre Render, sinon `pg_dump` avant un déploiement qui migre) ; préproduction par copie du Blueprint —
   avec, à signaler à Aymen, l'offre Vercel « Hobby » réservée à un usage non commercial et le coût d'une préproduction ;
   test de charge `apps/api/scripts/load-test.mjs` (lectures seulement, sans dépendance, refuse la production sauf
   confirmation explicite), essayé sur une API locale (10 utilisateurs simultanés : 158 requêtes/s, médiane 55 ms, 0 erreur) —
-  la vraie mesure est à faire sur la préproduction et à reporter dans §4.21.
+  la vraie mesure est à faire sur la préproduction et à reporter dans §4.24.
 

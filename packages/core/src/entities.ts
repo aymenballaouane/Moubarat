@@ -14,11 +14,12 @@ import type { TimeRange } from './time.js';
 
 export type Sport = 'FOOTBALL' | 'PADEL' | 'BASKET';
 
-export type MatchFormat = '5v5' | '6v6' | '7v7' | '8v8' | '11v11' | 'DOUBLE' | 'SIMPLE' | '3v3';
+/** '9v9' : lot « Match libre », phase 9v9 (17/11/2026, GO d'Aymen du 16/11/2026) — 18 joueurs, migration 0048. */
+export type MatchFormat = '5v5' | '6v6' | '7v7' | '8v8' | '9v9' | '11v11' | 'DOUBLE' | 'SIMPLE' | '3v3';
 
 /** Capacité en joueurs par format — contrainte serveur, pas décorative. */
 export const FORMAT_CAPACITY: Record<MatchFormat, number> = {
-  '5v5': 10, '6v6': 12, '7v7': 14, '8v8': 16, '11v11': 22,
+  '5v5': 10, '6v6': 12, '7v7': 14, '8v8': 16, '9v9': 18, '11v11': 22,
   DOUBLE: 4, SIMPLE: 2, '3v3': 6,
 };
 
@@ -127,6 +128,16 @@ export interface Booking {
 
 export type MatchStatus = 'DRAFT' | 'OPEN' | 'FULL' | 'LOCKED' | 'PLAYED' | 'CANCELLED';
 
+/** Le lieu d'un match libre — saisi tel quel (aucun service de cartes ni liste de lieux vérifiés dans cette version). */
+export interface FreePlace {
+  name: string;
+  area?: string;
+  wilaya: string;
+  /** Phase adresses (18/11/2026) : la position du lieu (adresse OpenStreetMap choisie, ou épingle posée), facultative. */
+  lat?: number;
+  lng?: number;
+}
+
 export interface Match {
   id: string;
   sport: Sport;
@@ -137,8 +148,13 @@ export interface Match {
       (ex. « on joue relax, niveau mixte »). Pure donnée d'affichage, ne
       porte aucune règle : jamais lue par une fonction de rules/. */
   description?: string;
-  venueId: string;
-  fieldId: string;
+  /** Centre et terrain d'un match de centre ; `null` pour un match libre (lot « Match libre », phase 5, GO d'Aymen du 16/11/2026),
+      qui se joue ailleurs et porte alors `place`. Un match a toujours l'un OU l'autre, jamais les deux (contrainte en base). */
+  venueId: string | null;
+  fieldId: string | null;
+  /** Match libre : le lieu saisi par l'organisateur (« Terrain de Bab Ezzouar »), sa commune si connue, sa wilaya. Ni photo,
+      ni prix, ni badge : un lieu libre n'est pas un centre. */
+  place?: FreePlace;
   range: TimeRange;
   capacity: number;           // ≤ FORMAT_CAPACITY[format]
   pricePerPlayer: PricePerPlayer;

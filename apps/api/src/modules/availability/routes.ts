@@ -4,6 +4,7 @@ import type { Db } from '../../db/client.js';
 import type { PlatformGuards } from '../../auth/platform-guards.js';
 import { algiersDateOf, dayStartMs, hhmm } from '../../lib/algiers.js';
 import { ApiError, badRequest, must } from '../../lib/http.js';
+import { hiddenFormats } from '../../lib/client-features.js';
 import { closureRangesFor, dayContextFor, loadDayContext, loadFieldContextsBatch, type DayContext } from '../bookings/service.js';
 
 interface Deps { db: Db; guards: PlatformGuards; summaryCacheMs?: number }
@@ -200,6 +201,12 @@ export async function registerAvailabilityRoutes(app: FastifyInstance, { db, gua
       throw new ApiError(409, 'INVALID_TARGET', 'Ce centre est actuellement indisponible.');
     }
 
+    // Phase 9v9 : une ancienne app ne reçoit pas le 9v9 — ni dans les formats du terrain, ni dans les devis ; un départ qui n'était
+    // libre qu'en 9v9 disparaît pour elle (lib/client-features.ts).
+    const hidden = hiddenFormats(req.headers);
+    const shownStarts = starts
+      .map((s) => ({ ...s, byFormat: s.byFormat.filter((f) => !hidden.has(f.format)) }))
+      .filter((s) => s.byFormat.length > 0);
     return reply.send({
       date,
       weekday: ctx.weekday,
@@ -208,10 +215,10 @@ export async function registerAvailabilityRoutes(app: FastifyInstance, { db, gua
       field: {
         id: ctx.field.id, name: ctx.field.name, sport: ctx.field.sport,
         hourlyRateDa: ctx.field.hourlyRateDa,
-        formats: ctx.field.formatPrices.map((fp) => ({ format: fp.format, hourlyRateDa: fp.hourlyRateDa })),
+        formats: ctx.field.formatPrices.filter((fp) => !hidden.has(fp.format)).map((fp) => ({ format: fp.format, hourlyRateDa: fp.hourlyRateDa })),
       },
       venue: { id: ctx.venue.id, name: ctx.venue.name },
-      starts: starts.map((s) => ({
+      starts: shownStarts.map((s) => ({
         startMin: s.startMin,
         label: hhmm(s.startMin),
         start: s.range.start,

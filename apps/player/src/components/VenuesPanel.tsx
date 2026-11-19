@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { Sport } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
+import { VenuePhoto } from './VenuePhoto.js';
 import { fmt } from '../lib/format.js';
 import { useLang, useT } from '../lib/i18n.js';
 import { fieldFormatList, sportIcon } from '../lib/venueView.js';
@@ -104,7 +105,7 @@ export function VenuesPanel({ store, onNavigate, filters, onFilters }: VenuesPan
       {visible.length > 0 ? (
         <div className="xp-vlist">
           {visible.map((v) => (
-            <VenueCard key={v.id} venue={v} availability={availability?.[v.id]} opening={openingId === v.id}
+            <VenueCard key={v.id} venue={v} photo={store.venuePhoto(v.id, 'card')} availability={availability?.[v.id]} opening={openingId === v.id}
               onOpen={() => { void openVenue(v.id); }} />
           ))}
         </div>
@@ -131,8 +132,8 @@ function formatsOf(venue: VenueSummary): string[] {
   return [...new Set(venue.fields.filter((f) => f.status === 'ACTIVE').flatMap((f) => fieldFormatList(f.formats)))];
 }
 
-function VenueCard({ venue, availability, opening, onOpen }: {
-  venue: VenueSummary; availability: VenueAvailability | undefined; opening: boolean; onOpen: () => void;
+function VenueCard({ venue, photo, availability, opening, onOpen }: {
+  venue: VenueSummary; photo: string | null; availability: VenueAvailability | undefined; opening: boolean; onOpen: () => void;
 }) {
   const t = useT();
   const lang = useLang();
@@ -147,7 +148,8 @@ function VenueCard({ venue, availability, opening, onOpen }: {
       {/* Pas encore de photo de centre (aucun envoi possible aujourd'hui, décision du 23/09 : logo par défaut) —
           le signe de la marque sur la surface « terrain » du DS, jamais la photo nocturne répétée sur chaque carte. */}
       <span className="xp-vcard__photo mb-pitch">
-        <img className="xp-vcard__mark" src={brandMark} alt="" />
+        {/* Phase photos (17/11/2026) : la photo du centre si elle existe, sinon le signe de la marque. */}
+        <VenuePhoto src={photo}><img className="xp-vcard__mark" src={brandMark} alt="" /></VenuePhoto>
         <span className="xp-vcard__badge">{venue.sports.map((s) => t(sportChipLabel(s as Sport))).join(' · ').toUpperCase()}</span>
       </span>
       <span className="xp-vcard__body">

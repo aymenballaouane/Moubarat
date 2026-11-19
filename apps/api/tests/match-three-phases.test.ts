@@ -4,12 +4,13 @@ import { setupTestStack, loginAs, bearer, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { toPgRange } from '../src/lib/pgrange.js';
 
-/* Règle 4 (MODIFIÉE, 26/10/2026) — trois temps, appliqués par le serveur : désistement libre jusqu'à H-2 ; de H-2 à H-1 partir est possible,
-   compte comme une demi-absence (left_at en garde la trace) et la place est reproposée ; à H-1 la composition est figée. Vrai Postgres. */
+/* Règle 4 (MODIFIÉE, 26/10/2026 puis 16/11/2026) — trois temps, appliqués par le serveur : désistement libre jusqu'à H-2 ; de H-2 au coup
+   d'envoi partir est possible, compte comme une demi-absence (left_at en garde la trace) et la place est reproposée ; au coup d'envoi tout se
+   ferme. Le verrou à H-1 (« composition figée ») a été abandonné le 16/11/2026. Vrai Postgres. */
 
 let stack: TestStack;
 let seed: SeedResult;
-let karim = '', walid = '';
+let karim = '', walid = '', fouad = '';
 const H = 3_600_000;
 
 async function insertMatch(startInMs: number, joined: string[], capacity = 10): Promise<string> {
@@ -35,6 +36,7 @@ beforeAll(async () => {
   seed = await seedDemo(stack.db);
   karim = await loginAs(stack, seed.phones.karim);
   walid = await loginAs(stack, seed.phones.walid);
+  fouad = await loginAs(stack, seed.phones.fouad);
 });
 afterAll(async () => { await stack.teardown(); });
 
@@ -75,8 +77,27 @@ describe('règle 4 — trois temps', () => {
     expect(row.left_at).toBeNull();
   });
 
-  it('à H-1 : la composition est figée — ni départ (CANCEL_WINDOW_PASSED) ni inscription (MATCH_LOCKED)', async () => {
+  /* 16/11/2026 (GO d'Aymen) : la « composition figée une heure avant le match » est abandonnée. Ce test affirmait l'inverse
+     (départ 409 et inscription 400 à H-0:40) : assertions INVERSÉES. */
+  it('à 40 min du coup d’envoi (sous H-1) : départ encore possible (demi-absence, place reproposée), inscription et changement d’équipe aussi', async () => {
     const id = await insertMatch(40 * 60_000, [seed.users.karim]);
+    const out = await leave(karim, id);
+    expect(out.statusCode, out.body).toBe(200);
+    const row = await playerRow(id, seed.users.karim);
+    expect(row.status).toBe('LEFT');
+    expect(matchLeaveKind({ range: { start: Date.now() + 40 * 60_000, end: 0 } }, row.left_at!.getTime())).toBe('LATE');
+    const half = await stack.db.selectFrom('absences').select(['kind']).where('match_id', '=', id).where('user_id', '=', seed.users.karim).executeTakeFirst();
+    expect(half?.kind).toBe('HALF');
+    const inn = await join(fouad, id);   // walid est déjà inscrit à un autre match à la même heure (test précédent)
+    expect(inn.statusCode, inn.body).toBe(200);
+    const fouadTeam = (await playerRow(id, seed.users.fouad)).team;
+    const other = fouadTeam === 'A' ? 'B' : 'A';
+    const moved = await stack.app.inject({ method: 'POST', url: `/matches/${id}/team`, headers: bearer(fouad), payload: { team: other } });
+    expect(moved.statusCode, moved.body).toBe(200);
+  });
+
+  it('au coup d’envoi : plus de départ (CANCEL_WINDOW_PASSED), plus d’inscription (MATCH_LOCKED)', async () => {
+    const id = await insertMatch(-5 * 60_000, [seed.users.karim]);
     const out = await leave(karim, id);
     expect(out.statusCode).toBe(409);
     expect(errorOf(out)).toBe('CANCEL_WINDOW_PASSED');

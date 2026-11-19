@@ -2,15 +2,20 @@ import type { ReactNode } from 'react';
 import { CANCEL_FREE_BEFORE_MS } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
+import { VenuePhoto } from './VenuePhoto.js';
 import { useLang, useT } from '../lib/i18n.js';
 import { fmt, hhmm, epochMinutesOfDay } from '../lib/format.js';
+import { fillNodes } from '../lib/fillNodes.js';
 import { cancelLimitLabel, ticketDateLabel } from '../lib/reserverCreneau.js';
-import heroPhoto from '../../../../design/photo-nocturne.jpg';
 import '../styles/reserver-ticket.css';
+import '../styles/reserver-v2.css';
+import '../styles/match-view.css';
 
-/* R4 · « C'est réservé » (confirmation) et « Ta réservation » (consultation depuis Mes matchs) — Lot 5, patron
-   Reserver.dc.html étape confirme (ReserverConfirme / ReserverVoir). Présentationnel : annulation, création de
-   match et réservation réelle restent dans BookingFlow. Un seul ticket pour les deux entrées, comme la maquette. */
+/* R6 · « C'est réservé » (lot « Match libre », phase 4 — planche S6, dossier §8) et « Ta réservation » (consultation depuis Mes matchs) :
+   un seul ticket. La carte : l'image du centre (logo tant qu'il n'y a pas de photo, phase 6), la date, le centre, « Terrain T1 · 5V5 · au
+   nom de … », « À payer sur place » et le prix total, la référence. Dessous : « Un empêchement ? Annule ici jusqu'à 17:30 ». Deux boutons :
+   « Créer mon match » (principal) et « Voir mes matchs ». Présentationnel : annulation, création de match et réservation réelle restent
+   dans BookingFlow. */
 
 export type TicketState = 'reserved' | 'pending' | 'cancelled' | 'past';
 
@@ -20,6 +25,10 @@ export interface ReserverTicketProps {
   venueName: string;
   fieldName: string;
   format: string | null;
+  /** « au nom de … ». */
+  name: string;
+  /** Phase photos : la photo du centre (vignette), `null` sans photo — le logo Moubarat sinon. */
+  photoUrl?: string | null | undefined;
   totalDa: number;
   code: string;
   rangeStart: number;
@@ -30,7 +39,6 @@ export interface ReserverTicketProps {
   canCreateMatch: boolean;
   /** Réservé à moins de 2 h du début (§19) : toute annulation compte comme une demi-absence. */
   late: boolean;
-  shareUrl: string;
   /** Consultation : retour vers Mes matchs. */
   onBack?: (() => void) | undefined;
   onCancel: () => void;
@@ -41,6 +49,11 @@ export interface ReserverTicketProps {
   sheet?: ReactNode;
 }
 
+/** « Terrain T1 » ; un nom qui commence déjà par « terrain » reste tel quel. */
+function terrainLabel(name: string, t: (k: string) => string): string {
+  return /^terrain\b/i.test(name.trim()) ? name : `${t('Terrain')} ${name}`;
+}
+
 export function ReserverTicket(p: ReserverTicketProps) {
   const t = useT();
   const lang = useLang();
@@ -48,66 +61,57 @@ export function ReserverTicket(p: ReserverTicketProps) {
   const cancelled = p.state === 'cancelled';
   const title = cancelled ? t('Réservation annulée.') : p.mode === 'view' ? t('Ta réservation') : t('C’est réservé');
   const limit = cancelLimitLabel(p.rangeStart - CANCEL_FREE_BEFORE_MS, p.rangeStart, p.now, lang);
-  const terrain = p.format ? `${p.fieldName} · ${p.format.toUpperCase()}` : p.fieldName;
+  const date = ticketDateLabel(p.rangeStart, lang);
+  const sep = ' · ';
 
   return (
-    <section className="au-screen rsv-tk" id="s-proof">
+    <section className="au-screen rv6" id="s-proof">
       {p.mode === 'view' && p.onBack ? (
-        <button type="button" className="rsv-tk__back mb-tap" aria-label={t('Retour')} onClick={p.onBack}><Icon id="i-back" /></button>
+        <button type="button" className="rv2-back rv6-back mb-tap" aria-label={t('Retour')} onClick={p.onBack}><Icon id="i-back" /></button>
       ) : null}
 
-      <div className="rsv-tk__head">
-        {p.mode === 'confirm' && !cancelled ? <span className="rsv-tk__check"><Icon id="i-check" className="mb-ic--lg" /></span> : null}
-        <h1 className="rsv-tk__h1">{title}</h1>
-        {p.state === 'pending' && !cancelled ? <p className="mb-meta rsv-tk__sub">{t('Le créneau est bloqué. Le centre confirme ta réservation téléphonique.')}</p> : null}
-        {cancelled ? <p className="mb-meta rsv-tk__sub">{t('Le créneau est libéré pour les autres joueurs.')}</p> : null}
-      </div>
+      <div className="rv6-main">
+        {p.mode === 'confirm' && !cancelled ? <span className="rv6-check" aria-hidden="true"><Icon id="i-check" /></span> : null}
+        <h1 className="rv6-h1">{title}</h1>
+        {p.state === 'pending' && !cancelled ? <p className="rv6-sub">{t('Le créneau est bloqué. Le centre confirme ta réservation téléphonique.')}</p> : null}
+        {cancelled ? <p className="rv6-sub">{t('Le créneau est libéré pour les autres joueurs.')}</p> : null}
 
-      <div className="rsv-tk__ticket" aria-label={t('Ton ticket')} data-cancelled={cancelled ? 'true' : undefined}>
-        <div className="rsv-tk__photo">
-          <img src={heroPhoto} alt="" />
-          <span className="rsv-tk__scrim" />
-          <span className="rsv-tk__title">
-            <span className="rsv-tk__date">
-              {ticketDateLabel(p.rangeStart, lang)} · <Ltr>{hhmm(epochMinutesOfDay(p.rangeStart))}</Ltr> {arrow} <Ltr>{hhmm(epochMinutesOfDay(p.rangeEnd))}</Ltr>
-            </span>
-            <span className="rsv-tk__venue">{p.venueName}</span>
-          </span>
+        <div className="rv6-card" aria-label={t('Ton ticket')} data-cancelled={cancelled ? 'true' : undefined}>
+          <div className="rv6-card__img" aria-hidden="true">
+            <VenuePhoto src={p.photoUrl ?? null}><svg width="48" height="48" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg></VenuePhoto>
+          </div>
+          <div className="rv6-card__body">
+            <div className="rv6-date">
+              {lang === 'ar' ? date : date.toUpperCase()}{sep}<Ltr>{hhmm(epochMinutesOfDay(p.rangeStart))}</Ltr> {arrow} <Ltr>{hhmm(epochMinutesOfDay(p.rangeEnd))}</Ltr>
+            </div>
+            <div className="rv6-venue">{p.venueName.toUpperCase()}</div>
+            <div className="rv6-meta">
+              {terrainLabel(p.fieldName, t)}{p.format ? <>{sep}<Ltr>{p.format.toUpperCase()}</Ltr></> : null}
+              {p.name ? <>{sep}{t('au nom de')} <Ltr>{p.name}</Ltr></> : null}
+            </div>
+            <div className="rv6-sep" />
+            <div className="rv6-pay">
+              <span className="rv6-pay__l">{t('À payer sur place')}</span>
+              <span className="rv6-pay__n"><Ltr>{fmt(p.totalDa).split(' ').join(String.fromCharCode(0xa0))}</Ltr> {t('DA')}</span>
+            </div>
+            <div className="rv6-ref">{fillNodes(t('Réf. {ref}'), { ref: <Ltr>{p.code}</Ltr> })}</div>
+          </div>
         </div>
-        <div className="rsv-tk__tear" />
-        <span className="rsv-tk__notch rsv-tk__notch--s" /><span className="rsv-tk__notch rsv-tk__notch--e" />
-        <div className="rsv-tk__facts">
-          <span><i>{t('TERRAIN')}</i><b>{terrain}</b></span>
-          <span><i>{t('À PAYER')}</i><b><Ltr>{fmt(p.totalDa)}</Ltr> {t('DA')}</b></span>
-          <span><i>{t('CODE')}</i><b className="rsv-tk__code"><Ltr>{p.code}</Ltr></b></span>
-        </div>
-      </div>
 
-      {!cancelled && p.state !== 'past' ? (
-        <p className="rsv-tk__note">
-          {t('Tu paies sur place, en espèces.')}<br />
-          {p.canCancel ? (
-            p.late ? (
-              <>{t('Tu réserves à moins de 2 h du début : si tu')} <button type="button" className="rsv-tk__link" onClick={p.onCancel}>{t('annules')}</button>{t(', ça comptera comme une demi-absence.')}</>
+        {!cancelled && p.state !== 'past' && p.canCancel ? (
+          <p className="rv6-note">
+            {p.late ? (
+              <>{t('Tu réserves à moins de 2 h du début : si tu')} <button type="button" className="rv6-link mb-tap" onClick={p.onCancel}>{t('annules')}</button>{t(', ça comptera comme une demi-absence.')}</>
             ) : (
-              <>{t('Un empêchement ?')} <button type="button" className="rsv-tk__link" onClick={p.onCancel}>{t('Annule ici')}</button>{t(', sans souci jusqu’à')} <Ltr>{limit}</Ltr>.</>
-            )
-          ) : null}
-        </p>
-      ) : null}
+              <>{t('Un empêchement ?')} <button type="button" className="rv6-link mb-tap" onClick={p.onCancel}>{t('Annule ici')}</button> {fillNodes(t('jusqu’à {heure}'), { heure: lang === 'ar' ? <bdi>{limit}</bdi> : <Ltr>{limit}</Ltr> })}</>
+            )}
+          </p>
+        ) : null}
+      </div>
 
-      <div className="rsv-tk__actions">
-        {p.canCreateMatch ? (
-          <button type="button" className="rsv-tk__cta mb-tap" onClick={p.onCreateMatch}>
-            <span>{t('Créer un match sur ce créneau')}</span><Icon id="i-arrow" />
-          </button>
-        ) : null}
-        {!cancelled ? (
-          <a className="rsv-tk__share mb-tap" href={p.shareUrl} target="_blank" rel="noopener noreferrer">
-            <Icon id="i-share" />{t('Partager sur WhatsApp')}
-          </a>
-        ) : null}
-        {p.onMyMatches ? <button type="button" className="rsv-tk__more mb-tap" onClick={p.onMyMatches}>{t('Voir mes matchs')}</button> : null}
+      <div className="rv6-actions">
+        {p.canCreateMatch ? <button type="button" className="mv-cta mb-tap" onClick={p.onCreateMatch}>{t('Créer mon match')}</button> : null}
+        {p.onMyMatches ? <button type="button" className="rv6-more mb-tap" onClick={p.onMyMatches}>{t('Voir mes matchs')}</button> : null}
       </div>
       {p.toast}
       {p.sheet}

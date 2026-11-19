@@ -106,7 +106,7 @@ export function ExplorerSearch({ store, onNavigate, onClose }: { store: AppStore
                     <span className="xp-search__tag">
                       {relativeDayLabel(match.range.start, now, t).toUpperCase()} · <Ltr>{hhmm(epochMinutesOfDay(match.range.start))}</Ltr>
                     </span>
-                    <b>{store.venueName(match.venueId)}</b>
+                    <b>{store.matchPlace(match)}</b>
                     <span className="xp-search__meta">{formatBadge(match.format)}{places ? ` · ${places}` : ''}</span>
                   </span>
                   <Icon id="i-arrow" className="xp-search__chev" />

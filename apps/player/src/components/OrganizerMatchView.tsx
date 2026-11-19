@@ -2,30 +2,39 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { activePlayers, canDeclareAbsence, canOrganizerAct, matchShareText, whatsappShareUrl, type Match, type MatchPlayer, type MatchTeam } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
+import { MatchHead } from './MatchHead.js';
+import { MatchPitch } from './MatchPitch.js';
 import { CancelReservationSheet } from './CancelReservationSheet.js';
 import { MatchConfirmSheet } from './MatchSheets.js';
-import { arPluralOk } from '../lib/explorerFilters.js';
+import { ReportSheet, type ReportTarget } from './ReportSheet.js';
 import { epochDayLabel, epochMinutesOfDay, hhmm } from '../lib/format.js';
-import { useLang, useT } from '../lib/i18n.js';
+import { useLang, useT, useTn } from '../lib/i18n.js';
 import { useToast } from '../lib/useToast.js';
 import { formatBadge, NOTE_MAX } from '../lib/createMatch.js';
-import { fillTemplate, ticketDateLabel } from '../lib/reserverCreneau.js';
-import { freeCount, teamViews } from '../lib/matchDetail.js';
+import { fillTemplate } from '../lib/reserverCreneau.js';
+import { matchPhase, registrationsOpen, teamViews } from '../lib/matchDetail.js';
+import { displayPhone, pitchHelp } from '../lib/matchView.js';
+import { fillNodes } from '../lib/fillNodes.js';
 import { lateCancelNotice } from '../lib/reservationView.js';
 import { copyText } from '../lib/clipboard.js';
-import { inviteHref, matchLink } from '../lib/matchLink.js';
+import { share } from '../lib/share.js';
+import { inviteHref, inviteText, matchLink } from '../lib/matchLink.js';
+import { contactsByUser, telHref } from '../lib/contacts.js';
 import { CURRENT_USER_ID } from '../data/identity.js';
 import type { AppStore } from '../state/useAppStore.js';
-import heroPhoto from '../../../../design/photo-nocturne.jpg';
 import '../styles/create.css';
-import { contactsByUser, telHref } from '../lib/contacts.js';
 import '../styles/match-detail.css';
 import '../styles/organizer.css';
+import '../styles/match-view.css';
+import '../styles/report.css';
 
-/* Vue organisateur d'un match (Lot 7, OrgaMatch.dc.html, OrgaMatchGroupe, MotAuxJoueurs, ConfRetirer, ConfAnnulerMatch, GroupeWhatsApp) : « TU ORGANISES »,
-   la jauge, « Tes joueurs » (retirer), « Gérer le match » (ton mot, le groupe WhatsApp, annuler le match, annuler la réservation) et « Trouver N joueurs ».
-   Toutes les règles restent côté core / serveur (canOrganizerAct, removePlayer, cancel…) ; cet écran ne fait que les appeler.
-   « Appeler » un joueur (règle 31) : le numéro n'est servi que pour les joueurs qui ont l'accord « numéro visible » — sans numéro, pas de bouton. Retiré : « Fermer les inscriptions » (aucune maquette) et la saisie de score / l'OVR (plus d'écran résultat dans cette version). */
+/* Vue organisateur d'un match (lot « Match libre », phase 3 — planches Dv3, Dv9, Dt3 ; dossier §7). Même écran que le joueur (MatchHead,
+   MatchPitch) avec : « Joueurs inscrits » (nom, équipe, numéro, « Appeler » — numéros visibles par lui seul, servis par le serveur),
+   « Ton mot aux joueurs » (« Modifier »), « Gérer le match » (« Qui peut voir ce match ? » Public / Privé — passer en privé demande la
+   confirmation Dt3 —, copier le lien, groupe WhatsApp, annuler le match, annuler la réservation) et « Trouver N joueurs ».
+   Pas affichés, absents des planches : « Fermer les inscriptions » (décision d'Aymen du 16/11/2026, la route serveur reste), la jauge,
+   « TU ORGANISES ». Le bouton « Retirer » un joueur (règle 8), absent de Dv3, est gardé sur décision d'Aymen du 17/11/2026. Après le match : « Absent »
+   (règle 25), à la place de « Appeler ». Toutes les règles restent côté core / serveur. */
 
 interface OrganizerMatchViewProps {
   match: Match;
@@ -34,10 +43,11 @@ interface OrganizerMatchViewProps {
   store: AppStore;
 }
 
-type Sheet = null | { kind: 'kick'; userId: string } | { kind: 'absent'; userId: string } | { kind: 'cancelMatch' } | { kind: 'cancelBooking' } | { kind: 'group' };
+type Sheet = null | { kind: 'kick'; userId: string } | { kind: 'absent'; userId: string } | { kind: 'cancelMatch' } | { kind: 'cancelBooking' } | { kind: 'group' } | { kind: 'private' } | { kind: 'report' };
 
 export function OrganizerMatchView({ match, players, onExit, store }: OrganizerMatchViewProps) {
   const t = useT();
+  const tn = useTn();
   const lang = useLang();
   const toast = useToast();
   const [sheet, setSheet] = useState<Sheet>(null);
@@ -52,7 +62,7 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match.id]);
 
-  /* Règle 31 : les numéros des inscrits qui ont accordé « numéro visible » — rechargés quand la liste des inscrits change. */
+  /* Règle 31 et dossier §3 : les numéros des inscrits (accord « numéro visible ») — servis à l'organisateur seul, rechargés quand la liste change. */
   const rosterKey = players.filter((p) => p.status === 'JOINED').map((p) => p.userId).sort().join(',');
   useEffect(() => {
     if (match.status === 'CANCELLED' || match.status === 'PLAYED') { setPhones({}); return; }
@@ -62,34 +72,32 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match.id, match.status, rosterKey]);
 
+  const now = Date.now();
   const meId = CURRENT_USER_ID;
   const nameOf = (id: string) => store.knownPlayerName(id) ?? t('Joueur');
   const active = activePlayers(players);
   const count = active.length;
   const left = Math.max(0, match.capacity - count);
   const over = match.status === 'CANCELLED' || match.status === 'PLAYED';
-  const venueName = store.venueName(match.venueId);
+  const phase = matchPhase(match, now);
+  const open = registrationsOpen(phase);
+  const venueName = store.matchPlace(match);   // phase 5 : le lieu saisi pour un match libre
   const fieldName = store.fieldInfo(match.fieldId)?.field.name ?? '';
+  const centre = store.venueSummary(match.venueId);
   const views = teamViews(match, players, meId, nameOf);
   const groupUrl = match.coordination.kind === 'WHATSAPP' ? match.coordination.url : undefined;
   const startHour = hhmm(epochMinutesOfDay(match.range.start));
-  const endHour = hhmm(epochMinutesOfDay(match.range.end));
-  const arrow = lang === 'ar' ? '←' : '→';
+  const isPrivate = match.visibility === 'PRIVATE';
 
   /* BUG-1 (26/09/2026, décision d'Aymen : l'organisateur CHOISIT) — la réservation du terrain qui porte ce match est la mienne ; si elle est encore
      vivante, deux actions distinctes : annuler SEULEMENT le match (la réservation reste), ou la réservation (le match tombe avec). */
   const myLiveBooking = store.reservations.find((r) => r.booking.matchId === match.id && r.booking.status === 'RESERVED')?.booking;
 
-  /** Les joueurs, par équipe : toi d'abord. Un joueur sans équipe connue est rangé comme dans les équipes de la fiche. */
-  const rows: { userId: string; name: string; team: MatchTeam; me: boolean }[] = [];
+  /** « Joueurs inscrits » (Dv3) : les AUTRES inscrits, par équipe — l'organisateur ne s'y voit pas. */
+  const rows: { userId: string; name: string; team: MatchTeam }[] = [];
   for (const team of ['A', 'B'] as const) {
-    for (const s of views[team].slots) {
-      if (s.kind === 'me') rows.push({ userId: meId, name: nameOf(meId), team, me: true });
-      else if (s.kind === 'player') rows.push({ userId: s.userId, name: s.name, team, me: false });
-    }
+    for (const s of views[team].slots) if (s.kind === 'player') rows.push({ userId: s.userId, name: s.name, team });
   }
-  rows.sort((a, b) => Number(b.me) - Number(a.me));
-  const freeTotal = freeCount(views.A) + freeCount(views.B);
 
   const code = store.findMatch(match.id)?.code;
   async function copyLink() {
@@ -104,9 +112,15 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
     dayLabel: epochDayLabel(match.range.start), timeLabel: startHour,
     pricePerPlayerDa: match.pricePerPlayer.amount, spotsLeft: Math.max(left, 1),
   });
+  function shareMatch() {
+    void share(code ? { title: venueName, text: inviteText(code).split(' : ')[0] ?? '', url: matchLink(code) } : { title: venueName, text: waText });
+  }
 
   /* --- actions ------------------------------------------------------------------------------------------------------------- */
 
+  /* Règle 25 : « n'est pas venu » — l'organisateur le déclare une fois le match FINI (core canDeclareAbsence : jamais lui-même, jamais un joueur retiré ou parti). */
+  const canAbsent = (userId: string) => userId !== meId
+    && canDeclareAbsence({ match, players, targetId: userId, declarerId: meId, byCenter: false, now: Date.now() }).ok;
   async function kick(userId: string) {
     setBusy(true);
     const res = await store.kickPlayer(match.id, userId);
@@ -115,11 +129,6 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
     if (!res.ok) { toast.show(res.message); return; }
     toast.show(t('C’est fait, sa place est libre.'));
   }
-
-  /* Règle 25 : « n'est pas venu » — l'organisateur le déclare une fois le match FINI (core canDeclareAbsence : jamais lui-même, jamais un joueur retiré ou parti).
-     Une absence compte pour la fiabilité du joueur ; à deux, il est restreint. Le centre peut aussi la déclarer : la seconde déclaration est ignorée. */
-  const canAbsent = (userId: string) => userId !== meId
-    && canDeclareAbsence({ match, players, targetId: userId, declarerId: meId, byCenter: false, now: Date.now() }).ok;
   async function declareAbsent(userId: string) {
     setBusy(true);
     const res = await store.declareAbsent(match.id, userId);
@@ -127,6 +136,16 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
     setSheet(null);
     if (!res.ok) { toast.show(res.message); return; }
     toast.show(res.recorded === false ? t('Il était déjà déclaré absent.') : res.restricted ? t('C’est noté. Il est maintenant restreint pour un temps.') : t('C’est noté. Merci.'));
+  }
+
+  /* « Qui peut voir ce match ? » (Dv3) : passer en privé demande une confirmation (Dt3) ; revenir en public, non. */
+  async function setVisibility(v: 'OPEN' | 'PRIVATE') {
+    if (busy || match.visibility === v) return;
+    setBusy(true);
+    const res = await store.setMatchVisibility(match.id, v);
+    setBusy(false);
+    setSheet(null);
+    if (!res.ok) toast.show(res.message);
   }
 
   function requestCancelMatch() {
@@ -155,13 +174,6 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
     toast.show(`${res.message ?? 'Réservation et match annulés — les joueurs inscrits sont prévenus.'}${late ? ` ${late}` : ''}`);
   }
 
-  /** « Plus que 3 joueurs à trouver » ; arabe : seulement de 3 à 10 (le nombre en lettres n'est pas dérivable pour les autres cas, plan lot 5). */
-  const findLine = left === 0
-    ? t('Complet')
-    : lang === 'ar'
-      ? (arPluralOk(left) ? fillTemplate(t('Plus que {n} joueurs à trouver'), { n: String(left) }) : null)
-      : `Plus que ${left} joueur${left > 1 ? 's' : ''} à trouver`;
-
   if (view === 'note') {
     return (
       <NoteScreen
@@ -177,119 +189,139 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
     );
   }
 
-  const kickTarget = sheet?.kind === 'kick' ? rows.find((r) => r.userId === sheet.userId) : undefined;
   const absentTarget = sheet?.kind === 'absent' ? rows.find((r) => r.userId === sheet.userId) : undefined;
+  const kickTarget = sheet?.kind === 'kick' ? rows.find((r) => r.userId === sheet.userId) : undefined;
   const others = Math.max(count - 1, 0);
+  const helpState = pitchHelp({ organizer: true, joined: true, picked: false, free: left, open, replacement: false });
+  const help = helpState?.kind === 'full' ? t('Toutes les places sont prises')
+    : helpState?.kind === 'orga' ? tn('Plus que {n} places à remplir', helpState.free)
+      : open ? null : t('Inscriptions fermées');
 
   return (
-    <section className="au-screen md og" id="s-mymatch">
-      <div className="og-hero">
-        <img src={heroPhoto} alt={fillTemplate(t('Le terrain de {centre} sous les projecteurs'), { centre: venueName })} />
-        <span className="md-veil" />
-        <div className="og-top">
-          <button type="button" className="md-round mb-tap" aria-label={t('Retour')} onClick={onExit}><Icon id="i-back" /></button>
-          <span className="og-pill">{match.status === 'CANCELLED' ? t('Match annulé') : t('TU ORGANISES')}</span>
-          <span className="og-top__sp" />
-        </div>
-        <div className="og-hero__low">
-          <span className="og-hero__date">{ticketDateLabel(match.range.start, lang)} · <bdi dir="ltr">{startHour}</bdi> {arrow} <bdi dir="ltr">{endHour}</bdi></span>
-          <span className="og-hero__name">{venueName.toUpperCase()}</span>
-          <span className="og-hero__sub">{fieldName ? `${fieldName} · ` : ''}{formatBadge(match.format).toLowerCase()}</span>
-        </div>
-      </div>
+    <section className="au-screen mv" id="s-mymatch">
+      <MatchHead
+        match={match} venueName={venueName} centre={centre} now={now} onBack={onExit}
+        onShare={over ? undefined : shareMatch}
+        onMore={match.status === 'CANCELLED' ? undefined : () => setSheet({ kind: 'report' })}
+      />
 
-      <div className="md-pad">
-        <div className="og-gauge">
-          <span className="og-gauge__n"><Ltr>{count}<i>/{match.capacity}</i></Ltr></span>
-          <span className="og-gauge__txt">
-            {findLine ? <b>{findLine}</b> : null}
-            <span className="og-bar"><i style={{ width: `${Math.round((count / match.capacity) * 100)}%` }} /></span>
-          </span>
-        </div>
-      </div>
+      <div className="mv-pad">
+        {over ? (
+          <p className="md-line md-line--box">{match.status === 'CANCELLED' ? `${t('Ce match a été annulé')}. ${t('Il ne se relance pas.')}` : t('Ce match a été joué.')}</p>
+        ) : (
+          <MatchPitch views={views} padel={match.sport === 'PADEL'} preview={null} canPlus={() => false} onPlus={() => {}} help={help} busy={busy} />
+        )}
 
-      <div className="md-pad">
-        <section className="md-sec">
-          <h2>{t('Tes joueurs')}</h2>
-          <div className="og-list">
-            {rows.map((r) => (
-              <div key={r.userId} className="og-prow">
-                <span className={`og-av${r.me ? ' og-av--me' : ''}`}>{r.name.charAt(0).toUpperCase()}</span>
-                <span className="og-prow__who"><b>{r.name}</b> <i>{t(r.team === 'A' ? '· Éq. A' : '· Éq. B')}</i></span>
-                {r.me ? <span className="og-prow__me">{t('C’est toi')}</span> : canAbsent(r.userId) ? (
-                  <button
-                    type="button" className="og-prow__abs mb-tap" disabled={busy}
-                    aria-label={fillTemplate(t('Déclarer {nom} absent'), { nom: r.name })}
-                    onClick={() => setSheet({ kind: 'absent', userId: r.userId })}
-                  >{t('Absent')}</button>
-                ) : (
-                  !over ? (
-                    <>
-                    {phones[r.userId] && telHref(phones[r.userId]!) ? (
-                      <a className="og-prow__x og-prow__call mb-tap" href={telHref(phones[r.userId]!) ?? undefined} aria-label={fillTemplate(t('Appeler {prenom}'), { prenom: r.name })}><Icon id="i-phone" /></a>
+        {rows.length > 0 ? (
+          <section className="mv-sec">
+            <div className="mv-sec__head">
+              <h2>{t('Joueurs inscrits')}</h2>
+              {!over ? <span className="mv-sec__note">{t('Numéros visibles par toi seul')}</span> : null}
+            </div>
+            <div className="mv-box">
+              {rows.map((r) => {
+                const phone = phones[r.userId];
+                const href = phone ? telHref(phone) : null;
+                return (
+                  <div key={r.userId} className="mv-prow">
+                    <span className="mv-prow__av" aria-hidden="true">{r.name.charAt(0).toUpperCase()}</span>
+                    <span className="mv-prow__col">
+                      <span className="mv-prow__who">{fillNodes(t('{nom} · équipe {x}'), { nom: <Ltr>{r.name}</Ltr>, x: r.team })}</span>
+                      {phone && !over ? <span className="mv-prow__num"><Ltr>{displayPhone(phone)}</Ltr></span> : null}
+                    </span>
+                    {canAbsent(r.userId) ? (
+                      <button type="button" className="mv-prow__abs mb-tap" disabled={busy}
+                        aria-label={fillTemplate(t('Déclarer {nom} absent'), { nom: r.name })}
+                        onClick={() => setSheet({ kind: 'absent', userId: r.userId })}>{t('Absent')}</button>
+                    ) : !over ? (
+                      <>
+                        {href ? <a className="mv-callbtn mb-tap" href={href} aria-label={fillTemplate(t('Appeler {prenom}'), { prenom: r.name })}><Icon id="i-phone" />{t('Appeler')}</a> : null}
+                        {/* « Retirer » (règle 8) — absent de la planche Dv3, remis sur décision d'Aymen du 17/11/2026 ; jusqu'au coup d'envoi (core). */}
+                        {open ? (
+                          <button type="button" className="mv-kick mb-tap" disabled={busy}
+                            aria-label={fillTemplate(t('Retirer {nom} du match'), { nom: r.name })}
+                            onClick={() => setSheet({ kind: 'kick', userId: r.userId })}><Icon id="i-user-minus" /></button>
+                        ) : null}
+                      </>
                     ) : null}
-                    <button
-                      type="button" className="og-prow__x mb-tap" disabled={busy}
-                      aria-label={fillTemplate(t('Retirer {nom} du match'), { nom: r.name })}
-                      onClick={() => setSheet({ kind: 'kick', userId: r.userId })}
-                    ><Icon id="i-user-minus" /></button>
-                    </>
-                  ) : null
-                )}
-              </div>
-            ))}
-            {freeTotal > 0 && !over ? (
-              <div className="og-prow og-prow--free">
-                <span className="og-av og-av--free">+</span>
-                <span className="og-prow__who"><b>{left === 1 ? t('1 place libre') : fillTemplate(t('{n} places libres'), { n: String(left) })}</b></span>
-              </div>
-            ) : null}
-          </div>
-        </section>
-      </div>
-
-      {!over ? (
-        <div className="md-pad">
-          <section className="md-sec">
-            <h2>{t('Gérer le match')}</h2>
-            <div className="og-list">
-              <button type="button" className="og-act mb-tap" onClick={() => setView('note')}>
-                <Icon id="i-pencil" /><span className="og-act__t"><b>{t('Modifier ton mot aux joueurs')}</b></span><Icon id="i-arrow" className="og-act__chev" />
-              </button>
-              {code ? (
-                <button type="button" className="og-act mb-tap" onClick={() => { void copyLink(); }}>
-                  <Icon id="i-link" /><span className="og-act__t"><b>{copied ? t('Lien copié ✓') : t('Copier le lien du match')}</b></span><Icon id="i-arrow" className="og-act__chev" />
-                </button>
-              ) : null}
-              <button type="button" className="og-act mb-tap" onClick={() => setSheet({ kind: 'group' })}>
-                <Icon id="i-chat" />
-                <span className="og-act__t">
-                  <b>{groupUrl ? t('Groupe WhatsApp ajouté') : t('Ajouter un groupe WhatsApp')}</b>
-                  {groupUrl ? <small>{fillTemplate(t('{lien} · visible par les inscrits'), { lien: groupUrl.replace(/^https:\/\//, '') })}</small> : null}
-                </span>
-                <Icon id="i-arrow" className="og-act__chev" />
-              </button>
-              <button type="button" className="og-act og-act--danger mb-tap" onClick={requestCancelMatch}>
-                <Icon id="i-cancel" /><span className="og-act__t"><b>{t('Annuler le match')}</b></span><Icon id="i-arrow" className="og-act__chev" />
-              </button>
-              {myLiveBooking ? (
-                <button type="button" className="og-act og-act--danger mb-tap" onClick={() => setSheet({ kind: 'cancelBooking' })}>
-                  <Icon id="i-cancel" /><span className="og-act__t"><b>{t('Annuler la réservation (et le match)')}</b></span><Icon id="i-arrow" className="og-act__chev" />
-                </button>
-              ) : null}
+                  </div>
+                );
+              })}
             </div>
           </section>
-        </div>
-      ) : (
-        <p className="md-line md-line--box">{match.status === 'CANCELLED' ? `${t('Ce match a été annulé')}. ${t('Il ne se relance pas.')}` : t('Ce match a été joué.')}</p>
-      )}
+        ) : null}
 
-      {!over && left > 0 && match.status !== 'LOCKED' ? (
-        <footer className="md-foot">
-          <a className="md-cta mb-tap og-find" href={code ? inviteHref(code) : whatsappShareUrl(waText)} target="_blank" rel="noopener noreferrer">
-            <Icon id="i-chat" />{lang === 'ar' && !arPluralOk(left) ? t('Inviter sur WhatsApp') : lang === 'ar' ? fillTemplate(t('Trouver {n} joueurs'), { n: String(left) }) : `Trouver ${left} joueur${left > 1 ? 's' : ''}`}
+        {!over ? (
+          <>
+            <section className="mv-sec">
+              <div className="mv-sec__head">
+                <h2>{t('Ton mot aux joueurs')}</h2>
+                <button type="button" className="mv-link mb-tap" onClick={() => setView('note')}>{t('Modifier')}</button>
+              </div>
+              {match.description ? <div className="mv-note" dir="auto">{match.description}</div> : null}
+            </section>
+
+            <section className="mv-sec">
+              <h2 className="mv-sec__title">{t('Gérer le match')}</h2>
+              <div className="mv-vis">
+                <span className="mv-vis__q">{t('Qui peut voir ce match ?')}</span>
+                <div className="mv-seg" role="group" aria-label={t('Qui peut voir ce match ?')}>
+                  <button type="button" aria-pressed={!isPrivate} disabled={busy} onClick={() => { void setVisibility('OPEN'); }}><Icon id="i-globe" />{t('Public')}</button>
+                  <button type="button" aria-pressed={isPrivate} disabled={busy} onClick={() => { if (!isPrivate) setSheet({ kind: 'private' }); }}><Icon id="i-lock" />{t('Privé')}</button>
+                </div>
+                <span className="mv-vis__txt">{isPrivate ? t('Seuls ceux qui ont le lien peuvent le rejoindre.') : t('Tout le monde peut le voir et le rejoindre.')}</span>
+              </div>
+              <div className="mv-box">
+                {code ? (
+                  <button type="button" className="mv-act mb-tap" onClick={() => { void copyLink(); }}>
+                    <Icon id="i-link" /><span className="mv-act__t">{copied ? t('Lien copié ✓') : t('Copier le lien du match')}</span><Icon id="i-chev" className="mv-act__chev" />
+                  </button>
+                ) : null}
+                <button type="button" className="mv-act mb-tap" onClick={() => setSheet({ kind: 'group' })}>
+                  <Icon id="i-chat" />
+                  <span className="mv-act__t">
+                    {groupUrl ? t('Groupe WhatsApp ajouté') : t('Ajouter un groupe WhatsApp')}
+                    {groupUrl ? <small>{fillTemplate(t('{lien} · visible par les inscrits'), { lien: groupUrl.replace(/^https:\/\//, '') })}</small> : null}
+                  </span>
+                  <Icon id="i-chev" className="mv-act__chev" />
+                </button>
+                <button type="button" className="mv-act mv-act--danger mb-tap" onClick={requestCancelMatch}>
+                  <Icon id="i-cancel" /><span className="mv-act__t">{t('Annuler le match')}</span><Icon id="i-chev" className="mv-act__chev" />
+                </button>
+                {myLiveBooking ? (
+                  <button type="button" className="mv-act mv-act--danger mb-tap" onClick={() => setSheet({ kind: 'cancelBooking' })}>
+                    <Icon id="i-cancel" /><span className="mv-act__t">{t('Annuler la réservation (et le match)')}</span><Icon id="i-chev" className="mv-act__chev" />
+                  </button>
+                ) : null}
+              </div>
+            </section>
+          </>
+        ) : null}
+        <div className="mv-spacer" />
+      </div>
+
+      {!over && left > 0 && open ? (
+        <footer className="mv-foot">
+          <a className="mv-cta mb-tap" href={code ? inviteHref(code) : whatsappShareUrl(waText)} target="_blank" rel="noopener noreferrer">
+            <Icon id="i-chat" />{tn('Trouver {n} joueurs', left)}
           </a>
         </footer>
+      ) : null}
+
+      {sheet?.kind === 'private' ? (
+        <PrivateSheet busy={busy} onKeep={() => setSheet(null)} onConfirm={() => { void setVisibility('PRIVATE'); }} />
+      ) : null}
+
+      {sheet?.kind === 'report' ? (
+        <ReportSheet
+          targets={[
+            { type: 'MATCH', id: match.id, label: t('Ce match') } satisfies ReportTarget,
+            ...rows.map((r) => ({ type: 'PLAYER' as const, id: r.userId, label: r.name })),
+          ]}
+          send={(target, reason, note) => store.sendReport(target, reason, note)}
+          onClose={() => setSheet(null)}
+          onSent={(duplicate) => { setSheet(null); toast.show(duplicate ? t('Tu as déjà signalé ça : le support s’en occupe.') : t('Merci, c’est transmis au support Moubarat.')); }}
+        />
       ) : null}
 
       {sheet?.kind === 'kick' && kickTarget ? (
@@ -345,6 +377,27 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
 
       <div className={`mb-toast${toast.message ? ' on' : ''}`} role="status" aria-live="polite">{toast.message ?? ''}</div>
     </section>
+  );
+}
+
+/** « Passer ce match en privé ? » (planche Dt3) : ce que ça change, « Passer en privé », « Garder public ». */
+function PrivateSheet({ busy, onKeep, onConfirm }: { busy: boolean; onKeep: () => void; onConfirm: () => void }) {
+  const t = useT();
+  return (
+    <div className="mb-sheet-bg" role="dialog" aria-modal="true" aria-label={t('Passer ce match en privé ?')} onClick={() => { if (!busy) onKeep(); }}>
+      <div className="mb-sheet mv-dt3" onClick={(e) => e.stopPropagation()}>
+        <span className="mv-dt3__grab" aria-hidden="true" />
+        <span className="mv-dt3__ic" aria-hidden="true"><Icon id="i-lock" /></span>
+        <h2 className="mv-dt3__title">{t('Passer ce match en privé ?')}</h2>
+        <div className="mv-dt3__body">
+          <span>{t('Il disparaît de la liste des matchs.')}</span>
+          <span>{t('Les joueurs déjà inscrits gardent leur place.')}</span>
+          <span>{t('Seuls ceux qui ont le lien peuvent le rejoindre.')}</span>
+        </div>
+        <button type="button" className="mv-cta mb-tap" disabled={busy} data-loading={busy ? 'true' : undefined} onClick={onConfirm}>{t('Passer en privé')}</button>
+        <button type="button" className="mv-keep mb-tap" disabled={busy} onClick={onKeep}>{t('Garder public')}</button>
+      </div>
+    </div>
   );
 }
 

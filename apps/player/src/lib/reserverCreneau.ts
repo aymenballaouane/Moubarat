@@ -107,5 +107,7 @@ export function cancelLimitLabel(limitMs: number, startMs: number, now: number, 
   const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   if (new Date(startMs).toDateString() === new Date(now).toDateString()) return time;
   const locale = lang === 'ar' ? 'ar-DZ-u-nu-latn' : 'fr-FR';
+  // Arabe : « الخميس 19، 19:30 » (la date courte arabe porte déjà sa propre virgule, d'où l'assemblage à la main).
+  if (lang === 'ar') return `${d.toLocaleDateString(locale, { weekday: 'long' })} ${d.getDate()}، ${time}`;
   return `${d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric' })}, ${time}`;
 }

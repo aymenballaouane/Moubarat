@@ -1,0 +1,62 @@
+/* Carte de match de l'accueil et de l'onglet Jouer (lot « Match libre », phase 2) — mesures et couleurs reprises des planches Acc5,
+   Acc6, Jo1 (dossier §4 et §6). Valeurs de l'app réutilisées par leurs variables quand elles existent (fond, contour, textes, or,
+   succès). Les positions sont logiques (début / fin) : en arabe, la carte se lit en miroir (planches Ar-Acc5, Ar-Acc6). */
+
+.mc {
+  position: relative; display: block; width: 100%; padding: 0; overflow: hidden; text-align: start;
+  border-radius: 16px; border: 1px solid var(--line); background: var(--ink-2); color: var(--text);
+  font-family: inherit; box-sizing: border-box; cursor: pointer;
+}
+.mc:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.mc-top { position: relative; display: block; height: 120px; }
+.mc-art { position: relative; display: block; width: 100%; height: 120px; overflow: hidden; background: #0E141D; }
+.mc-art__svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.mc-art__logo {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #3A0C04 0%, #0A0202 65%);
+}
+.mc-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,0) 35%, rgba(10,10,15,.88) 100%); }
+
+.mc-pill {
+  position: absolute; top: 10px; height: 22px; padding: 0 9px; border-radius: 999px; box-sizing: border-box;
+  display: inline-flex; align-items: center; white-space: nowrap; font-size: 11px; font-weight: 700; letter-spacing: 0;
+}
+.mc-pill--format { inset-inline-start: 10px; background: rgba(10,10,15,.72); color: #fff; }
+.mc-pill--places { inset-inline-end: 10px; background: rgba(10,10,15,.78); }
+.mc-pill--places[data-tone="ok"] { color: var(--success); }
+.mc-pill--places[data-tone="gold"] { color: var(--gold); }
+.mc-pill--places[data-tone="full"] { color: var(--text-2); border: 1px solid rgba(138,148,166,.35); }
+
+.mc-hour {
+  position: absolute; inset-inline-start: 14px; bottom: 8px; color: #fff;
+  font-family: var(--font-display); font-size: 38px; line-height: 38px; letter-spacing: .4px;
+}
+
+.mc-body { display: block; padding: 12px 14px 16px; }
+.mc-name { display: block; font-size: 16px; font-weight: 600; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; min-height: 16px; }
+.mc-city { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-3); }
+.mc-city__ic { width: 11px; height: 13px; }
+.mc-price { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
+.mc-price__unit { font-size: 10px; font-weight: 400; color: var(--text-3); }
+
+/* Match complet (Acc6) : image et textes passés en gris, pastille « Complet », prix grisé ; la carte reste touchable. */
+.mc[data-full="true"] { color: var(--text-3); }
+.mc[data-full="true"] .mc-art { filter: grayscale(1) brightness(.7); }
+.mc[data-full="true"] .mc-pill--format,
+.mc[data-full="true"] .mc-hour { color: #AEB7C6; }
+.mc[data-full="true"] .mc-price { color: var(--text-3); }
+
+/* Liste verticale (accueil et Jouer) : cartes pleine largeur, 12 px entre elles. */
+.mc-list { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.mc-more {
+  width: 100%; min-height: 48px; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--line-strong);
+  background: transparent; color: var(--text); font-family: inherit; font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-top: 4px;
+}
+.mc-more .mb-ic { width: 16px; height: 16px; }
+[dir="rtl"] .mc-more--arrow .mb-ic { transform: scaleX(-1); }
+.mc-end { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 6px; }
+.mc-end__text { font-size: 13px; line-height: 18px; color: var(--text-3); }
+.xp-end { display: block; text-align: center; margin: 12px 0 0; padding-top: 4px; }

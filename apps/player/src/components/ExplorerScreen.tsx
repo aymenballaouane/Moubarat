@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { activeMembers, captainOf, type Sport, GENERIC_ERROR_MESSAGE } from '@moubarat/core';
 import { Icon } from './Icon.js';
-import { ExplorerMatchCard } from './ExplorerMatchCard.js';
+import { MatchListCard } from './MatchListCard.js';
 import { LoadMoreButton } from './LoadMoreButton.js';
 import type { SegTab } from './SegmentedTabs.js';
 import { teamInitials, epochDayLabel, epochDateStamp } from '../lib/format.js';
@@ -118,17 +118,19 @@ function crestGradient(index: number): readonly [string, string] {
   return CREST_GRADIENTS[index % CREST_GRADIENTS.length]!;
 }
 
-export function ExplorerScreen({ onNavigate, store, initialTab }: {
+export function ExplorerScreen({ onNavigate, store, initialTab, initialDay }: {
   onNavigate: (route: Route) => void; store: AppStore;
   /** Ouvre directement un onglet (« Voir tous les centres » depuis le Home) ; défaut : Matchs. */
   initialTab?: ExplorerTabName | undefined;
+  /** Lot « Match libre » : ouvre l'onglet Jouer sur ce jour du bandeau (« Voir les autres jours » de l'accueil) ; défaut : aujourd'hui. */
+  initialDay?: number | undefined;
 }) {
   const [tab, setTab] = useState<ExplorerTab>(initialTab ?? 'matchs');
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [dayStart] = useState(dayRailStarts);
   /* Lot 5 (Explorer.dc.html) : l'Explorer s'ouvre sur AUJOURD'HUI (le rail de sept jours a toujours un jour choisi) ; « Tous les jours » = effacer « Quand ? ». */
-  const [selectedDay, setSelectedDay] = useState<number | 'ALL'>(() => dayStart[0]!);
+  const [selectedDay, setSelectedDay] = useState<number | 'ALL'>(() => (initialDay !== undefined && dayStart.includes(initialDay) ? initialDay : dayStart[0]!));
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('tous');
   const sportTabs = sportTabsFor(store.venues);
   // A7 (22/09/2026) : premier sport RÉELLEMENT proposé — jamais 'FOOTBALL' en dur (un catalogue
@@ -180,6 +182,14 @@ export function ExplorerScreen({ onNavigate, store, initialTab }: {
   /** Seul un jour est choisi (aucun autre filtre, aucune recherche) : l'état vide de la maquette parle de CE jour-là. */
   const dayOnly = selectedDay !== 'ALL' && quickFilter === 'tous' && city === null && levels.length === 0 && formats.length === 0 && !spots && debouncedQuery.trim() === '';
   const loadingFirstPage = feed.status === 'loading' && feed.entries.length === 0;
+  /** Le jour du bandeau qui suit le jour choisi (« Voir les autres jours ») ; aucun après le dernier jour du bandeau. */
+  const nextRailDay = selectedDay === 'ALL' ? null : (dayStart[dayStart.indexOf(selectedDay) + 1] ?? null);
+  /* Jour choisi (Jo1) : on défile jusqu'au bout — les pages suivantes du MÊME fil se chargent d'elles-mêmes, une à la fois, jusqu'à la
+     dernière (jamais pour « Tous les jours », qui garde son bouton). */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (tab === 'matchs' && selectedDay !== 'ALL' && feed.status === 'ready' && feed.hasMore && !feed.loadingMore) void store.loadMoreFeed();
+  }, [tab, selectedDay, feed.status, feed.hasMore, feed.loadingMore, feed.entries.length]);
   const visibleTeams = BROWSABLE_TEAMS.filter((t) =>
     q === '' || fold(t.name).includes(q) || fold(t.captainName).includes(q));
 
@@ -199,7 +209,7 @@ export function ExplorerScreen({ onNavigate, store, initialTab }: {
       {/* En-tête de l'Explorer repeint (Lot 5, Explorer.dc.html) : titre, recherche, filtres — plus de slogan sous le titre.
           La recherche n'a de sens que sur Matchs et Terrains (l'onglet Équipes garde son champ permanent). */}
       <header className="xp-head">
-        <h1 className="xp-h1">{t('Explorer')}</h1>
+        <h1 className="xp-h1">{t('Jouer')}</h1>
         {tab === 'matchs' || tab === 'terrains' ? (
           <div className="xp-head__btns">
             <button type="button" className="xp-iconbtn mb-tap" aria-label={t('Rechercher')} aria-pressed={searchOpen}
@@ -249,7 +259,8 @@ export function ExplorerScreen({ onNavigate, store, initialTab }: {
               <button type="button" className="xp-chip mb-tap" aria-pressed={sport === 'ALL'} onClick={() => setSport('ALL')}>{t('Tous')}</button>
               {sportTabs.map((x) => (
                 <button key={x.value} type="button" className="xp-chip mb-tap" aria-pressed={sport === x.value} onClick={() => setSport(x.value)}>
-                  <Icon id={sportIcon(x.value)} className="mb-ic--sm" />{t(sportChipLabel(x.value))}
+                  {/* Lot « Match libre » (dossier §5) : la puce « Foot » montre un vrai ballon (Jo1). */}
+                  <Icon id={x.value === 'FOOTBALL' ? 'i-ball' : sportIcon(x.value)} className="mb-ic--sm" />{t(sportChipLabel(x.value))}
                 </button>
               ))}
             </div>
@@ -259,21 +270,29 @@ export function ExplorerScreen({ onNavigate, store, initialTab }: {
           {feed.status === 'error' && feed.entries.length === 0 ? (
             <div className="mb-note" role="alert">
               <div className="mb-note__mark"><Icon id="i-search" className="mb-ic--lg" /></div>
-              <h4 className="mb-note__title">Impossible de charger les matchs</h4>
+              <h4 className="mb-note__title">{t('Impossible de charger les matchs')}</h4>
               <p className="mb-note__text">{feed.error ?? GENERIC_ERROR_MESSAGE}</p>
-              <button type="button" className="mb-btn mb-btn--sm mb-tap" onClick={reloadFeed}>Réessayer</button>
+              <button type="button" className="mb-btn mb-btn--sm mb-tap" onClick={reloadFeed}>{t('Réessayer')}</button>
             </div>
           ) : loadingFirstPage ? (
             <p className="mb-note__text" role="status" aria-live="polite">Chargement des matchs…</p>
           ) : feed.entries.length > 0 ? (
             <>
-              <div className="xp-mlist" aria-busy={feed.status === 'loading'}>
+              {/* Lot « Match libre » (Jo1, dossier §5 et §6) : la carte de l'accueil, tous les matchs du jour choisi, du plus tôt au plus
+                  tard (tri du serveur, stable à heure égale). Un jour choisi : pas de bouton « voir plus », la suite se charge d'elle-même et
+                  on défile jusqu'au bout ; « Tous les jours » (filtres) garde « Afficher plus ». */}
+              <div className="mc-list" aria-busy={feed.status === 'loading' || feed.loadingMore}>
                 {feed.entries.map((e) => (
-                  <ExplorerMatchCard key={e.match.id} match={e.match} players={e.players} venueName={store.venueName(e.match.venueId)}
+                  <MatchListCard key={e.match.id} match={e.match} players={e.players} venueName={store.matchPlace(e.match)}
+                    venueWilaya={store.matchWilaya(e.match)} photoUrl={store.venuePhoto(e.match.venueId, 'card')}
                     onOpen={() => openMatch(e.match.id, e.match.organizerId)} />
                 ))}
               </div>
-              <LoadMoreButton visible={feed.hasMore} loading={feed.loadingMore} onLoad={() => store.loadMoreFeed()} />
+              {selectedDay === 'ALL' ? (
+                <LoadMoreButton visible={feed.hasMore} loading={feed.loadingMore} onLoad={() => store.loadMoreFeed()} />
+              ) : !feed.hasMore && selectedDay === todayStart ? (
+                <p className="mc-end__text xp-end">{t('Fin des matchs d’aujourd’hui')}</p>
+              ) : null}
             </>
           ) : dayOnly ? (
             /* ExplorerVide.dc.html : un jour sans match, sans autre filtre — « Pas encore de match ce jour-là », avec « M'alerter si un match est créé »
@@ -286,6 +305,12 @@ export function ExplorerScreen({ onNavigate, store, initialTab }: {
                 {t('Créer un match')}
               </button>
               <DayAlertButton store={store} day={epochDateStamp(selectedDay as number)} sport={sport === 'ALL' || sport === null ? null : sport} />
+              {/* Valeur provisoire du dossier (section 11) : l'écran vide garde son message, avec « Voir les autres jours » (le jour suivant). */}
+              {nextRailDay !== null ? (
+                <button type="button" className="mc-more mc-more--arrow mb-tap" onClick={() => { setQuickFilter('tous'); setSelectedDay(nextRailDay); }}>
+                  {t('Voir les autres jours')}<Icon id="i-arrow" />
+                </button>
+              ) : null}
             </div>
           ) : (
             <div className="mb-note">

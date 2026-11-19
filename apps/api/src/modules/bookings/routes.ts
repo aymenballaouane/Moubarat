@@ -237,6 +237,27 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
     });
   });
 
+  /* Lot « Match libre », phase 4 (planche S3L) : les plafonds de réservation RÉELLEMENT appliqués (réglages `BOOKING_MAX_PER_DAY`,
+     `BOOKING_MAX_UPCOMING`) et ce que le joueur a déjà — mêmes réservations que `playerGuard` ci-dessus (les siennes, RESERVED, pas
+     terminées), comptées par jour d'Alger. L'écran de réservation affiche « Limite atteinte » AVANT d'essayer ; le serveur reste le
+     juge à la création (409 BOOKING_LIMIT_DAY / BOOKING_LIMIT_UPCOMING). Sans plafond configuré (`limits` absent) : `null`. */
+  app.get('/me/booking-limits', { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
+    if (!limits) return reply.send({ limits: null });
+    const mine = await db.selectFrom('bookings').select(['time_range']).where('by_user_id', '=', req.auth!.userId)
+      .where('status', '=', 'RESERVED').where(sql<boolean>`upper(time_range) > now()`).execute();
+    // Mêmes comptes que le core (`checkBookingLimits`) : par jour, toutes les réservations vivantes ; « à venir », celles pas encore commencées.
+    const now = Date.now();
+    const perDay: Record<string, number> = {};
+    let upcoming = 0;
+    for (const m of mine) {
+      const start = fromPgRange(m.time_range).start;
+      const day = algiersDateOf(start);
+      perDay[day] = (perDay[day] ?? 0) + 1;
+      if (start > now) upcoming += 1;
+    }
+    return reply.send({ limits: { maxPerDay: limits.bookingMaxPerDay, maxUpcoming: limits.bookingMaxUpcoming, upcoming, perDay } });
+  });
+
   /* Mes réservations (app joueur). Pagination par curseur (mise à l'échelle L3, 25/09/2026 — contrat :
      lib/cursor.ts) : `limit` absent = 50, l'ancien plafond ; réponse = les mêmes `bookings` plus `nextCursor`. */
   app.get<{ Querystring: { limit?: string; cursor?: string } }>('/me/bookings',
@@ -844,7 +865,7 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       const phones = phoneSearchPatterns(q);
 
       /* MS-072 (audit final, Lot 2b, 18/11/2026) : les réservations trouvées sont l'UNION de recherches que les index
-         trigrammes servent chacune (migration 0047) — nom saisi, référence, numéro saisi, numéro du compte joueur. Écrites en
+         trigrammes servent chacune (migration 0051) — nom saisi, référence, numéro saisi, numéro du compte joueur. Écrites en
          un seul « OU » mêlé à la jointure des joueurs, Postgres relisait toutes les réservations du centre et les 100 000
          joueurs à chaque recherche (310 ms pour « 0555 »). Mêmes critères qu'avant, mot pour mot ; les expressions
          `regexp_replace(coalesce(…), '\D', '', 'g')` sont celles des index : ne pas les reformuler sans eux. */

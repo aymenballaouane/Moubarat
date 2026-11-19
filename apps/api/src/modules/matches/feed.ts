@@ -50,6 +50,10 @@ export interface FeedFilters {
   spots: boolean;
   /** Texte cherché dans le titre et le format, insensible à la casse et aux accents. */
   q?: string;
+  /** Lot « Match libre », phase 5 : l'appelant comprend les matchs libres (en-tête, voir `knowsFreeMatches`) — sinon ils sont exclus. */
+  includeFree?: boolean;
+  /** Phase 9v9 : formats que l'appelant ne sait pas afficher (une ancienne app ne reçoit aucun match en 9v9). */
+  hiddenFormats?: ReadonlySet<string>;
 }
 
 export function parseFeedFilters(query: FeedQuery): FeedFilters {
@@ -91,8 +95,14 @@ export function feedConditions(f: FeedFilters, now: Date): RawBuilder<boolean>[]
   const conds: RawBuilder<boolean>[] = [
     sql<boolean>`matches.visibility = 'OPEN'`,
     sql<boolean>`matches.status IN ('OPEN', 'FULL')`,
-    sql<boolean>`upper(matches.time_range) > ${now}`,
+    sql<boolean>`upper(matches.time_range) > ${now}`,   // garde l'index matches_feed_upcoming (migration 0025)
+    // Lot « Match libre » (16/11/2026, décision d'Aymen) : un match déjà COMMENCÉ quitte les listes, même si son statut stocké
+    // (synchronisé paresseusement) est encore OPEN/FULL — on ne s'y inscrit plus (verrou au coup d'envoi, core `isLockedNow`).
+    sql<boolean>`lower(matches.time_range) > ${now}`,
   ];
+  // Une ancienne app (sans l'en-tête) ne reçoit aucun match libre (décision d'Aymen du 16/11/2026, iPhone 1.0 et 1.0.1).
+  if (f.includeFree !== true) conds.push(sql<boolean>`matches.venue_id IS NOT NULL`);
+  if (f.hiddenFormats && f.hiddenFormats.size > 0) conds.push(sql<boolean>`matches.format::text NOT IN (${sql.join([...f.hiddenFormats])})`);
   if (f.sport) conds.push(sql<boolean>`matches.sport = ${f.sport}`);
   if (f.venueId) conds.push(sql<boolean>`matches.venue_id = ${f.venueId}::uuid`);
   if (f.dayStart !== undefined) {
@@ -102,11 +112,13 @@ export function feedConditions(f: FeedFilters, now: Date): RawBuilder<boolean>[]
   if (f.formats) conds.push(sql<boolean>`matches.format::text IN (${sql.join(f.formats)})`);
   if (f.city) {
     // Ville du CENTRE (wilaya), insensible aux accents et à la casse (« Sétif » = « SETIF »), comme la recherche texte.
-    const named = (c: string) => sql<boolean>`venues.wilaya ~* ${'^' + accentInsensitiveRegex(c === 'SETIF' ? 'Sétif' : c)}`;
-    const where = f.city === 'AUTRE'
-      ? sql<boolean>`NOT (${sql.join(CITIES.map(named), sql` OR `)})`
-      : named(f.city);
-    conds.push(sql<boolean>`matches.venue_id IN (SELECT venues.id FROM venues WHERE ${where})`);
+    // Match libre (phase 5) : sa wilaya est celle saisie avec le lieu (`matches.place_wilaya`), même comparaison.
+    const named = (col: RawBuilder<unknown>, c: string) => sql<boolean>`${col} ~* ${'^' + accentInsensitiveRegex(c === 'SETIF' ? 'Sétif' : c)}`;
+    const whereOn = (col: RawBuilder<unknown>) => f.city === 'AUTRE'
+      ? sql<boolean>`NOT (${sql.join(CITIES.map((c) => named(col, c)), sql` OR `)})`
+      : named(col, f.city!);
+    conds.push(sql<boolean>`(matches.venue_id IN (SELECT venues.id FROM venues WHERE ${whereOn(sql`venues.wilaya`)})
+      OR (matches.venue_id IS NULL AND ${whereOn(sql`matches.place_wilaya`)}))`);
   }
   if (f.spots) conds.push(sql<boolean>`matches.status = 'OPEN'`);
   if (f.evening) conds.push(sql<boolean>`extract(hour from ${startLocal}) >= 18`);
@@ -116,7 +128,7 @@ export function feedConditions(f: FeedFilters, now: Date): RawBuilder<boolean>[]
   if (f.weekend) conds.push(sql<boolean>`extract(dow from ${startLocal}) IN (5, 6)`);
   if (f.q) {
     const re = accentInsensitiveRegex(f.q);
-    conds.push(sql<boolean>`(matches.title ~* ${re} OR matches.format::text ~* ${re})`);
+    conds.push(sql<boolean>`(matches.title ~* ${re} OR matches.format::text ~* ${re} OR coalesce(matches.place_name, '') ~* ${re})`);
   }
   return conds;
 }
@@ -125,7 +137,7 @@ export function feedConditions(f: FeedFilters, now: Date): RawBuilder<boolean>[]
     l'Explorer). Ne tient compte que du sport et du centre : le décompte d'un jour ne change pas quand on choisit
     « ce soir » ou qu'on tape un texte — comportement historique du bandeau. Les jours sans match sont absents. */
 export async function feedDayCounts(
-  db: Db, f: Pick<FeedFilters, 'sport' | 'venueId'>, fromDayStart: number, days: number, now: Date,
+  db: Db, f: Pick<FeedFilters, 'sport' | 'venueId' | 'includeFree' | 'hiddenFormats'>, fromDayStart: number, days: number, now: Date,
 ): Promise<Record<string, number>> {
   const conds = feedConditions({ ...f, evening: false, weekend: false, spots: false }, now);
   conds.push(sql<boolean>`lower(matches.time_range) >= ${new Date(fromDayStart)} AND lower(matches.time_range) < ${new Date(fromDayStart + days * 86_400_000)}`);

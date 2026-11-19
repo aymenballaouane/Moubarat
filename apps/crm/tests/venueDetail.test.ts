@@ -8,9 +8,9 @@ const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
 describe('fiche centre réelle → écran Centre (É1)', () => {
   it('formats : options par sport depuis le core, libellés du prototype pour le padel', () => {
-    expect(formatOptionsFor('FOOTBALL')).toEqual(['5v5', '6v6', '7v7', '8v8', '11v11']);
+    expect(formatOptionsFor('FOOTBALL')).toEqual(['5v5', '6v6', '7v7', '8v8', '9v9', '11v11']);   // 9v9 : phase 9v9 (17/11/2026)
     expect(formatOptionsFor('PADEL')).toEqual(['SIMPLE', 'DOUBLE']);
-    expect(formatOptionsFor('FOOTBALL')).not.toContain('9v9');
+    expect(formatOptionsFor('PADEL')).not.toContain('9v9');   // assertion INVERSÉE sur GO d'Aymen (16/11/2026) : le foot propose de nouveau le 9v9, jamais le padel
     expect(formatLabel('SIMPLE')).toBe('Simple');
     expect(formatLabel('7v7')).toBe('7v7');
     expect(formatsLabel(['DOUBLE', 'SIMPLE'])).toBe('Double · Simple');

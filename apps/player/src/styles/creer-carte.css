@@ -1,0 +1,21 @@
+/* « Où exactement ? » (phase adresses, 18/11/2026) : la carte Leaflet et l'épingle fixe au centre. */
+.cc-h1 { margin-bottom: 6px; }
+.cc-hint { margin: 0 0 12px; font-size: 14px; line-height: 20px; color: var(--text-2); }
+.cc-map { position: relative; height: 340px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: #0E141D; isolation: isolate; }
+.cc-map__leaflet { position: absolute; inset: 0; }
+/* L'épingle : sa pointe tombe exactement au centre de la carte. */
+.cc-pin { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -40px 0 0 -20px; z-index: 500; pointer-events: none;
+  color: var(--primary); filter: drop-shadow(0 3px 4px rgba(0,0,0,.45)); transition: transform .15s ease; }
+.cc-pin .mb-ic { width: 40px; height: 40px; }
+.cc-pin[data-moving="true"] { transform: translateY(-8px); }
+.cc-under { margin: 12px 0 0; min-height: 22px; font-size: 14px; line-height: 20px; color: var(--text-2); }
+.cc-under b { color: var(--text); font-weight: 700; }
+.cc-label { text-align: start; margin-top: 18px; }
+.cc-name { width: 100%; box-sizing: border-box; }
+/* Leaflet : mention de la carte lisible sur fond clair, boutons de zoom au contraste de l'app. */
+.cc-map .leaflet-control-attribution { font-size: 10px; }
+.cc-map .leaflet-bar a { background: var(--ink-2); color: var(--text); border-color: var(--line); }
+/* Écrans haute densité : Leaflet laisse parfois un liseré d'un pixel entre deux images de carte (arrondi des positions) — chaque image
+   déborde d'un demi-pixel pour le couvrir. Leaflet 1.9 additionne les images voisines (mix-blend-mode: plus-lighter) : avec ce
+   débord, la bande commune deviendrait une ligne blanche ; on revient donc au mélange normal (correctif connu de Leaflet). */
+.cc-map .leaflet-tile-container img.leaflet-tile { width: 256.5px !important; height: 256.5px !important; mix-blend-mode: normal; }

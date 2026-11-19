@@ -12,7 +12,7 @@ export type BookingStatusDb = 'RESERVED' | 'HONORED' | 'NO_SHOW' | 'PAID' | 'CAN
 export type BookingSourceDb = 'MOUBARAT' | 'PHONE' | 'WALK_IN' | 'CENTER';
 export type CenterRoleDb = 'OWNER' | 'MANAGER' | 'RECEPTION' | 'STAFF';
 export type SportDb = 'FOOTBALL' | 'PADEL' | 'BASKET';
-export type MatchFormatDb = '5v5' | '6v6' | '7v7' | '8v8' | '11v11' | 'DOUBLE' | 'SIMPLE' | '3v3';
+export type MatchFormatDb = '5v5' | '6v6' | '7v7' | '8v8' | '9v9' | '11v11' | 'DOUBLE' | 'SIMPLE' | '3v3';   // 9v9 : migration 0048
 export type SkillLevelDb = 'LOISIR' | 'INTERMEDIAIRE' | 'COMPETITION';
 export type MatchStatusDb = 'DRAFT' | 'OPEN' | 'FULL' | 'LOCKED' | 'PLAYED' | 'CANCELLED';
 export type MatchVisibilityDb = 'OPEN' | 'PRIVATE';
@@ -370,8 +370,16 @@ export interface MatchesTable {
   format: MatchFormatDb;
   level: SkillLevelDb;
   title: string;
-  venue_id: string;
-  field_id: string;
+  /** Migration 0047 (match libre) : NULL pour un match libre, qui porte alors `place_*` (contrainte `matches_place_kind`). */
+  venue_id: string | null;
+  field_id: string | null;
+  /** Migration 0047 — le lieu d'un match libre : nom ou adresse saisi, commune si connue, wilaya. NULL pour un match de centre. */
+  place_name: string | null;
+  place_area: string | null;
+  place_wilaya: string | null;
+  /** Migration 0050 — position du lieu libre (adresse OpenStreetMap choisie ou épingle), facultative. */
+  place_lat: number | null;
+  place_lng: number | null;
   time_range: string;                 // tstzrange
   capacity: number;
   price_per_player_da: number;
@@ -581,7 +589,19 @@ export interface RateLimitCountersTable {
   hits: number;
 }
 
+/** Migration 0049 — la photo principale d'un centre, en deux tailles réduites dans le navigateur du CRM (option A d'Aymen, 17/11/2026). */
+export interface VenuePhotosTable {
+  venue_id: string;
+  mime: 'image/jpeg' | 'image/webp';
+  large: Buffer;
+  card: Buffer;
+  version: Generated<number>;
+  updated_at: Generated<Date>;
+  updated_by: string | null;
+}
+
 export interface Database {
+  venue_photos: VenuePhotosTable;
   users: UsersTable;
   profiles: ProfilesTable;
   absences: AbsencesTable;

@@ -20,11 +20,13 @@ const p = (userId: string, team: MatchTeam | undefined, joinedAt = 1): MatchPlay
 const nameOf = (id: string) => ({ org: 'Yanis', me: 'Aymen', a1: 'Farid', b1: 'Riad' } as Record<string, string>)[id] ?? 'Joueur';
 
 describe('matchPhase', () => {
-  it('normal avant H-2, figé à partir de H-2 (verrou du core), annulé, joué', () => {
+  it('normal avant H-2, remplacement jusqu’au coup d’envoi, figé à partir du coup d’envoi (verrou du core), annulé, joué', () => {
     expect(matchPhase(match(), NOW)).toBe('normal');
     expect(matchPhase(match({ range: { start: NOW + 3 * H, end: NOW + 4 * H } }), NOW)).toBe('normal');
-    expect(matchPhase(match({ range: { start: NOW + 1.5 * H, end: NOW + 3 * H } }), NOW)).toBe('remplacement');   // règle 4 : de H-2 à H-1
-    expect(matchPhase(match({ range: { start: NOW + 0.5 * H, end: NOW + 2 * H } }), NOW)).toBe('fige');           // à partir de H-1
+    expect(matchPhase(match({ range: { start: NOW + 1.5 * H, end: NOW + 3 * H } }), NOW)).toBe('remplacement');   // règle 4 : de H-2 au coup d'envoi
+    // 16/11/2026 (GO d'Aymen) : plus de verrou à H-1 — à 30 min du début, on est encore en remplacement (assertion inversée).
+    expect(matchPhase(match({ range: { start: NOW + 0.5 * H, end: NOW + 2 * H } }), NOW)).toBe('remplacement');
+    expect(matchPhase(match({ range: { start: NOW, end: NOW + 1.5 * H } }), NOW)).toBe('fige');                    // au coup d'envoi
     expect(matchPhase(match({ status: 'LOCKED' }), NOW)).toBe('fige');
     expect(matchPhase(match({ status: 'CANCELLED' }), NOW)).toBe('cancelled');
     expect(matchPhase(match({ status: 'PLAYED' }), NOW)).toBe('played');
@@ -33,11 +35,13 @@ describe('matchPhase', () => {
 
 describe('les trois temps (règle 4 modifiée) — états « Remplacement »', () => {
   const at = (hoursBefore: number) => match({ range: { start: NOW + hoursBefore * H, end: NOW + (hoursBefore + 1.5) * H } });
-  it('normal > 2 h, remplacement entre 2 h et 1 h, figé ensuite — aux bornes', () => {
+  it('normal > 2 h, remplacement de 2 h au coup d’envoi (H-1 compris, assertion inversée le 16/11/2026), figé ensuite — aux bornes', () => {
     expect(matchPhase(at(2.01), NOW)).toBe('normal');
     expect(matchPhase(at(2), NOW)).toBe('remplacement');
     expect(matchPhase(at(1.01), NOW)).toBe('remplacement');
-    expect(matchPhase(at(1), NOW)).toBe('fige');
+    expect(matchPhase(at(1), NOW)).toBe('remplacement');
+    expect(matchPhase(at(0.01), NOW)).toBe('remplacement');
+    expect(matchPhase(at(0), NOW)).toBe('fige');
   });
   it('un match annulé ou joué garde sa phase, même dans la fenêtre de remplacement', () => {
     expect(matchPhase({ ...at(1.5), status: 'CANCELLED' }, NOW)).toBe('cancelled');
@@ -51,9 +55,9 @@ describe('les trois temps (règle 4 modifiée) — états « Remplacement »', (
     expect(registrationsOpen('cancelled')).toBe(false);
     expect(registrationsOpen('played')).toBe(false);
   });
-  it('limite des inscriptions : début − 1 h (H-1), distincte du désistement libre (H-2)', () => {
+  it('limite des inscriptions : le coup d’envoi (plus H-1 depuis le 16/11/2026), distincte du désistement libre (H-2)', () => {
     const m = at(3);
-    expect(registrationLimit(m)).toBe(m.range.start - H);
+    expect(registrationLimit(m)).toBe(m.range.start);
     expect(freeLeaveLimit(m)).toBe(m.range.start - 2 * H);
     expect(registrationLimitLabel(m, 'fr')).toMatch(/^\d\d:\d\d$/);
     expect(registrationLimitLabel(m, 'fr')).not.toBe(freeLeaveLimitLabel(m, 'fr'));

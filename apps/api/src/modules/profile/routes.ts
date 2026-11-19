@@ -43,7 +43,8 @@ export async function registerProfileRoutes(app: FastifyInstance, { db, guards }
     const me = await db.selectFrom('users').select(['name', 'phone']).where('id', '=', userId).executeTakeFirstOrThrow();
     const playedIds = await myPlayedMatchIds(db, userId);
     const played = playedIds.length === 0 ? [] : await db.selectFrom('matches')
-      .innerJoin('venues', 'venues.id', 'matches.venue_id')
+      // Match libre (phase 5) : compté dans les statistiques, jamais dans « Tes centres » (il n'a pas de centre).
+      .leftJoin('venues', 'venues.id', 'matches.venue_id')
       .select(['matches.id as id', 'matches.sport as sport', 'matches.organizer_id as organizer_id', 'matches.time_range as time_range',
         'venues.id as venue_id', 'venues.name as venue_name'])
       .where('matches.id', 'in', playedIds).execute();
@@ -56,6 +57,7 @@ export async function registerProfileRoutes(app: FastifyInstance, { db, guards }
 
     const byVenue = new Map<string, { venueId: string; name: string; sport: string; matches: number; lastStart: number }>();
     for (const m of played) {
+      if (m.venue_id === null || m.venue_name === null) continue;
       const start = fromPgRange(m.time_range).start;
       const cur = byVenue.get(m.venue_id);
       if (!cur) byVenue.set(m.venue_id, { venueId: m.venue_id, name: m.venue_name, sport: m.sport, matches: 1, lastStart: start });

@@ -98,6 +98,13 @@ describe('ticket R4', () => {
     expect(other).toMatch(/26/);
     expect(other).toMatch(/16:00$/);
   });
+  it('limite d’annulation en arabe : une seule virgule arabe, chiffres latins', () => {
+    const limit = start - 2 * 3_600_000;
+    const ar = cancelLimitLabel(limit, start, new Date(2026, 9, 25, 9, 0).getTime(), 'ar');
+    expect(ar).toMatch(/ 26، 16:00$/);
+    expect(ar.split('،').length).toBe(2);
+    expect(ar).not.toMatch(/[٠-٩]/);
+  });
 });
 
 describe('créneau pris entre-temps', () => {

@@ -46,6 +46,10 @@ export function canRate(p: {
       return fail('INVALID_TARGET', 'Ce joueur n’a pas joué ce match.');
     }
   }
+  // Match libre (phase 5) : aucun centre à noter — un lieu libre n'est pas un centre.
+  if (p.targetType === 'VENUE' && p.match.venueId === null) {
+    return fail('INVALID_TARGET', 'Ce match ne se joue pas dans un centre : il n’y a pas de terrain à noter.');
+  }
   if (p.targetType === 'VENUE' && p.targetId !== p.match.venueId) {
     return fail('INVALID_TARGET', 'Le terrain noté n’est pas celui du match.');
   }

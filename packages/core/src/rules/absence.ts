@@ -2,7 +2,7 @@
    RÈGLES — ABSENCES ET RESTRICTIONS (règle 25, MODIFIÉE ; précisions d'Aymen du 26/10/2026).
    - Une ABSENCE : un joueur inscrit à un match, ou titulaire d'une réservation, qui ne vient pas. Déclarée par le centre (CRM) ou par l'organisateur
      (après le match) ; une seule fois par match ; l'organisateur ne se déclare pas lui-même ; un joueur retiré n'a jamais d'absence (règle 8).
-   - Une DEMI-ABSENCE (annulation tardive d'une réservation, désistement entre H-2 et H-1 — règles 4, 18, 19) compte : deux demi-absences valent une absence.
+   - Une DEMI-ABSENCE (annulation tardive d'une réservation, désistement entre H-2 et le coup d'envoi — règles 4, 18, 19) compte : deux demi-absences valent une absence.
    - 2 absences → une restriction : la 1re fois 7 jours, la 2e 30 jours, la 3e un blocage levé à la main (support, console superadmin). Le compteur
      REPART À ZÉRO après chaque restriction. Un joueur restreint garde l'accès à l'app : il ne peut ni rejoindre un match ni réserver.
    Additif : aucune règle existante ne lit ce fichier. Pur : l'appelant (le serveur) fournit les événements et les restrictions déjà enregistrés.

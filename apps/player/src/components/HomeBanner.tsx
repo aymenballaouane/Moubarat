@@ -8,6 +8,8 @@ import type { FeedEntry } from '../data/matchesFeedDemo.js';
 import type { VenueSummary } from '../state/store.js';
 import type { Route } from '../nav.js';
 import heroPhoto from '../../../../design/photo-nocturne.jpg';
+import { VenuePhoto } from './VenuePhoto.js';
+import { venuePhotoUrl } from '../lib/venuePhoto.js';
 import '../styles/home-banner.css';
 
 /* Accueil › bannière (refonte-app-joueur/maquettes/Main(Ar).dc.html, règle 11) — carrousel de
@@ -17,7 +19,8 @@ import '../styles/home-banner.css';
    au doigt avec accroche (scroll-snap), puces synchronisées au défilement réel (pas un minuteur
    factice). */
 
-interface Slide { key: string; content: React.ReactNode }
+/** `photo` (phase photos, 17/11/2026) : la photo du centre partenaire mis en avant — la photo nocturne sinon. */
+interface Slide { key: string; content: React.ReactNode; photo?: string | null }
 
 export function HomeBanner({
   next, nextVenueName, partnerVenue, onNavigate, onOpenPartner, openingPartnerId,
@@ -78,6 +81,7 @@ export function HomeBanner({
     const fieldsCount = partnerVenue.fields.length;
     slides.push({
       key: 'partner',
+      photo: partnerVenue.photoVersion ? venuePhotoUrl(partnerVenue.id, partnerVenue.photoVersion, 'large') : null,
       content: (
         <>
           <span className="ho-banner__tag ho-banner__tag--gold">{t('Stade partenaire')}</span>
@@ -126,7 +130,7 @@ export function HomeBanner({
       <div className="ho-banner__track" ref={trackRef} onScroll={onScroll}>
         {slides.map((s) => (
           <div className="ho-banner__slide" key={s.key}>
-            <img src={heroPhoto} alt="" />
+            <VenuePhoto src={s.photo ?? null}><img src={heroPhoto} alt="" /></VenuePhoto>
             <span className="ho-banner__scrim" aria-hidden="true" />
             <div className="ho-banner__body">{s.content}</div>
           </div>

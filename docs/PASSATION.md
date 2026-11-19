@@ -159,13 +159,15 @@ racine : `.env.example`). En hébergement, les fournir par l'environnement du se
 | `SESSION_TTL_DAYS` | Inactivité avant expiration de session | non | 30 (défaut) |
 | `DB_POOL_MAX` / `DB_CONNECTION_TIMEOUT_MS` / `DB_STATEMENT_TIMEOUT_MS` | Pool de connexions Postgres (voir `db/client.ts`) — **le seul appelant à en tenir compte est le serveur réel** (`index.ts`) ; les scripts et les tests gardent le comportement historique (aucun timeout). Budget recommandé : instances × `DB_POOL_MAX` ≤ 60 % de `max_connections` côté Postgres. **Noms exacts** : le brief d'hébergement du 22/09/2026 donnait un nom provisoire `DB_CONNECT_TIMEOUT_MS` — **il n'existe pas dans le code et serait ignoré sans erreur** ; le nom lu par l'API est `DB_CONNECTION_TIMEOUT_MS` (dépassé, une requête en attente d'une connexion libre échoue en erreur plutôt que d'attendre sans fin) | non | 10 / 5000 / 15000 (défauts). **À trancher par les développeurs** : `DB_POOL_MAX` (voir le budget) |
 | `SUPPORT_PHONE` / `SUPPORT_WHATSAPP` / `SUPPORT_EMAIL` | Coordonnées de support servies par `GET /support` (publique) : app joueur (Profil > Aide & Support, écran de connexion d'un compte suspendu) et CRM (bouton « Aide »). Un canal vide n'est pas affiché. **OBLIGATOIRE hors développement (décision d'Aymen, 27/10/2026, audit P1-4) : sans `OTP_DEV_MODE=true`, l'API REFUSE DE DÉMARRER si aucun des trois canaux n'est valide** (au moins un ; les trois sont recommandés — la restriction « contacte le support Moubarat » de la règle 25 n'a de sens qu'avec un canal réel). Un canal invalide (e-mail sans @, numéro trop court) compte pour absent. Numéros au format national algérien acceptés (convertis pour `wa.me`) | **oui** (hors développement) | vide (aucun) |
-| `MIN_PLAYER_APP_VERSION` | Version minimale de l'app joueur (« 1.1.0 », 1 à 3 nombres). En dessous, l'API répond `426 APP_UPDATE_REQUIRED` et l'app affiche « Mets à jour Moubarat ». **Vide = aucun contrôle.** Une valeur mal écrite empêche l'API de démarrer. Mode d'emploi et limites : §4.20 | non | vide (à poser seulement quand un changement de l'API casse les anciennes versions de l'app) |
+| `MIN_PLAYER_APP_VERSION` | Version minimale de l'app joueur (« 1.1.0 », 1 à 3 nombres). En dessous, l'API répond `426 APP_UPDATE_REQUIRED` et l'app affiche « Mets à jour Moubarat ». **Vide = aucun contrôle.** Une valeur mal écrite empêche l'API de démarrer. Mode d'emploi et limites : §4.23 | non | vide (à poser seulement quand un changement de l'API casse les anciennes versions de l'app) |
 | `PLAYER_APP_STORE_URL_IOS` / `PLAYER_APP_STORE_URL_ANDROID` | Liens https des fiches de l'app sur l'App Store et le Play Store, servis avec le refus 426 (le bouton « Ouvrir l'App Store » de l'app iPhone). Changeables sans nouveau build ; une adresse non https empêche l'API de démarrer | non | le lien de la fiche App Store, dès qu'elle est publiée |
 | `INSTANCE_NAME` | Nom de CETTE instance d'API, posé comme `application_name` sur toutes ses connexions Postgres : `pg_stat_activity` et les journaux de la base disent alors **quelle instance** tient un verrou ou une requête lente. Tronqué à 63 caractères par Postgres ; aucune donnée personnelle dedans. Absent ou vide = `moubarat-api` | non | Une valeur **distincte par instance** : `moubarat-api-1`, `moubarat-api-2`… (sinon les deux instances se confondent dans les diagnostics) |
 | `REQUEST_IP_MAX_PER_HOUR` / `REQUEST_GLOBAL_MAX_PER_DAY` | Limites du formulaire public d'inscription d'un centre (`POST /public/venue-requests`) : par IP et par heure / globale et par jour d'Alger ; `429 RATE_LIMITED` au-delà. **Compteurs partagés en base** entre instances (fenêtres fixes, voir §3.2). Les demandes écartées en silence (piège à robots, remplissage trop rapide) ne consomment pas le plafond global. **Exigent une lecture correcte de l'adresse du client** (`TRUST_PROXY` / `TRUST_PROXY_CIDRS`) derrière un proxy, sinon toutes les demandes semblent venir de l'IP du proxy | non | 3 / 30 (défauts) |
 | `TEAM_INVITE_MAX_PER_HOUR` | Invitations d'équipe (`POST /teams/:id/invite`) **par joueur et par heure**, comptées à chaque appel (refusé ou non) ; `429 RATE_LIMITED` au-delà. La route cherche un joueur par son nom d'affichage exact : sans plafond, elle permettrait de sonder quels noms existent (audit du 25/09/2026, P0-6 ; jamais de numéro). Compteur partagé en base (clé = l'identifiant du joueur), fenêtre fixe. Entier ≥ 1 | non | 20 (défaut). Sans effet tant que `TEAMS_CHALLENGES_ENABLED` n'est pas `true` (les routes des équipes ne sont alors pas servies) |
 | `TEAMS_CHALLENGES_ENABLED` | Audit final, MS-011 (12/11/2026) : sert ou non les routes des équipes (`/teams`, `/me/teams`) et des défis (`/challenges`). Éteintes, elles répondent 404 comme une route inexistante. Avant ce correctif elles répondaient à des appels directs alors que la fonction est masquée dans l'app, et **accepter un défi créait une réservation au nom du capitaine émetteur sans plafonds (règle 23), sans horizon de 60 jours et sans restriction (règle 25)**, sans lien avec son match. **Ne l'allumer qu'après** avoir fait passer l'acceptation par la création de réservation standard (`createBooking` avec la garde du joueur) — chantier non fait, à trancher avec Aymen à la réactivation. Seule la chaîne exacte `true` allume | non | `false` (défaut) — ne pas définir |
 | `NAME_CHANGE_MAX_PER_HOUR` | Changements de nom d'affichage (`PATCH /me`) **par joueur et par heure**, comptés à chaque appel (refusé ou non : chaque essai révèle si un nom est pris) ; `429 RATE_LIMITED` au-delà. Compteur partagé en base (clé = l'identifiant du joueur), fenêtre fixe. Entier ≥ 1 | non | 10 (défaut). Voir §4.12 |
+| `PLACES_SEARCH_URL` | Adresse du service de recherche d'adresses (Photon, moteur d'OpenStreetMap) que le serveur interroge pour `GET /places/search` et `/places/reverse` (« Créer un match » → recherche d'un lieu, §4.21). Vide = recherche coupée (l'app propose alors seulement « Je ne trouve pas mon terrain » et la carte). Le service public est gratuit, sans garantie ni clé ; un Photon hébergé chez nous se brancherait ici sans toucher au code | non | `https://photon.komoot.io` (défaut) |
+| `PLACES_MAX_PER_HOUR` | Recherches d'adresses **par joueur et par heure** (compteur partagé en base, nom `places`) ; `429 PLACES_RATE_LIMITED` au-delà. Garde-fou pour ne pas abuser du service public. Entier ≥ 1 | non | 120 (défaut) |
 | `BOOKING_HORIZON_DAYS` | Horizon maximal (jours) d'une réservation posée par un **joueur** (App, ou téléphonique déclarée dans l'app) ; au-delà, `400 BOOKING_TOO_FAR`. Le comptoir et le téléphone saisi au CRM ne sont pas concernés (abonnements, événements). Audit pré-lancement BUG-4 (27/09/2026) : une réservation à +400 jours était acceptée. Entier 1–730 | non | 60 (défaut) |
 | `BOOKING_MAX_PER_DAY` | Règle 23 (refonte app joueur, 26/10/2026) : nombre maximal de réservations **vivantes le même jour d'Alger**, **par joueur** (App ou téléphonique déclarée ; jamais le comptoir/CRM) ; au-delà, `409 BOOKING_LIMIT_DAY`. Une annulation libère une place. Entier ≥ 1 | non | 2 (défaut) |
 | `BOOKING_MAX_UPCOMING` | Même règle : nombre maximal de réservations vivantes **à venir**, par joueur ; au-delà, `409 BOOKING_LIMIT_UPCOMING`. L'app n'explique la limite en fenêtre que pour les valeurs 2 et 4 de la règle : pour un autre réglage, elle affiche le message du serveur. Entier ≥ 1 | non | 4 (défaut) |
@@ -243,6 +245,7 @@ Fronts (au **build**, pas à l'exécution — la valeur est figée dans `dist/`)
 | Variable | Apps | Production |
 |---|---|---|
 | `VITE_API_BASE_URL` | player, crm, superadmin | URL publique HTTPS de l'API (défaut `http://127.0.0.1:3001` sinon) |
+| `VITE_MAP_TILES_URL` / `VITE_MAP_TILES_ATTRIBUTION` | player | Images de la carte de « Créer un match » (§4.21) et leur mention obligatoire. Défaut : serveurs d'OpenStreetMap (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`, « © OpenStreetMap »), **autorisés pour un faible usage seulement** : à remplacer par un fournisseur (ou un serveur à nous) quand l'app grossit — figées au build comme `VITE_API_BASE_URL` |
 
 Secrets à créer côté hébergeur avant tout déploiement : mot de passe Postgres, clé smssak,
 mot de passe du superadmin, mots de passe des comptes CRM du centre pilote. Aucun de ces
@@ -853,7 +856,7 @@ variable d'un front exige de redéployer le projet Vercel concerné.
 ### 4.18 Départ de Render vers l'hébergeur suivant (prévu environ un mois après le lancement)
 
 **Ce qu'il faut chez le nouvel hébergeur** (mêmes exigences qu'ici, à vérifier avant de signer) : PostgreSQL 16 avec
-`btree_gist`, `pg_trgm` (§4.19) et le support ICU (§4.12) ; exécution d'une image Docker (ou Node 22) dont le processus principal reçoit
+`btree_gist`, `pg_trgm` (§4.22) et le support ICU (§4.12) ; exécution d'une image Docker (ou Node 22) dont le processus principal reçoit
 `SIGTERM` ; HTTPS ; pour les fronts, repli sur `index.html` en `200` qui laisse passer les fichiers existants
 (`/.well-known/…`, §4.16) ; sauvegardes de la base.
 
@@ -876,11 +879,76 @@ variable d'un front exige de redéployer le projet Vercel concerné.
 7. Refermer `ipAllowList` de la base Render. Garder Render arrêté mais intact une semaine (retour arrière = rebasculer le
    DNS), puis supprimer la base Render **après accord d'Aymen** — c'est aussi la fin du transfert de données à l'étranger.
 
-### 4.19 Index de recherche : extension `pg_trgm` (migration 0047, audit final Lot 2b, 18/11/2026)
+### 4.19 Match libre : migration 0047, en-tête `X-Moubarat-Features`, retour arrière (lot « Match libre », phase 5, 17/11/2026)
 
-La migration `0047_search_trigram_indexes` crée l'extension `pg_trgm` puis six index GIN « trigrammes » qui servent les
+Un match peut se jouer hors d'un centre partenaire (« match libre ») : `matches.venue_id` et `matches.field_id` deviennent
+nullables, trois colonnes s'ajoutent (`place_name`, `place_area`, `place_wilaya`) et la contrainte `matches_place_kind`
+impose « un centre ET un terrain, OU un lieu libre (sans réservation, sans défi, prix 0) ». Aucune ligne existante n'est
+modifiée : la migration s'applique comme les autres (`pnpm db:migrate`), sans coupure.
+
+**Les anciennes apps ne voient JAMAIS un match libre** (décision d'Aymen : iPhone 1.0 et 1.0.1 ; vaut aussi pour Android
+1.0.4 et toute page web mise en cache). Ces versions n'envoient aucune version : le serveur sert les matchs libres
+uniquement à une requête qui porte l'en-tête `X-Moubarat-Features: match-libre` (envoyé par l'app joueur à partir de ce
+lot, `apps/player/src/lib/api.ts`). Sans lui : absents du fil, des décomptes par jour, de Mes matchs, des matchs des amis ;
+`GET /matches/:id` et `GET /matches/by-code/:code` répondent `409 APP_UPDATE_REQUIRED`. Règle dans
+`apps/api/src/modules/matches/service.ts` (`knowsFreeMatches`). **À ne pas casser** : un répartiteur, un CDN ou un
+pare-feu qui filtrerait les en-têtes inconnus ferait disparaître les matchs libres de la nouvelle app — laisser passer
+`X-Moubarat-Features` (le CORS de l'API le renvoie déjà au préflight : `@fastify/cors` reflète les en-têtes demandés).
+
+**Création** : `POST /matches/free` (règle core `createFreeMatch`). Le CRM et Analytics ne voient jamais un match libre
+(ils filtrent par centre). La console (`/platform/matches`, signalements) montre le lieu saisi à la place du centre.
+
+**Retour arrière** (seulement si l'on redéploie un code d'avant ce lot) : `apps/api/migrations/retour/0047_match_libre.sql`,
+à exécuter à la main avec psql (commande en tête du fichier). Il refuse de s'exécuter tant qu'un match libre existe : à
+trancher avec Aymen avant (annuler ces matchs et prévenir leurs inscrits). Le migrateur ne lit jamais ce dossier `retour/`.
+
+**Format 9v9** (migration 0048, même lot, phase 9v9) : une valeur ajoutée au type `match_format`, sans coupure ; aucun terrain ne le
+propose tant qu'un centre ne l'ajoute pas dans le CRM avec un tarif qu'il saisit. Retour arrière à la main :
+`apps/api/migrations/retour/0048_format_9v9.sql` (refusé tant qu'une ligne utilise le 9v9). Les deux scripts de retour sont joués
+par les tests (`apps/api/tests/migrations-retour.test.ts`). **Les anciennes apps ne voient jamais le 9v9** (décision d'Aymen du
+17/11/2026), même mécanique que le match libre : la valeur `format-9v9` de `X-Moubarat-Features`, envoyée par l'app joueur, le CRM et
+la console (`apps/api/src/lib/client-features.ts`). **Conséquence à connaître** : tout NOUVEAU client (une autre app, un script, un
+outil interne) qui lit les centres, les disponibilités ou les matchs doit envoyer `X-Moubarat-Features: match-libre,format-9v9`, sinon
+le serveur le traite comme une ancienne app et lui cache le 9v9 et les matchs libres.
+
+### 4.20 Photo principale des centres (migration 0049, 17-18/11/2026)
+
+Une photo par centre, rangée DANS la base (table `venue_photos`, deux tailles déjà réduites par le CRM, quelques centaines de Ko par
+centre) : rien à configurer chez l'hébergeur, elle suit la base lors d'une copie (§4.18). Lecture publique
+`GET /venues/:id/photo/large|card?v=N`, cache d'un an : derrière un CDN, laisser passer le paramètre `v` (il change à chaque nouvel
+envoi). Le corps de `PUT /venues/:id/photo` monte à ~1,6 Mo (limite fixée sur la route) : un répartiteur ou un pare-feu qui couperait
+les corps de plus de 1 Mo ferait échouer l'envoi depuis le CRM. Si un jour les photos se comptent par milliers (galeries), passer à un
+stockage d'objets (Cloudflare R2 étudié le 17/11/2026) : l'adresse lue par l'app ne changerait pas. Retour arrière :
+`apps/api/migrations/retour/0049_venue_photo.sql` (refusé tant qu'un centre a une photo).
+
+### 4.21 Recherche d'adresses et carte (match libre, migration 0050, 18/11/2026)
+
+« Créer un match » → « Où tu joues ? » propose de vraies adresses (OpenStreetMap) et une carte où le joueur pose une épingle. Deux
+services extérieurs gratuits, sans compte ni clé :
+
+1. **Recherche d'adresses** : le SERVEUR interroge Photon (`PLACES_SEARCH_URL`, §3) — jamais l'app directement. Routes
+   `GET /places/search?q=&lat=&lng=` et `GET /places/reverse?lat=&lng=` (compte joueur exigé, `apps/api/src/modules/places/`). Limité à
+   l'Algérie, 6 résultats, cache mémoire de 10 minutes par instance, délai de 4 s, plafond par joueur (`PLACES_MAX_PER_HOUR`). Panne :
+   `{ results: [], unavailable: true }` (200), l'app continue sans suggestions. Le serveur doit pouvoir sortir vers
+   `photon.komoot.io` en HTTPS (pare-feu sortant). Envoyé à Photon : le texte tapé et la position de la ville, jamais l'identité.
+2. **Images de la carte** : chargées par le NAVIGATEUR du joueur (`VITE_MAP_TILES_URL`, §3), serveurs d'OpenStreetMap par défaut. Leur
+   règle d'usage interdit un usage intensif : **à trancher par les développeurs avant une forte croissance** (fournisseur payant ou
+   serveur à nous). Aucune politique de sécurité de contenu (CSP) n'est posée sur `app.moubarat.app` aujourd'hui ; si on en ajoute une,
+   autoriser ces images (`img-src`).
+
+**Position du lieu** : migration 0050, colonnes `matches.place_lat` / `place_lng` (les deux ou aucune, seulement pour un match libre ;
+contrainte `matches_place_position`). Additive, sans coupure. Retour arrière à la main : `apps/api/migrations/retour/0050_match_place_position.sql`
+(refusé tant qu'un match à venir porte une position). **Ordre des retours si l'on revient avant tout le lot** : 0050, puis 0049, 0048, 0047.
+
+### 4.22 Index de recherche : extension `pg_trgm` (migration 0056, audit final Lot 2b, 18/11/2026)
+
+La migration `0056_search_trigram_indexes` crée l'extension `pg_trgm` puis six index GIN « trigrammes » qui servent les
 recherches texte : réservations du CRM (nom saisi, référence, numéro saisi et numéro du compte joueur réduits à leurs chiffres)
 et joueurs de la console (nom, numéro). Sans eux, ces recherches relisaient toute la table à chaque frappe.
+**Numéro** : 0056 et non 0051, parce que 0051 à 0055 sont pris par le Lot B « Match libre » (branche `lot-b/…`, fusionnée
+séparément). Le migrateur applique toute migration absente de `schema_migrations`, quel que soit son rang : que l'un ou l'autre lot
+arrive le premier en production ne change rien. Retour arrière à la main : `apps/api/migrations/retour/0056_search_trigram_indexes.sql`
+(rien à perdre : que des index).
 
 1. **Droits** : `pg_trgm` est une extension « trusted » depuis PostgreSQL 13 — le propriétaire de la base la crée sans
    superutilisateur. Chez Render, l'utilisateur de `DATABASE_URL` est propriétaire : rien à faire. Chez un autre hébergeur,
@@ -898,7 +966,7 @@ et joueurs de la console (nom, numéro). Sans eux, ces recherches relisaient tou
 4. **Mesure** (base à l'échelle visée, 100 000 joueurs, `apps/api/scripts/bench-routes.ts`) : recherche CRM par nom 104 → 7 ms,
    par numéro « 0555 » 264 → 115 ms ; recherche de joueurs de la console 120 → 7 ms.
 
-### 4.20 Version de l'app joueur et version minimale (MS-041, audit final Lot 2d, 18/11/2026)
+### 4.23 Version de l'app joueur et version minimale (MS-041, audit final Lot 2d, 18/11/2026)
 
 **Ce qui est envoyé** : chaque appel de l'app joueur porte `X-Moubarat-App-Version`, la version de SON CODE
 (`apps/player/src/lib/appVersion.ts`, aujourd'hui `1.1.0`). C'est ce numéro qui compte, pas celui du store :
@@ -924,7 +992,7 @@ et joueurs de la console (nom, numéro). Sans eux, ces recherches relisaient tou
 Code : `apps/api/src/lib/app-version.ts` (règles), contrôle global dans `apps/api/src/server.ts` ; tests
 `apps/api/tests/app-version-gate.test.ts`, `apps/player/tests/miseAJourRequise.test.tsx`.
 
-### 4.21 Déploiement sûr et capacité : ordre de mise en ligne, sauvegarde avant migration, préproduction, test de charge (audit final Lot 2e, 18/11/2026)
+### 4.24 Déploiement sûr et capacité : ordre de mise en ligne, sauvegarde avant migration, préproduction, test de charge (audit final Lot 2e, 18/11/2026)
 
 Quatre points de l'audit final (MS-031, MS-032, MS-034, MS-074) qui relèvent de l'hébergement, pas du code : **à trancher et
 à régler par les développeurs**, dans les comptes Render, Vercel et GitHub. Ce qui suit dit le problème, ce qui est déjà en

@@ -1,9 +1,13 @@
 import type { ReactNode } from 'react';
-import type { MatchFormat } from '@moubarat/core';
+import type { MatchFormat, Sport } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
+import { VenuePhoto } from './VenuePhoto.js';
 import { SlotTakenSheet } from './SlotTakenSheet.js';
-import { useLang, useT } from '../lib/i18n.js';
+import { useLang, useT, useTn } from '../lib/i18n.js';
+import type { LimitReached } from '../lib/bookingLimits.js';
+import '../styles/match-view.css';
+import '../styles/reserver-v2.css';
 import { fmt, hhmm } from '../lib/format.js';
 import { WEEKDAY_KEYS } from '../lib/calendar.js';
 import { formatBadge } from '../lib/createMatch.js';
@@ -12,18 +16,36 @@ import {
   PERIOD_LABELS, PERIOD_ORDER, buildDayChips, fallbackStarts, formatPrice, periodOf, startsForFormat, type PeriodKey,
 } from '../lib/reserverCreneau.js';
 
-/* R3 · « Ta réservation » (Lot 5, patron Reserver.dc.html, étape creneau, variante d'heures « périodes ») :
-   jour → format → durée → heure → nom, un pied collant avec le récap et le CTA (règle 17). Présentationnel :
-   la disponibilité, le terrain affecté et la réservation réelle restent dans BookingFlow. */
+/* R3 + R4 · la fiche du centre et la réservation sur un même écran (lot « Match libre », phase 4 — planches S3 et S3L, dossier §8) :
+   en haut l'image du centre (logo tant qu'il n'y a pas de photo, phase 6), retour et partager, le sport, le nom, l'adresse et
+   « Itinéraire », « N créneaux disponibles aujourd'hui » ; puis « Quand ? », « Format » (avec le prix du créneau), « Durée », « Heure »
+   (Matin / Après-midi / Soir, puis les heures libres) et « Au nom de » ; un pied collant avec le récap, le prix et « Confirmer la
+   réservation ». « Limite atteinte » (S3L) remplace le reste du formulaire et désactive le bouton. Présentationnel : la disponibilité,
+   le terrain affecté et la réservation réelle restent dans BookingFlow. */
 
 const DURATIONS: readonly { min: number; label: string }[] = [
   { min: 60, label: '1 h' }, { min: 90, label: '1 h 30' }, { min: 120, label: '2 h' },
 ];
 
 export interface ReserverCreneauProps {
-  /** Mode « Créer un match » (maquette Reserver mode=match) : fil d'Ariane, titre et CTA changent. */
+  /** Mode « Créer un match » (ancien parcours Créer, jusqu'à la phase 5) : seul le bouton change. */
   matchMode?: boolean | undefined;
   venueName: string;
+  /** L'en-tête du centre (S3). */
+  venueAddress: string;
+  /** Phase photos : la photo du centre (grande taille), `null` sans photo — le logo Moubarat sinon. */
+  photoUrl?: string | null | undefined;
+  mapsUrl: string | null;
+  shareUrl: string;
+  /** Sports du centre ; plusieurs = un choix au-dessus de « Quand ? » (la maquette n'en montre qu'un). */
+  sports: readonly Sport[];
+  sport: Sport | null;
+  onSelectSport: (sport: Sport) => void;
+  /** Départs libres aujourd'hui (90 min, tous formats du sport) ; null tant que non lu. */
+  freeToday: number | null;
+  /** S3L : la limite qui bloque une réservation ce jour-là, ou null. */
+  limit: LimitReached;
+  onMyMatches?: (() => void) | undefined;
   onBack: () => void;
   weekday: number;
   onSelectWeekday: (weekday: number) => void;
@@ -63,6 +85,7 @@ function isoLatin(label: string): ReactNode {
 
 export function ReserverCreneau(p: ReserverCreneauProps) {
   const t = useT();
+  const tn = useTn();
   const lang = useLang();
   const now = new Date();
   const days = buildDayChips(now);
@@ -86,16 +109,44 @@ export function ReserverCreneau(p: ReserverCreneauProps) {
 
   return (
     <section className="au-screen rsv-r3" id="s-slots">
-      <header className="rsv-r3__head">
-        <button type="button" className="rsv-r3__back mb-tap" aria-label={t('Retour')} onClick={p.onBack}><Icon id="i-back" /></button>
-        <span className="rsv-r3__crumb">
-          <span>{t(p.matchMode ? 'CRÉER UN MATCH · LE TERRAIN' : 'RÉSERVER UN TERRAIN')}</span>
-          <b>{p.venueName}</b>
-        </span>
-      </header>
-      <h1 className="rsv-r3__h1">{t(p.matchMode ? 'Le créneau de ton match' : 'Ta réservation')}</h1>
+      <div className="rv3-band">
+        <VenuePhoto src={p.photoUrl ?? null}>
+          <span className="rv3-band__logo" aria-hidden="true">
+            <svg width="84" height="84" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9" /><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00" /></svg>
+          </span>
+        </VenuePhoto>
+        <span className="rv3-band__veil" aria-hidden="true" />
+        <div className="rv3-band__top">
+          <button type="button" className="mv-round mb-tap" aria-label={t('Retour')} onClick={p.onBack}><Icon id="i-back" /></button>
+          <a className="mv-round mb-tap" aria-label={t('Partager')} href={p.shareUrl} target="_blank" rel="noopener noreferrer"><Icon id="i-share" /></a>
+        </div>
+      </div>
+      <div className="rv3-head">
+        {p.sport ? <span className="rv3-sport">{p.sport === 'PADEL' ? t('PADEL') : t('FOOT')}</span> : null}
+        <h1 className="rv3-name">{p.venueName.toUpperCase()}</h1>
+        <div className="mv-addr">
+          <Icon id="i-pin" className="mv-addr__ic" />
+          <span className="mv-addr__txt">{p.venueAddress ? <Ltr>{p.venueAddress}</Ltr> : null}</span>
+          {p.mapsUrl ? (
+            <a className="mv-route mb-tap" href={p.mapsUrl} target="_blank" rel="noopener noreferrer" aria-label={t('Itinéraire')}>
+              <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-8-8 18-2-8z" /></svg>
+              {t('Itinéraire')}
+            </a>
+          ) : null}
+        </div>
+        {!p.limit && p.freeToday !== null && p.freeToday > 0 ? (
+          <div className="rv3-free"><i aria-hidden="true" />{tn('{n} créneaux disponibles aujourd’hui', p.freeToday)}</div>
+        ) : null}
+        {p.sports.length > 1 ? (
+          <div className="rsv-r3__seg rv3-sports" role="group" aria-label={t('Quel sport ?')}>
+            {p.sports.map((sp) => (
+              <button key={sp} type="button" className="rsv-r3__seg-b mb-tap" aria-pressed={p.sport === sp} onClick={() => p.onSelectSport(sp)}>{sp === 'PADEL' ? t('PADEL') : t('FOOT')}</button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
-      <h2 className="rsv-r3__q">{t('C’est pour quand ?')}</h2>
+      <h2 className="rsv-r3__q">{t('Quand ?')}</h2>
       <div className="rsv-r3__days">
         {days.map((d) => (
           <button key={d.weekday} type="button" className="rsv-r3__day mb-tap" aria-pressed={p.weekday === d.weekday} onClick={() => p.onSelectWeekday(d.weekday)}>
@@ -105,7 +156,19 @@ export function ReserverCreneau(p: ReserverCreneauProps) {
         ))}
       </div>
 
-      <h2 className="rsv-r3__q">{t('Quel format ?')}</h2>
+      {p.limit ? (
+        <div className="rv3-limit" role="alert">
+          <Icon id="i-help" className="rv3-limit__ic" />
+          <div className="rv3-limit__col">
+            <span className="rv3-limit__title">{t('Limite atteinte')}</span>
+            <span className="rv3-limit__txt">{p.limit.kind === 'day'
+              ? tn('Tu as déjà {n} réservations ce jour-là. Choisis un autre jour.', p.limit.max)
+              : tn('Tu as déjà {n} réservations à venir. Annule-en une ou attends qu’un match ait eu lieu.', p.limit.max)}</span>
+            {p.onMyMatches ? <button type="button" className="rv3-limit__link mb-tap" onClick={p.onMyMatches}>{t('Voir mes matchs')}</button> : null}
+          </div>
+        </div>
+      ) : (<>
+      <h2 className="rsv-r3__q">{t('Format')}</h2>
       {p.formatOptions === undefined ? (
         <p className="mb-meta rsv-r3__meta">{t('Vérification des disponibilités…')}</p>
       ) : (
@@ -124,14 +187,14 @@ export function ReserverCreneau(p: ReserverCreneauProps) {
         </div>
       )}
 
-      <h2 className="rsv-r3__q">{t('Tu joues combien de temps ?')}</h2>
+      <h2 className="rsv-r3__q">{t('Durée')}</h2>
       <div className="rsv-r3__seg">
         {DURATIONS.map((d) => (
           <button key={d.min} type="button" className="rsv-r3__seg-b mb-tap" aria-pressed={p.duration === d.min} onClick={() => p.onSelectDuration(d.min)}>{isoLatin(t(d.label))}</button>
         ))}
       </div>
 
-      <h2 className="rsv-r3__q">{t('À quelle heure ?')}</h2>
+      <h2 className="rsv-r3__q">{t('Heure')}</h2>
       <div className="rsv-r3__seg">
         {PERIOD_ORDER.map((k) => (
           <button key={k} type="button" className="rsv-r3__seg-b mb-tap" aria-pressed={activePeriod === k} onClick={() => p.onSelectPeriod(k)}>{t(PERIOD_LABELS[k])}</button>
@@ -151,30 +214,30 @@ export function ReserverCreneau(p: ReserverCreneauProps) {
         </div>
       )}
 
-      <label className="rsv-r3__q rsv-r3__q--label" htmlFor="nomResa">{t('C’est au nom de qui ?')}</label>
+      <label className="rsv-r3__q rsv-r3__q--label" htmlFor="nomResa">{t('Au nom de')}</label>
       <input
-        id="nomResa" className="rsv-r3__name" maxLength={40} autoComplete="name"
+        id="nomResa" className="rsv-r3__name" maxLength={40} autoComplete="name" dir="auto"
         value={p.name} onChange={(e) => p.onName(e.target.value)}
       />
+      </>)}
 
       <footer className="rsv-r3__foot">
         <div className="rsv-r3__recap">
           <span className="rsv-r3__recap-l">
-            {p.selectedStart !== null ? (
+            {p.selectedStart !== null && !p.limit ? (
               <>
                 {dayWord} · <Ltr>{hhmm(p.selectedStart)}</Ltr> {arrow} <Ltr>{hhmm(p.selectedStart + p.duration)}</Ltr>
-                {p.activeFormat ? ` · ${p.activeFormat.toUpperCase()}` : ''}{p.fieldName ? ` · ${p.fieldName}` : ''}
+                {p.activeFormat ? <> · <Ltr>{p.activeFormat.toUpperCase()}</Ltr></> : null}
               </>
             ) : dayWord}
           </span>
-          {p.total !== null ? (
+          {p.total !== null && !p.limit ? (
             <span className="rsv-r3__total">
               <span><b><Ltr>{fmt(p.total)}</Ltr></b><i> {t('DA')}</i></span>
-              <small>{t('le créneau, sur place')}</small>
             </span>
           ) : null}
         </div>
-        <button type="button" className="mb-btn mb-btn--block" data-loading={p.confirming ? 'true' : undefined} disabled={!p.canConfirm || p.confirming} onClick={p.onConfirm}>
+        <button type="button" className="mb-btn mb-btn--block" data-loading={p.confirming ? 'true' : undefined} disabled={!p.canConfirm || p.confirming || p.limit !== null} onClick={p.onConfirm}>
           {t(p.matchMode ? 'Réserver et configurer le match' : 'Confirmer la réservation')}
         </button>
       </footer>

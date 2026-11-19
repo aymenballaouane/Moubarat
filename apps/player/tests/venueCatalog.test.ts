@@ -62,6 +62,13 @@ describe('affectation automatique du terrain', () => {
     expect(formatChoicesFor([])).toEqual([]);
   });
 
+  it('phase 9v9 : du plus petit au plus grand format, même quand le 9v9 est ajouté en premier sur un terrain', () => {
+    const v = venue([field('a', 'T1', 'FOOTBALL', ['9v9', '5v5']), field('b', 'T2', 'FOOTBALL', ['7v7'])]);
+    expect(formatChoicesFor(fieldsForSport(v, 'FOOTBALL'))).toEqual([
+      { value: '5v5', capacity: 10 }, { value: '7v7', capacity: 14 }, { value: '9v9', capacity: 18 },
+    ]);
+  });
+
   it('les sports proposés sont ceux des terrains actifs seulement', () => {
     expect(sportChoicesFor(pilot).map((s) => s.value)).toEqual(['PADEL', 'FOOTBALL']);
     expect(sportChoicesFor(venue([field('x', 'T4', 'PADEL', ['DOUBLE'], 'ARCHIVED')]))).toEqual([]);

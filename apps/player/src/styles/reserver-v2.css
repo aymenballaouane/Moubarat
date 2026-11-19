@@ -1,0 +1,85 @@
+/* Parcours Réserver (lot « Match libre », phase 4) — planches S2B, S3, S3L, S6 ; mesures et couleurs reprises des maquettes (dossier §4
+   et §8), variables de l'app quand elles existent. Positions logiques (début / fin) : l'arabe se lit en miroir. */
+
+/* --- R2 · Réserver un terrain (S2B) --- */
+.rv2 { background: var(--ink); color: var(--text); display: flex; flex-direction: column; }
+.rv2-top { padding: 22px 22px 0; display: flex; flex-direction: column; gap: 14px; }
+.rv2-bar { display: flex; align-items: center; gap: 12px; }
+.rv2-back { width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text); display: flex; align-items: center; justify-content: center; padding: 0; flex: none; cursor: pointer; }
+.rv2-back .mb-ic { width: 20px; height: 20px; }
+[dir="rtl"] .rv2-back .mb-ic { transform: scaleX(-1); }
+.rv2-title { font-size: 18px; font-weight: 700; line-height: 24px; }
+.rv2-h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.42px; line-height: 33.6px; }
+[dir="rtl"] .rv2-h1 { letter-spacing: 0; }
+.rv2-search { height: 52px; border-radius: 12px; background: var(--ink-2); border: 1px solid var(--line-strong); display: flex; align-items: center; padding: 0 14px; gap: 10px; box-sizing: border-box; }
+.rv2-search:focus-within { border-color: var(--primary); }
+.rv2-search__ic { width: 20px; height: 20px; color: var(--text-3); flex: none; }
+.rv2-search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--text); font-size: 15px; font-family: inherit; padding: 0; }
+.rv2-search input::placeholder { color: var(--text-3); }
+.rv2-kicker { font-size: 12px; font-weight: 700; letter-spacing: 1.1px; color: var(--text-3); line-height: 16px; }
+[dir="rtl"] .rv2-kicker { letter-spacing: 0; }
+.rv2-list { padding: 14px 22px 32px; display: flex; flex-direction: column; gap: 12px; }
+.rv2-card { width: 100%; box-sizing: border-box; border-radius: 16px; border: 1px solid var(--line); background: var(--ink-2); color: var(--text); font-family: inherit; padding: 0; display: flex; flex-direction: column; text-align: start; overflow: hidden; cursor: pointer; }
+.rv2-card[aria-busy="true"] { opacity: .6; }
+.rv2-card__img { position: relative; height: 118px; width: 100%; overflow: hidden; background: #0E141D; display: block; }
+.rv2-card__logo { position: absolute; inset: 0; background: linear-gradient(160deg, #3A0C04 0%, #0A0202 65%); display: flex; align-items: center; justify-content: center; }
+.rv2-card__sport { position: absolute; inset-inline-start: 12px; top: 12px; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border-radius: 6px; background: rgba(10,10,15,.78); font-size: 11px; font-weight: 700; letter-spacing: .8px; color: var(--text); }
+[dir="rtl"] .rv2-card__sport { letter-spacing: 0; }
+.rv2-card__sport .mb-ic { width: 13px; height: 13px; color: var(--text-2); }
+.rv2-card__row { display: flex; align-items: center; gap: 12px; padding: 12px 14px 14px; }
+.rv2-card__col { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.rv2-card__name { font-size: 18px; font-weight: 700; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rv2-card__place { display: flex; align-items: center; gap: 6px; font-size: 14px; line-height: 18px; color: var(--text-3); min-width: 0; }
+.rv2-card__place .mb-ic { width: 15px; height: 15px; flex: none; }
+.rv2-card__place > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rv2-card__chev { width: 20px; height: 20px; color: var(--text-3); flex: none; }
+[dir="rtl"] .rv2-card__chev { transform: scaleX(-1); }
+
+/* --- R3 + R4 · fiche du centre et réservation (S3, S3L) --- */
+#s-slots.rsv-r3 { padding-top: 0; }
+.rv3-band { position: relative; height: 232px; margin: 0 -22px; overflow: hidden; background: #0E141D; flex: none; }
+.rv3-band__logo { position: absolute; inset: 0; background: linear-gradient(160deg, #3A0C04 0%, #0A0202 65%); display: flex; align-items: center; justify-content: center; }
+.rv3-band__veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,15,.45) 0, rgba(10,10,15,0) 30%, rgba(10,10,15,0) 72%, var(--ink) 100%); }
+.rv3-band__top { position: absolute; top: max(16px, env(safe-area-inset-top)); inset-inline: 16px; display: flex; align-items: center; justify-content: space-between; }
+.rv3-head { padding-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.rv3-sport { font-size: 13px; font-weight: 700; letter-spacing: 1.2px; color: var(--text-2); }
+[dir="rtl"] .rv3-sport { letter-spacing: 0; }
+.rv3-name { margin: 0; font-family: var(--font-display); font-size: 36px; line-height: 36px; font-weight: 400; }
+.rv3-free { display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 48px; margin-top: 4px; border-radius: 14px; background: rgba(0,200,150,.10); border: 1px solid rgba(0,200,150,.30); font-size: 15px; font-weight: 600; }
+.rv3-free i { width: 8px; height: 8px; border-radius: 999px; background: var(--success); flex: none; }
+.rv3-sports { margin-top: 6px; }
+.rv3-limit { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; margin-top: 24px; border-radius: 14px; background: rgba(255,43,0,.10); border: 1px solid rgba(255,43,0,.35); }
+.rv3-limit__ic { width: 22px; height: 22px; color: var(--primary-glow); flex: none; margin-top: 1px; }
+.rv3-limit__col { display: flex; flex-direction: column; gap: 4px; min-width: 0; align-items: flex-start; }
+.rv3-limit__title { font-size: 16px; font-weight: 700; line-height: 22px; }
+.rv3-limit__txt { font-size: 14px; line-height: 20px; color: var(--text-2); }
+.rv3-limit__link { margin-top: 4px; min-height: 44px; padding: 0; background: transparent; border: 0; font: inherit; font-size: 14px; font-weight: 700; color: var(--text); text-decoration: underline; cursor: pointer; }
+.rsv-r3__foot .mb-btn:disabled { background: var(--ink-3); color: var(--text-3); }
+
+/* --- R6 · C'est réservé (S6) --- */
+.rv6 { background: var(--ink); color: var(--text); display: flex; flex-direction: column; min-height: 100%; position: relative; }
+.rv6-back { position: absolute; top: max(16px, env(safe-area-inset-top)); inset-inline-start: 16px; z-index: 2; }
+.rv6-main { padding: max(64px, calc(env(safe-area-inset-top) + 48px)) 22px 0; display: flex; flex-direction: column; align-items: center; flex: 1; }
+.rv6-check { width: 68px; height: 68px; border-radius: 999px; background: rgba(0,200,150,.14); color: var(--success); display: flex; align-items: center; justify-content: center; }
+.rv6-check .mb-ic { width: 32px; height: 32px; }
+.rv6-h1 { margin: 16px 0 24px; font-size: 30px; font-weight: 700; line-height: 34px; text-align: center; }
+.rv6-sub { margin: -14px 0 20px; font-size: 14px; line-height: 20px; color: var(--text-2); text-align: center; }
+.rv6-card { width: 100%; border-radius: 16px; background: var(--ink-2); border: 1px solid var(--line); box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
+.rv6-card[data-cancelled="true"] { opacity: .55; }
+.rv6-card__img { height: 92px; flex: none; background: linear-gradient(160deg, #3A0C04 0%, #0A0202 65%); display: flex; align-items: center; justify-content: center; }
+.rv6-card__body { padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+.rv6-date { font-size: 13px; font-weight: 600; letter-spacing: .6px; color: var(--text-2); }
+[dir="rtl"] .rv6-date { letter-spacing: 0; }
+.rv6-venue { font-family: var(--font-display); font-size: 38px; line-height: 38px; overflow-wrap: anywhere; }
+.rv6-meta { font-size: 15px; color: var(--text-2); line-height: 22px; }
+.rv6-sep { height: 1px; background: var(--line); margin: 12px 0 8px; }
+.rv6-pay { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rv6-pay__l { font-size: 15px; font-weight: 600; color: var(--text-2); }
+.rv6-pay__n { font-family: var(--font-display); font-size: 32px; line-height: 32px; white-space: nowrap; }
+.rv6-ref { font-size: 13px; line-height: 18px; letter-spacing: .06em; color: var(--text-3); margin-top: 10px; }
+[dir="rtl"] .rv6-ref { letter-spacing: 0; }
+.rv6-note { margin: 20px 0 0; text-align: center; font-size: 14px; line-height: 20px; color: var(--text-2); }
+.rv6-note > bdi { white-space: nowrap; }
+.rv6-link { background: transparent; border: 0; padding: 0; font: inherit; color: var(--text); font-weight: 700; text-decoration: underline; cursor: pointer; }
+.rv6-actions { margin-top: auto; padding: 12px 22px max(14px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.rv6-more { background: transparent; border: 0; color: var(--text-2); font-size: 14px; font-weight: 600; font-family: inherit; min-height: 44px; padding: 0 14px; cursor: pointer; }

@@ -122,6 +122,12 @@ export interface Env {
       l'Explorer relance ce calcul. 0 = aucun cache (les tests). Par processus : avec plusieurs instances,
       chacune a le sien, l'obsolescence est bornée par cette durée (cadrage §2, « cache de lecture »). */
   availabilitySummaryCacheMs: number;
+  /** Phase adresses (18/11/2026, GO d'Aymen : OpenStreetMap) — le service de recherche d'adresses interrogé par
+      `GET /places/search` et `/places/reverse` : un serveur Photon (défaut : l'instance publique de Komoot, « usage raisonnable »).
+      Vide = recherche d'adresses coupée (la saisie libre et l'épingle restent). Aucune clé. */
+  placesSearchUrl: string;
+  /** Recherches d'adresses par joueur et par heure (garde-fou : le service public est gratuit mais limité). */
+  placesMaxPerHour: number;
   /** Arrêt propre (mise à l'échelle L4, 25/09/2026 — lib/lifecycle.ts, docs/PASSATION.md §4.10). `shutdownDrainMs` :
       après SIGTERM/SIGINT, durée pendant laquelle l'instance se déclare « en cours d'arrêt » (`/ready` → 503) tout en
       CONTINUANT de servir — le temps que le répartiteur de charge la retire de la rotation. `shutdownTimeoutMs` : délai
@@ -142,7 +148,7 @@ export interface Env {
       de `dbStatementTimeoutMs`) ni l'envoi de la réponse. 0 = aucun délai (comportement historique). */
   requestTimeoutMs: number;
   /** MS-041 (audit final, Lot 2d, 18/11/2026) : version minimale de l'app joueur (« 1.1.0 ») ; `null` = aucun contrôle.
-      Voir lib/app-version.ts et docs/PASSATION.md §4.20. Les liens des stores sont servis avec le refus (426) : changeables
+      Voir lib/app-version.ts et docs/PASSATION.md §4.23. Les liens des stores sont servis avec le refus (426) : changeables
       sans nouveau build. */
   minPlayerAppVersion: string | null;
   playerStoreUrls: { ios: string | null; android: string | null };
@@ -261,6 +267,8 @@ export function readEnv(overrides: Partial<Env> = {}): Env {
     dbStatementTimeoutMs: intEnv('DB_STATEMENT_TIMEOUT_MS', 15_000),
     instanceName: optionalEnv('INSTANCE_NAME') ?? 'moubarat-api',
     availabilitySummaryCacheMs: intEnv('AVAILABILITY_SUMMARY_CACHE_MS', 30_000),
+    placesSearchUrl: (process.env.PLACES_SEARCH_URL ?? 'https://photon.komoot.io').trim().replace(/\/+$/, ''),
+    placesMaxPerHour: intEnv('PLACES_MAX_PER_HOUR', 120, { min: 1 }),
     shutdownDrainMs: intEnv('SHUTDOWN_DRAIN_MS', 5_000, { max: 300_000 }),
     shutdownTimeoutMs: intEnv('SHUTDOWN_TIMEOUT_MS', 20_000, { min: 1, max: 300_000 }),
     requestTimeoutMs: intEnv('REQUEST_TIMEOUT_MS', 30_000, { max: 3_600_000 }),

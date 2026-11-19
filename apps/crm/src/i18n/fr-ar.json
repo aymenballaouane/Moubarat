@@ -427,7 +427,6 @@
     "Terrains": "الملاعب",
     "Vestiaires": "غرف تبديل الملابس",
     "Vue extérieure": "منظر خارجي",
-    "L'ajout de photos arrive bientôt. En attendant, l'app affiche le logo Moubarat sur la fiche du centre.": "إضافة الصور متاحة قريبًا. في الأثناء، يعرض التطبيق شعار مبارات على بطاقة المركز.",
     "Tarifs — appliqués partout : création, modification, abonnements": "الأسعار — تُطبَّق في كل مكان: الإنشاء، التعديل، الاشتراكات",
     "Aucun terrain, donc aucun tarif.": "لا يوجد ملعب، وبالتالي لا يوجد سعر.",
     "Même tarif que {formats} — jamais différencié, à régler si ce format doit coûter autre chose": "نفس سعر {formats} — لم يُميَّز بعد، اضبطوه إن كان لهذه الصيغة سعر مختلف",
@@ -708,6 +707,14 @@
     "Aucune équipe n'a encore joué de match issu d'un défi sur ce centre.": "لم يلعب أي فريق بعد مباراة ناتجة عن تحدٍّ في هذا المركز.",
     "Matchs joués sur ce centre": "المباريات الملعوبة في هذا المركز",
     "Membres actifs": "الأعضاء النشطون",
-    "Un export couvre 3 mois au plus. Pour une période plus longue, faites plusieurs exports.": "يغطي التصدير 3 أشهر على الأكثر. لفترة أطول، قوموا بعدة عمليات تصدير."
+    "Un export couvre 3 mois au plus. Pour une période plus longue, faites plusieurs exports.": "يغطي التصدير 3 أشهر على الأكثر. لفترة أطول، قوموا بعدة عمليات تصدير.",
+    "Ajouter la photo": "إضافة الصورة",
+    "Remplacer la photo": "استبدال الصورة",
+    "La photo d'ambiance est la photo du centre dans l'app : cartes, fiche du centre, réservation, matchs. Sans photo, l'app affiche le logo Moubarat. Les trois autres emplacements arriveront plus tard.": "صورة الأجواء هي صورة المركز في التطبيق: في البطاقات وصفحة المركز والحجز والمباريات. ومن دون صورة، يعرض التطبيق شعار مبارات. وستتوفر الخانات الثلاث الأخرى لاحقًا.",
+    "Photo enregistrée : elle apparaît maintenant dans l'app.": "حُفظت الصورة: أصبحت تظهر الآن في التطبيق.",
+    "Cette photo est trop petite : choisissez une image d'au moins 320 pixels de large.": "هذه الصورة صغيرة جدًا: اختاروا صورة لا يقل عرضها عن 320 بكسل.",
+    "Cette photo est trop lourde, même réduite : choisissez-en une autre.": "هذه الصورة ثقيلة جدًا حتى بعد تصغيرها: اختاروا صورة أخرى.",
+    "Ce fichier n'est pas une image lisible : choisissez une photo JPEG, PNG ou WebP.": "هذا الملف ليس صورة قابلة للقراءة: اختاروا صورة بصيغة JPEG أو PNG أو WebP.",
+    "Photo retirée : l'app affiche de nouveau le logo Moubarat.": "أُزيلت الصورة: يعرض التطبيق شعار مبارات من جديد."
   }
 }
