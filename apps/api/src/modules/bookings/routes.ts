@@ -865,7 +865,7 @@ export async function registerBookingRoutes(app: FastifyInstance, { db, guards, 
       const phones = phoneSearchPatterns(q);
 
       /* MS-072 (audit final, Lot 2b, 18/11/2026) : les réservations trouvées sont l'UNION de recherches que les index
-         trigrammes servent chacune (migration 0051) — nom saisi, référence, numéro saisi, numéro du compte joueur. Écrites en
+         trigrammes servent chacune (migration 0056) — nom saisi, référence, numéro saisi, numéro du compte joueur. Écrites en
          un seul « OU » mêlé à la jointure des joueurs, Postgres relisait toutes les réservations du centre et les 100 000
          joueurs à chaque recherche (310 ms pour « 0555 »). Mêmes critères qu'avant, mot pour mot ; les expressions
          `regexp_replace(coalesce(…), '\D', '', 'g')` sont celles des index : ne pas les reformuler sans eux. */

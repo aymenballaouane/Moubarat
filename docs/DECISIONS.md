@@ -6719,7 +6719,7 @@ charge**, les réglages Render/Vercel et la préproduction restent aux développ
   - **Analytics** : `GET /venues/:id/analytics/overview?today=` — une lecture des 60 jours, puis chaque vue calculée par les
     MÊMES fonctions que les routes unitaires (inchangées) ; l'écran passe de 22 appels à 2. 304 → 138 ms, et une connexion au
     lieu de dix. Test : chaque vue identique à sa route unitaire.
-  - **Recherches** : migration 0051 (extension `pg_trgm`, six index trigrammes — PASSATION §4.22) ; la recherche de
+  - **Recherches** : migration 0056 (extension `pg_trgm`, six index trigrammes — PASSATION §4.22) ; la recherche de
     réservations du CRM devient une UNION de recherches indexées (mêmes critères mot pour mot). CRM par nom 104 → 7 ms, par
     numéro « 0555 » 264 → 115 ms (ce début de numéro est porté par beaucoup de comptes : beaucoup de candidats) ; joueurs de la
     console 120 → 7 ms. La liste des centres de la console n'a pas de recherche côté serveur (filtre dans le navigateur) : coût
