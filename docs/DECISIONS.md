@@ -6897,3 +6897,11 @@ avec l'adresse écrite ET l'épingle sur la carte. Maquette : https://claude.ai/
 - **Vérifié en vrai** (app 5178, FR/AR × sombre/clair) : la carte Moubarat se dessine, un glissement passe en mode épingle et trouve
   l'adresse, le toucher d'un centre ouvre son parcours, aucune erreur. Version de production construite. Captures :
   `.claude/captures/lot-b/phase-7` et l'aperçu `.claude/captures/lot-b/carte-moubarat`.
+
+### Phase 8 — Le ballon des stades de la communauté (branche `lot-b/phase-8-ballon`, 19/11/2026, demande d'Aymen)
+
+- Sur la carte et dans la recherche, un stade de la communauté porte un **ballon de foot** dans un rond or ; les centres partenaires gardent
+  le logo Moubarat (seuls réservables). Dans la recherche, l'**adresse** s'affiche sous le nom, comme une fiche d'entreprise (sinon le
+  quartier, sinon la wilaya).
+- Premier répertoire d'Aymen (15 terrains, Alger · Oran · Blida) : 9 terrains P1/P2 avec position, préparés pour l'import console
+  (« à vérifier », sans avis Google ni téléphone) ; 6 sans position fiable, à épingler. Le fichier source est gardé hors dépôt.
