@@ -1,0 +1,16 @@
+/* Lot B, phase 6 — le terrain de la communauté sous l'adresse d'un match (CommunityPlaceInfo.tsx). */
+.cp { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: -4px; }
+.cp-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.cp-chip { font-size: 11px; font-weight: 700; letter-spacing: .8px; color: var(--gold); background: rgba(242,183,5,.12); border-radius: 6px; padding: 2px 7px; }
+.cp-chip--pending { color: var(--text-2); background: var(--ink-4); }
+body[data-theme="clair"] .cp-chip { color: #8A6400; background: #FFF3CC; }
+body[data-theme="clair"] .cp-chip--pending { color: var(--text-2); background: var(--ink-4); }
+[dir="rtl"] .cp-chip { letter-spacing: 0; }
+.cp-n { font-size: 13px; color: var(--text-3); }
+.cp-report { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--text-2); font: 600 14px/1 var(--font-body); cursor: pointer; }
+.cp-report:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 8px; }
+.cp-sheet { display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; color: var(--text); }
+.mb-sheet .cp-sheet__t, .cp-sheet .cp-sheet__t { margin: 4px 0 8px; text-align: center; font-family: var(--font-body); text-transform: none; letter-spacing: 0; font-size: 20px; line-height: 26px; font-weight: 700; color: var(--text); }
+.cp-reason { min-height: 52px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--ink-3); color: var(--text); font: 600 16px/1.2 var(--font-body); text-align: start; cursor: pointer; }
+.cp-reason:disabled { opacity: .6; cursor: progress; }
+.cp-cancel { height: 48px; border: 0; background: none; color: var(--text); font: 700 16px/1 var(--font-body); cursor: pointer; }

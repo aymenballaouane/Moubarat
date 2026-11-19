@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Match } from '@moubarat/core';
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
@@ -25,7 +26,7 @@ import '../styles/match-view.css';
 const NBSP = String.fromCharCode(0xa0);
 type Centre = NonNullable<ReturnType<AppStore['venueSummary']>>;
 
-export function MatchHead({ match, venueName, centre, now, onBack, onShare, onMore }: {
+export function MatchHead({ match, venueName, centre, now, onBack, onShare, onMore, placeInfo }: {
   match: Match;
   venueName: string;
   centre: Centre | undefined;
@@ -33,6 +34,8 @@ export function MatchHead({ match, venueName, centre, now, onBack, onShare, onMo
   onBack?: (() => void) | undefined;
   onShare?: (() => void) | undefined;
   onMore?: (() => void) | undefined;
+  /** Lot B, phase 6 : sous l'adresse, le terrain de la communauté (CommunityPlaceInfo). */
+  placeInfo?: ReactNode;
 }) {
   const t = useT();
   const lang = useLang();
@@ -91,6 +94,7 @@ export function MatchHead({ match, venueName, centre, now, onBack, onShare, onMo
         </div>
 
         {address || mapsHref ? <AddressCard address={address} href={mapsHref} routeLabel={t('Itinéraire')} ariaLabel={t('Itinéraire dans Google Maps')} /> : null}
+        {free ? placeInfo : null}
 
         {price > 0 ? (
           <div className="mv-price">

@@ -969,6 +969,20 @@ contrainte `matches_place_position`). Additive, sans coupure. Retour arrière à
   Absente = éteint (défaut voulu : Aymen doit d'abord relire la liste, `docs/FILTRE-INSULTES.md`). L'allumer ou l'éteindre ne
   touche aucune donnée ; seuls les textes écrits APRÈS l'activation sont vérifiés (un pseudo déjà en base n'est pas renommé).
 
+### 4.25 Lot B : lieux de la communauté (migration 0055) et Google en réserve (19/11/2026)
+
+- **Migration 0055** (`places`, `place_reports`, `matches.place_id`). Additive. Retour arrière : `migrations/retour/0055_places.sql`
+  (refusé tant qu'un lieu existe ; les matchs gardent leurs nom, adresse et position, copiés sur le match). Ordre complet des retours du
+  lot : 0055, 0054, 0053, 0052, 0051, 0050, 0049, 0048, 0047.
+- **Routes** joueur : `GET /places/community?lat=&lng=&radiusKm=`, `GET /places/community/:id`, `POST /places/community/:id/report` ;
+  console (superadmin) : `GET/POST /platform/places`, `PATCH /platform/places/:id`, `POST /platform/places/:id/{verify,hide,unhide,merge}`,
+  `POST /platform/places/:id/reports/handle`, `POST /platform/places/import` (JSON `{filename, file: base64}`, .xlsx ou .csv, 4 Mo au plus).
+  `POST /matches/free` accepte `place.placeId` (lieu choisi) et `place.share: true` (nouveau lieu à vérifier).
+- **Compteur partagé** `place-create` (10 lieux par joueur et par jour d'Alger) : table `rate_limit_counters` existante, rien à régler.
+- **Google (éteint)** : `GOOGLE_PLACES_SERVER_KEY` (secrète : Places API (New) + Geocoding) et `GOOGLE_MAPS_BROWSER_KEY` (publique,
+  limitée au site). **Ne pas les poser** sans décision d'Aymen : la décision du 19/11/2026 est de rester sur OpenStreetMap. Sans elles,
+  rien n'est appelé chez Google.
+
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 
 Chaque point ci-dessous a été soit vérifié (test automatisé, ou vérification manuelle décrite),

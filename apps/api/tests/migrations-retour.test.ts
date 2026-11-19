@@ -33,6 +33,18 @@ beforeAll(async () => {
 });
 afterAll(() => stack.teardown());
 
+describe('retour arrière de 0055 (lieux de la communauté)', () => {
+  it('refuse tant qu’un lieu existe ; défait la migration sinon ; le migrateur la réapplique', async () => {
+    await q("INSERT INTO places (name, name_key, wilaya, lat, lng, source) VALUES ('Kooraland', 'kooraland', 'Alger', 36.74, 3.19, 'CONSOLE')");
+    await expect(runRetour('0055_places.sql')).rejects.toThrow(/0055 refusé/);
+    await q('DELETE FROM places');
+    await runRetour('0055_places.sql');
+    const cols = (await q<{ c: string }>("SELECT column_name AS c FROM information_schema.columns WHERE table_name = 'matches'")).map((r) => r.c);
+    expect(cols).not.toContain('place_id');
+    expect(await migrate(stack.pool)).toEqual(['0055_places']);
+  });
+});
+
 describe('retour arrière de 0054 (joueurs bloqués)', () => {
   it('refuse tant qu’un blocage existe ; défait la migration sinon ; le migrateur la réapplique', async () => {
     await q('INSERT INTO user_blocks (blocker_id, blocked_id) VALUES ($1, $2)', [seed.users.sofiane, seed.users.karim]);

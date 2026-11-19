@@ -51,7 +51,9 @@ export type ApiAuditAction = AuditAction | 'EXTERNAL_CONFIRMED'
   // Règle 21 (26/10/2026) : le joueur dont le numéro a été saisi par le centre répond « C'est moi » / « Ce n'est pas moi » (ligne du centre, auteur « Moubarat »).
   | 'BOOKING_CLAIM_CONFIRMED' | 'BOOKING_CLAIM_DECLINED'
   // Audit final 26/10/2026 (P1-3) : un manager corrige un « no-show » posé par erreur (efface l'absence du titulaire).
-  | 'BOOKING_NO_SHOW_REVERTED';
+  | 'BOOKING_NO_SHOW_REVERTED'
+  // Lot B, phase 6 (19/11/2026) : les lieux de la communauté, gérés dans la console (sans centre).
+  | 'PLACE_CREATED' | 'PLACE_UPDATED' | 'PLACE_VERIFIED' | 'PLACE_HIDDEN' | 'PLACE_MERGED' | 'PLACES_IMPORTED';
 // PLAYER (audit final, MS-020, migration 0043) : un joueur qui annule sa propre réservation — acteur = son identifiant joueur.
 export type ApiActorRole = CenterRole | 'SUPERADMIN' | 'PLAYER';
 

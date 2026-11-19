@@ -70,8 +70,8 @@ export function LeafletMap(p: MapViewProps) {
     layer.clearLayers();
     for (const mk of p.markers) {
       const icon = L.divIcon({
-        className: 'mm-mk',
-        html: markerHtml(mk.name),
+        className: mk.kind === 'community' ? 'mm-mk mm-mk--community' : 'mm-mk',
+        html: markerHtml(mk.name, mk.kind),
         iconSize: [MARKER_SIZE.w, MARKER_SIZE.h], iconAnchor: [MARKER_SIZE.anchorX, MARKER_SIZE.anchorY],
       });
       L.marker([mk.lat, mk.lng], { icon, keyboard: false, title: mk.name })

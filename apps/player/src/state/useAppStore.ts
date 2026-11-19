@@ -18,7 +18,7 @@ import { bootFailureKind, type BootFailureKind } from '../lib/bootFailure.js';
 import type { MatchContact } from '../lib/contacts.js';
 import { epochDateStamp } from '../lib/format.js';
 import type { BookingLimits } from '../lib/bookingLimits.js';
-import type { PlaceSuggestion } from '../lib/places.js';
+import type { CommunityPlace, PlaceSuggestion } from '../lib/places.js';
 import type { FreePlaceInput } from '../lib/freeMatch.js';
 import { venuePhotoUrl, type VenuePhotoSize } from '../lib/venuePhoto.js';
 import type { ProfileSummary } from '../lib/profileView.js';
@@ -76,7 +76,7 @@ interface FeedState {
 const EMPTY_FEED: FeedState = { ids: [], nextCursor: null, total: null, status: 'idle', error: null, loadingMore: false };
 
 function recordFromApi(w: ApiMatchWithRoster, meId: string, now: number): MatchRecord {
-  return { match: matchFromApi(w), players: syntheticPlayersFromCount(w.id, w.joinedCount, w.viewerJoined, meId, now, w.viewerTeam), code: w.code ?? undefined };
+  return { match: matchFromApi(w), players: syntheticPlayersFromCount(w.id, w.joinedCount, w.viewerJoined, meId, now, w.viewerTeam), code: w.code ?? undefined, placeId: w.placeId ?? undefined };
 }
 type ApiPlayerNamed = { userId: string; name: string; joinedAt: number; team?: 'A' | 'B' | null };
 type ApiMatchWithPlayers = ApiPublicMatch & { players: ApiPlayerNamed[] };
@@ -227,7 +227,7 @@ async function fetchMatchDetail(token: string | null, matchId: string): Promise<
   const players = matchPlayersFromDetail(matchId, res.match.players);
   const names: Record<string, string> = {};
   for (const p of res.match.players) names[p.userId] = p.name;
-  return { record: { match: matchFromApi(res.match), players, code: res.match.code ?? undefined }, names };
+  return { record: { match: matchFromApi(res.match), players, code: res.match.code ?? undefined, placeId: res.match.placeId ?? undefined }, names };
 }
 
 /** Seul point de contact entre React et l'état partagé (store.ts, logique pure
@@ -964,7 +964,7 @@ export function useAppStore() {
       const { preview } = res;
       const names: Record<string, string> = {};
       for (const p of preview.players) names[p.userId] = p.name;
-      const record: MatchRecord = { match: preview.match, players: matchPlayersFromDetail(preview.match.id, preview.players), code: preview.code ?? undefined };
+      const record: MatchRecord = { match: preview.match, players: matchPlayersFromDetail(preview.match.id, preview.players), code: preview.code ?? undefined, placeId: preview.placeId ?? undefined };
       setState((st) => applyMergePlayerNames(applyUpsertMatch(st, record), names));
       return { ok: true, matchId: preview.match.id, mine: preview.match.organizerId === meId };
     },
@@ -1122,6 +1122,27 @@ export function useAppStore() {
       } catch { return null; }
       return mapKeyCache;
     },
+    /** Lot B, phase 6 — GET /places/community : les terrains de la communauté autour d'un point (vérifiés, plus les miens). Vide en cas d'erreur. */
+    loadCommunityPlaces: async (near: { lat: number; lng: number }): Promise<CommunityPlace[]> => {
+      try {
+        const res = await apiFetch<{ places: CommunityPlace[] }>(`/places/community?lat=${near.lat}&lng=${near.lng}`, { token });
+        return res.places ?? [];
+      } catch { return []; }
+    },
+    /** Lot B, phase 6 : le terrain de la communauté d'un match libre déjà chargé (`undefined` : aucun). */
+    matchPlaceId: (matchId: string): string | undefined => state.matches[matchId]?.placeId,
+    /** Lot B, phase 6 — GET /places/community/:id : un terrain (détail d'un match). `null` s'il n'est plus visible. */
+    communityPlace: async (id: string): Promise<CommunityPlace | null> => {
+      try { return (await apiFetch<{ place: CommunityPlace }>(`/places/community/${encodeURIComponent(id)}`, { token })).place; }
+      catch { return null; }
+    },
+    /** Lot B, phase 6 — « Signaler une erreur » sur un terrain. */
+    reportPlace: async (id: string, reason: 'WRONG_NAME' | 'WRONG_POSITION' | 'CLOSED' | 'OTHER', note?: string): Promise<ActionResult & { duplicate?: boolean }> => {
+      try {
+        const res = await apiFetch<{ duplicate: boolean }>(`/places/community/${encodeURIComponent(id)}/report`, { method: 'POST', token, body: { reason, ...(note ? { note } : {}) } });
+        return { ok: true, duplicate: res.duplicate };
+      } catch (e) { return actionResultFromError(e); }
+    },
     /** GET /places/reverse — le lieu sous l'épingle de la carte (`null` si rien de connu à cet endroit). */
     reversePlace: async (lat: number, lng: number): Promise<PlaceSuggestion | null> => {
       try {
@@ -1142,7 +1163,7 @@ export function useAppStore() {
           },
         });
         const match = matchFromApi(res.match);
-        const record: MatchRecord = { match, players: syntheticPlayersFromCount(match.id, 1, true, meId ?? '', Date.now()), code: res.match.code ?? undefined };
+        const record: MatchRecord = { match, players: syntheticPlayersFromCount(match.id, 1, true, meId ?? '', Date.now()), code: res.match.code ?? undefined, placeId: res.match.placeId ?? undefined };
         setState((s) => applyUpsertMatch(s, record));
         return { ok: true, matchId: match.id, code: res.match.code ?? undefined };
       } catch (e) { return actionResultFromError(e); }

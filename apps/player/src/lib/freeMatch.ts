@@ -56,4 +56,10 @@ export function partnerSuggestions<V extends { name: string }>(venues: readonly 
 }
 
 /** Le lieu d'un match libre tel que l'app l'envoie (lot B, phase 1 : quartier et adresse sous l'épingle en plus). */
-export interface FreePlaceInput { name: string; wilaya: string; area?: string | undefined; address?: string | undefined; lat?: number | undefined; lng?: number | undefined }
+export interface FreePlaceInput {
+  name: string; wilaya: string; area?: string | undefined; address?: string | undefined; lat?: number | undefined; lng?: number | undefined;
+  /** Lot B, phase 6 : un terrain de la communauté choisi (le serveur reprend ses nom, adresse et position). */
+  placeId?: string | undefined;
+  /** Lot B, phase 6 : « Ajouter ce terrain à Moubarat » (nouveau lieu, à vérifier). */
+  share?: boolean | undefined;
+}

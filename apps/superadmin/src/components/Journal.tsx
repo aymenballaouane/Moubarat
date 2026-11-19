@@ -21,6 +21,8 @@ const ACTION_OPTIONS = [
   'USER_PHONE_CHANGED', 'CASH_SESSION_CLOSED', 'BOOKING_CLAIM_CONFIRMED', 'BOOKING_CLAIM_DECLINED',
   // Audit final 26/10/2026 : règle 25 (absences, restrictions) et correction d'un no-show.
   'BOOKING_NO_SHOW_REVERTED', 'PLAYER_ABSENCE_DECLARED', 'PLAYER_RESTRICTION_LIFTED',
+  // Lot B, phase 6 : lieux de la communauté.
+  'PLACE_CREATED', 'PLACE_UPDATED', 'PLACE_VERIFIED', 'PLACE_HIDDEN', 'PLACE_MERGED', 'PLACES_IMPORTED',
 ];
 export function Journal({ token }: { token: string }) {
   const [entries, setEntries] = useState<AuditEntry[] | null>(null);

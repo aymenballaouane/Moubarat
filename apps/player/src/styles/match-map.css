@@ -29,6 +29,10 @@ body[data-theme="clair"] .mm { background: #EEF1F5; }
   background: #131A24; border: 1px solid rgba(138,148,166,.28); color: #F5F7FA; font: 600 11px/14px var(--font-body);
 }
 .mm--dim .mm-mk { opacity: .45; }
+/* Lot B, phase 6 : un terrain de la communauté — rond or (maquette « Nos lieux d'abord »), pointe or. */
+.mm-mk__tile--community { width: 30px; height: 30px; border-radius: 999px; border-color: #F2B705; background: #1A1405; color: #F2B705; }
+.mm-mk--community .mm-mk__tip { border-top-color: #F2B705; }
+body[data-theme="clair"] .mm-mk__tile--community { background: #FFF6DA; color: #9A6F00; border-color: #D9A300; }
 
 /* Le joueur : point bleu cerclé de blanc dans un halo. */
 .mm-me > span {

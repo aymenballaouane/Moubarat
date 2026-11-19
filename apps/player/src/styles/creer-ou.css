@@ -104,3 +104,28 @@ body[data-theme="clair"] .co-drawer { box-shadow: 0 -10px 28px rgba(10,10,15,.14
 .co-ask { display: flex; flex-direction: column; gap: 12px; padding-bottom: 22px; }
 .co-ask__t { margin: 4px 0 6px; font-size: 20px; font-weight: 700; line-height: 26px; text-align: center; }
 .co-ask__no { height: 48px; border: 0; background: transparent; color: var(--text); font: 600 15px/1 var(--font-body); cursor: pointer; }
+
+/* Lot B, phase 6 « Nos lieux d'abord » (maquette du 19/11/2026) — terrains de la communauté : icône or, coche « vérifié », case
+   « Ajouter ce terrain à Moubarat », pastille d'un terrain choisi, fenêtre « C'est l'un de ces terrains ? ». */
+.co-row__ic--community { background: rgba(242,183,5,.12); color: var(--gold); }
+body[data-theme="clair"] .co-row__ic--community { background: #FFF3CC; color: #8A6400; }
+.co-row__ok { flex: none; color: #2EB872; }
+.co-share { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 14px; background: rgba(242,183,5,.08); border: 1px solid rgba(242,183,5,.28); cursor: pointer; }
+body[data-theme="clair"] .co-share { background: #FFF8E1; border-color: #E9C766; }
+.co-share > input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--primary); flex: none; }
+.co-share__txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.co-share__txt > b { font-size: 15px; font-weight: 700; line-height: 20px; }
+.co-share__txt > span { font-size: 13px; line-height: 18px; color: var(--text-2); }
+.co-known { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.co-known__chip { font-size: 11px; font-weight: 700; letter-spacing: .8px; color: var(--gold); background: rgba(242,183,5,.12); border-radius: 6px; padding: 2px 7px; }
+body[data-theme="clair"] .co-known__chip { color: #8A6400; background: #FFF3CC; }
+[dir="rtl"] .co-known__chip { letter-spacing: 0; }
+.co-known__n { font-size: 13px; color: var(--text-3); }
+.co-near__sub { margin: -4px 0 4px; font-size: 15px; line-height: 21px; color: var(--text-2); text-align: center; }
+.co-row--near { border-color: rgba(242,183,5,.38); }
+.co-near__yes { flex: none; font: 700 14px/1 var(--font-body); color: var(--primary-glow); }
+/* Les fenêtres de cet écran (« C'est {centre} ? », « C'est l'un de ces terrains ? ») passent AU-DESSUS du tiroir (z-index 700) — avant
+   ce correctif (lot B, phase 6), « C'est {centre} ? » s'ouvrait derrière lui. */
+.co .mb-sheet-bg { z-index: 800; }
+/* « C'est l'un de ces terrains ? » : titre en Barlow gras 24 px (maquette Nos lieux d'abord, écran 3), pas le Bebas des feuilles .xp-cob. */
+.co-near .co-ask__t { font-family: var(--font-body); text-transform: none; letter-spacing: 0; font-size: 24px; line-height: 30px; font-weight: 700; color: var(--text); }

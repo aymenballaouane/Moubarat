@@ -28,6 +28,9 @@ export const ACTION_LABELS: Record<string, string> = {
   PROMO_CHANGED: 'Code promo modifié', SUBSCRIPTION_CHANGED: 'Réservation récurrente modifiée',
   ROLE_CHANGED: 'Rôle modifié', ATTENDANCE_SET: 'Présence enregistrée',
   USER_PHONE_CHANGED: 'Téléphone joueur corrigé',
+  // Lot B, phase 6 (19/11/2026) : lieux de la communauté.
+  PLACE_CREATED: 'Lieu ajouté', PLACE_UPDATED: 'Lieu corrigé', PLACE_VERIFIED: 'Lieu vérifié', PLACE_HIDDEN: 'Lieu masqué',
+  PLACE_MERGED: 'Lieux fusionnés', PLACES_IMPORTED: 'Lieux importés',
   BOOKING_CLAIM_CONFIRMED: 'Réservation confirmée par le joueur', BOOKING_CLAIM_DECLINED: 'Réservation refusée par le joueur',
   // Audit final 26/10/2026 (CRM-6) : règle 25 et correction d'un no-show.
   BOOKING_NO_SHOW_REVERTED: 'No-show annulé', BOOKING_STATUS_CORRECTED: 'Statut corrigé', PLAYER_ABSENCE_DECLARED: 'Absence déclarée', PLAYER_RESTRICTION_LIFTED: 'Restriction levée',

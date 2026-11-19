@@ -11,12 +11,13 @@ import { Matchs } from './components/Matchs.js';
 import { Reservations } from './components/Reservations.js';
 import { Journal } from './components/Journal.js';
 import { Signalements } from './components/Signalements.js';
+import { Lieux } from './components/Lieux.js';
 import { AccountPanel } from './components/AccountPanel.js';
 import { apiFetch, setUnauthorizedHandler } from './lib/api.js';
 import { loadToken, saveToken, clearToken } from './lib/session.js';
 import { BOOT_RETRY_MS, bootFailureAction } from './lib/bootSession.js';
 
-type View = 'dashboard' | 'centres' | 'demandes' | 'centre-detail' | 'utilisateurs' | 'matchs' | 'reservations' | 'journal' | 'signalements';
+type View = 'dashboard' | 'centres' | 'demandes' | 'centre-detail' | 'utilisateurs' | 'matchs' | 'reservations' | 'journal' | 'signalements' | 'lieux';
 
 interface MeResponse { account: { id: string; email: string; name: string; isSuperadmin: boolean } }
 
@@ -142,6 +143,7 @@ export function App() {
             <button type="button" className={view === 'signalements' ? 'on' : ''} onClick={() => setView('signalements')}>
               Signalements{openReports > 0 ? <span className="sa-nav-badge" aria-label={`${openReports} signalement${openReports > 1 ? 's' : ''} à traiter`}>{openReports}</span> : null}
             </button>
+            <button type="button" className={view === 'lieux' ? 'on' : ''} onClick={() => setView('lieux')}>Lieux</button>
             <button type="button" className={view === 'journal' ? 'on' : ''} onClick={() => setView('journal')}>Journal</button>
           </nav>
           <main className="sa-main">
@@ -162,6 +164,7 @@ export function App() {
               : view === 'matchs' ? <Matchs token={token} />
               : view === 'reservations' ? <Reservations token={token} />
               : view === 'signalements' ? <Signalements token={token} onChanged={refreshReportCount} />
+              : view === 'lieux' ? <Lieux token={token} />
               : view === 'journal' ? <Journal token={token} />
               : selectedVenueId ? <CentreDetail key={selectedVenueId} token={token} venueId={selectedVenueId} onBack={() => setView('centres')} openAddStaff={openAddStaff} />
               : null}

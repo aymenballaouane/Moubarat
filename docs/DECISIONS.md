@@ -6833,3 +6833,45 @@ Décision d'Aymen : le web et Android d'abord ; l'iPhone quand il aura la clé A
   le message tel que le serveur l'envoie). Le refus du filtre et « Ce match n'est plus disponible. » ont leur traduction dans fr-ar.json,
   utilisée là où l'écran passe par `t()`.
 - **Textes arabes** : section « bloquer » du pack ; textes sans maquette en provisoires (à relire par un arabophone).
+
+### Phase 5 — Google en réserve (branche `lot-b/phase-5-google`, 19/11/2026)
+
+Aymen avait choisi Google (TomTom 0/6, OpenStreetMap 2/6, Google 5/6 sur ses six adresses). Le code est écrit et testé : recherche par
+Google Places (New) pour une app qui se déclare `places-google`, OpenStreetMap en secours automatique (Google muet, plafond atteint, clé
+refusée), carte Google Maps avec Leaflet en secours (`MatchMap.tsx` choisit, `map/GoogleMap.tsx`, `map/LeafletMap.tsx`). Le compte
+Google Cloud a été créé (projet « Moubarat Sport », 3 services activés, 2 clés restreintes), mais son compte de facturation est resté
+« clôturé » malgré une réouverture ; Aymen a ensuite décidé (19/11) : **on garde OpenStreetMap et on l'enrichit**. Le code Google reste
+**éteint** tant que `GOOGLE_PLACES_SERVER_KEY` et `GOOGLE_MAPS_BROWSER_KEY` ne sont pas posées sur le serveur (elles ne le sont pas) :
+aucun appel à Google, aucun coût. Les deux clés existent dans `apps/api/.env.google.local` (jamais commité) ; à supprimer dans la
+console Google si l'option est abandonnée.
+
+### Phase 6 — « Nos lieux d'abord » (branche `lot-b/phase-6-lieux`, 19/11/2026, maquette validée par Aymen)
+
+Décision d'Aymen : garder OpenStreetMap, « ajouter les terrains manquants et laisser les joueurs l'enrichir pour nous avec le temps »,
+avec l'adresse écrite ET l'épingle sur la carte. Maquette : https://claude.ai/artifact/HoXhQY3HLsoiPp6oTszj5q (« code-le »).
+- **Données** : migration 0055 — `places` (nom, quartier, adresse, wilaya, position en Algérie ; À VÉRIFIER / VÉRIFIÉ / MASQUÉ ; source
+  joueur / console / fichier ; « sur OpenStreetMap »), `matches.place_id` (un match libre rattaché à un lieu : « 12 matchs joués ici »),
+  `place_reports` (« Signaler une erreur »). Module `apps/api/src/modules/places/community.ts`.
+- **Recherche** (« Où tu joues ? ») : centres partenaires, puis **terrains de la communauté** (vérifiés, plus ceux que j'ai ajoutés), puis
+  adresses OpenStreetMap ; les terrains de la communauté apparaissent aussi sur la carte (rond or).
+- **Ajouter** : en mode épingle, « Ajouter ce terrain à Moubarat » (cochée par défaut) — le match publié crée un lieu « à vérifier »,
+  visible tout de suite pour son auteur, pour tous après vérification. 10 lieux par joueur et par jour au plus (au-delà, le match se
+  crée sans fiche). Le filtre des insultes (éteint) s'applique au nom.
+- **Doublons** : à « C'est ici », si un terrain de la communauté est à moins de 150 m, « C'est l'un de ces terrains ? » → « C'est lui »
+  (le match prend ses nom, adresse et position) ou « Non, c'est un autre terrain ». Le serveur rattache aussi d'office un même nom
+  (replié) à moins de 150 m, sans nouvelle fiche.
+- **Détail du match** : « TERRAIN DE LA COMMUNAUTÉ » (ou « À VÉRIFIER » pour son auteur), « N matchs joués ici », « Signaler une erreur »
+  (mauvais nom, mauvaise position, terrain fermé, autre).
+- **Console › Lieux** : filtres (tous, à vérifier, vérifiés, signalés, masqués), Vérifier, Corriger (nom, adresse, position collée depuis
+  une carte), Fusionner (les matchs et signalements suivent), Masquer / Réafficher, Signalements traités, **Ajouter un lieu** (vérifié
+  d'office), **Importer un fichier Excel ou CSV** (en-têtes nom, quartier, adresse, wilaya, latitude, longitude — chaque ligne « à
+  vérifier », doublons ignorés), « Ajouter à OpenStreetMap » (ouvre l'éditeur d'OSM à la position ; on y ajoute le lieu à la main puis
+  « C'est fait »). Chaque action est journalisée (Journal de la console).
+- **Jamais de copie de Google** (conditions de Google ; OpenStreetMap supprime toute donnée qui en vient) : sources admises = un joueur,
+  la console (appel au gérant, visite, page du centre), un fichier public (liste du ministère si sa licence le permet).
+- **Corrigé au passage** : les fenêtres de l'écran « Où tu joues ? » (« C'est {centre} ? », depuis la phase 1) s'ouvraient DERRIÈRE le
+  tiroir (z-index 80 contre 700) ; la carte du mode épingle passe de 610 à 520 px pour laisser la place à la case.
+- **Vérifié en vrai** (base de dev, compte console jetable supprimé ensuite) : ajout console, import CSV, recherche, ajout par un joueur,
+  doublon → « C'est lui », publication, détail, signalement, vérification dans la console ; aucune erreur console ; données de test
+  nettoyées. Captures : `.claude/captures/lot-b/phase-6`.
+- **Textes arabes** : 20 textes et 1 pluriel (« {n} matchs joués ici ») ajoutés en PROVISOIRE, à relire par un arabophone.

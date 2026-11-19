@@ -153,11 +153,11 @@ export function GoogleMap(p: MapViewProps & { apiKey: string; lang: string; onFa
     for (const o of markerOverlays.current) o.setMap(null);
     markerOverlays.current = cb.current.markers.map((mk) => {
       const el = document.createElement('div');
-      el.className = 'mm-mk';
+      el.className = mk.kind === 'community' ? 'mm-mk mm-mk--community' : 'mm-mk';
       el.title = mk.name;
       el.style.width = `${MARKER_SIZE.w}px`;
       el.style.height = `${MARKER_SIZE.h}px`;
-      el.innerHTML = markerHtml(mk.name);
+      el.innerHTML = markerHtml(mk.name, mk.kind);
       const o = htmlOverlay(g, mk, el, { x: MARKER_SIZE.anchorX, y: MARKER_SIZE.anchorY }, () => cb.current.onMarker?.(mk.id));
       o.setMap(m);
       return o;

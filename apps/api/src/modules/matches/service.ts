@@ -70,6 +70,7 @@ export function publicMatch(row: MatchRow, opts: { group?: boolean; code?: boole
     // Lot « Match libre », phase 5 : le lieu d'un match libre (null pour un match de centre) — seulement servi aux apps qui le
     // comprennent (knowsFreeMatches) : une ancienne app ne reçoit jamais de match libre.
     place: placeOf(row),
+    placeId: row.place_id ?? null,   // lot B, phase 6 : le lieu de la communauté de ce match libre
     capacity: row.capacity, pricePerPlayerDa: row.price_per_player_da,
     visibility: row.visibility, status: row.status, organizerId: row.organizer_id,
     coordination: row.coordination, whatsappUrl: opts.group ? row.whatsapp_url : null, hasGroup: row.whatsapp_url !== null, note: row.note,

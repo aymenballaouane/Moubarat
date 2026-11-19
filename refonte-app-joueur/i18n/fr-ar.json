@@ -1086,6 +1086,26 @@
   },
   "textes_provisoires_lisezmoi": "PROVISOIRE, À RELIRE PAR UN ARABOPHONE — traductions ajoutées le 26/10/2026 par Claude pour des textes SANS maquette (erreurs, toasts, états vides, écran Aide & Support, libellés de notification du core), en suivant le ton et le vocabulaire des maquettes. Ce bloc est fusionné avec « textes » par apps/player/src/lib/i18n.ts ; en cas de doublon, « textes » (les maquettes) l'emporte. Pour corriger : remplacer la valeur ici.",
   "textes_provisoires": {
+    "TERRAINS MOUBARAT": "ملاعب مبارات",
+    "TERRAINS DE LA COMMUNAUTÉ": "ملاعب المجتمع",
+    "ADRESSES": "العناوين",
+    "TERRAIN DE LA COMMUNAUTÉ": "ملعب من المجتمع",
+    "Ajouter ce terrain à Moubarat": "أضف هذا الملعب إلى مبارات",
+    "Les autres joueurs le trouveront dans la recherche, après une vérification par Moubarat.": "سيجده اللاعبون الآخرون في البحث بعد أن تتحقق منه مبارات.",
+    "C’est l’un de ces terrains ?": "هل هو أحد هذه الملاعب؟",
+    "Des joueurs ont déjà ajouté un terrain tout près de ton épingle.": "أضاف لاعبون ملعبًا قريبًا جدًا من الدبوس الذي وضعته.",
+    "à {n} m": "على بعد {n} م",
+    "C’est lui": "هذا هو",
+    "Non, c’est un autre terrain": "لا، إنه ملعب آخر",
+    "Ajouté par toi · à vérifier": "أضفته أنت · في انتظار التحقق",
+    "Vérifié par Moubarat": "تحققت منه مبارات",
+    "À VÉRIFIER": "في انتظار التحقق",
+    "Signaler une erreur": "الإبلاغ عن خطأ",
+    "Qu’est-ce qui ne va pas ?": "ما المشكلة؟",
+    "Mauvais nom": "الاسم خاطئ",
+    "Mauvaise position sur la carte": "الموقع خاطئ على الخريطة",
+    "Ce terrain n’existe plus": "هذا الملعب لم يعد موجودًا",
+    "Autre chose": "شيء آخر",
     "Ce texte contient un mot qui n’est pas accepté sur Moubarat. Reformule, s’il te plaît.": "هذا النص يحتوي على كلمة غير مقبولة في مبارات. من فضلك أعد الصياغة.",
     "Alertes activées sur ce téléphone.": "التنبيهات مفعّلة على هذا الهاتف.",
     "Activation impossible pour le moment. Réessaie.": "تعذّر التفعيل حاليًا. حاول مرة أخرى.",
@@ -1249,6 +1269,19 @@
   "par_ecran": {},
   "pluriels": {
     "_lisezmoi": "Lot « Match libre » (16/11/2026) — textes qui contiennent un nombre. Clé = texte français avec {n}. « fr » : 1 → singulier, autre → pluriel (accord français). « ar » : les quatre cas du dossier (1, 2, 3 à 10, 11 et plus), repris TELS QUELS de fr-ar-match-libre.json (fait foi pour l’arabe) — nouveaux, à faire relire par un arabophone. Lus par pluralText() (apps/player/src/lib/i18n.ts).",
+    "{n} matchs joués ici": {
+      "_provisoire": "Lot B, phase 6 (19/11/2026) : traduction PROVISOIRE, à relire par un arabophone.",
+      "fr": {
+        "1": "{n} match joué ici",
+        "autre": "{n} matchs joués ici"
+      },
+      "ar": {
+        "1": "مباراة واحدة لُعبت هنا",
+        "2": "مباراتان لُعبتا هنا",
+        "3-10": "{n} مباريات لُعبت هنا",
+        "11+": "{n} مباراة لُعبت هنا"
+      }
+    },
     "{n} places": {
       "fr": {
         "1": "{n} place",

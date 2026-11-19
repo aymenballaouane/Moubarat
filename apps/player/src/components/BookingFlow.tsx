@@ -444,12 +444,14 @@ export function BookingFlow({ store, venuePicked, viewReservationId, mode, resum
           initial={freePlace ? { name: freePlace.name, area: freePlace.area ?? null, address: freePlace.address ?? null, wilaya: freePlace.wilaya, ...(freePlace.lat !== undefined && freePlace.lng !== undefined ? { lat: freePlace.lat, lng: freePlace.lng } : {}) } : null}
           search={(q, near, session) => store.searchPlaces(q, near, session)} reverse={(lat, lng) => store.reversePlace(lat, lng)}
           details={(s, session) => store.placeDetails(s, session)} mapConfig={() => store.mapConfig()}
+          loadCommunity={(near) => store.loadCommunityPlaces(near)}
           openingId={lieuOpening} error={lieuError}
           onPickPartner={(id) => { void pickPartner(id); }}
           onConfirm={(pl) => onFreeMatch({
             name: pl.name, wilaya: wilayaForPlace(pl.wilaya, wilaya),
             ...(pl.area ? { area: pl.area.slice(0, 60) } : {}), ...(pl.address ? { address: pl.address.slice(0, 120) } : {}),
             ...(pl.lat !== undefined && pl.lng !== undefined ? { lat: pl.lat, lng: pl.lng } : {}),
+            ...(pl.placeId ? { placeId: pl.placeId } : pl.share ? { share: true } : {}),   // lot B, phase 6 : nos lieux d'abord
           }, '')}
           onBack={() => onExit?.()}
         />

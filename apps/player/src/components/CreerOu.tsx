@@ -5,7 +5,8 @@ import { MatchMap, type MapMarker, type MapTarget } from './MatchMap.js';
 import { useT } from '../lib/i18n.js';
 import { fillTemplate } from '../lib/reserverCreneau.js';
 import { freePlaceName, partnerSuggestions } from '../lib/freeMatch.js';
-import { defaultFieldName, kmText, newPlacesSession, partnerUnderPin, partnersByDistance, placeSubtitle, type LatLng, type PlaceSuggestion } from '../lib/places.js';
+import { communityNear, communitySuggestions, defaultFieldName, kmText, newPlacesSession, partnerUnderPin, partnersByDistance, placeSubtitle, type CommunityPlace, type LatLng, type PlaceSuggestion } from '../lib/places.js';
+import { useTn } from '../lib/i18n.js';
 import '../styles/match-view.css';
 import '../styles/creer-ou.css';
 
@@ -17,10 +18,14 @@ import '../styles/creer-ou.css';
    l'adresse et la position. La carte elle-même est MatchMap (seul composant lié à une bibliothèque de carte). */
 
 export interface PartnerPin { id: string; name: string; lat: number | null; lng: number | null; photo: string | null }
-export interface ChosenPlace { name: string; area: string | null; address: string | null; wilaya: string | null; lat?: number; lng?: number }
+export interface ChosenPlace {
+  name: string; area: string | null; address: string | null; wilaya: string | null; lat?: number; lng?: number;
+  /** Lot B, phase 6 : un terrain de la communauté choisi ; ou `share` : « Ajouter ce terrain à Moubarat ». */
+  placeId?: string; share?: boolean;
+}
 
 const LIST_MAP_H = 440;
-const PIN_MAP_H = 610;
+const PIN_MAP_H = 520;   // lot B, phase 6 : 610 → 520, la case « Ajouter ce terrain à Moubarat » doit tenir sous la carte (maquette Nos lieux d'abord, écran 2)
 const MAX_ADDRESSES = 5;
 
 export function CreerOu(p: {
@@ -36,6 +41,8 @@ export function CreerOu(p: {
   details: (s: PlaceSuggestion, session: string) => Promise<PlaceSuggestion | null>;
   /** Lot B, phase 5 : la clé de la carte Google (`null` : carte de secours). */
   mapConfig: () => Promise<string | null>;
+  /** Lot B, phase 6 : les terrains de la communauté autour d'un point (vérifiés, plus ceux que j'ai ajoutés). */
+  loadCommunity: (near: LatLng) => Promise<CommunityPlace[]>;
   reverse: (lat: number, lng: number) => Promise<PlaceSuggestion | null>;
   openingId: string | null;
   error: string | null;
@@ -44,6 +51,7 @@ export function CreerOu(p: {
   onBack: () => void;
 }) {
   const t = useT();
+  const tn = useTn();
   const startPin = Boolean(p.initial && p.initial.lat !== undefined);
   const [mode, setMode] = useState<'list' | 'pin'>(startPin ? 'pin' : 'list');
   const [mapKey, setMapKey] = useState(0);
@@ -53,6 +61,13 @@ export function CreerOu(p: {
   const goTo = (center: LatLng, zoom: number) => { seq.current += 1; setTarget({ center, zoom, seq: seq.current }); };
   const [me, setMe] = useState<LatLng | null>(null);
   const [googleKey, setGoogleKey] = useState<string | null | undefined>(undefined);
+  // Lot B, phase 6 : les terrains de la communauté (carte, recherche, « C'est l'un de ces terrains ? »), chargés une fois autour de la ville.
+  const [community, setCommunity] = useState<CommunityPlace[]>([]);
+  useEffect(() => { let alive = true; void p.loadCommunity(p.city).then((list) => { if (alive) setCommunity(list); }); return () => { alive = false; }; }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Le terrain de la communauté choisi (liste, carte ou « C'est lui ») ; glisser la carte loin de lui ou changer son nom l'oublie.
+  const [chosen, setChosen] = useState<CommunityPlace | null>(null);
+  const [share, setShare] = useState(true);
+  const [askNear, setAskNear] = useState<(CommunityPlace & { m: number })[] | null>(null);
   useEffect(() => { let alive = true; void p.mapConfig().then((k) => { if (alive) setGoogleKey(k); }); return () => { alive = false; }; }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [locating, setLocating] = useState(false);
   const centerRef = useRef<LatLng>(startPin ? { lat: p.initial!.lat!, lng: p.initial!.lng! } : p.city);
@@ -82,6 +97,7 @@ export function CreerOu(p: {
     return () => { alive = false; window.clearTimeout(timer); };
   }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
   const partnerHits = q.length >= 2 ? partnerSuggestions(p.partners, q, 3) : [];
+  const communityHits = q.length >= 2 ? communitySuggestions(community, q, 3) : [];
 
   // Mode épingle : l'endroit sous l'épingle, et le nom du terrain (proposé tant que le joueur ne l'a pas touché).
   const [under, setUnder] = useState<PlaceSuggestion | null>(null);
@@ -113,6 +129,7 @@ export function CreerOu(p: {
   function enterPin(at: LatLng | null, suggestion?: PlaceSuggestion) {
     setMode('pin');
     setAskPartner(null);
+    setChosen(null);
     if (suggestion) {
       setUnder(suggestion);
       setTouched(true);
@@ -135,6 +152,12 @@ export function CreerOu(p: {
     else enterPin(null, a);
   }
 
+  /** Un terrain de la communauté choisi : l'épingle s'y pose, avec son nom et son adresse. */
+  function pickCommunity(c: CommunityPlace) {
+    enterPin({ lat: c.lat, lng: c.lng }, { id: c.id, name: c.name, detail: '', wilaya: c.wilaya, street: c.address, area: c.area, lat: c.lat, lng: c.lng });
+    setChosen(c);
+  }
+
   function locate() {
     if (!('geolocation' in navigator) || locating) return;
     setLocating(true);
@@ -152,24 +175,41 @@ export function CreerOu(p: {
     );
   }
 
-  const markers = useMemo<MapMarker[]>(() => p.partners
-    .filter((v): v is PartnerPin & { lat: number; lng: number } => v.lat !== null && v.lng !== null)
-    .map((v) => ({ id: v.id, name: v.name, lat: v.lat, lng: v.lng })), [p.partners]);
+  const markers = useMemo<MapMarker[]>(() => [
+    ...community.map((c) => ({ id: `c:${c.id}`, name: c.name, lat: c.lat, lng: c.lng, kind: 'community' as const })),
+    ...p.partners
+      .filter((v): v is PartnerPin & { lat: number; lng: number } => v.lat !== null && v.lng !== null)
+      .map((v) => ({ id: v.id, name: v.name, lat: v.lat, lng: v.lng })),
+  ], [p.partners, community]);
+  function onMarker(id: string) {
+    if (!id.startsWith('c:')) { p.onPickPartner(id); return; }
+    const c = community.find((x) => `c:${x.id}` === id);
+    if (c) pickCommunity(c);
+  }
   const nearby = partnersByDistance(p.nearbyPartners, me ?? p.city);
   const nearbyNoPos = p.nearbyPartners.filter((v) => v.lat === null || v.lng === null);
 
   const validName = freePlaceName(name);
+  function confirmHere(opts: { checkNear: boolean }) {
+    const c = centerRef.current;
+    if (chosen) { p.onConfirm({ name: chosen.name, area: chosen.area, address: chosen.address, wilaya: chosen.wilaya, lat: chosen.lat, lng: chosen.lng, placeId: chosen.id }); return; }
+    if (opts.checkNear && !mapDown) {
+      const near = communityNear(community, c);
+      if (near.length > 0) { setAskNear(near.slice(0, 3)); return; }
+    }
+    p.onConfirm({
+      name: validName ?? name, area: under?.area ?? null, address: under?.street ?? null, wilaya: under?.wilaya ?? null,
+      ...(mapDown ? {} : { lat: Number(c.lat.toFixed(6)), lng: Number(c.lng.toFixed(6)), share }),
+    });
+  }
   function confirm() {
     if (!validName) return;
     const c = centerRef.current;
-    if (!mapDown && !askPartner) {
+    if (!mapDown && !askPartner && !chosen) {
       const hit = partnerUnderPin(p.partners, c);
       if (hit) { setAskPartner(hit); return; }
     }
-    p.onConfirm({
-      name: validName, area: under?.area ?? null, address: under?.street ?? null, wilaya: under?.wilaya ?? null,
-      ...(mapDown ? {} : { lat: Number(c.lat.toFixed(6)), lng: Number(c.lng.toFixed(6)) }),
-    });
+    confirmHere({ checkNear: true });
   }
 
   const mapH = mode === 'pin' ? PIN_MAP_H : LIST_MAP_H;
@@ -189,14 +229,18 @@ export function CreerOu(p: {
             key={mapKey} label={t('Où tu joues ?')} googleKey={googleKey}
             center={centerRef.current} zoom={startPin ? 17 : 13} target={target}
             markers={markers} dimMarkers={mode === 'pin'} me={me}
-            onMarker={(id) => p.onPickPartner(id)}
+            onMarker={onMarker}
             onMoveStart={() => setMoving(true)}
             onMoveEnd={(c, byUser) => {
               setMoving(false);
               centerRef.current = c;
               if (!byUser) return;
               if (mode === 'list') enterPin(null);   // faire glisser la carte = poser son terrain
-              else { setAskPartner(null); lookUp(c); }
+              else {
+                setAskPartner(null);
+                if (chosen && communityNear([chosen], c, 40).length === 0) setChosen(null);   // loin du terrain choisi : c'est un autre terrain
+                if (!chosen || communityNear([chosen], c, 40).length === 0) lookUp(c);
+              }
             }}
             onUnavailable={() => setMapDown(true)}
           />
@@ -239,7 +283,11 @@ export function CreerOu(p: {
 
             {q.length >= 2 ? (
               <div className="co-list">
+                {partnerHits.length > 0 ? <div className="co-label">{t('TERRAINS MOUBARAT')}</div> : null}
                 {partnerHits.map((v) => <PartnerRow key={v.id} v={v} km={null} busy={p.openingId === v.id} onPick={p.onPickPartner} />)}
+                {communityHits.length > 0 ? <div className="co-label">{t('TERRAINS DE LA COMMUNAUTÉ')}</div> : null}
+                {communityHits.map((c) => <CommunityRow key={c.id} c={c} onPick={() => pickCommunity(c)} />)}
+                {addresses.length > 0 ? <div className="co-label">{t('ADRESSES')}</div> : null}
                 {addresses.map((a) => (
                   <button key={a.id} type="button" className="co-row co-row--place mb-tap" aria-busy={resolving === a.id || undefined} disabled={resolving !== null} onClick={() => { void pickAddress(a); }}>
                     <span className="co-row__ic co-row__ic--pin"><Icon id="i-pin" /></span>
@@ -251,7 +299,7 @@ export function CreerOu(p: {
                   </button>
                 ))}
                 {searching ? <p className="co-meta" role="status">{t('Recherche de l’adresse…')}</p> : null}
-                {!searching && searched && partnerHits.length === 0 && addresses.length === 0 ? (
+                {!searching && searched && partnerHits.length === 0 && communityHits.length === 0 && addresses.length === 0 ? (
                   <div className="co-none">
                     <p className="co-meta">{t('Aucun lieu trouvé')}</p>
                     <button type="button" className="co-free mb-tap" onClick={() => enterPin(null)}>
@@ -273,7 +321,7 @@ export function CreerOu(p: {
                 ) : null}
               </>
             )}
-            {q.length < 2 || (searched && (partnerHits.length > 0 || addresses.length > 0)) ? (
+            {q.length < 2 || (searched && (partnerHits.length > 0 || communityHits.length > 0 || addresses.length > 0)) ? (
               <button type="button" className="co-free mb-tap" onClick={() => enterPin(null)}>
                 <Icon id="i-pin" />{t('Mon terrain n’est pas dans la liste')}
               </button>
@@ -294,8 +342,22 @@ export function CreerOu(p: {
             </div>
             <input
               className="co-name" dir="auto" maxLength={80} value={name} aria-label={t('Nom du terrain')} placeholder={t('Nom du terrain')}
-              onChange={(e) => { setTouched(true); setName(e.target.value); }}
+              onChange={(e) => { setTouched(true); setName(e.target.value); if (chosen) setChosen(null); }}
             />
+            {chosen ? (
+              <div className="co-known">
+                <span className="co-known__chip">{t('TERRAIN DE LA COMMUNAUTÉ')}</span>
+                {chosen.matchCount > 0 ? <span className="co-known__n">{tn('{n} matchs joués ici', chosen.matchCount)}</span> : null}
+              </div>
+            ) : !mapDown ? (
+              <label className="co-share">
+                <input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} />
+                <span className="co-share__txt">
+                  <b>{t('Ajouter ce terrain à Moubarat')}</b>
+                  <span>{t('Les autres joueurs le trouveront dans la recherche, après une vérification par Moubarat.')}</span>
+                </span>
+              </label>
+            ) : null}
             <button type="button" className="mv-cta mb-tap" disabled={!validName} onClick={confirm}>{t('C’est ici')}</button>
           </>
         )}
@@ -307,10 +369,28 @@ export function CreerOu(p: {
             <span className="rsv-taken__grab" aria-hidden="true" />
             <h3 className="co-ask__t" id="co-ask-t">{fillTemplate(t('C’est {centre} ?'), { centre: askPartner.name })}</h3>
             <button type="button" className="mv-cta mb-tap" onClick={() => p.onPickPartner(askPartner.id)}>{t('Oui, c’est ce centre')}</button>
-            <button type="button" className="co-ask__no mb-tap" onClick={() => { setAskPartner(null); p.onConfirm({
-              name: validName ?? name, area: under?.area ?? null, address: under?.street ?? null, wilaya: under?.wilaya ?? null,
-              lat: Number(centerRef.current.lat.toFixed(6)), lng: Number(centerRef.current.lng.toFixed(6)),
-            }); }}>{t('Non, un autre terrain')}</button>
+            <button type="button" className="co-ask__no mb-tap" onClick={() => { setAskPartner(null); confirmHere({ checkNear: true }); }}>{t('Non, un autre terrain')}</button>
+          </div>
+        </div>
+      ) : null}
+
+      {askNear ? (
+        <div className="mb-sheet-bg" role="dialog" aria-modal="true" aria-labelledby="co-near-t" onClick={() => setAskNear(null)}>
+          <div className="mb-sheet xp-cob co-ask co-near" onClick={(e) => e.stopPropagation()}>
+            <span className="rsv-taken__grab" aria-hidden="true" />
+            <h3 className="co-ask__t" id="co-near-t">{t('C’est l’un de ces terrains ?')}</h3>
+            <p className="co-near__sub">{t('Des joueurs ont déjà ajouté un terrain tout près de ton épingle.')}</p>
+            {askNear.map((c) => (
+              <button key={c.id} type="button" className="co-row co-row--near mb-tap" onClick={() => { setAskNear(null); p.onConfirm({ name: c.name, area: c.area, address: c.address, wilaya: c.wilaya, lat: c.lat, lng: c.lng, placeId: c.id }); }}>
+                <span className="co-row__ic co-row__ic--community"><PitchIcon /></span>
+                <span className="co-row__txt">
+                  <b><Ltr>{c.name}</Ltr></b>
+                  <span>{[fillTemplate(t('à {n} m'), { n: String(c.m) }), c.matchCount > 0 ? tn('{n} matchs joués ici', c.matchCount) : ''].filter(Boolean).join(' · ')}</span>
+                </span>
+                <span className="co-near__yes">{t('C’est lui')}</span>
+              </button>
+            ))}
+            <button type="button" className="co-ask__no mb-tap" onClick={() => { setAskNear(null); confirmHere({ checkNear: false }); }}>{t('Non, c’est un autre terrain')}</button>
           </div>
         </div>
       ) : null}
@@ -337,4 +417,26 @@ function PartnerRow({ v, km, busy, onPick }: { v: PartnerPin; km: number | null;
       <Icon id="i-arrow" className="co-row__go" />
     </button>
   );
+}
+
+/** Lot B, phase 6 : un terrain de la communauté dans la recherche (maquette « Nos lieux d'abord », 1). */
+function CommunityRow({ c, onPick }: { c: CommunityPlace; onPick: () => void }) {
+  const t = useT();
+  const tn = useTn();
+  const where = c.area ?? c.wilaya;
+  const meta = c.verified ? (c.matchCount > 0 ? tn('{n} matchs joués ici', c.matchCount) : '') : t('Ajouté par toi · à vérifier');
+  return (
+    <button type="button" className="co-row mb-tap" onClick={onPick}>
+      <span className="co-row__ic co-row__ic--community" aria-hidden="true"><PitchIcon /></span>
+      <span className="co-row__txt">
+        <b><Ltr>{c.name}</Ltr></b>
+        <span><Ltr>{where}</Ltr>{meta ? <> · {meta}</> : null}</span>
+      </span>
+      {c.verified ? <svg className="co-row__ok" aria-label={t('Vérifié par Moubarat')} role="img" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10" /></svg> : null}
+    </button>
+  );
+}
+
+function PitchIcon() {
+  return <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M12 5v14" /><circle cx="12" cy="12" r="3" /></svg>;
 }

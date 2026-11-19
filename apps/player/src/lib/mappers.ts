@@ -60,6 +60,8 @@ export interface ApiPublicMatch {
   venueId: string | null; fieldId: string | null; start: number; end: number; capacity: number;
   /** Match libre : le lieu saisi par l'organisateur (absent ou `null` pour un match de centre). */
   place?: { name: string; area?: string; wilaya: string } | null;
+  /** Lot B, phase 6 : le terrain de la communauté de ce match libre (`null` : aucun). */
+  placeId?: string | null;
   pricePerPlayerDa: number; visibility: string; status: string; organizerId: string;
   coordination: string; whatsappUrl: string | null; createdAt: number;
   /** « Un petit mot pour les joueurs » (migration 0033) — lu par la fiche du match au lot 7. */

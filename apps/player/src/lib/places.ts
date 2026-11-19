@@ -97,3 +97,27 @@ export function newPlacesSession(): string {
   if (c && typeof c.randomUUID === 'function') return c.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
 }
+
+/* --- Lot B, phase 6 « Nos lieux d'abord » (19/11/2026) ------------------------------------------------------------------------ */
+
+/** Un terrain de la communauté (GET /places/community) : ajouté par un joueur, la console ou un fichier importé. */
+export interface CommunityPlace {
+  id: string; name: string; area: string | null; address: string | null; wilaya: string; lat: number; lng: number;
+  /** Vérifié par Moubarat (visible pour tous) ; sinon ajouté par moi et encore à vérifier. */
+  verified: boolean; mine: boolean; matchCount: number;
+}
+
+/** Rayon des « C'est l'un de ces terrains ? » — le même que celui des doublons côté serveur (modules/places/community.ts). */
+export const COMMUNITY_NEAR_M = 150;
+
+/** Les terrains de la communauté dont le nom contient la recherche (casse et accents ignorés), les plus joués d'abord. */
+export function communitySuggestions(places: readonly CommunityPlace[], query: string, max = 3): CommunityPlace[] {
+  const q = fold(query.trim()).replace(/\s+/g, '');
+  if (q === '') return [];
+  return places.filter((p) => fold(p.name).replace(/\s+/g, '').includes(q)).sort((a, b) => b.matchCount - a.matchCount).slice(0, max);
+}
+
+/** Les terrains de la communauté à moins de `withinM` mètres de l'épingle, du plus proche au plus loin, avec leur distance. */
+export function communityNear(places: readonly CommunityPlace[], pin: LatLng, withinM = COMMUNITY_NEAR_M): (CommunityPlace & { m: number })[] {
+  return places.map((p) => ({ ...p, m: Math.round(distanceKm(pin, p) * 1000) })).filter((p) => p.m <= withinM).sort((a, b) => a.m - b.m);
+}

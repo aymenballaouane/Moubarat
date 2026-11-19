@@ -14,6 +14,7 @@ import { hhmm, epochMinutesOfDay, epochDayLabel } from '../lib/format.js';
 import { useLang, useT, useTn } from '../lib/i18n.js';
 import { reportRefusal } from '../lib/pasPossible.js';
 import { useToast } from '../lib/useToast.js';
+import { CommunityPlaceInfo } from './CommunityPlaceInfo.js';
 import { formatBadge } from '../lib/createMatch.js';
 import { fillTemplate } from '../lib/reserverCreneau.js';
 import { latePhrase } from '../lib/cancelResa.js';
@@ -181,6 +182,7 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
         match={match} venueName={venueName} centre={centre} now={now} onBack={onExit}
         onShare={phase === 'cancelled' || phase === 'played' ? undefined : shareMatch}
         onMore={phase === 'cancelled' ? undefined : () => setSheet('report')}
+        placeInfo={store.matchPlaceId(match.id) ? <CommunityPlaceInfo placeId={store.matchPlaceId(match.id)!} store={store} onToast={(m) => toast.show(m)} /> : null}
       />
       <div className="mv-pad">
         {phase === 'cancelled' ? (

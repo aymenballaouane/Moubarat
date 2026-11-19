@@ -386,6 +386,8 @@ export interface MatchesTable {
   place_lng: number | null;
   /** Migration 0051 (lot B, phase 1) : l'adresse sous l'épingle d'un match libre. */
   place_address: string | null;
+  /** Lot B, phase 6 (0055) : le lieu de la communauté de ce match libre, `null` s'il n'est rattaché à aucun. */
+  place_id: string | null;
   time_range: string;                 // tstzrange
   capacity: number;
   price_per_player_da: number;
@@ -609,6 +611,8 @@ export interface VenuePhotosTable {
 export interface Database {
   /** Migration 0054 (lot B, phase 4) : joueurs bloqués. */
   user_blocks: UserBlocksTable;
+  places: PlacesTable;
+  place_reports: PlaceReportsTable;
   venue_photos: VenuePhotosTable;
   users: UsersTable;
   profiles: ProfilesTable;
@@ -653,6 +657,36 @@ export interface Database {
 }
 
 /** Migration 0054 (lot B, phase 4) : `blocker_id` a bloqué `blocked_id`. */
+/** Lot B, phase 6 (0055) — les terrains de la communauté (joueurs, console, fichier importé), vérifiés avant d'être montrés à tous. */
+export interface PlacesTable {
+  id: Generated<string>;
+  name: string;
+  name_key: string;
+  area: string | null;
+  address: string | null;
+  wilaya: string;
+  lat: number;
+  lng: number;
+  status: Generated<'PENDING' | 'VERIFIED' | 'HIDDEN'>;
+  source: 'PLAYER' | 'CONSOLE' | 'IMPORT';
+  created_by: string | null;
+  on_osm: Generated<boolean>;
+  merged_into: string | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+  verified_at: Date | null;
+}
+export interface PlaceReportsTable {
+  id: Generated<string>;
+  place_id: string;
+  reporter_id: string;
+  reason: 'WRONG_NAME' | 'WRONG_POSITION' | 'CLOSED' | 'OTHER';
+  note: string | null;
+  status: Generated<'OPEN' | 'HANDLED'>;
+  created_at: Generated<Date>;
+  handled_at: Date | null;
+}
+
 export interface UserBlocksTable {
   blocker_id: string;
   blocked_id: string;

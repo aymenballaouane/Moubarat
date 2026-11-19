@@ -10,6 +10,7 @@ import { MatchMoreSheet } from './MatchMoreSheet.js';
 import { epochDayLabel, epochMinutesOfDay, hhmm } from '../lib/format.js';
 import { useLang, useT, useTn } from '../lib/i18n.js';
 import { useToast } from '../lib/useToast.js';
+import { CommunityPlaceInfo } from './CommunityPlaceInfo.js';
 import { formatBadge, NOTE_MAX } from '../lib/createMatch.js';
 import { fillTemplate } from '../lib/reserverCreneau.js';
 import { matchPhase, registrationsOpen, teamViews } from '../lib/matchDetail.js';
@@ -205,6 +206,7 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
         match={match} venueName={venueName} centre={centre} now={now} onBack={onExit}
         onShare={over ? undefined : shareMatch}
         onMore={match.status === 'CANCELLED' ? undefined : () => setSheet({ kind: 'report' })}
+        placeInfo={store.matchPlaceId(match.id) ? <CommunityPlaceInfo placeId={store.matchPlaceId(match.id)!} store={store} onToast={(m) => toast.show(m)} /> : null}
       />
 
       <div className="mv-pad">

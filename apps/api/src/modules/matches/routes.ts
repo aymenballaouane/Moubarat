@@ -20,6 +20,8 @@ import { feedConditions, feedDayCounts, parseFeedFilters, type FeedQuery } from 
 import { assertNotBlockedFrom, isBlockedBy, matchUnavailable } from '../blocks/routes.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
 import { assertCleanText } from '../../lib/content-filter.js';
+import type { RateLimiter } from '../../lib/rate-limit.js';
+import { placeForPlayer, resolvePlaceForMatch } from '../places/community.js';
 import { rowToBooking } from '../bookings/service.js';
 import { playerCancelSummary } from '../bookings/cascade.js';
 import { writeAudit } from '../../audit/log.js';
@@ -32,6 +34,8 @@ interface Deps {
   db: Db; guards: Guards;
   /** Lot B, phase 4 : filtre des insultes (CONTENT_FILTER_ENABLED, lib/content-filter.ts). Absent = éteint. */
   contentFilter?: boolean;
+  /** Lot B, phase 6 : lieux qu'un joueur ajoute par jour. Absent (tests) : aucune limite. */
+  placeCreateLimiter?: RateLimiter;
 }
 
 const SKILL_LEVELS = ['LOISIR', 'INTERMEDIAIRE', 'COMPETITION'] as const;
@@ -91,7 +95,7 @@ function assertCanEditOwnMatch(row: { organizer_id: string; status: string }, us
   if (row.status === 'CANCELLED' || row.status === 'PLAYED') throw new ApiError(409, 'MATCH_NOT_OPEN', 'Ce match est terminé ou annulé.');
 }
 
-export async function registerMatchRoutes(app: FastifyInstance, { db, guards, contentFilter = false }: Deps): Promise<void> {
+export async function registerMatchRoutes(app: FastifyInstance, { db, guards, contentFilter = false, placeCreateLimiter }: Deps): Promise<void> {
 
   /* Création — TOUJOURS depuis une réservation déjà posée (chemin B — le
      chemin A « réserver puis créer dans la foulée » s'obtient en enchaînant
@@ -199,7 +203,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards, co
      s'appliquent PAS : ils ne concernent que les réservations chez un centre (valeur provisoire du dossier, section 11). */
   app.post<{
     Body: {
-      place?: { name?: unknown; area?: unknown; address?: unknown; wilaya?: unknown; lat?: unknown; lng?: unknown }; sport?: string; format?: string; level?: string;
+      place?: { name?: unknown; area?: unknown; address?: unknown; wilaya?: unknown; lat?: unknown; lng?: unknown; placeId?: unknown; share?: unknown }; sport?: string; format?: string; level?: string;
       start?: number; durationMin?: number; visibility?: string; note?: string; title?: string;
     };
   }>('/matches/free', { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
@@ -210,13 +214,20 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards, co
     if (!(SPORTS as readonly string[]).includes(sport)) throw badRequest('Sport invalide.');
     const p = b.place ?? {};
     const str = (v: unknown) => (typeof v === 'string' ? v : '');
-    const placeName = str(p.name);
-    const placeArea = str(p.area).trim();
-    const placeWilaya = str(p.wilaya);
-    const placeAddress = str(p.address).trim();   // lot B, phase 1 : l'adresse sous l'épingle
+    /* Lot B, phase 6 : un terrain de la communauté choisi (`placeId`) — le match prend SES nom, adresse et position ; ou `share` : le
+       joueur ajoute ce terrain à Moubarat (« Ajouter ce terrain à Moubarat », lieu « à vérifier »). */
+    const chosenPlace = typeof p.placeId === 'string' && p.placeId !== '' ? await placeForPlayer(db, p.placeId, req.auth!.userId) : null;
+    if (typeof p.placeId === 'string' && p.placeId !== '' && !chosenPlace) {
+      throw new ApiError(404, 'PLACE_NOT_FOUND', 'Ce terrain n’est plus disponible. Choisis-le à nouveau sur la carte.');
+    }
+    const share = p.share === true;
+    const placeName = chosenPlace?.name ?? str(p.name);
+    const placeArea = (chosenPlace ? chosenPlace.area ?? '' : str(p.area)).trim();
+    const placeWilaya = chosenPlace?.wilaya ?? str(p.wilaya);
+    const placeAddress = (chosenPlace ? chosenPlace.address ?? '' : str(p.address)).trim();   // lot B, phase 1 : l'adresse sous l'épingle
     // Phase adresses : la position du lieu (adresse choisie ou épingle), facultative — le core vérifie qu'elle est entière et plausible.
-    const placeLat = p.lat === undefined || p.lat === null ? undefined : Number(p.lat);
-    const placeLng = p.lng === undefined || p.lng === null ? undefined : Number(p.lng);
+    const placeLat = chosenPlace ? chosenPlace.lat : p.lat === undefined || p.lat === null ? undefined : Number(p.lat);
+    const placeLng = chosenPlace ? chosenPlace.lng : p.lng === undefined || p.lng === null ? undefined : Number(p.lng);
     const start = Number(b.start);
     const durationMin = Number(b.durationMin);
     if (!Number.isFinite(start)) throw badRequest('start manquant (ms).');
@@ -242,9 +253,13 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards, co
       await assertNotRestricted(trx, req.auth!.userId, now);   // règle 25
       const conflict = await describeConflict(trx, req.auth!.userId, match.range);
       if (conflict) throw new ApiError(409, 'SCHEDULE_CONFLICT', 'Tu as déjà un match ou une réservation sur ce créneau.', conflict);
+      const { placeId } = chosenPlace ? { placeId: chosenPlace.id } : await resolvePlaceForMatch(trx, {
+        placeId: null, share, name: match.place!.name, area: match.place!.area ?? null, address: match.place!.address ?? null,
+        wilaya: match.place!.wilaya, lat: match.place!.lat, lng: match.place!.lng,
+      }, req.auth!.userId, placeCreateLimiter);
       const row = await trx.insertInto('matches').values({
         sport: match.sport, format: match.format, level: match.level, title: match.title,
-        venue_id: null, field_id: null,
+        venue_id: null, field_id: null, place_id: placeId,
         place_name: match.place!.name, place_area: match.place!.area ?? null, place_wilaya: match.place!.wilaya,
         place_lat: match.place!.lat ?? null, place_lng: match.place!.lng ?? null, place_address: match.place!.address ?? null,
         time_range: toPgRange(match.range), capacity: match.capacity, price_per_player_da: 0,
