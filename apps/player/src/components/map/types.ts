@@ -27,13 +27,13 @@ export interface MapViewProps {
 }
 
 const LOGO = '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 60 60"><path d="M8 12h20l-7 18 7 18H8l7-18z" fill="#D9D9D9"/><path d="M32 12h20l-7 18 7 18H32l7-18z" fill="#E32A00"/></svg>';
-/** Un terrain (icône de la maquette « Nos lieux d'abord »). */
-const PITCH = '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 5v14"/><circle cx="12" cy="12" r="3"/></svg>';
+/** Un stade de la communauté : un ballon de foot (demande d'Aymen du 19/11/2026 — les centres partenaires gardent le logo Moubarat). */
+const BALL = '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.6l3.7 2.7-1.4 4.3H9.7l-1.4-4.3z"/><path d="M12 3v4.6M20.6 9.4l-4.9.9M17.4 19.4l-3.1-4.8M6.6 19.4l3.1-4.8M3.4 9.4l4.9.9"/></svg>';
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
 /** Un centre partenaire : le logo Moubarat dans un carré, une pointe, le nom dessous (maquette Cm-B1). Boîte 160 × 70, pointe à (80, 46). */
 export function markerHtml(name: string, kind: MapMarker['kind'] = 'partner'): string {
-  if (kind === 'community') return `<span class="mm-mk__tile mm-mk__tile--community">${PITCH}</span><span class="mm-mk__tip"></span><span class="mm-mk__name" dir="ltr">${esc(name)}</span>`;
+  if (kind === 'community') return `<span class="mm-mk__tile mm-mk__tile--community">${BALL}</span><span class="mm-mk__tip"></span><span class="mm-mk__name" dir="ltr">${esc(name)}</span>`;
   return `<span class="mm-mk__tile">${LOGO}</span><span class="mm-mk__tip"></span><span class="mm-mk__name" dir="ltr">${esc(name)}</span>`;
 }
 export const MARKER_SIZE = { w: 160, h: 70, anchorX: 80, anchorY: 46 } as const;

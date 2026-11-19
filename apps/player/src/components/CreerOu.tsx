@@ -382,7 +382,7 @@ export function CreerOu(p: {
             <p className="co-near__sub">{t('Des joueurs ont déjà ajouté un terrain tout près de ton épingle.')}</p>
             {askNear.map((c) => (
               <button key={c.id} type="button" className="co-row co-row--near mb-tap" onClick={() => { setAskNear(null); p.onConfirm({ name: c.name, area: c.area, address: c.address, wilaya: c.wilaya, lat: c.lat, lng: c.lng, placeId: c.id }); }}>
-                <span className="co-row__ic co-row__ic--community"><PitchIcon /></span>
+                <span className="co-row__ic co-row__ic--community"><BallIcon /></span>
                 <span className="co-row__txt">
                   <b><Ltr>{c.name}</Ltr></b>
                   <span>{[fillTemplate(t('à {n} m'), { n: String(c.m) }), c.matchCount > 0 ? tn('{n} matchs joués ici', c.matchCount) : ''].filter(Boolean).join(' · ')}</span>
@@ -423,11 +423,12 @@ function PartnerRow({ v, km, busy, onPick }: { v: PartnerPin; km: number | null;
 function CommunityRow({ c, onPick }: { c: CommunityPlace; onPick: () => void }) {
   const t = useT();
   const tn = useTn();
-  const where = c.area ?? c.wilaya;
+  // Comme une fiche d'entreprise (demande d'Aymen du 19/11/2026) : l'adresse sous le nom, sinon le quartier, sinon la wilaya.
+  const where = c.address ?? c.area ?? c.wilaya;
   const meta = c.verified ? (c.matchCount > 0 ? tn('{n} matchs joués ici', c.matchCount) : '') : t('Ajouté par toi · à vérifier');
   return (
     <button type="button" className="co-row mb-tap" onClick={onPick}>
-      <span className="co-row__ic co-row__ic--community" aria-hidden="true"><PitchIcon /></span>
+      <span className="co-row__ic co-row__ic--community" aria-hidden="true"><BallIcon /></span>
       <span className="co-row__txt">
         <b><Ltr>{c.name}</Ltr></b>
         <span><Ltr>{where}</Ltr>{meta ? <> · {meta}</> : null}</span>
@@ -437,6 +438,7 @@ function CommunityRow({ c, onPick }: { c: CommunityPlace; onPick: () => void }) 
   );
 }
 
-function PitchIcon() {
-  return <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M12 5v14" /><circle cx="12" cy="12" r="3" /></svg>;
+/** Un stade de la communauté : un ballon de foot (la même icône que sur la carte, map/types.ts). */
+function BallIcon() {
+  return <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.6l3.7 2.7-1.4 4.3H9.7l-1.4-4.3z" /><path d="M12 3v4.6M20.6 9.4l-4.9.9M17.4 19.4l-3.1-4.8M6.6 19.4l3.1-4.8M3.4 9.4l4.9.9" /></svg>;
 }

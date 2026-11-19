@@ -2,7 +2,7 @@
 
 Lot B, phase 4 (19/11/2026). Demande d'Aymen : « côté serveur… Montre-moi la liste avant de l'activer ».
 
-**État : construit, testé, ÉTEINT.** Rien n'est refusé tant que la variable `CONTENT_FILTER_ENABLED=true` n'est pas posée sur
+**État : ALLUMÉ en production le 19/11/2026 vers 19 h** (`CONTENT_FILTER_ENABLED=true` sur Render, après relecture d'Aymen : « Oui, valide tout »). Avant : construit, testé, éteint. Rien n'est refusé tant que la variable `CONTENT_FILTER_ENABLED=true` n'est pas posée sur
 l'API (Render → Environment). Pour l'activer : relire la liste ci-dessous, rayer ou ajouter des mots (le fichier est
 `apps/api/src/lib/content-filter.ts`, deux listes `BLOCKED_LATIN` et `BLOCKED_ARABIC`), puis poser la variable et redémarrer.
 Pour le couper : retirer la variable (ou toute autre valeur que `true`) et redémarrer. Aucune donnée n'est modifiée.
@@ -61,7 +61,12 @@ zamel · zemel · zamal · zmel · 3atay · miboun · mibon · mibone · khra ·
 زبي · زب · قحبه · قحاب · نيك · نيكمك · « نيك يماك » · زامل · زوامل · شرموطه · شرموط · عاهره · منيوك · منيوكه · خرا · عطاي · ميبون ·
 كس · كسمك · « كس امك » · طيز · « ولد القحبه » · « يا قحبه » · « لعن دينك » · « لعن ربك »
 
-## Points à trancher par Aymen
+## Décisions d'Aymen (19/11/2026, « Oui, valide tout »)
+
+1. « pd » : gardé. 2. « negro » : gardé. 3. « ta gueule » : gardé. 4. « merde » seul : laissé passer (seuls « grosse merde » / « sale merde » bloqués).
+5. Liste ouverte : des mots de darija d'Alger pourront être ajoutés (fichier `apps/api/src/lib/content-filter.ts`).
+
+## Points posés à Aymen (historique)
 
 1. **« pd »** : bloque aussi deux initiales (« P.D. ») dans un nom. Garder ?
 2. **« negro »** : aussi un mot espagnol courant (club, nom de famille). Garder ?
