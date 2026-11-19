@@ -186,7 +186,8 @@
     "Un centre « {1} » ne peut pas passer à « {2} ».": "لا يمكن لمركز في حالة «{1}» أن ينتقل إلى «{2}».",
     "Un export couvre 3 mois au plus. Pour une période plus longue, faites plusieurs exports.": "يغطي التصدير 3 أشهر على الأكثر. لفترة أطول، قوموا بعدة عمليات تصدير.",
     "50 identifiants au plus.": "50 معرّفًا على الأكثر.",
-    "Identifiant de compte invalide.": "معرّف الحساب غير صالح."
+    "Identifiant de compte invalide.": "معرّف الحساب غير صالح.",
+    "Une nouvelle version de Moubarat est disponible : mets à jour l’app pour continuer.": "يتوفر إصدار جديد من Moubarat: حدّثوا التطبيق للمتابعة."
   },
   "fragments": {
     "il est déjà publié": "المركز منشور بالفعل",
@@ -225,6 +226,7 @@
   "vouvoiement": {
     "Cette réservation a un match rattaché — le terrain et l’horaire ne se modifient plus une fois le match créé, même sans inscrit. Annule la réservation pour libérer le créneau (le match s’annule avec elle).": "Cette réservation a un match rattaché — le terrain et l’horaire ne se modifient plus une fois le match créé, même sans inscrit. Annulez la réservation pour libérer le créneau (le match s’annule avec elle).",
     "Une caisse est déjà ouverte — clôture-la d’abord.": "Une caisse est déjà ouverte — clôturez-la d’abord.",
-    "Choisis au moins un jour.": "Choisissez au moins un jour."
+    "Choisis au moins un jour.": "Choisissez au moins un jour.",
+    "Une nouvelle version de Moubarat est disponible : mets à jour l’app pour continuer.": "Une nouvelle version de Moubarat est disponible : mettez à jour l’app pour continuer."
   }
 }

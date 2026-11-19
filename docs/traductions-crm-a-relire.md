@@ -1,6 +1,6 @@
 # CRM Moubarat en arabe — traductions à faire relire
 
-*Document produit par `pnpm --filter @moubarat/crm traductions:relire` (ne pas modifier à la main : il est régénéré). 924 textes.*
+*Document produit par `pnpm --filter @moubarat/crm traductions:relire` (ne pas modifier à la main : il est régénéré). 925 textes.*
 
 Toutes les traductions arabes du CRM ont été rédigées par Claude (choix d’Aymen du 15/11/2026) : **aucune n’a été relue par un
 arabophone**. Elles sont affichées telles quelles aux postes réglés en arabe. Merci de les relire en pensant à un gérant ou un
@@ -857,6 +857,7 @@ voit qu’en cas de bug.
 
 | Français | Arabe (provisoire) | Correction |
 |---|---|---|
+| Une nouvelle version de Moubarat est disponible : mets à jour l’app pour continuer. | يتوفر إصدار جديد من Moubarat: حدّثوا التطبيق للمتابعة. | |
 | Erreur interne. Réessayez. | خطأ داخلي. أعيدوا المحاولة. | |
 | Identifiant invalide. | معرّف غير صالح. | |
 | Réservé à l’administrateur plateforme. | مخصّص لمسؤول المنصة. | |
