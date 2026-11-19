@@ -2,7 +2,7 @@ import { spawn, execFile } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { NODE, PG_BIN, PG_DATA, PG_LOG, ROOT, API_URL, CRM_URL, PLAYER_URL } from './config.mjs';
+import { NODE, PG_BIN, PG_DATA, PG_LOG, ROOT, API_URL, CRM_URL, PLAYER_URL, PROTO_URL, API_PORT, CRM_PORT, PLAYER_PORT, PROTO_PORT } from './config.mjs';
 
 export function log(msg) { console.log(`\n— ${msg}`); }
 
@@ -76,7 +76,10 @@ export function spawnApi() {
     cwd: join(ROOT, 'apps', 'api'),
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, OTP_DEV_MODE: 'true' },
+    env: {
+      ...process.env, OTP_DEV_MODE: 'true', PORT: String(API_PORT),
+      ...(API_PORT !== 3001 || CRM_PORT !== 5174 || PLAYER_PORT !== 5175 ? { CORS_ORIGINS: `${CRM_URL},${PLAYER_URL},http://127.0.0.1:${CRM_PORT},http://127.0.0.1:${PLAYER_PORT}` } : {}),
+    },
   });
   const lines = [];
   const onData = (buf) => {
@@ -116,7 +119,7 @@ export function spawnVite(name, appDir, port, envOverrides = {}) {
 }
 
 export function spawnProtoServer() {
-  return spawn(NODE, [join(ROOT, 'scripts', 'static-server.mjs'), join(ROOT, 'prototypes'), '4173'],
+  return spawn(NODE, [join(ROOT, 'scripts', 'static-server.mjs'), join(ROOT, 'prototypes'), String(PROTO_PORT)],
     { stdio: 'ignore', windowsHide: true });
 }
 
@@ -129,17 +132,17 @@ export async function startAllServers() {
   await seedDemoData();
   log('API, CRM, app joueur, serveur de prototypes…');
   const api = spawnApi();
-  const crm = spawnVite('crm', 'crm', 5174);
+  const crm = spawnVite('crm', 'crm', CRM_PORT, API_PORT !== 3001 ? { VITE_API_BASE_URL: API_URL } : {});
   // apps/player/.env.local pointe VITE_API_BASE_URL sur une IP LAN (test sur téléphone réel,
   // 24/10/2026) — jamais touché sur disque (même règle que OTP_DEV_MODE ci-dessus) : surchargé
   // en mémoire pour CE process vite uniquement, vers l'API locale que ce script vient de lancer.
-  const player = spawnVite('player', 'player', 5175, { VITE_API_BASE_URL: API_URL });
+  const player = spawnVite('player', 'player', PLAYER_PORT, { VITE_API_BASE_URL: API_URL });
   const proto = spawnProtoServer();
   await Promise.all([
     waitUntilUp(API_URL + '/health', 'API'),
     waitUntilUp(CRM_URL, 'CRM'),
     waitUntilUp(PLAYER_URL, 'App joueur'),
-    waitUntilUp('http://localhost:4173', 'Serveur de prototypes'),
+    waitUntilUp(PROTO_URL, 'Serveur de prototypes'),
   ]);
   log('Tous les serveurs sont prêts.');
   return {

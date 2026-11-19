@@ -96,3 +96,15 @@ describe('createFreeMatch — position du lieu (phase adresses, 18/11/2026)', ()
     expect(at({ lat: Number.NaN, lng: 3 }).result).toMatchObject({ ok: false, code: 'PLACE_INVALID' });
   });
 });
+
+describe('createFreeMatch — adresse sous l’épingle (lot B, phase 1, 18/11/2026)', () => {
+  const at = (place: Record<string, unknown>) => createFreeMatch({ ...base, place: { name: 'Terrain · Ben Aknoun', wilaya: 'Alger', ...place } as never });
+  it('gardée avec le lieu, espaces resserrés ; absente si vide', () => {
+    const r = at({ area: 'Ben Aknoun', address: '  Rue   Ali Khodja ', lat: 36.7565, lng: 3.0084 });
+    expect(r.match!.place).toEqual({ name: 'Terrain · Ben Aknoun', area: 'Ben Aknoun', address: 'Rue Ali Khodja', wilaya: 'Alger', lat: 36.7565, lng: 3.0084 });
+    expect(at({ address: '   ' }).match!.place).toEqual({ name: 'Terrain · Ben Aknoun', wilaya: 'Alger' });
+  });
+  it('refusée au-delà de 120 caractères', () => {
+    expect(at({ address: 'r'.repeat(121) }).result).toMatchObject({ ok: false, code: 'PLACE_INVALID' });
+  });
+});

@@ -45,7 +45,7 @@ describe('pluralText — exemples du dossier', () => {
 
   it('chaque texte du bloc « pluriels » a ses deux formes françaises et ses quatre formes arabes, chacune avec {n} quand le nombre s’écrit', () => {
     const blocks = Object.entries(translations.pluriels).filter(([k]) => !k.startsWith('_')) as [string, { fr: Record<string, string>; ar: Record<string, string> }][];
-    expect(blocks.length).toBe(12);   // 5 de fr-ar-match-libre.json + 3 du compte à rebours (phase 3, en partie provisoires)
+    expect(blocks.length).toBe(13);   // 5 de fr-ar-match-libre.json + 3 du compte à rebours (phase 3, en partie provisoires) + « {n} matchs joués ici » (lot B, phase 6, provisoire)
     for (const [key, forms] of blocks) {
       expect(Object.keys(forms.fr).sort(), key).toEqual(['1', 'autre']);
       expect(Object.keys(forms.ar).sort(), key).toEqual(['1', '11+', '2', '3-10']);

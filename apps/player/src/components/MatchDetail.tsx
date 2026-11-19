@@ -6,19 +6,21 @@ import {
 import { Icon } from './Icon.js';
 import { Ltr } from './Ltr.js';
 import { MatchHead } from './MatchHead.js';
+import { AlertsCard } from './AlertsCard.js';
 import { MatchPitch } from './MatchPitch.js';
 import { MatchConfirmSheet } from './MatchSheets.js';
-import { ReportSheet, type ReportTarget } from './ReportSheet.js';
+import { MatchMoreSheet } from './MatchMoreSheet.js';
 import { hhmm, epochMinutesOfDay, epochDayLabel } from '../lib/format.js';
 import { useLang, useT, useTn } from '../lib/i18n.js';
 import { reportRefusal } from '../lib/pasPossible.js';
 import { useToast } from '../lib/useToast.js';
+import { CommunityPlaceInfo } from './CommunityPlaceInfo.js';
 import { formatBadge } from '../lib/createMatch.js';
 import { fillTemplate } from '../lib/reserverCreneau.js';
 import { latePhrase } from '../lib/cancelResa.js';
 import { telHref, type MatchContact } from '../lib/contacts.js';
 import { share } from '../lib/share.js';
-import { inviteText, matchLink } from '../lib/matchLink.js';
+import { inviteLink, inviteMessage, type InviteDetails } from '../lib/matchLink.js';
 import { freeCount, freeLeaveLimitLabel, matchPhase, momentPhrase, myTeam, registrationsOpen, teamViews } from '../lib/matchDetail.js';
 import { displayPhone, pitchHelp, type PitchHelp } from '../lib/matchView.js';
 import { fillNodes } from '../lib/fillNodes.js';
@@ -112,11 +114,13 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
       dayLabel: epochDayLabel(match.range.start), timeLabel: startHour,
       pricePerPlayerDa: match.pricePerPlayer.amount, spotsLeft: Math.max(left, 1),
     });
-    void share(code ? { title: venueName, text: inviteText(code).split(' : ')[0] ?? '', url: matchLink(code) } : { title: venueName, text: waText });
+    const invite: InviteDetails | null = code ? { code, format: match.format, start: match.range.start, placeName: venueName, wilaya: match.place?.wilaya ?? centre?.wilaya ?? null, pricePerPlayerDa: match.pricePerPlayer.amount, missing: left } : null;
+    void share(invite ? { title: venueName, text: inviteMessage(invite, lang, { withLink: false }), url: inviteLink(invite.code, lang) } : { title: venueName, text: waText });
   }
 
   /* --- actions -------------------------------------------------------------------------------------------------------------------- */
 
+  const [justJoined, setJustJoined] = useState(false);
   async function join() {
     if (busy) return;
     if (picked) {
@@ -128,6 +132,7 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
     setBusy(false);
     if (!res.ok) { if (!reportRefusal(res)) toast.show(res.message); return; }
     setPicked(null);
+    setJustJoined(true);   // lot B, phase 3 : « Sois prévenu avant le match »
     toast.show(t('C’est noté, tu joues.'));
   }
   async function changeTo(team: MatchTeam) {
@@ -177,6 +182,7 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
         match={match} venueName={venueName} centre={centre} now={now} onBack={onExit}
         onShare={phase === 'cancelled' || phase === 'played' ? undefined : shareMatch}
         onMore={phase === 'cancelled' ? undefined : () => setSheet('report')}
+        placeInfo={store.matchPlaceId(match.id) ? <CommunityPlaceInfo placeId={store.matchPlaceId(match.id)!} store={store} onToast={(m) => toast.show(m)} /> : null}
       />
       <div className="mv-pad">
         {phase === 'cancelled' ? (
@@ -200,6 +206,7 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
           <a className="mv-callbtn mv-wa mb-tap" href={groupUrl} target="_blank" rel="noopener noreferrer"><Icon id="i-chat" />{t('Groupe WhatsApp')}</a>
         ) : null}
 
+        {justJoined && joined ? <AlertsCard store={store} variant="player" /> : null}
         <div className="mv-org">
           <span className="mv-org__av" aria-hidden="true">{organizerName.charAt(0).toUpperCase()}</span>
           <span className="mv-org__col">
@@ -242,14 +249,10 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
       )}
 
       {sheet === 'report' ? (
-        <ReportSheet
-          targets={[
-            { type: 'MATCH', id: match.id, label: t('Ce match') } satisfies ReportTarget,
-            ...active.filter((p) => p.userId !== meId).map((p) => ({ type: 'PLAYER' as const, id: p.userId, label: nameOf(p.userId) })),
-          ]}
-          send={(target, reason, note) => store.sendReport(target, reason, note)}
-          onClose={() => setSheet(null)}
-          onSent={(duplicate) => { setSheet(null); toast.show(duplicate ? t('Tu as déjà signalé ça : le support s’en occupe.') : t('Merci, c’est transmis au support Moubarat.')); }}
+        <MatchMoreSheet
+          matchId={match.id} store={store}
+          players={active.filter((p) => p.userId !== meId).map((p) => ({ userId: p.userId, name: nameOf(p.userId) }))}
+          onClose={() => setSheet(null)} onToast={(m) => toast.show(m)}
         />
       ) : null}
 

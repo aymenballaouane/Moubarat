@@ -1,0 +1,55 @@
+/* La carte de « Créer un match » (lot B, phase 1 — MatchMap.tsx), mesures des maquettes Cm-B1 et Cm-B1b. */
+.mm { position: absolute; inset: 0; background: #0E1319; }
+/* La mention obligatoire de la carte : au-dessus du bord du tiroir (qui recouvre les 26 derniers pixels), discrète en thème sombre. */
+.mm .leaflet-bottom { bottom: 26px; }
+.mm .leaflet-control-attribution { font-size: 10px; background: rgba(10,10,15,.62); color: #C5CCD6; border-radius: 6px 0 0 0; }
+.mm .leaflet-control-attribution a { color: #9CC3FF; }
+body[data-theme="clair"] .mm .leaflet-control-attribution { background: rgba(255,255,255,.8); color: #374151; }
+body[data-theme="clair"] .mm .leaflet-control-attribution a { color: #0B57D0; }
+/* Thème sombre (par défaut) : les images claires d'OpenStreetMap assombries ; thème clair : telles quelles. Remplacé par un vrai style
+   sombre avec Google Maps. */
+.mm .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.55); }
+body[data-theme="clair"] .mm .leaflet-tile-pane { filter: none; }
+@media (prefers-color-scheme: light) {
+  body:not([data-theme="sombre"]):not([data-theme="clair"]) .mm .leaflet-tile-pane { filter: none; }
+}
+body[data-theme="clair"] .mm { background: #EEF1F5; }
+/* Liseré d'un demi-pixel entre deux images de carte (même correctif que la phase adresses). */
+.mm .leaflet-tile-container img.leaflet-tile { width: 256.5px !important; height: 256.5px !important; mix-blend-mode: normal; }
+
+/* Centre partenaire : carré au logo, pointe rouge, nom dans une pastille. */
+.mm-mk { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+.mm-mk__tile {
+  width: 36px; height: 36px; box-sizing: border-box; border-radius: 11px; border: 2px solid #FF2B00;
+  background: linear-gradient(160deg, #3A0C04 0%, #0A0202 65%); display: flex; align-items: center; justify-content: center;
+}
+.mm-mk__tip { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid #FF2B00; margin-top: -1px; }
+.mm-mk__name {
+  margin-top: 5px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 9px; border-radius: 10px;
+  background: #131A24; border: 1px solid rgba(138,148,166,.28); color: #F5F7FA; font: 600 11px/14px var(--font-body);
+}
+.mm--dim .mm-mk { opacity: .45; }
+/* Lot B, phase 6 : un terrain de la communauté — rond or (maquette « Nos lieux d'abord »), pointe or. */
+.mm-mk__tile--community { width: 30px; height: 30px; border-radius: 999px; border-color: #F2B705; background: #1A1405; color: #F2B705; }
+.mm-mk--community .mm-mk__tip { border-top-color: #F2B705; }
+body[data-theme="clair"] .mm-mk__tile--community { background: #FFF6DA; color: #9A6F00; border-color: #D9A300; }
+
+/* Le joueur : point bleu cerclé de blanc dans un halo. */
+.mm-me > span {
+  display: block; width: 34px; height: 34px; border-radius: 999px; background: rgba(77,163,255,.16); position: relative;
+}
+.mm-me > span::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%);
+  border-radius: 999px; background: #4DA3FF; border: 2.5px solid #FFFFFF; box-sizing: border-box;
+}
+
+/* Lot B, phase 7 — la carte Moubarat (MapLibre, VectorMap.tsx) : la mention obligatoire au-dessus du bord du tiroir, comme Leaflet. */
+.mm .maplibregl-ctrl-bottom-right, .mm .maplibregl-ctrl-bottom-left { bottom: 26px; }
+.mm .maplibregl-ctrl-attrib { font-size: 10px; background: rgba(10,10,15,.62); color: #C5CCD6; border-radius: 6px 0 0 0; }
+.mm .maplibregl-ctrl-attrib a { color: #9CC3FF; }
+body[data-theme="clair"] .mm .maplibregl-ctrl-attrib { background: rgba(255,255,255,.8); color: #374151; }
+body[data-theme="clair"] .mm .maplibregl-ctrl-attrib a { color: #0B57D0; }
+.mm .maplibregl-canvas:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+/* La feuille de MapLibre pose `.maplibregl-map { position: relative }`, chargée APRÈS celle-ci : sans cette règle plus précise, le cadre
+   de la carte perd sa hauteur (carte vide). */
+.mm.maplibregl-map { position: absolute; inset: 0; }

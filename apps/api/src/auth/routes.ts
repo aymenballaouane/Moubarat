@@ -11,6 +11,7 @@ import { ACCOUNT_SUSPENDED_CODE, ACCOUNT_SUSPENDED_MESSAGE, type Guards } from '
 import type { SmsProvider } from '../lib/sms.js';
 import { hashPassword, newOtpCode, newSessionToken, sha256, verifyPassword } from '../lib/crypto.js';
 import { ApiError, badRequest, must } from '../lib/http.js';
+import { assertCleanText } from '../lib/content-filter.js';
 import { checkLoginThrottle, clearLoginThrottle, clearLoginThrottleForKeys, foldedName, ipFingerprint, recordLoginFailure, throttleKey } from '../lib/login-throttle.js';
 import { checkRateLimit, type RateLimiter } from '../lib/rate-limit.js';
 import { needsLegalConsent, recordLegalConsent, recordAgeConsent } from '../modules/legal/service.js';
@@ -19,6 +20,8 @@ import { isNameTakenViolation, nameKeyOf, nameTaken } from '../lib/display-name.
 
 interface Deps {
   db: Db; guards: Guards; sms: SmsProvider;
+  /** Lot B, phase 4 : filtre des insultes (CONTENT_FILTER_ENABLED, lib/content-filter.ts). Absent = éteint. */
+  contentFilter?: boolean;
   /** Audit 07-09/09/2026 (S12) : compteurs additionnels au quota par numéro
       du core — par IP appelante et global (coût SMS total). Optionnels : un
       test qui ne les fournit pas garde l'ancien comportement (quota par
@@ -51,7 +54,7 @@ function accessAlreadySet(): ApiError {
 }
 
 export async function registerAuthRoutes(
-  app: FastifyInstance, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter }: Deps,
+  app: FastifyInstance, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter, contentFilter = false }: Deps,
 ): Promise<void> {
 
   /* Demande d'un code OTP. Cooldown 60 s + quota 3/15 min = règles core.
@@ -216,7 +219,7 @@ export async function registerAuthRoutes(
       // Règles 28-30 (24/10/2026) : pseudo + mot de passe + nouveaux accords, pas encore
       // posés pour un compte antérieur à ce lot (`password_hash` reste NULL) — vrai pour un
       // compte tout juste créé par cette même requête aussi bien que pour un ancien compte.
-      needsAccessSetup: user.password_hash === null,
+      needsAccessSetup: user.password_hash === null && user.access_setup_at === null,
     });
   });
 
@@ -302,7 +305,7 @@ export async function registerAuthRoutes(
       user: { id: user.id, name: user.name, phone: user.phone, role: user.role },
       needsLegalConsent: await needsLegalConsent(db, 'PLAYER', user.id),
       needsNameChange: user.name_change_required,
-      needsAccessSetup: user.password_hash === null,
+      needsAccessSetup: user.password_hash === null && user.access_setup_at === null,
     });
   });
 
@@ -370,13 +373,13 @@ export async function registerAuthRoutes(
          visible », pseudo, mot de passe — règles 28 à 30) : lui poser un mot de passe ici faisait tomber `needsAccessSetup` et
          l'envoyait dans l'app sans les accords (numéro visible par défaut, aucune attestation d'âge). Son code SMS prouve qu'il est
          bien le titulaire : on ouvre sa session, mais le mot de passe reste vide — la passerelle s'affiche et le lui demande. */
-      const current = await trx.selectFrom('users').select('password_hash')
+      const current = await trx.selectFrom('users').select(['password_hash', 'access_setup_at'])
         .where('phone', '=', norm.e164).where('deleted_at', 'is', null).forUpdate().executeTakeFirst();
       // Un mot de passe réinitialisé par SMS efface aussi le verrou anti-bruteforce et révoque
       // les AUTRES sessions (même téléphone = même personne, mais un appareil volé qui avait
       // encore une session active ne doit pas la garder après ce geste de récupération).
       const updated = await trx.updateTable('users')
-        .set({ password_hash: current && current.password_hash === null ? null : hash, failed_login_attempts: 0, locked_until: null })
+        .set({ password_hash: current && current.password_hash === null && current.access_setup_at === null ? null : hash, failed_login_attempts: 0, locked_until: null })
         .where('phone', '=', norm.e164).where('deleted_at', 'is', null)
         .returningAll().executeTakeFirst();
       if (!updated) return { ok: false as const, error: badRequest('Aucun compte avec ce numéro.', 'NOT_FOUND') };
@@ -394,7 +397,7 @@ export async function registerAuthRoutes(
     return reply.send({
       token,
       user: { id: user.id, name: user.name, phone: user.phone, role: user.role },
-      needsAccessSetup: user.password_hash === null,
+      needsAccessSetup: user.password_hash === null && user.access_setup_at === null,
     });
   });
 
@@ -428,6 +431,7 @@ export async function registerAuthRoutes(
       }
       if (!pseudo) throw badRequest('Choisis un pseudo.', 'NAME_REQUIRED');
       must(validatePlayerPseudo(pseudo));
+      assertCleanText(contentFilter, pseudo, firstName, lastName);
       must(validatePlayerPassword(password));
 
       const hash = await hashPassword(password);
@@ -438,7 +442,7 @@ export async function registerAuthRoutes(
         let updated: bigint;
         try {
           const res = await trx.updateTable('users')
-            .set({ name: pseudo, name_change_required: false, password_hash: hash })
+            .set({ name: pseudo, name_change_required: false, password_hash: hash, access_setup_at: new Date() })
             .where('id', '=', userId).where('deleted_at', 'is', null).where('password_hash', 'is', null)
             .executeTakeFirst();
           updated = res.numUpdatedRows;

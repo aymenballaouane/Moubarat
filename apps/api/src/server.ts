@@ -9,6 +9,9 @@ import type { Env } from './env.js';
 import { makeGuards } from './auth/guards.js';
 import { makePlatformGuards } from './auth/platform-guards.js';
 import { registerAuthRoutes } from './auth/routes.js';
+import { registerGuestRoutes } from './auth/guest.js';
+import { registerOgRoutes } from './modules/og/routes.js';
+import { registerBlockRoutes } from './modules/blocks/routes.js';
 import { registerPlatformAuthRoutes } from './platform/auth/routes.js';
 import { registerPlatformAccountRoutes } from './platform/accounts/routes.js';
 import { registerPlatformVenueRoutes } from './platform/venues/routes.js';
@@ -22,6 +25,7 @@ import { registerPlatformBookingRoutes } from './platform/bookings/routes.js';
 import { registerPlatformAuditRoutes } from './platform/audit/routes.js';
 import { registerVenueRoutes } from './modules/venues/routes.js';
 import { registerPlaceRoutes } from './modules/places/routes.js';
+import { PLACE_CREATE_MAX_PER_DAY, registerCommunityPlaceRoutes } from './modules/places/community.js';
 import { registerSupportRoutes } from './modules/support/routes.js';
 import { registerStaffRoutes } from './modules/staff/routes.js';
 import { registerLegalRoutes } from './modules/legal/routes.js';
@@ -52,6 +56,7 @@ import { Lifecycle } from './lib/lifecycle.js';
 import { ConsoleSmsProvider, NullSmsProvider, SmssakSmsProvider, type SmsProvider } from './lib/sms.js';
 import { ApnsPushProvider, NullPushProvider, type PushProvider } from './lib/push.js';
 import { APP_VERSION_HEADER, isBelowMinVersion, isVersionGateExempt } from './lib/app-version.js';
+import { RoutingPushProvider, WebPushProvider } from './lib/web-push.js';
 import { PushDispatcher, registerPushDispatcher } from './notifications/push.js';
 
 export interface ServerDeps {
@@ -83,14 +88,18 @@ function generateRequestId(req: { headers: Record<string, string | string[] | un
 /** Choix du fournisseur push — le fournisseur réel demandé s'il est
     entièrement configuré, sinon repli explicite (rien n'est envoyé). */
 function selectPushProvider(env: Env, app: FastifyInstance): PushProvider {
+  let ios: PushProvider | undefined;
   if (env.pushProvider === 'apns') {
-    if (env.apns) return new ApnsPushProvider(env.apns, app.log);
-    app.log.warn(
+    if (env.apns) ios = new ApnsPushProvider(env.apns, app.log);
+    else app.log.warn(
       'PUSH_PROVIDER=apns demandé mais configuration incomplète '
-      + '(APNS_KEY_ID/APNS_TEAM_ID/APNS_PRIVATE_KEY/APNS_BUNDLE_ID) — repli sur NullPushProvider.',
+      + '(APNS_KEY_ID/APNS_TEAM_ID/APNS_PRIVATE_KEY/APNS_BUNDLE_ID) — aucun envoi vers iPhone.',
     );
   }
-  return new NullPushProvider(app.log);
+  // Lot B, phase 3 : les alertes web (app web et app Android du Play Store) — chaque appareil part par le canal de sa plateforme.
+  const web = env.webPush ? new WebPushProvider(env.webPush, app.log) : undefined;
+  if (!ios && !web) return new NullPushProvider(app.log);
+  return new RoutingPushProvider({ ...(ios ? { ios } : {}), ...(web ? { web } : {}) });
 }
 
 /** Choix du fournisseur SMS — dev toujours prioritaire (jamais de vrai SMS
@@ -287,8 +296,11 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
   const nameChangeLimiter = createSharedRateLimiter(db, { name: 'name-change', max: env.nameChangeMaxPerHour, window: 'hour', log: limiterLog });
   // Phase adresses (18/11/2026) : recherches d'adresses par joueur (le service OpenStreetMap public est gratuit mais limité).
   const placesLimiter = createSharedRateLimiter(db, { name: 'places', max: env.placesMaxPerHour, window: 'hour', log: limiterLog });
+  // Lot B, phase 6 : lieux qu'un joueur ajoute par jour (au-delà, son match se crée sans nouvelle fiche de lieu).
+  const placeCreateLimiter = createSharedRateLimiter(db, { name: 'place-create', max: PLACE_CREATE_MAX_PER_DAY, window: 'day', log: limiterLog });
 
-  await registerAuthRoutes(app, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter });
+  await registerAuthRoutes(app, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter, contentFilter: env.contentFilterEnabled });
+  await registerGuestRoutes(app, { db, guards, contentFilter: env.contentFilterEnabled });   // lot B, phase 2 : inscription courte d'un invité
   await registerPlatformAuthRoutes(app, { db, guards: platformGuards, loginIpLimiter });
   await registerPlatformAccountRoutes(app, { db, guards: platformGuards });
   await registerPlatformVenueRoutes(app, { db, guards: platformGuards });
@@ -313,15 +325,18 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
     },
   });
   // MS-011 (audit final, 12/11/2026) : équipes et défis servis seulement si la fonction est allumée (env.ts).
-  if (env.teamsChallengesEnabled) await registerTeamRoutes(app, { db, guards, inviteLimiter: teamInviteLimiter });
-  await registerMatchRoutes(app, { db, guards });
-  await registerPlaceRoutes(app, { guards, baseUrl: env.placesSearchUrl, limiter: placesLimiter });
+  if (env.teamsChallengesEnabled) await registerTeamRoutes(app, { db, guards, inviteLimiter: teamInviteLimiter, contentFilter: env.contentFilterEnabled });
+  await registerMatchRoutes(app, { db, guards, contentFilter: env.contentFilterEnabled, placeCreateLimiter });
+  await registerPlaceRoutes(app, { guards, baseUrl: env.placesSearchUrl, limiter: placesLimiter, googleKey: env.googlePlacesServerKey, mapsBrowserKey: env.googleMapsBrowserKey });
+  await registerOgRoutes(app, { db });   // lot B, phase 2 : aperçu des liens de match (balises og:* et image)
+  await registerBlockRoutes(app, { db, guards });   // lot B, phase 4 : bloquer un joueur
   await registerNotificationRoutes(app, { db, guards });
-  await registerPushRoutes(app, { db, guards });
-  await registerAccountRoutes(app, { db, guards, nameLimiter: nameChangeLimiter });
+  await registerPushRoutes(app, { db, guards, webPushPublicKey: env.webPush?.publicKey ?? null });
+  await registerAccountRoutes(app, { db, guards, nameLimiter: nameChangeLimiter, contentFilter: env.contentFilterEnabled });
   await registerProfileRoutes(app, { db, guards });
   await registerAbsenceRoutes(app, { db, guards, platformGuards });
   await registerReportRoutes(app, { db, guards, platformGuards });
+  await registerCommunityPlaceRoutes(app, { db, guards, platformGuards, contentFilter: env.contentFilterEnabled });   // lot B, phase 6 : nos lieux d'abord
   await registerClaimRoutes(app, { db, guards });
   if (env.teamsChallengesEnabled) await registerChallengeRoutes(app, { db, guards });
   await registerResultRoutes(app, { db, guards });

@@ -68,6 +68,7 @@ export function NoticeScreen({ onBack, onNavigate }: { onBack: () => void; onNav
       <div className="pf-rights">
         <button type="button" className="mb-btn mb-btn--secondary mb-btn--block" onClick={() => onNavigate({ name: 'tab', tab: 'profile' })}>{t('Voir mes infos')}</button>
         <button type="button" className="mb-btn mb-btn--secondary mb-btn--block" onClick={() => onNavigate({ name: 'accords' })}>{t('Mes accords')}</button>
+        <button type="button" className="mb-btn mb-btn--secondary mb-btn--block" onClick={() => onNavigate({ name: 'blocked' })}>{t('Joueurs bloqués')}</button>
       </div>
       <p>{t('Pas de réponse sous 10 jours ? Tu peux saisir l’ANPDP, l’autorité qui protège les données en Algérie.')}</p>
 

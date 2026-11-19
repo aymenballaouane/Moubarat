@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { setupTestStack, loginAs, bearer, type TestStack } from './helpers.js';
 import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
-import { latinPart, suggestionsFromPhoton } from '../src/modules/places/photon.js';
+import { latinPart, suggestionsFromPhoton, tidyCase } from '../src/modules/places/photon.js';
 
 /* Phase adresses (GO d'Aymen du 18/11/2026 : OpenStreetMap + Leaflet). La recherche passe par notre serveur, qui interroge Photon : ici
    un FAUX Photon local (jamais le vrai service depuis les tests), avec des réponses relevées sur le vrai le 18/11/2026. */
@@ -100,5 +100,27 @@ describe('match libre — la position du lieu est gardée', () => {
     expect((res.json() as { match: { place: unknown } }).match.place).toEqual({ name: 'Stade Mohamed Bentalha', wilaya: 'Alger', lat: 36.72, lng: 3.19 });
     const half = await stack.app.inject({ method: 'POST', url: '/matches/free', headers, payload: { ...body, start: start + 3 * 3_600_000, place: { name: 'Stade', wilaya: 'Alger', lat: 36.72 } } });
     expect((half.json() as { error: string }).error).toBe('PLACE_INVALID');
+  });
+});
+
+describe('lot B, phase 1 — rue, quartier et adresse du match', () => {
+  it('la réponse Photon donne la rue et le quartier (capitales remises en forme)', () => {
+    const [aknoun, stade] = suggestionsFromPhoton(BEN_AKNOUN);
+    expect(aknoun).toMatchObject({ street: null, area: null });
+    expect(stade).toMatchObject({ street: 'Cité AADL La Réconciliation Nationale', area: 'Bab Ezzouar' });
+    expect(tidyCase('BEN AKNOUN')).toBe('Ben Aknoun');
+    expect(tidyCase('Dély Ibrahim')).toBe('Dély Ibrahim');
+  });
+  it('POST /matches/free garde l’adresse sous l’épingle et la sert avec le lieu', async () => {
+    const start = Math.ceil((Date.now() + 520 * 3_600_000) / 1_800_000) * 1_800_000;
+    const headers = { ...bearer(karim), 'x-moubarat-features': 'match-libre,format-9v9' };
+    const res = await stack.app.inject({ method: 'POST', url: '/matches/free', headers, payload: {
+      place: { name: 'Terrain · Ben Aknoun', area: 'Ben Aknoun', address: 'Rue Ali Khodja', wilaya: 'Alger', lat: 36.7565, lng: 3.0084 },
+      format: '5v5', level: 'LOISIR', start, durationMin: 90 } });
+    expect(res.statusCode, res.body).toBe(201);
+    const m = (res.json() as { match: { id: string; code: string; place: unknown } }).match;
+    expect(m.place).toEqual({ name: 'Terrain · Ben Aknoun', area: 'Ben Aknoun', address: 'Rue Ali Khodja', wilaya: 'Alger', lat: 36.7565, lng: 3.0084 });
+    const pub = await stack.app.inject({ method: 'GET', url: `/matches/by-code/${m.code}`, headers: { 'x-moubarat-features': 'match-libre,format-9v9' } });
+    expect((pub.json() as { match: { place: { address?: string } } }).match.place.address).toBe('Rue Ali Khodja');
   });
 });

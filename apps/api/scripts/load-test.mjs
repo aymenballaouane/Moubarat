@@ -1,5 +1,5 @@
 /* Test de charge de l'API (MS-074, audit final Lot 2e, 18/11/2026) — À LANCER CONTRE UNE PRÉPRODUCTION, jamais contre la
-   production sans le décider (voir docs/PASSATION.md §4.24). LECTURES SEULEMENT : aucune réservation, aucun envoi de SMS,
+   production sans le décider (voir docs/PASSATION.md §4.29). LECTURES SEULEMENT : aucune réservation, aucun envoi de SMS,
    aucune écriture — le script peut tourner sur une copie de la production sans rien y changer.
    Aucune dépendance : Node 22 suffit (fetch intégré).
 
@@ -15,13 +15,13 @@
      CONCURRENCY     paliers d'utilisateurs simultanés, séparés par des virgules (défaut « 1,10,50,100 »)
      DURATION_S      durée de chaque palier en secondes (défaut 20)
    Sortie : un tableau par palier (requêtes par seconde, médiane, 95e et 99e centiles, erreurs, 429) — à recopier dans
-   docs/PASSATION.md §4.24 avec la date, l'offre Render et le nombre d'instances au moment de la mesure. */
+   docs/PASSATION.md §4.29 avec la date, l'offre Render et le nombre d'instances au moment de la mesure. */
 
 const BASE = (process.env.BASE_URL ?? '').replace(/\/+$/, '');
 if (!BASE) { console.error('BASE_URL manquant (adresse de l’API visée).'); process.exit(2); }
 const host = new URL(BASE).hostname;
 if (host === 'api.moubarat.app' && process.env.LOAD_TEST_ALLOW_PROD !== 'true') {
-  console.error('Refusé : BASE_URL vise la PRODUCTION. Lancer contre une préproduction (PASSATION §4.24), ou confirmer en connaissance de cause avec LOAD_TEST_ALLOW_PROD=true.');
+  console.error('Refusé : BASE_URL vise la PRODUCTION. Lancer contre une préproduction (PASSATION §4.29), ou confirmer en connaissance de cause avec LOAD_TEST_ALLOW_PROD=true.');
   process.exit(2);
 }
 const VENUE = process.env.VENUE_ID ?? '';

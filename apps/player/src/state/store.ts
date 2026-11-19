@@ -39,6 +39,8 @@ export interface MatchRecord {
   players: MatchPlayer[];
   /** Le code du lien du match (« app.moubarat.app/m/CODE », migration 0036) — absent tant que le serveur ne l'a pas servi (un match sur invitation ne le montre qu'à qui le connaît). */
   code?: string | undefined;
+  /** Lot B, phase 6 : le terrain de la communauté de ce match libre, quand il en a un. */
+  placeId?: string | undefined;
 }
 
 /** `city` — règle 34 (refonte-app-joueur/docs/regles.md) : choisie à l'onboarding, servie par
@@ -305,7 +307,8 @@ function notFound(): RuleResult {
 }
 
 function putMatch(state: StoreState, matchId: string, match: Match, players: MatchPlayer[]): StoreState {
-  return { ...state, matches: { ...state.matches, [matchId]: { match, players } } };
+  // Garde le code du lien et le lieu de la communauté déjà connus (lot B, phase 6) : seuls le match et ses joueurs changent ici.
+  return { ...state, matches: { ...state.matches, [matchId]: { ...state.matches[matchId], match, players } } };
 }
 
 function upsertReservation(reservations: MyReservation[], booking: Booking, format?: MatchFormat, reference?: string): MyReservation[] {

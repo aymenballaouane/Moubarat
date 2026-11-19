@@ -10,12 +10,16 @@ import { withCommittedPush } from '../../notifications/push.js';
 import type { Db } from '../../db/client.js';
 import type { Guards } from '../../auth/guards.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
+import { assertCleanText } from '../../lib/content-filter.js';
 import { checkRateLimit, type RateLimiter } from '../../lib/rate-limit.js';
 import {
   loadMembers, loadTeam, loadTeamForUpdate, publicMember, publicTeam, rowToTeamMember,
 } from './service.js';
 
-interface Deps { db: Db; guards: Guards; /** Invitations par joueur et par heure (P0-6). Absent (tests, scripts) : aucune limite. */ inviteLimiter?: RateLimiter; }
+interface Deps { db: Db; guards: Guards; /** Invitations par joueur et par heure (P0-6). Absent (tests, scripts) : aucune limite. */ inviteLimiter?: RateLimiter;
+  /** Lot B, phase 4 : filtre des insultes (CONTENT_FILTER_ENABLED, lib/content-filter.ts). Absent = éteint. */
+  contentFilter?: boolean;
+}
 
 /** Le vestiaire affiché = actifs + invités en attente. Un membre LEFT reste en
     base (historique jamais effacé, cohérent avec le reste du produit) mais
@@ -32,13 +36,14 @@ async function membersWithNames(db: Db, teamId: string) {
   return rows.map((r) => publicMember(r, byId.get(r.user_id) ?? '?'));
 }
 
-export async function registerTeamRoutes(app: FastifyInstance, { db, guards, inviteLimiter }: Deps): Promise<void> {
+export async function registerTeamRoutes(app: FastifyInstance, { db, guards, inviteLimiter, contentFilter = false }: Deps): Promise<void> {
 
   /* Création — le créateur devient capitaine actif d'office (une équipe n'est
      jamais sans capitaine, invariant aussi tenu par l'index unique en base). */
   app.post<{ Body: { name?: string } }>('/teams',
     { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
       const name = String(req.body?.name ?? '');
+      assertCleanText(contentFilter, name);
       const created = await db.transaction().execute(async (trx) => {
         const result = createTeam('', name, req.auth!.userId, Date.now());
         must(result.result);

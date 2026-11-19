@@ -1,0 +1,18 @@
+/* Lot B, phase 3 — la carte « Sois prévenu avant le match » (AlertsCard.tsx), mesures de la maquette 04_Tu_joues_et_alertes. */
+.al-card {
+  margin-top: 16px; padding: 16px; border-radius: 16px; background: rgba(255,43,0,.07); border: 1px solid rgba(255,43,0,.32);
+  display: flex; flex-direction: column; gap: 12px; color: var(--text);
+}
+.al-card--settings { background: var(--ink-2); border-color: var(--line); margin-top: 0; }
+.al-card__head { display: flex; align-items: center; gap: 12px; }
+.al-card__ic { width: 22px; height: 22px; color: var(--primary-glow); flex: none; }
+.al-card__t { margin: 0; font-size: 17px; font-weight: 700; line-height: 22px; }
+.al-card__body { margin: 0; font-size: 15px; line-height: 22px; color: var(--text-2); }
+.al-card__btn {
+  height: 50px; border-radius: 12px; border: 1px solid rgba(255,43,0,.55); background: transparent; color: var(--text);
+  font: 700 16px/1 var(--font-body); cursor: pointer;
+}
+.al-card__btn:disabled { opacity: .6; cursor: progress; }
+.al-card__btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.al-card__ok { margin: 0; display: flex; align-items: center; gap: 8px; color: var(--success); font-weight: 600; font-size: 15px; }
+.al-card__err { margin: 0; color: var(--danger); font-size: 14px; }

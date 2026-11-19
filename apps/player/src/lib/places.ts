@@ -3,7 +3,14 @@
 import { cityLabel } from './labels.js';
 import { fold } from './venueFilters.js';
 
-export interface PlaceSuggestion { id: string; name: string; detail: string; wilaya: string | null; lat: number; lng: number }
+export interface PlaceSuggestion {
+  id: string; name: string; detail: string; wilaya: string | null;
+  /** Lot B, phase 5 : `null` pour une suggestion de Google — la position arrive au toucher (`needsDetails`, GET /places/details). */
+  lat: number | null; lng: number | null;
+  needsDetails?: boolean;
+  /** Lot B, phase 1 : la rue et le quartier (ou la commune) d'OpenStreetMap, quand ils sont connus. */
+  street?: string | null; area?: string | null;
+}
 export interface LatLng { lat: number; lng: number }
 
 /** Le centre de chaque ville proposée par l'app (code du profil) — là où s'ouvre la carte quand le lieu n'a pas encore de position. */
@@ -36,4 +43,81 @@ export function wilayaForPlace(osmWilaya: string | null | undefined, fallback: s
 export function placeSubtitle(s: Pick<PlaceSuggestion, 'detail' | 'wilaya'>): string {
   const parts = [s.detail, s.wilaya ?? ''].map((x) => x.trim()).filter(Boolean);
   return parts.filter((x, i) => parts.findIndex((y) => fold(y) === fold(x)) === i).join(' · ');
+}
+
+/* --- Lot B, phase 1 (« Où tu joues ? » sur la carte, 18/11/2026) ------------------------------------------------------------------ */
+
+/** Distance à vol d'oiseau, en kilomètres (formule de haversine). */
+export function distanceKm(a: LatLng, b: LatLng): number {
+  const R = 6371;
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** « 1,2 km », « 12 km » (une décimale sous 10 km) — virgule française, chiffres latins en arabe aussi. */
+export function kmText(km: number): string {
+  const v = km < 10 ? Math.round(km * 10) / 10 : Math.round(km);
+  return String(v).replace('.', ',');
+}
+
+/** Les centres qui ont une position, du plus proche au plus loin de `from`, avec leur distance. */
+export function partnersByDistance<V extends { lat: number | null; lng: number | null }>(venues: readonly V[], from: LatLng): (V & { km: number })[] {
+  return venues
+    .filter((v): v is V & { lat: number; lng: number } => v.lat !== null && v.lng !== null)
+    .map((v) => ({ ...v, km: distanceKm(from, { lat: v.lat, lng: v.lng }) }))
+    .sort((a, b) => a.km - b.km);
+}
+
+/** Le centre partenaire sous l'épingle (à moins de `withinM` mètres), le plus proche ; sinon `null` — « C'est {centre} ? ». */
+export function partnerUnderPin<V extends { lat: number | null; lng: number | null }>(venues: readonly V[], pin: LatLng, withinM = 120): V | null {
+  const near = partnersByDistance(venues, pin)[0];
+  return near && near.km * 1000 <= withinM ? (venues.find((v) => v.lat === near.lat && v.lng === near.lng) ?? null) : null;
+}
+
+/** Le nom proposé pour un terrain sous l'épingle : « Terrain · Ben Aknoun » — jamais le nom du commerce le plus proche. Sans quartier
+    connu : « Terrain · {wilaya} », sinon « Terrain ». `label` = la traduction de « Terrain · {quartier} ». */
+export function defaultFieldName(area: string | null | undefined, wilaya: string | null | undefined, label: string): string {
+  const where = (area ?? '').trim() || (wilaya ?? '').trim();
+  return where ? label.replace('{quartier}', where) : label.replace(/\s*·\s*\{quartier\}/, '').trim();
+}
+
+/** Le code de ville du profil (« ALGER ») pour une wilaya écrite (« Alger ») — `null` si ce n'est pas une ville de l'app. */
+export function cityCodeOf(wilaya: string | null | undefined): string | null {
+  if (!wilaya) return null;
+  const key = fold(wilaya.trim());
+  return Object.keys(CITY_CENTERS).find((code) => fold(cityLabel(code)) === key) ?? null;
+}
+
+/** Lot B, phase 5 : un jeton de « session » de recherche (Google facture la recherche et le choix de l'adresse ensemble). */
+export function newPlacesSession(): string {
+  const c = globalThis.crypto as Crypto | undefined;
+  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
+}
+
+/* --- Lot B, phase 6 « Nos lieux d'abord » (19/11/2026) ------------------------------------------------------------------------ */
+
+/** Un terrain de la communauté (GET /places/community) : ajouté par un joueur, la console ou un fichier importé. */
+export interface CommunityPlace {
+  id: string; name: string; area: string | null; address: string | null; wilaya: string; lat: number; lng: number;
+  /** Vérifié par Moubarat (visible pour tous) ; sinon ajouté par moi et encore à vérifier. */
+  verified: boolean; mine: boolean; matchCount: number;
+}
+
+/** Rayon des « C'est l'un de ces terrains ? » — le même que celui des doublons côté serveur (modules/places/community.ts). */
+export const COMMUNITY_NEAR_M = 150;
+
+/** Les terrains de la communauté dont le nom contient la recherche (casse et accents ignorés), les plus joués d'abord. */
+export function communitySuggestions(places: readonly CommunityPlace[], query: string, max = 3): CommunityPlace[] {
+  const q = fold(query.trim()).replace(/\s+/g, '');
+  if (q === '') return [];
+  return places.filter((p) => fold(p.name).replace(/\s+/g, '').includes(q)).sort((a, b) => b.matchCount - a.matchCount).slice(0, max);
+}
+
+/** Les terrains de la communauté à moins de `withinM` mètres de l'épingle, du plus proche au plus loin, avec leur distance. */
+export function communityNear(places: readonly CommunityPlace[], pin: LatLng, withinM = COMMUNITY_NEAR_M): (CommunityPlace & { m: number })[] {
+  return places.map((p) => ({ ...p, m: Math.round(distanceKm(pin, p) * 1000) })).filter((p) => p.m <= withinM).sort((a, b) => a.m - b.m);
 }

@@ -7,7 +7,7 @@ import { seedDemo, type SeedResult } from '../src/seed/fixtures.js';
 import { migrate } from '../src/db/migrate.js';
 import { toPgRange } from '../src/lib/pgrange.js';
 
-/* Lot « Match libre » : les migrations 0047 (match libre), 0048 (9v9) et 0050 (position du lieu, phase adresses) sont RÉVERSIBLES (décision d'Aymen : « rien de destructif »).
+/* Lot « Match libre » : les migrations 0047 (match libre), 0048 (9v9) et 0050 (position du lieu, phase adresses) et 0051 (adresse, lot B) sont RÉVERSIBLES (décision d'Aymen : « rien de destructif »).
    Leurs scripts de retour arrière (migrations/retour/, jamais lus par le migrateur) sont joués ici sur une base jetable : ils refusent
    tant qu'une ligne utilise la nouveauté, défont la migration sinon, et le migrateur la réapplique ensuite à l'identique.
    SQL brut seulement : le type énuméré est recréé, les lecteurs de tableaux d'enum du serveur ne sont plus valables après. */
@@ -44,6 +44,68 @@ describe('retour arrière de 0056 (index trigrammes de recherche)', () => {
     expect(await migrationsApplied()).not.toContain('0056_search_trigram_indexes');
     expect(await migrate(stack.pool)).toEqual(['0056_search_trigram_indexes']);
     expect(await trgm()).toHaveLength(6);
+  });
+});
+
+describe('retour arrière de 0055 (lieux de la communauté)', () => {
+  it('refuse tant qu’un lieu existe ; défait la migration sinon ; le migrateur la réapplique', async () => {
+    await q("INSERT INTO places (name, name_key, wilaya, lat, lng, source) VALUES ('Kooraland', 'kooraland', 'Alger', 36.74, 3.19, 'CONSOLE')");
+    await expect(runRetour('0055_places.sql')).rejects.toThrow(/0055 refusé/);
+    await q('DELETE FROM places');
+    await runRetour('0055_places.sql');
+    const cols = (await q<{ c: string }>("SELECT column_name AS c FROM information_schema.columns WHERE table_name = 'matches'")).map((r) => r.c);
+    expect(cols).not.toContain('place_id');
+    expect(await migrate(stack.pool)).toEqual(['0055_places']);
+  });
+});
+
+describe('retour arrière de 0054 (joueurs bloqués)', () => {
+  it('refuse tant qu’un blocage existe ; défait la migration sinon ; le migrateur la réapplique', async () => {
+    await q('INSERT INTO user_blocks (blocker_id, blocked_id) VALUES ($1, $2)', [seed.users.sofiane, seed.users.karim]);
+    await expect(runRetour('0054_user_blocks.sql')).rejects.toThrow(/0054 refusé/);
+    await q('DELETE FROM user_blocks');
+    await runRetour('0054_user_blocks.sql');
+    expect((await q<{ n: number }>("SELECT count(*)::int AS n FROM information_schema.tables WHERE table_name = 'user_blocks'"))[0]!.n).toBe(0);
+    expect(await migrate(stack.pool)).toEqual(['0054_user_blocks']);
+  });
+});
+
+describe('retour arrière de 0053 (alertes web)', () => {
+  it('retire les abonnements web et la plateforme web ; le migrateur la réapplique', async () => {
+    await runRetour('0053_web_push.sql');
+    const cols = (await q<{ c: string }>("SELECT column_name AS c FROM information_schema.columns WHERE table_name = 'push_devices'")).map((r) => r.c);
+    expect(cols).not.toContain('web_keys');
+    expect(await migrate(stack.pool)).toEqual(['0053_web_push']);
+  });
+});
+
+describe('retour arrière de 0052 (inscription courte d’un invité)', () => {
+  it('refuse tant qu’un compte d’invité sans mot de passe existe ; défait la migration sinon ; le migrateur la réapplique', async () => {
+    await q("UPDATE users SET access_setup_at = now() WHERE id = $1 AND password_hash IS NULL", [seed.users.sofiane]);
+    await expect(runRetour('0052_user_access_setup.sql')).rejects.toThrow(/0052 refusé/);
+    await q('UPDATE users SET access_setup_at = NULL WHERE id = $1', [seed.users.sofiane]);
+    await runRetour('0052_user_access_setup.sql');
+    const cols = (await q<{ c: string }>("SELECT column_name AS c FROM information_schema.columns WHERE table_name = 'users'")).map((r) => r.c);
+    expect(cols).not.toContain('access_setup_at');
+    expect(await migrate(stack.pool)).toEqual(['0052_user_access_setup']);
+  });
+});
+
+describe('retour arrière de 0051 (adresse d’un match libre)', () => {
+  it('refuse tant qu’un match à venir porte une adresse ; défait la migration sinon ; le migrateur la réapplique', async () => {
+    const start = Date.now() + 30 * 86_400_000;
+    await q(
+      `INSERT INTO matches (sport, format, level, title, venue_id, field_id, place_name, place_wilaya, place_address, time_range, capacity, price_per_player_da, organizer_id)
+       VALUES ('FOOTBALL', '5v5', 'LOISIR', 'Libre', NULL, NULL, 'Terrain · Ben Aknoun', 'Alger', 'Rue Ali Khodja', $1::tstzrange, 10, 0, $2)`,
+      [toPgRange({ start, end: start + 5_400_000 }), seed.users.sofiane],
+    );
+    await expect(runRetour('0051_match_place_address.sql')).rejects.toThrow(/0051 refusé/);
+    await q('DELETE FROM matches WHERE venue_id IS NULL');
+    await runRetour('0051_match_place_address.sql');
+    const cols = (await q<{ c: string }>(`SELECT column_name AS c FROM information_schema.columns WHERE table_name = 'matches'`)).map((r) => r.c);
+    expect(cols).not.toContain('place_address');
+    expect(cols).toContain('place_lat');   // 0050 intacte
+    expect(await migrate(stack.pool)).toEqual(['0051_match_place_address']);
   });
 });
 

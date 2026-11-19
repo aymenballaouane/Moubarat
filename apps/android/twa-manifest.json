@@ -12,7 +12,7 @@
   "navigationDividerColorDark": "#000000",
   "backgroundColor": "#050505",
   "splashScreenFadeOutDuration": 300,
-  "enableNotifications": false,
+  "enableNotifications": true,
   "startUrl": "/",
   "iconUrl": "https://app.moubarat.app/icons/icon-512.png",
   "maskableIconUrl": "https://app.moubarat.app/icons/icon-512-maskable.png",
@@ -20,8 +20,8 @@
     "path": "./android.keystore",
     "alias": "moubarat"
   },
-  "appVersionName": "1.0.4",
-  "appVersionCode": 6,
+  "appVersionName": "1.0.5",
+  "appVersionCode": 7,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://app.moubarat.app/manifest.json",
@@ -44,5 +44,5 @@
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
   "displayOverride": [],
-  "appVersion": "1.0.4"
+  "appVersion": "1.0.5"
 }

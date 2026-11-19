@@ -34,6 +34,10 @@ export interface Env {
       aucun (NullPushProvider : rien n'est envoyé, tracé en debug). Piloté par
       `PUSH_PROVIDER=apns`, jamais par du code — voir lib/push.ts. */
   pushProvider: 'apns' | null;
+  /** Lot B, phase 3 : clés VAPID des alertes web (WEB_PUSH_PUBLIC_KEY / WEB_PUSH_PRIVATE_KEY / WEB_PUSH_SUBJECT), `null` = coupées. */
+  webPush: { publicKey: string; privateKey: string; subject: string } | null;
+  /** Lot B, phase 4 : filtre des insultes sur les textes écrits par les joueurs. Seule la chaîne exacte `true` l'allume (défaut : éteint, docs/FILTRE-INSULTES.md). */
+  contentFilterEnabled: boolean;
   /** Configuration APNs complète — `null` tant qu'une des cinq variables
       manque, auquel cas server.ts se replie sur NullPushProvider avec un
       avertissement au démarrage. La clé privée (.p8, PEM) vient UNIQUEMENT
@@ -128,6 +132,10 @@ export interface Env {
   placesSearchUrl: string;
   /** Recherches d'adresses par joueur et par heure (garde-fou : le service public est gratuit mais limité). */
   placesMaxPerHour: number;
+  /** Lot B, phase 5 (19/11/2026) : clé serveur Google (Places API (New) + Geocoding API), secrète. `null` = recherche chez Photon seul. */
+  googlePlacesServerKey: string | null;
+  /** Clé navigateur de la carte Google (Maps JavaScript API) — publique par nature, limitée au site dans la console Google. `null` = carte de secours. */
+  googleMapsBrowserKey: string | null;
   /** Arrêt propre (mise à l'échelle L4, 25/09/2026 — lib/lifecycle.ts, docs/PASSATION.md §4.10). `shutdownDrainMs` :
       après SIGTERM/SIGINT, durée pendant laquelle l'instance se déclare « en cours d'arrêt » (`/ready` → 503) tout en
       CONTINUANT de servir — le temps que le répartiteur de charge la retire de la rotation. `shutdownTimeoutMs` : délai
@@ -148,7 +156,7 @@ export interface Env {
       de `dbStatementTimeoutMs`) ni l'envoi de la réponse. 0 = aucun délai (comportement historique). */
   requestTimeoutMs: number;
   /** MS-041 (audit final, Lot 2d, 18/11/2026) : version minimale de l'app joueur (« 1.1.0 ») ; `null` = aucun contrôle.
-      Voir lib/app-version.ts et docs/PASSATION.md §4.23. Les liens des stores sont servis avec le refus (426) : changeables
+      Voir lib/app-version.ts et docs/PASSATION.md §4.28. Les liens des stores sont servis avec le refus (426) : changeables
       sans nouveau build. */
   minPlayerAppVersion: string | null;
   playerStoreUrls: { ios: string | null; android: string | null };
@@ -225,6 +233,14 @@ export function readEnv(overrides: Partial<Env> = {}): Env {
       ?? 'http://localhost:5175,http://127.0.0.1:5175,http://localhost:5174,http://127.0.0.1:5174,http://localhost:4174,http://127.0.0.1:4174,http://localhost:5176,http://127.0.0.1:5176,capacitor://localhost,http://localhost'
     ).split(',').map((s) => s.trim()).filter(Boolean),
     pushProvider: process.env.PUSH_PROVIDER === 'apns' ? 'apns' : null,
+    /* Lot B, phase 3 : alertes web (Web Push). Les trois variables ensemble, sinon rien n'est envoyé par le web (la cloche reste). */
+    webPush: (() => {
+      const publicKey = process.env.WEB_PUSH_PUBLIC_KEY?.trim();
+      const privateKey = process.env.WEB_PUSH_PRIVATE_KEY?.trim();
+      const subject = process.env.WEB_PUSH_SUBJECT?.trim();
+      return publicKey && privateKey && subject ? { publicKey, privateKey, subject } : null;
+    })(),
+    contentFilterEnabled: process.env.CONTENT_FILTER_ENABLED === 'true',
     apns: (() => {
       const keyId = process.env.APNS_KEY_ID;
       const teamId = process.env.APNS_TEAM_ID;
@@ -269,6 +285,8 @@ export function readEnv(overrides: Partial<Env> = {}): Env {
     availabilitySummaryCacheMs: intEnv('AVAILABILITY_SUMMARY_CACHE_MS', 30_000),
     placesSearchUrl: (process.env.PLACES_SEARCH_URL ?? 'https://photon.komoot.io').trim().replace(/\/+$/, ''),
     placesMaxPerHour: intEnv('PLACES_MAX_PER_HOUR', 120, { min: 1 }),
+    googlePlacesServerKey: process.env.GOOGLE_PLACES_SERVER_KEY?.trim() || null,
+    googleMapsBrowserKey: process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null,
     shutdownDrainMs: intEnv('SHUTDOWN_DRAIN_MS', 5_000, { max: 300_000 }),
     shutdownTimeoutMs: intEnv('SHUTDOWN_TIMEOUT_MS', 20_000, { min: 1, max: 300_000 }),
     requestTimeoutMs: intEnv('REQUEST_TIMEOUT_MS', 30_000, { max: 3_600_000 }),

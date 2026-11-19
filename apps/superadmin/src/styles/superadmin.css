@@ -180,3 +180,14 @@ body {
 .sa-hours li span:first-child { color: var(--text-4); text-transform: uppercase; font-family: var(--font-mono); font-size: var(--fs-tag); }
 
 section > .sa-card { margin-bottom: 14px; }
+
+/* Lot B, phase 6 « Nos lieux d'abord » — écran Lieux (components/Lieux.tsx). */
+.sa-lieux-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 8px; }
+.sa-lieux-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.sa-lieux-search { flex: 1 1 220px; max-width: 320px; }
+.sa-lieux-actions { display: flex; gap: 8px; margin-left: auto; }
+.sa-lieux-row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.sa-lieux-report { color: var(--danger); }
+.sa-badge--osm { color: #7DBBFF; background: rgba(77,163,255,.12); border-color: rgba(77,163,255,.35); }
+.sa-notice { color: var(--success); font-size: var(--fs-b2); }
+.sa-lieux-row-actions a { text-decoration: none; }

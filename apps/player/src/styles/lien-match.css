@@ -1,0 +1,52 @@
+/* Lot B, phase 2 — la page d'invitation sans compte (LienMatch.tsx), mesures de la maquette 02_Page_invitation (390 pt). */
+.lk { display: flex; flex-direction: column; min-height: 100dvh; box-sizing: border-box; padding-bottom: 0; color: var(--text); }
+.lk-head { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.lk-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 3px; color: var(--text); }
+[dir="rtl"] .lk-brand { letter-spacing: 3px; }
+.lk-have { background: none; border: 0; color: var(--text-2); font: 600 15px/1 var(--font-body); text-decoration: underline; min-height: 44px; padding: 0; cursor: pointer; }
+
+.lk-who { display: flex; align-items: center; gap: 16px; margin-top: 26px; }
+.lk-who__av {
+  flex: none; width: 56px; height: 56px; border-radius: 999px; background: #1C2533; border: 2px solid var(--primary); color: #F5F7FA;
+  display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700;
+}
+.lk-who__txt { margin: 0; font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.3px; }
+[dir="rtl"] .lk-who__txt { letter-spacing: 0; }
+
+.lk-card { margin-top: 20px; border-radius: 18px; overflow: hidden; border: 1px solid var(--line); background: var(--ink-2); box-shadow: var(--card-shadow); }
+.lk-card__band { position: relative; height: 132px; background: linear-gradient(160deg, #3A0C04 0%, #0A0202 75%); }
+.lk-card__band img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lk-card__logo { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.lk-card__chip {
+  position: absolute; top: 12px; inset-inline-start: 14px; padding: 6px 12px; border-radius: 999px; background: rgba(10,10,15,.82); color: #F5F7FA;
+  font-size: 12px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
+}
+[dir="rtl"] .lk-card__chip { letter-spacing: 0; }
+.lk-card__body { padding: 16px 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+.lk-card__caps { display: flex; }
+
+.lk-when { display: flex; align-items: center; gap: 14px; }
+.lk-when__hour { font-family: var(--font-display); font-size: 60px; line-height: 56px; }
+.lk-when__txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lk-when__txt > b { font-size: 16px; font-weight: 700; }
+.lk-when__cd { font-size: 14px; font-weight: 700; color: var(--success); }
+
+.lk-place { display: flex; align-items: flex-start; gap: 10px; }
+.lk-place__ic { width: 20px; height: 20px; color: var(--primary-glow); flex: none; margin-top: 2px; }
+.lk-place__txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lk-place__txt > b { font-size: 16px; font-weight: 700; }
+.lk-place__txt > span { font-size: 14px; color: var(--text-3); }
+.lk-place__price { color: var(--text-2) !important; font-weight: 600; }
+
+.lk-fill { display: flex; flex-direction: column; gap: 8px; }
+.lk-fill__bar { height: 6px; border-radius: 999px; background: var(--ink-3); overflow: hidden; display: block; }
+.lk-fill__bar > i { display: block; height: 100%; background: var(--success); border-radius: 999px; }
+.lk-fill__txt { font-size: 15px; font-weight: 600; color: var(--text-2); }
+
+.lk-msg { margin: auto 0; display: flex; flex-direction: column; gap: 16px; align-items: stretch; text-align: center; color: var(--text-2); font-size: 16px; }
+
+.lk-foot {
+  position: sticky; bottom: 0; margin: auto -22px 0; padding: 14px 22px calc(14px + env(safe-area-inset-bottom)); background: var(--ink);
+  border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; align-items: stretch; z-index: 5;
+}
+.lk-foot__hint { font-size: 14px; color: var(--text-2); text-align: center; }

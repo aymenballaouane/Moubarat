@@ -114,7 +114,7 @@ export const FREE_MATCH_HORIZON_MS = 60 * 86_400_000;
 
 export interface CreateFreeMatchInput {
   id: string;
-  place: { name: string; area?: string | undefined; wilaya: string; lat?: number | undefined; lng?: number | undefined };
+  place: { name: string; area?: string | undefined; address?: string | undefined; wilaya: string; lat?: number | undefined; lng?: number | undefined };
   sport: Match['sport'];
   format: MatchFormat;
   level: SkillLevel;
@@ -137,6 +137,8 @@ export function createFreeMatch(p: CreateFreeMatchInput):
   if (wilaya.length < 2 || wilaya.length > 40) return { result: fail('PLACE_INVALID', 'La ville du match est inconnue.') };
   const area = p.place.area?.trim();
   if (area !== undefined && area.length > 60) return { result: fail('PLACE_INVALID', 'Le quartier est trop long (60 caractères au plus).') };
+  const address = p.place.address?.trim().replace(/\s+/g, ' ');
+  if (address !== undefined && address.length > 120) return { result: fail('PLACE_INVALID', 'L’adresse est trop longue (120 caractères au plus).') };
   // Phase adresses : la position est facultative, mais toujours entière (les deux) et plausible.
   const { lat, lng } = p.place;
   const hasLat = lat !== undefined && lat !== null;
@@ -177,7 +179,7 @@ export function createFreeMatch(p: CreateFreeMatchInput):
     ...(description ? { description } : {}),
     venueId: null,
     fieldId: null,
-    place: { name, ...(area ? { area } : {}), wilaya, ...(hasLat ? { lat: lat!, lng: lng! } : {}) },
+    place: { name, ...(area ? { area } : {}), ...(address ? { address } : {}), wilaya, ...(hasLat ? { lat: lat!, lng: lng! } : {}) },
     range: { start: p.start, end: p.start + p.durationMin * 60_000 },
     capacity,
     pricePerPlayer: perPlayer(0),   // aucun prix sur un match libre dans cette version (dossier, section 11)

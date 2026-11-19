@@ -1,0 +1,37 @@
+/* Lot B, phase 2 — « C'est bon, tu joues ! » (TuJoues.tsx), mesures de la maquette 04_Tu_joues_et_alertes (390 pt). */
+.tj { display: flex; flex-direction: column; align-items: stretch; min-height: 100dvh; box-sizing: border-box; padding-bottom: 0; color: var(--text); }
+.tj-check {
+  align-self: center; margin-top: 50px; width: 74px; height: 74px; border-radius: 999px; border: 3px solid var(--success); background: rgba(0,200,150,.10);
+  color: var(--success); display: flex; align-items: center; justify-content: center;
+}
+.tj-check .mb-ic { width: 34px; height: 34px; }
+.tj-check--full { border-color: var(--line-strong); background: var(--ink-2); color: var(--text-2); }
+.tj-h1 { margin: 22px 0 0; text-align: center; font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.3px; }
+[dir="rtl"] .tj-h1 { letter-spacing: 0; }
+.tj-when { margin: 12px 0 0; text-align: center; font-size: 16px; line-height: 22px; color: var(--text-2); }
+
+.tj-orga {
+  margin-top: 26px; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 16px; background: var(--ink-2);
+  border: 1px solid var(--line); box-shadow: var(--card-shadow);
+}
+.tj-orga__av { width: 42px; height: 42px; border-radius: 999px; background: var(--ink-4); display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+.tj-orga__txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.tj-orga__txt > b { font-size: 16px; font-weight: 700; }
+.tj-orga__txt > span { font-size: 15px; color: var(--text-2); }
+.tj-orga__call {
+  width: 48px; height: 48px; border-radius: 999px; background: rgba(0,200,150,.14); color: var(--success); display: flex; align-items: center; justify-content: center; flex: none;
+}
+.tj-orga__call .mb-ic { width: 22px; height: 22px; }
+
+.tj-pwd { margin: 22px 0 0; text-align: center; font-size: 15px; line-height: 22px; color: var(--text-2); }
+.tj-pwd__link { background: none; border: 0; padding: 0; color: var(--text-2); font: inherit; text-decoration: underline; cursor: pointer; min-height: 24px; }
+.tj-home { align-self: center; min-height: 44px; }
+
+.tj-foot {
+  position: sticky; bottom: 0; margin: auto -22px 0; padding: 14px 22px calc(14px + env(safe-area-inset-bottom)); background: var(--ink);
+  border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; z-index: 5;
+}
+.tj-sheet { display: flex; flex-direction: column; gap: 12px; padding-bottom: 22px; }
+.tj-sheet__t { margin: 4px 0 4px; font-size: 20px; font-weight: 700; text-align: center; }
+.tj-sheet__ok { margin: 0; text-align: center; color: var(--success); font-weight: 600; }
+.tj-sheet__later { height: 44px; border: 0; background: none; color: var(--text-2); font: 600 15px/1 var(--font-body); cursor: pointer; }

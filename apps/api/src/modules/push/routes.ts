@@ -2,8 +2,9 @@ import type { FastifyInstance } from 'fastify';
 import type { Db } from '../../db/client.js';
 import type { Guards } from '../../auth/guards.js';
 import { badRequest, notFound } from '../../lib/http.js';
+import { validWebSubscription } from '../../lib/web-push.js';
 
-interface Deps { db: Db; guards: Guards; }
+interface Deps { db: Db; guards: Guards; /** Lot B, phase 3 : la clé publique VAPID (alertes web), `null` = coupées. */ webPushPublicKey?: string | null }
 
 /* Chantier iOS (04/09/2026) — enregistrement des appareils pour le push.
    L'app native reçoit un jeton APNs à chaque lancement et le (ré)envoie ici
@@ -16,7 +17,29 @@ interface Deps { db: Db; guards: Guards; }
     demande de ne pas supposer une longueur fixe, d'où la fourchette). */
 const IOS_TOKEN = /^[0-9a-fA-F]{32,512}$/;
 
-export async function registerPushRoutes(app: FastifyInstance, { db, guards }: Deps): Promise<void> {
+export async function registerPushRoutes(app: FastifyInstance, { db, guards, webPushPublicKey = null }: Deps): Promise<void> {
+
+  /* Lot B, phase 3 — les alertes web : la clé publique du serveur (publique par nature), et l'abonnement d'un navigateur. Sans clé
+     configurée, `publicKey: null` : l'app n'affiche pas la carte « Sois prévenu avant le match ». */
+  app.get('/push/web-key', async (_req, reply) => reply.header('cache-control', 'public, max-age=300').send({ publicKey: webPushPublicKey }));
+
+  app.put<{ Body: { subscription?: unknown } }>('/me/push-devices/web',
+    { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
+      const sub = validWebSubscription(req.body?.subscription);
+      if (!sub) throw badRequest('Abonnement aux alertes invalide.');
+      await db.insertInto('push_devices')
+        .values({ token: sub.endpoint, user_id: req.auth!.userId, platform: 'web', web_keys: JSON.stringify(sub.keys) as never })
+        .onConflict((oc) => oc.column('token').doUpdateSet({ user_id: req.auth!.userId, platform: 'web', web_keys: JSON.stringify(sub.keys) as never, last_seen_at: new Date() }))
+        .execute();
+      return reply.code(204).send();
+    });
+
+  app.delete<{ Body: { endpoint?: unknown } }>('/me/push-devices/web',
+    { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
+      const endpoint = typeof req.body?.endpoint === 'string' ? req.body.endpoint : '';
+      await db.deleteFrom('push_devices').where('token', '=', endpoint).where('user_id', '=', req.auth!.userId).where('platform', '=', 'web').execute();
+      return reply.code(204).send();
+    });
 
   app.put<{ Body: { token?: string; platform?: string } }>('/me/push-devices',
     { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {

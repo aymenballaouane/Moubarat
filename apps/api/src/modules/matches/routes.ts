@@ -17,7 +17,11 @@ import { fromPgRange, toPgRange } from '../../lib/pgrange.js';
 import { decodeCursor, isoMicros, pageLimit, pageOf } from '../../lib/cursor.js';
 import { algiersDateOf, dayStartMs } from '../../lib/algiers.js';
 import { feedConditions, feedDayCounts, parseFeedFilters, type FeedQuery } from './feed.js';
+import { assertNotBlockedFrom, isBlockedBy, matchUnavailable } from '../blocks/routes.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
+import { assertCleanText } from '../../lib/content-filter.js';
+import type { RateLimiter } from '../../lib/rate-limit.js';
+import { placeForPlayer, resolvePlaceForMatch } from '../places/community.js';
 import { rowToBooking } from '../bookings/service.js';
 import { playerCancelSummary } from '../bookings/cascade.js';
 import { writeAudit } from '../../audit/log.js';
@@ -26,7 +30,13 @@ import {
   syncMatchLifecycle, userCommitments, withRosterCounts, describeConflict, assertPhoneVisible, knowsFreeMatches, assertVisibleToClient,
 } from './service.js';
 
-interface Deps { db: Db; guards: Guards; }
+interface Deps {
+  db: Db; guards: Guards;
+  /** Lot B, phase 4 : filtre des insultes (CONTENT_FILTER_ENABLED, lib/content-filter.ts). Absent = éteint. */
+  contentFilter?: boolean;
+  /** Lot B, phase 6 : lieux qu'un joueur ajoute par jour. Absent (tests) : aucune limite. */
+  placeCreateLimiter?: RateLimiter;
+}
 
 const SKILL_LEVELS = ['LOISIR', 'INTERMEDIAIRE', 'COMPETITION'] as const;
 const SPORTS = ['FOOTBALL', 'PADEL', 'BASKET'] as const;
@@ -85,7 +95,7 @@ function assertCanEditOwnMatch(row: { organizer_id: string; status: string }, us
   if (row.status === 'CANCELLED' || row.status === 'PLAYED') throw new ApiError(409, 'MATCH_NOT_OPEN', 'Ce match est terminé ou annulé.');
 }
 
-export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: Deps): Promise<void> {
+export async function registerMatchRoutes(app: FastifyInstance, { db, guards, contentFilter = false, placeCreateLimiter }: Deps): Promise<void> {
 
   /* Création — TOUJOURS depuis une réservation déjà posée (chemin B — le
      chemin A « réserver puis créer dans la foulée » s'obtient en enchaînant
@@ -109,6 +119,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     const visibility = b.visibility === 'PRIVATE' ? 'PRIVATE' : 'OPEN';
     /* « Un petit mot pour les joueurs » (lot 6) : facultatif, texte brut, 280 signes au plus ; vide = pas de mot. */
     const note = parseNote(b.note);
+    assertCleanText(contentFilter, note, typeof b.title === 'string' ? b.title : null);
     const now = Date.now();
 
     const created = await withCommittedPush(() => db.transaction().execute(async (trx) => {
@@ -192,7 +203,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
      s'appliquent PAS : ils ne concernent que les réservations chez un centre (valeur provisoire du dossier, section 11). */
   app.post<{
     Body: {
-      place?: { name?: unknown; area?: unknown; wilaya?: unknown; lat?: unknown; lng?: unknown }; sport?: string; format?: string; level?: string;
+      place?: { name?: unknown; area?: unknown; address?: unknown; wilaya?: unknown; lat?: unknown; lng?: unknown; placeId?: unknown; share?: unknown }; sport?: string; format?: string; level?: string;
       start?: number; durationMin?: number; visibility?: string; note?: string; title?: string;
     };
   }>('/matches/free', { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
@@ -203,12 +214,20 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     if (!(SPORTS as readonly string[]).includes(sport)) throw badRequest('Sport invalide.');
     const p = b.place ?? {};
     const str = (v: unknown) => (typeof v === 'string' ? v : '');
-    const placeName = str(p.name);
-    const placeArea = str(p.area).trim();
-    const placeWilaya = str(p.wilaya);
+    /* Lot B, phase 6 : un terrain de la communauté choisi (`placeId`) — le match prend SES nom, adresse et position ; ou `share` : le
+       joueur ajoute ce terrain à Moubarat (« Ajouter ce terrain à Moubarat », lieu « à vérifier »). */
+    const chosenPlace = typeof p.placeId === 'string' && p.placeId !== '' ? await placeForPlayer(db, p.placeId, req.auth!.userId) : null;
+    if (typeof p.placeId === 'string' && p.placeId !== '' && !chosenPlace) {
+      throw new ApiError(404, 'PLACE_NOT_FOUND', 'Ce terrain n’est plus disponible. Choisis-le à nouveau sur la carte.');
+    }
+    const share = p.share === true;
+    const placeName = chosenPlace?.name ?? str(p.name);
+    const placeArea = (chosenPlace ? chosenPlace.area ?? '' : str(p.area)).trim();
+    const placeWilaya = chosenPlace?.wilaya ?? str(p.wilaya);
+    const placeAddress = (chosenPlace ? chosenPlace.address ?? '' : str(p.address)).trim();   // lot B, phase 1 : l'adresse sous l'épingle
     // Phase adresses : la position du lieu (adresse choisie ou épingle), facultative — le core vérifie qu'elle est entière et plausible.
-    const placeLat = p.lat === undefined || p.lat === null ? undefined : Number(p.lat);
-    const placeLng = p.lng === undefined || p.lng === null ? undefined : Number(p.lng);
+    const placeLat = chosenPlace ? chosenPlace.lat : p.lat === undefined || p.lat === null ? undefined : Number(p.lat);
+    const placeLng = chosenPlace ? chosenPlace.lng : p.lng === undefined || p.lng === null ? undefined : Number(p.lng);
     const start = Number(b.start);
     const durationMin = Number(b.durationMin);
     if (!Number.isFinite(start)) throw badRequest('start manquant (ms).');
@@ -218,10 +237,11 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     const cleanName = placeName.trim().replace(/\s+/g, ' ');
     const title = (typeof b.title === 'string' && b.title.trim() !== '' ? b.title.trim()
       : cleanName.length >= 3 ? cleanName : `${cleanName} ${format.toUpperCase()}`).slice(0, 40);
+    assertCleanText(contentFilter, placeName, placeArea, placeAddress, title, note);
     const now = Date.now();
 
     const result = createFreeMatch({
-      id: '', place: { name: placeName, ...(placeArea !== '' ? { area: placeArea } : {}), wilaya: placeWilaya, lat: placeLat, lng: placeLng },
+      id: '', place: { name: placeName, ...(placeArea !== '' ? { area: placeArea } : {}), ...(placeAddress !== '' ? { address: placeAddress } : {}), wilaya: placeWilaya, lat: placeLat, lng: placeLng },
       sport: sport as (typeof SPORTS)[number], format, level: level as SkillLevel, start, durationMin, title, visibility,
       organizerId: req.auth!.userId, now,
     });
@@ -233,11 +253,15 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
       await assertNotRestricted(trx, req.auth!.userId, now);   // règle 25
       const conflict = await describeConflict(trx, req.auth!.userId, match.range);
       if (conflict) throw new ApiError(409, 'SCHEDULE_CONFLICT', 'Tu as déjà un match ou une réservation sur ce créneau.', conflict);
+      const { placeId } = chosenPlace ? { placeId: chosenPlace.id } : await resolvePlaceForMatch(trx, {
+        placeId: null, share, name: match.place!.name, area: match.place!.area ?? null, address: match.place!.address ?? null,
+        wilaya: match.place!.wilaya, lat: match.place!.lat, lng: match.place!.lng,
+      }, req.auth!.userId, placeCreateLimiter);
       const row = await trx.insertInto('matches').values({
         sport: match.sport, format: match.format, level: match.level, title: match.title,
-        venue_id: null, field_id: null,
+        venue_id: null, field_id: null, place_id: placeId,
         place_name: match.place!.name, place_area: match.place!.area ?? null, place_wilaya: match.place!.wilaya,
-        place_lat: match.place!.lat ?? null, place_lng: match.place!.lng ?? null,
+        place_lat: match.place!.lat ?? null, place_lng: match.place!.lng ?? null, place_address: match.place!.address ?? null,
         time_range: toPgRange(match.range), capacity: match.capacity, price_per_player_da: 0,
         visibility: match.visibility, status: match.status, organizer_id: match.organizerId,
         booking_id: null, coordination: 'WHATSAPP', note: note === '' ? null : note,
@@ -269,9 +293,12 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
       const found = await db.selectFrom('matches').selectAll().where('code', '=', code).executeTakeFirst();
       if (!found) throw notFound('Ce lien ne mène à aucun match.');
       assertVisibleToClient(found, req.headers);   // match libre : jamais à une ancienne app
+      await assertNotBlockedFrom(db, found, req.auth?.userId);   // lot B, phase 4 : « Ce match n'est plus disponible. »
       const synced = await syncMatchLifecycle(db, found, Date.now());
-      const organizer = await db.selectFrom('users').select('name').where('id', '=', synced.organizer_id).executeTakeFirst();
-      const organizerName = organizer?.name ?? null;
+      // Lot B, phase 2 : « {prénom} t'invite à jouer » — le PRÉNOM de l'organisateur (profiles.first_name), son pseudo s'il n'en a pas.
+      const organizer = await db.selectFrom('users').leftJoin('profiles', 'profiles.user_id', 'users.id')
+        .select(['users.name', 'profiles.first_name']).where('users.id', '=', synced.organizer_id).executeTakeFirst();
+      const organizerName = organizer ? (organizer.first_name?.trim() || organizer.name) : null;
       // Ce que montre la page du lien à un visiteur (LienMatch) : le centre et le terrain — des informations publiques (GET /venues).
       // Match libre (phase 5) : pas de centre ni de terrain — le lieu voyage dans `match.place`.
       const place = synced.field_id === null ? undefined : await db.selectFrom('fields').innerJoin('venues', 'venues.id', 'fields.venue_id')
@@ -294,6 +321,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     { preHandler: (req) => guards.tryAuth(req) }, async (req, reply) => {
       const row = await loadMatch(db, req.params.id);
       assertVisibleToClient(row, req.headers);   // match libre : jamais à une ancienne app
+      await assertNotBlockedFrom(db, row, req.auth?.userId);   // lot B, phase 4
       if (row.visibility === 'PRIVATE') {
         const allowed = req.auth && (
           req.auth.userId === row.organizer_id
@@ -382,7 +410,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
   app.get<{ Querystring: FeedQuery & { limit?: string; cursor?: string } }>('/matches',
     { preHandler: (req) => guards.tryAuth(req) }, async (req, reply) => {
       const now = new Date();
-      const filters = { ...parseFeedFilters(req.query), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers) };
+      const filters = { ...parseFeedFilters(req.query), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers), ...(req.auth ? { viewerId: req.auth.userId } : {}) };
       const limit = pageLimit(req.query.limit, { def: 50, max: 100 });
       const cursor = decodeCursor(req.query.cursor, ['iso', 'uuid']);
       const conds = feedConditions(filters, now);
@@ -411,14 +439,14 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
 
   /* Décompte des matchs du fil PAR JOUR d'Alger (bandeau de jours de l'Explorer) : `from` (YYYY-MM-DD, défaut
      aujourd'hui), `days` (1 à 62 — le calendrier « Choisis un jour » —, défaut 7), `sport`, `venueId`. Jours sans match absents de `counts`. Public, comme le fil. */
-  app.get<{ Querystring: { sport?: string; venueId?: string; from?: string; days?: string } }>('/matches/day-counts', async (req, reply) => {
+  app.get<{ Querystring: { sport?: string; venueId?: string; from?: string; days?: string } }>('/matches/day-counts', { preHandler: (req) => guards.tryAuth(req) }, async (req, reply) => {
     const now = new Date();
     const { sport, venueId } = parseFeedFilters(req.query);
     const days = pageLimit(req.query.days, { def: 7, max: 62 });
     let fromStart: number;
     try { fromStart = dayStartMs(req.query.from ?? algiersDateOf(now.getTime())); }
     catch { throw badRequest('Paramètre from attendu au format YYYY-MM-DD.'); }
-    const counts = await feedDayCounts(db, { ...(sport ? { sport } : {}), ...(venueId ? { venueId } : {}), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers) }, fromStart, days, now);
+    const counts = await feedDayCounts(db, { ...(sport ? { sport } : {}), ...(venueId ? { venueId } : {}), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers), ...(req.auth ? { viewerId: req.auth.userId } : {}) }, fromStart, days, now);
     return reply.send({ from: algiersDateOf(fromStart), days, counts });
   });
 
@@ -477,6 +505,8 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
       // notifications/push.ts.
       await withCommittedPush(() => db.transaction().execute(async (trx) => {
         const row = await loadMatchForUpdate(trx, req.params.id);
+        // Lot B, phase 4 : un joueur bloqué par l'organisateur ne rejoint pas — même réponse que par le lien.
+        if (await isBlockedBy(trx, row.organizer_id, req.auth!.userId)) throw matchUnavailable();
         // Un match ISSU D'UN DÉFI (challenge_id non nul) a un effectif fermé :
         // les deux capitaines, inscrits d'office à l'acceptation — jamais un
         // tiers. Le core ne le vérifie pas lui-même (canJoinMatch ignore
@@ -552,6 +582,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
   app.put<{ Params: { id: string }; Body: { note?: string | null } }>('/matches/:id/note',
     { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
       const note = parseNote((req.body ?? {}).note);
+      assertCleanText(contentFilter, note);
       await db.transaction().execute(async (trx) => {
         const row = await loadMatchForUpdate(trx, req.params.id);
         assertCanEditOwnMatch(row, req.auth!.userId);

@@ -12,12 +12,14 @@ import {
 } from './store.js';
 import { loadToken, saveToken, clearToken, loadPrefs, savePrefs, clearPrefs, saveAuthNotice } from '../lib/session.js';
 import { loadPushToken, savePushToken, clearPushToken } from '../lib/native.js';
+import { disableAlerts } from '../lib/webPush.js';
 import { fetchMatchPreview } from '../lib/matchPreview.js';
 import { bootFailureKind, type BootFailureKind } from '../lib/bootFailure.js';
 import type { MatchContact } from '../lib/contacts.js';
 import { epochDateStamp } from '../lib/format.js';
 import type { BookingLimits } from '../lib/bookingLimits.js';
-import type { PlaceSuggestion } from '../lib/places.js';
+import type { CommunityPlace, PlaceSuggestion } from '../lib/places.js';
+import type { FreePlaceInput } from '../lib/freeMatch.js';
 import { venuePhotoUrl, type VenuePhotoSize } from '../lib/venuePhoto.js';
 import type { ProfileSummary } from '../lib/profileView.js';
 import type { NotificationSettings } from '../lib/notificationSettings.js';
@@ -57,6 +59,8 @@ type PageCursors = Record<PagedList, string | null>;
 const NO_CURSORS: PageCursors = { notifications: null, reservations: null, myMatches: null };
 /** Taille d'une page demandée par « Afficher plus » (les listes du joueur : notifications, réservations, matchs). */
 const LIST_PAGE_SIZE = 30;
+/** Lot B, phase 5 : la clé de la carte Google, demandée une fois (`undefined` = pas encore demandée). */
+let mapKeyCache: string | null | undefined;
 
 /** Fil des matchs de l'Explorer (filtres côté serveur) : les identifiants dans l'ordre reçu — les matchs eux-mêmes
     vivent dans `state.matches`, une seule source. */
@@ -72,7 +76,7 @@ interface FeedState {
 const EMPTY_FEED: FeedState = { ids: [], nextCursor: null, total: null, status: 'idle', error: null, loadingMore: false };
 
 function recordFromApi(w: ApiMatchWithRoster, meId: string, now: number): MatchRecord {
-  return { match: matchFromApi(w), players: syntheticPlayersFromCount(w.id, w.joinedCount, w.viewerJoined, meId, now, w.viewerTeam), code: w.code ?? undefined };
+  return { match: matchFromApi(w), players: syntheticPlayersFromCount(w.id, w.joinedCount, w.viewerJoined, meId, now, w.viewerTeam), code: w.code ?? undefined, placeId: w.placeId ?? undefined };
 }
 type ApiPlayerNamed = { userId: string; name: string; joinedAt: number; team?: 'A' | 'B' | null };
 type ApiMatchWithPlayers = ApiPublicMatch & { players: ApiPlayerNamed[] };
@@ -223,7 +227,7 @@ async function fetchMatchDetail(token: string | null, matchId: string): Promise<
   const players = matchPlayersFromDetail(matchId, res.match.players);
   const names: Record<string, string> = {};
   for (const p of res.match.players) names[p.userId] = p.name;
-  return { record: { match: matchFromApi(res.match), players, code: res.match.code ?? undefined }, names };
+  return { record: { match: matchFromApi(res.match), players, code: res.match.code ?? undefined, placeId: res.match.placeId ?? undefined }, names };
 }
 
 /** Seul point de contact entre React et l'état partagé (store.ts, logique pure
@@ -305,6 +309,8 @@ export function useAppStore() {
   const [homeToday, setHomeToday] = useState<{ ids: string[]; status: 'idle' | 'loading' | 'ready' | 'error' }>({ ids: [], status: 'idle' });
   /* Lot « Match libre », phase 4 (S3L) : plafonds de réservation appliqués par le serveur et ce que le joueur a déjà. `null` = inconnus. */
   const [bookingLimits, setBookingLimits] = useState<BookingLimits | null>(null);
+  /** Lot B, phase 3 : la clé publique des alertes web (`null` = coupées côté serveur, `undefined` = pas encore lue). */
+  const [webPushKey, setWebPushKey] = useState<string | null | undefined>(undefined);
   const homeRequest = useRef(0);
 
   function applyBootstrapped(b: Bootstrapped) {
@@ -933,6 +939,23 @@ export function useAppStore() {
       } catch { return []; }
     },
 
+    /* --- Lot B, phase 4 : bloquer un joueur --- */
+    blockPlayer: async (userId: string): Promise<ActionResult> => {
+      try { await apiFetch('/me/blocks', { method: 'POST', token, body: { userId } }); return { ok: true }; }
+      catch (e) { return actionResultFromError(e); }
+    },
+    unblockPlayer: async (userId: string): Promise<ActionResult> => {
+      try { await apiFetch(`/me/blocks/${encodeURIComponent(userId)}`, { method: 'DELETE', token }); return { ok: true }; }
+      catch (e) { return actionResultFromError(e); }
+    },
+    loadBlocked: async (): Promise<{ userId: string; name: string }[]> => {
+      try { return (await apiFetch<{ blocked: { userId: string; name: string }[] }>('/me/blocks', { token })).blocked; } catch { return []; }
+    },
+    /** Lot B, phase 2 : « Choisir un mot de passe » (facultatif) pour un compte d'invité qui n'en a pas — POST /me/password/initial. */
+    setInitialPassword: async (password: string): Promise<ActionResult> => {
+      try { await apiFetch('/me/password/initial', { method: 'POST', token, body: { password } }); return { ok: true }; }
+      catch (e) { return actionResultFromError(e); }
+    },
     /** `team` (règle 3) : l'équipe choisie ; absente = le serveur prend celle qui a le plus de places. */
     joinMatch: async (matchId: string, team?: MatchTeam): Promise<ActionResult> => {
       try {
@@ -949,7 +972,7 @@ export function useAppStore() {
       const { preview } = res;
       const names: Record<string, string> = {};
       for (const p of preview.players) names[p.userId] = p.name;
-      const record: MatchRecord = { match: preview.match, players: matchPlayersFromDetail(preview.match.id, preview.players), code: preview.code ?? undefined };
+      const record: MatchRecord = { match: preview.match, players: matchPlayersFromDetail(preview.match.id, preview.players), code: preview.code ?? undefined, placeId: preview.placeId ?? undefined };
       setState((st) => applyMergePlayerNames(applyUpsertMatch(st, record), names));
       return { ok: true, matchId: preview.match.id, mine: preview.match.organizerId === meId };
     },
@@ -964,6 +987,16 @@ export function useAppStore() {
     /** Lot « Match libre » (Dv3, Dt3) : « Qui peut voir ce match ? » — l'organisateur le passe en privé (hors des listes, rejoint par le
         lien) ou le rend public. Le serveur tranche (organisateur seul, avant le coup d'envoi). */
     bookingLimits,
+    /* --- Lot B, phase 3 : les alertes sur le téléphone (Web Push) --- */
+    webPushKey: webPushKey ?? null,
+    loadWebPushKey: async (): Promise<void> => {
+      if (webPushKey !== undefined) return;
+      try { setWebPushKey((await apiFetch<{ publicKey: string | null }>('/push/web-key')).publicKey); } catch { setWebPushKey(null); }
+    },
+    /** L'abonnement du navigateur → PUT /me/push-devices/web. `true` si le serveur l'a gardé. */
+    registerWebPush: async (subscription: PushSubscriptionJSON): Promise<boolean> => {
+      try { await apiFetch('/me/push-devices/web', { method: 'PUT', token, body: { subscription } }); return true; } catch { return false; }
+    },
     /** GET /me/booking-limits — relu à l'ouverture de l'écran de réservation et après chaque réservation ou annulation. Échec silencieux :
         l'écran ne prévient pas, le serveur refuse quand même à la création (fenêtre « Pas possible pour l'instant »). */
     loadBookingLimits: async (): Promise<void> => {
@@ -1073,12 +1106,50 @@ export function useAppStore() {
         Le serveur rejoue la règle core `createFreeMatch` ; le match est inséré avec l'id réel renvoyé. */
     /** Phase adresses (18/11/2026) — GET /places/search : lieux et adresses d'OpenStreetMap en Algérie, proches de `near`. Jamais
         une erreur pour l'écran : en cas de souci, une liste vide et `unavailable` (la saisie libre et l'épingle restent). */
-    searchPlaces: async (q: string, near?: { lat: number; lng: number }): Promise<{ results: PlaceSuggestion[]; unavailable: boolean }> => {
+    searchPlaces: async (q: string, near?: { lat: number; lng: number }, session?: string): Promise<{ results: PlaceSuggestion[]; unavailable: boolean }> => {
       try {
-        const qs = new URLSearchParams({ q, ...(near ? { lat: String(near.lat), lng: String(near.lng) } : {}) });
+        const qs = new URLSearchParams({ q, ...(near ? { lat: String(near.lat), lng: String(near.lng) } : {}), ...(session ? { session } : {}) });
         const res = await apiFetch<{ results: PlaceSuggestion[]; unavailable?: boolean }>(`/places/search?${qs}`, { token });
         return { results: res.results ?? [], unavailable: res.unavailable === true };
       } catch { return { results: [], unavailable: true }; }
+    },
+    /** Lot B, phase 5 — GET /places/details : la position d'une suggestion Google (`null` si Google ne répond pas). */
+    placeDetails: async (s: PlaceSuggestion, session?: string): Promise<PlaceSuggestion | null> => {
+      try {
+        const qs = new URLSearchParams({ id: s.id, name: s.name, ...(session ? { session } : {}) });
+        const res = await apiFetch<{ place: PlaceSuggestion | null }>(`/places/details?${qs}`, { token });
+        return res.place ?? null;
+      } catch { return null; }
+    },
+    /** Lot B, phase 5 — GET /places/map-config : la clé de la carte Google (`null` : carte de secours). Demandée une fois par session. */
+    mapConfig: async (): Promise<string | null> => {
+      if (mapKeyCache !== undefined) return mapKeyCache;
+      try {
+        const res = await apiFetch<{ googleMapsKey: string | null }>('/places/map-config', { token });
+        mapKeyCache = res.googleMapsKey ?? null;
+      } catch { return null; }
+      return mapKeyCache;
+    },
+    /** Lot B, phase 6 — GET /places/community : les terrains de la communauté autour d'un point (vérifiés, plus les miens). Vide en cas d'erreur. */
+    loadCommunityPlaces: async (near: { lat: number; lng: number }): Promise<CommunityPlace[]> => {
+      try {
+        const res = await apiFetch<{ places: CommunityPlace[] }>(`/places/community?lat=${near.lat}&lng=${near.lng}`, { token });
+        return res.places ?? [];
+      } catch { return []; }
+    },
+    /** Lot B, phase 6 : le terrain de la communauté d'un match libre déjà chargé (`undefined` : aucun). */
+    matchPlaceId: (matchId: string): string | undefined => state.matches[matchId]?.placeId,
+    /** Lot B, phase 6 — GET /places/community/:id : un terrain (détail d'un match). `null` s'il n'est plus visible. */
+    communityPlace: async (id: string): Promise<CommunityPlace | null> => {
+      try { return (await apiFetch<{ place: CommunityPlace }>(`/places/community/${encodeURIComponent(id)}`, { token })).place; }
+      catch { return null; }
+    },
+    /** Lot B, phase 6 — « Signaler une erreur » sur un terrain. */
+    reportPlace: async (id: string, reason: 'WRONG_NAME' | 'WRONG_POSITION' | 'CLOSED' | 'OTHER', note?: string): Promise<ActionResult & { duplicate?: boolean }> => {
+      try {
+        const res = await apiFetch<{ duplicate: boolean }>(`/places/community/${encodeURIComponent(id)}/report`, { method: 'POST', token, body: { reason, ...(note ? { note } : {}) } });
+        return { ok: true, duplicate: res.duplicate };
+      } catch (e) { return actionResultFromError(e); }
     },
     /** GET /places/reverse — le lieu sous l'épingle de la carte (`null` si rien de connu à cet endroit). */
     reversePlace: async (lat: number, lng: number): Promise<PlaceSuggestion | null> => {
@@ -1088,7 +1159,7 @@ export function useAppStore() {
       } catch { return null; }
     },
     publishFreeMatch: async (input: {
-      place: { name: string; wilaya: string; lat?: number | undefined; lng?: number | undefined }; format: MatchFormat; level: SkillLevel; start: number; durationMin: number;
+      place: FreePlaceInput; format: MatchFormat; level: SkillLevel; start: number; durationMin: number;
       title: string; note?: string | undefined; visibility: 'OPEN' | 'PRIVATE';
     }): Promise<ActionResult & { matchId?: string; code?: string | undefined }> => {
       try {
@@ -1100,7 +1171,7 @@ export function useAppStore() {
           },
         });
         const match = matchFromApi(res.match);
-        const record: MatchRecord = { match, players: syntheticPlayersFromCount(match.id, 1, true, meId ?? '', Date.now()), code: res.match.code ?? undefined };
+        const record: MatchRecord = { match, players: syntheticPlayersFromCount(match.id, 1, true, meId ?? '', Date.now()), code: res.match.code ?? undefined, placeId: res.match.placeId ?? undefined };
         setState((s) => applyUpsertMatch(s, record));
         return { ok: true, matchId: match.id, code: res.match.code ?? undefined };
       } catch (e) { return actionResultFromError(e); }
@@ -1317,6 +1388,8 @@ export function useAppStore() {
           apiFetch(`/me/push-devices/${encodeURIComponent(pushToken)}`, { method: 'DELETE', token: tok }).catch(() => { /* meilleur effort */ });
           clearPushToken();
         }
+        // Lot B, phase 3 : le navigateur cesse aussi de recevoir les alertes web de CE compte.
+        void disableAlerts((endpoint) => apiFetch('/me/push-devices/web', { method: 'DELETE', token: tok, body: { endpoint } }).then(() => undefined));
         apiFetch('/auth/logout', { method: 'POST', token: tok }).catch(() => { /* meilleur effort */ });
       }
     },

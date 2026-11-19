@@ -93,7 +93,7 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
   headers['X-Moubarat-App-Version'] = APP_VERSION; // MS-041 : la version du code, pour la version minimale (lib/appVersion.ts)
   /* Lot « Match libre », phase 5 : cette app comprend les matchs libres (sans centre). Le serveur n'en envoie qu'aux apps qui le
      déclarent — jamais aux versions 1.0 et 1.0.1 de l'iPhone, qui n'envoient pas cet en-tête (décision d'Aymen du 16/11/2026). */
-  headers['X-Moubarat-Features'] = 'match-libre,format-9v9';   // + le 9v9 (phase 9v9, décision d'Aymen du 17/11/2026)
+  headers['X-Moubarat-Features'] = 'match-libre,format-9v9,places-google';   // + places-google : lot B, phase 5 (suggestions Google sans position)   // + le 9v9 (phase 9v9, décision d'Aymen du 17/11/2026)
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? API_TIMEOUT_MS);

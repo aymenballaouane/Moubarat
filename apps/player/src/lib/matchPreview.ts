@@ -20,6 +20,8 @@ export interface MatchPreview {
   fieldName: string | null;
   /** Le code du lien (celui qu'on vient d'utiliser). */
   code: string | null;
+  /** Lot B, phase 6 : le terrain de la communauté de ce match libre. */
+  placeId: string | null;
   /** Roster nominatif — vide pour un visiteur (le serveur n'en sert pas sans compte). */
   players: ApiByCode['match']['players'];
 }
@@ -33,7 +35,7 @@ export async function fetchMatchPreview(code: string, token: string | null = nul
       ok: true,
       preview: {
         match: matchFromApi(res.match), joinedCount: res.match.joinedCount, organizerName: res.organizerName,
-        venueName: res.venueName, fieldName: res.fieldName, code: res.match.code ?? null, players: res.match.players,
+        venueName: res.venueName, fieldName: res.fieldName, code: res.match.code ?? null, placeId: res.match.placeId ?? null, players: res.match.players,
       },
     };
   } catch (e) {

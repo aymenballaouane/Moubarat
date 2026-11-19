@@ -6,10 +6,13 @@
    app de téléphone, à qui l'on cache ce qu'elle ne connaît pas :
    - `match-libre` : les matchs sans centre (phase 5) ;
    - `format-9v9` : le format 9 contre 9 (phase 9v9) — le CRM et la console se déclarent aussi, sans quoi le gérant ne verrait plus le
-     9v9 qu'il vient d'ajouter. */
+     9v9 qu'il vient d'ajouter ;
+   - `places-google` (lot B, phase 5) : l'app sait demander la position d'une suggestion d'adresse Google (GET /places/details) — sans
+     lui, la recherche d'adresses reste chez OpenStreetMap, dont chaque suggestion porte sa position. */
 
 export const FEATURE_FREE_MATCH = 'match-libre';
 export const FEATURE_FORMAT_9V9 = 'format-9v9';
+export const FEATURE_PLACES_GOOGLE = 'places-google';
 
 type Headers = Record<string, string | string[] | undefined>;
 

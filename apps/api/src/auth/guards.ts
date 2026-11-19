@@ -9,7 +9,7 @@ import { playerWriteBlock } from '../modules/legal/service.js';
 /** Audit final, MS-007 (12/11/2026) : écritures qu'un joueur doit pouvoir faire AVANT d'avoir accepté les textes et
     franchi la passerelle d'accès — ce sont celles des écrans de garde eux-mêmes (consentement, changement de nom,
     passerelle), plus se déconnecter, supprimer son compte et l'enregistrement de l'appareil par la coque native. */
-const WRITE_GATE_EXEMPT = new Set(['/me/legal-consent', '/me/access-setup', '/auth/logout', '/me', '/me/push-devices', '/me/push-devices/:token']);
+const WRITE_GATE_EXEMPT = new Set(['/me/legal-consent', '/me/access-setup', '/me/guest-setup', '/auth/logout', '/me', '/me/push-devices', '/me/push-devices/:token']);
 const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /** Compte joueur suspendu par le superadmin (audit produit JO6/JO7, 22/09/2026). Le message est le même à la
@@ -71,7 +71,7 @@ export function makeGuards(db: Db, env: Env): Guards {
     const row = await db
       .selectFrom('sessions')
       .innerJoin('users', 'users.id', 'sessions.user_id')
-      .select(['sessions.id as session_id', 'sessions.last_seen_at', 'users.id as user_id', 'users.name', 'users.phone', 'users.role', 'users.status', 'users.name_change_required', 'users.password_hash'])
+      .select(['sessions.id as session_id', 'sessions.last_seen_at', 'users.id as user_id', 'users.name', 'users.phone', 'users.role', 'users.status', 'users.name_change_required', 'users.password_hash', 'users.access_setup_at'])
       .where('sessions.token_hash', '=', sha256(token))
       .where('sessions.revoked_at', 'is', null)
       .where('sessions.last_seen_at', '>', minLastSeen)
@@ -84,7 +84,7 @@ export function makeGuards(db: Db, env: Env): Guards {
     req.auth = {
       sessionId: row.session_id, userId: row.user_id,
       name: row.name, phone: row.phone, role: row.role, nameChangeRequired: row.name_change_required,
-      needsAccessSetup: row.password_hash === null,
+      needsAccessSetup: row.password_hash === null && row.access_setup_at === null,   // lot B, phase 2 : un invité a passé la passerelle sans mot de passe
     };
     // Trace de vie, sans bloquer la requête. Audit multi-centre 22/09/2026 (socle 2e centre, cadrage §2,
     // finding F5) : coalescée à une écriture au plus toutes les LAST_SEEN_COALESCE_MS — sans ça, CHAQUE

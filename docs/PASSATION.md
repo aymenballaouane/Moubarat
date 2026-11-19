@@ -159,7 +159,7 @@ racine : `.env.example`). En hébergement, les fournir par l'environnement du se
 | `SESSION_TTL_DAYS` | Inactivité avant expiration de session | non | 30 (défaut) |
 | `DB_POOL_MAX` / `DB_CONNECTION_TIMEOUT_MS` / `DB_STATEMENT_TIMEOUT_MS` | Pool de connexions Postgres (voir `db/client.ts`) — **le seul appelant à en tenir compte est le serveur réel** (`index.ts`) ; les scripts et les tests gardent le comportement historique (aucun timeout). Budget recommandé : instances × `DB_POOL_MAX` ≤ 60 % de `max_connections` côté Postgres. **Noms exacts** : le brief d'hébergement du 22/09/2026 donnait un nom provisoire `DB_CONNECT_TIMEOUT_MS` — **il n'existe pas dans le code et serait ignoré sans erreur** ; le nom lu par l'API est `DB_CONNECTION_TIMEOUT_MS` (dépassé, une requête en attente d'une connexion libre échoue en erreur plutôt que d'attendre sans fin) | non | 10 / 5000 / 15000 (défauts). **À trancher par les développeurs** : `DB_POOL_MAX` (voir le budget) |
 | `SUPPORT_PHONE` / `SUPPORT_WHATSAPP` / `SUPPORT_EMAIL` | Coordonnées de support servies par `GET /support` (publique) : app joueur (Profil > Aide & Support, écran de connexion d'un compte suspendu) et CRM (bouton « Aide »). Un canal vide n'est pas affiché. **OBLIGATOIRE hors développement (décision d'Aymen, 27/10/2026, audit P1-4) : sans `OTP_DEV_MODE=true`, l'API REFUSE DE DÉMARRER si aucun des trois canaux n'est valide** (au moins un ; les trois sont recommandés — la restriction « contacte le support Moubarat » de la règle 25 n'a de sens qu'avec un canal réel). Un canal invalide (e-mail sans @, numéro trop court) compte pour absent. Numéros au format national algérien acceptés (convertis pour `wa.me`) | **oui** (hors développement) | vide (aucun) |
-| `MIN_PLAYER_APP_VERSION` | Version minimale de l'app joueur (« 1.1.0 », 1 à 3 nombres). En dessous, l'API répond `426 APP_UPDATE_REQUIRED` et l'app affiche « Mets à jour Moubarat ». **Vide = aucun contrôle.** Une valeur mal écrite empêche l'API de démarrer. Mode d'emploi et limites : §4.23 | non | vide (à poser seulement quand un changement de l'API casse les anciennes versions de l'app) |
+| `MIN_PLAYER_APP_VERSION` | Version minimale de l'app joueur (« 1.1.0 », 1 à 3 nombres). En dessous, l'API répond `426 APP_UPDATE_REQUIRED` et l'app affiche « Mets à jour Moubarat ». **Vide = aucun contrôle.** Une valeur mal écrite empêche l'API de démarrer. Mode d'emploi et limites : §4.28 | non | vide (à poser seulement quand un changement de l'API casse les anciennes versions de l'app) |
 | `PLAYER_APP_STORE_URL_IOS` / `PLAYER_APP_STORE_URL_ANDROID` | Liens https des fiches de l'app sur l'App Store et le Play Store, servis avec le refus 426 (le bouton « Ouvrir l'App Store » de l'app iPhone). Changeables sans nouveau build ; une adresse non https empêche l'API de démarrer | non | le lien de la fiche App Store, dès qu'elle est publiée |
 | `INSTANCE_NAME` | Nom de CETTE instance d'API, posé comme `application_name` sur toutes ses connexions Postgres : `pg_stat_activity` et les journaux de la base disent alors **quelle instance** tient un verrou ou une requête lente. Tronqué à 63 caractères par Postgres ; aucune donnée personnelle dedans. Absent ou vide = `moubarat-api` | non | Une valeur **distincte par instance** : `moubarat-api-1`, `moubarat-api-2`… (sinon les deux instances se confondent dans les diagnostics) |
 | `REQUEST_IP_MAX_PER_HOUR` / `REQUEST_GLOBAL_MAX_PER_DAY` | Limites du formulaire public d'inscription d'un centre (`POST /public/venue-requests`) : par IP et par heure / globale et par jour d'Alger ; `429 RATE_LIMITED` au-delà. **Compteurs partagés en base** entre instances (fenêtres fixes, voir §3.2). Les demandes écartées en silence (piège à robots, remplissage trop rapide) ne consomment pas le plafond global. **Exigent une lecture correcte de l'adresse du client** (`TRUST_PROXY` / `TRUST_PROXY_CIDRS`) derrière un proxy, sinon toutes les demandes semblent venir de l'IP du proxy | non | 3 / 30 (défauts) |
@@ -245,7 +245,7 @@ Fronts (au **build**, pas à l'exécution — la valeur est figée dans `dist/`)
 | Variable | Apps | Production |
 |---|---|---|
 | `VITE_API_BASE_URL` | player, crm, superadmin | URL publique HTTPS de l'API (défaut `http://127.0.0.1:3001` sinon) |
-| `VITE_MAP_TILES_URL` / `VITE_MAP_TILES_ATTRIBUTION` | player | Images de la carte de « Créer un match » (§4.21) et leur mention obligatoire. Défaut : serveurs d'OpenStreetMap (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`, « © OpenStreetMap »), **autorisés pour un faible usage seulement** : à remplacer par un fournisseur (ou un serveur à nous) quand l'app grossit — figées au build comme `VITE_API_BASE_URL` |
+| `VITE_MAP_TILES_URL` / `VITE_MAP_TILES_ATTRIBUTION` | player | Images de la carte de « Créer un match » (§4.21, §4.22) et leur mention obligatoire. **Aucun défaut en production** depuis le lot B (décision d'Aymen) : sans valeur, la carte affiche « Carte indisponible » ; les serveurs d'OpenStreetMap ne servent qu'en développement. Figées au build comme `VITE_API_BASE_URL` |
 
 Secrets à créer côté hébergeur avant tout déploiement : mot de passe Postgres, clé smssak,
 mot de passe du superadmin, mots de passe des comptes CRM du centre pilote. Aucun de ces
@@ -856,7 +856,7 @@ variable d'un front exige de redéployer le projet Vercel concerné.
 ### 4.18 Départ de Render vers l'hébergeur suivant (prévu environ un mois après le lancement)
 
 **Ce qu'il faut chez le nouvel hébergeur** (mêmes exigences qu'ici, à vérifier avant de signer) : PostgreSQL 16 avec
-`btree_gist`, `pg_trgm` (§4.22) et le support ICU (§4.12) ; exécution d'une image Docker (ou Node 22) dont le processus principal reçoit
+`btree_gist`, `pg_trgm` (§4.27) et le support ICU (§4.12) ; exécution d'une image Docker (ou Node 22) dont le processus principal reçoit
 `SIGTERM` ; HTTPS ; pour les fronts, repli sur `index.html` en `200` qui laisse passer les fichiers existants
 (`/.well-known/…`, §4.16) ; sauvegardes de la base.
 
@@ -940,14 +940,78 @@ services extérieurs gratuits, sans compte ni clé :
 contrainte `matches_place_position`). Additive, sans coupure. Retour arrière à la main : `apps/api/migrations/retour/0050_match_place_position.sql`
 (refusé tant qu'un match à venir porte une position). **Ordre des retours si l'on revient avant tout le lot** : 0050, puis 0049, 0048, 0047.
 
-### 4.22 Index de recherche : extension `pg_trgm` (migration 0056, audit final Lot 2b, 18/11/2026)
+### 4.22 Créer un match sur la carte (lot B, phase 1, migration 0051, 18/11/2026)
+
+- **Migration 0051** : `matches.place_address` (adresse sous l'épingle d'un match libre, 120 signes au plus, jamais sur un match de centre ;
+  contrainte `matches_place_address`). Additive, sans coupure. Retour arrière à la main :
+  `apps/api/migrations/retour/0051_match_place_address.sql` (refusé tant qu'un match à venir porte une adresse). Ordre si l'on revient
+  avant tout le lot « Match libre » : 0051, 0050, 0049, 0048, 0047.
+- **Fond de carte en production** : `VITE_MAP_TILES_URL` (§3) n'a PLUS de valeur par défaut en production — décision d'Aymen, aucune
+  image de tile.openstreetmap.org pour un service commercial. Sans réglage, « Créer un match » affiche « Carte indisponible. Réessaie. »
+  et reste utilisable par le tiroir (centres, recherche d'adresses). Le fournisseur retenu est Google Maps (compte d'Aymen en cours) :
+  le passage ne touche que `apps/player/src/components/MatchMap.tsx`, seul composant lié à une bibliothèque de carte.
+- **Position du joueur** : demandée par le navigateur seulement au toucher de « Ma position » ; jamais envoyée au serveur (elle sert à
+  trier les centres et à recentrer la carte).
+
+### 4.23 Lot B : invitation, aperçu des liens, alertes web (migrations 0052-0053, 18/11/2026)
+
+- **Migration 0052** (`users.access_setup_at`) : l'inscription courte d'un invité (sans mot de passe). Additive. Retour arrière :
+  `migrations/retour/0052_user_access_setup.sql` (refusé tant qu'un compte d'invité sans mot de passe existe).
+- **Migration 0053** (`push_devices` : plateforme `web` et `web_keys`). Additive. Retour arrière : `migrations/retour/0053_web_push.sql`
+  (supprime les abonnements web). Ordre complet des retours du lot : 0053, 0052, 0051, 0050, 0049, 0048, 0047.
+- **Alertes web — à faire AVANT la mise en ligne** : générer une fois les clés `pnpm --filter @moubarat/api web-push:keys`, puis poser sur
+  le serveur `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY` (secret : jamais dans le code ni sur GitHub) et `WEB_PUSH_SUBJECT`
+  (`mailto:contact@moubaratsport.com`). Sans elles : aucune alerte web, l'app n'affiche pas la carte (rien ne casse). Changer de clés
+  oblige chaque téléphone à réactiver ses alertes. Le serveur doit pouvoir sortir en HTTPS vers les services de notification des
+  navigateurs (fcm.googleapis.com, updates.push.services.mozilla.com, web.push.apple.com…).
+- **Aperçu des liens** : `apps/player/middleware.ts` (Routing Middleware Vercel) lit `VITE_API_BASE_URL` à l'exécution ; il doit donc être
+  défini dans les variables du projet Vercel de l'app joueur (c'est déjà le cas). Routes publiques de l'API : `GET /og/m/:code` et
+  `GET /og/m/:code/image.png` (dépendances `satori` et `@resvg/resvg-js`, binaire précompilé pour Linux installé par pnpm).
+- **Android** : nouvelle version Play Store nécessaire pour les alertes (délégation des notifications) — configuration prête dans
+  `apps/android/twa-manifest.json` (1.0.5, code 7), à construire avec la clé de signature (`apps/android/README.md`).
+
+### 4.24 Lot B : bloquer un joueur et filtre des insultes (migration 0054, 19/11/2026)
+
+- **Migration 0054** (`user_blocks`). Additive. Retour arrière : `migrations/retour/0054_user_blocks.sql` (supprime les blocages).
+  Ordre complet des retours du lot : 0054, 0053, 0052, 0051, 0050, 0049, 0048, 0047.
+- **`CONTENT_FILTER_ENABLED`** : seule la valeur exacte `true` allume le filtre des insultes (`apps/api/src/lib/content-filter.ts`).
+  Absente = éteint (défaut voulu : Aymen doit d'abord relire la liste, `docs/FILTRE-INSULTES.md`). L'allumer ou l'éteindre ne
+  touche aucune donnée ; seuls les textes écrits APRÈS l'activation sont vérifiés (un pseudo déjà en base n'est pas renommé).
+
+### 4.25 Lot B : lieux de la communauté (migration 0055) et Google en réserve (19/11/2026)
+
+- **Migration 0055** (`places`, `place_reports`, `matches.place_id`). Additive. Retour arrière : `migrations/retour/0055_places.sql`
+  (refusé tant qu'un lieu existe ; les matchs gardent leurs nom, adresse et position, copiés sur le match). Ordre complet des retours du
+  lot : 0055, 0054, 0053, 0052, 0051, 0050, 0049, 0048, 0047.
+- **Routes** joueur : `GET /places/community?lat=&lng=&radiusKm=`, `GET /places/community/:id`, `POST /places/community/:id/report` ;
+  console (superadmin) : `GET/POST /platform/places`, `PATCH /platform/places/:id`, `POST /platform/places/:id/{verify,hide,unhide,merge}`,
+  `POST /platform/places/:id/reports/handle`, `POST /platform/places/import` (JSON `{filename, file: base64}`, .xlsx ou .csv, 4 Mo au plus).
+  `POST /matches/free` accepte `place.placeId` (lieu choisi) et `place.share: true` (nouveau lieu à vérifier).
+- **Compteur partagé** `place-create` (10 lieux par joueur et par jour d'Alger) : table `rate_limit_counters` existante, rien à régler.
+- **Google (éteint)** : `GOOGLE_PLACES_SERVER_KEY` (secrète : Places API (New) + Geocoding) et `GOOGLE_MAPS_BROWSER_KEY` (publique,
+  limitée au site). **Ne pas les poser** sans décision d'Aymen : la décision du 19/11/2026 est de rester sur OpenStreetMap. Sans elles,
+  rien n'est appelé chez Google.
+
+### 4.26 Lot B : la carte Moubarat (MapLibre + OpenFreeMap, 19/11/2026)
+
+- **Aucune clé, aucun compte, aucun coût.** Domaines appelés par l'app joueur sur l'écran « Créer un match » : `tiles.openfreemap.org`
+  (tuiles vectorielles et polices des noms). Si une politique de sécurité de contenu (CSP) est ajoutée un jour, l'autoriser en
+  `connect-src` et `worker-src blob:` (MapLibre dessine dans des tâches de fond).
+- **Variables (facultatives, app joueur, au moment du build)** : `VITE_MAP_VECTOR_URL` (TileJSON des tuiles, défaut
+  `https://tiles.openfreemap.org/planet`), `VITE_MAP_GLYPHS_URL` (polices, défaut OpenFreeMap). À poser seulement pour héberger nos propres
+  tuiles de l'Algérie (par exemple un fichier PMTiles servi par notre CDN) — à trancher par les développeurs si OpenFreeMap devient lent.
+- **Mention obligatoire** : « OpenFreeMap © OpenMapTiles · © OpenStreetMap », en bas à droite de la carte — ne jamais la masquer.
+- Leaflet reste le dernier secours (`VITE_MAP_TILES_URL`, inchangé) ; sans lui, en production, la carte dit « Carte indisponible » si
+  MapLibre ne peut pas fonctionner (navigateur sans WebGL).
+
+### 4.27 Index de recherche : extension `pg_trgm` (migration 0056, audit final Lot 2b, 18/11/2026)
 
 La migration `0056_search_trigram_indexes` crée l'extension `pg_trgm` puis six index GIN « trigrammes » qui servent les
 recherches texte : réservations du CRM (nom saisi, référence, numéro saisi et numéro du compte joueur réduits à leurs chiffres)
 et joueurs de la console (nom, numéro). Sans eux, ces recherches relisaient toute la table à chaque frappe.
-**Numéro** : 0056 et non 0051, parce que 0051 à 0055 sont pris par le Lot B « Match libre » (branche `lot-b/…`, fusionnée
-séparément). Le migrateur applique toute migration absente de `schema_migrations`, quel que soit son rang : que l'un ou l'autre lot
-arrive le premier en production ne change rien. Retour arrière à la main : `apps/api/migrations/retour/0056_search_trigram_indexes.sql`
+**Numéro** : écrite d'abord comme 0047 sur sa branche, renumérotée 0056 à la fusion (0047-0050 : lot « Match libre » ;
+0051-0055 : Lot B, §4.22-4.26, tous en production avant elle). Le migrateur applique toute migration absente de
+`schema_migrations`, quel que soit son rang. Retour arrière à la main : `apps/api/migrations/retour/0056_search_trigram_indexes.sql`
 (rien à perdre : que des index).
 
 1. **Droits** : `pg_trgm` est une extension « trusted » depuis PostgreSQL 13 — le propriétaire de la base la crée sans
@@ -966,7 +1030,7 @@ arrive le premier en production ne change rien. Retour arrière à la main : `ap
 4. **Mesure** (base à l'échelle visée, 100 000 joueurs, `apps/api/scripts/bench-routes.ts`) : recherche CRM par nom 104 → 7 ms,
    par numéro « 0555 » 264 → 115 ms ; recherche de joueurs de la console 120 → 7 ms.
 
-### 4.23 Version de l'app joueur et version minimale (MS-041, audit final Lot 2d, 18/11/2026)
+### 4.28 Version de l'app joueur et version minimale (MS-041, audit final Lot 2d, 18/11/2026)
 
 **Ce qui est envoyé** : chaque appel de l'app joueur porte `X-Moubarat-App-Version`, la version de SON CODE
 (`apps/player/src/lib/appVersion.ts`, aujourd'hui `1.1.0`). C'est ce numéro qui compte, pas celui du store :
@@ -992,7 +1056,7 @@ arrive le premier en production ne change rien. Retour arrière à la main : `ap
 Code : `apps/api/src/lib/app-version.ts` (règles), contrôle global dans `apps/api/src/server.ts` ; tests
 `apps/api/tests/app-version-gate.test.ts`, `apps/player/tests/miseAJourRequise.test.tsx`.
 
-### 4.24 Déploiement sûr et capacité : ordre de mise en ligne, sauvegarde avant migration, préproduction, test de charge (audit final Lot 2e, 18/11/2026)
+### 4.29 Déploiement sûr et capacité : ordre de mise en ligne, sauvegarde avant migration, préproduction, test de charge (audit final Lot 2e, 18/11/2026)
 
 Quatre points de l'audit final (MS-031, MS-032, MS-034, MS-074) qui relèvent de l'hébergement, pas du code : **à trancher et
 à régler par les développeurs**, dans les comptes Render, Vercel et GitHub. Ce qui suit dit le problème, ce qui est déjà en

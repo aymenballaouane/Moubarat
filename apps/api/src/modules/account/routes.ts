@@ -4,6 +4,7 @@ import { validateDisplayName, validatePlayerPseudo } from '@moubarat/core';
 import type { Db } from '../../db/client.js';
 import type { Guards } from '../../auth/guards.js';
 import { ApiError, must } from '../../lib/http.js';
+import { assertCleanText } from '../../lib/content-filter.js';
 import { isNameTakenViolation, nameTaken, nameKeyOf } from '../../lib/display-name.js';
 import { checkRateLimit, type RateLimiter } from '../../lib/rate-limit.js';
 import { carryRestrictionOnDeletion } from '../absences/service.js';
@@ -12,6 +13,8 @@ interface Deps {
   db: Db; guards: Guards;
   /** Changements de nom (et tentatives) par joueur et par heure — chaque essai révèle si un nom est pris. Absent (tests, scripts) : aucune limite. */
   nameLimiter?: RateLimiter;
+  /** Lot B, phase 4 : filtre des insultes (CONTENT_FILTER_ENABLED, lib/content-filter.ts). Absent = éteint. */
+  contentFilter?: boolean;
 }
 
 /* Refonte app joueur, lot "Fondations" (règle 34, 22/10/2026) — mêmes listes que le CHECK de
@@ -45,7 +48,7 @@ type ProfileBody = { city?: string | null; gender?: string | null; sports?: stri
 
 export const DELETED_NAME = 'Joueur supprimé';
 
-export async function registerAccountRoutes(app: FastifyInstance, { db, guards, nameLimiter }: Deps): Promise<void> {
+export async function registerAccountRoutes(app: FastifyInstance, { db, guards, nameLimiter, contentFilter = false }: Deps): Promise<void> {
 
   /* Changer son nom d'affichage (25/09/2026, décision d'Aymen : vrai nom ou pseudo, unique — migration 0030).
      Sert au joueur marqué « nom à changer » (doublon hérité d'avant l'unicité : écran non contournable de l'app à sa
@@ -57,6 +60,7 @@ export async function registerAccountRoutes(app: FastifyInstance, { db, guards, 
     const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
     if (!name) throw new ApiError(400, 'NAME_REQUIRED', 'Indiquez votre nom.');
     must(validateDisplayName(name));
+    assertCleanText(contentFilter, name);
     try {
       // Efface la marque « nom à changer » dans la MÊME écriture : le compte entre dans l'index avec son nouveau nom,
       // ou l'écriture entière est refusée. `deleted_at IS NULL` : un compte supprimé ne se renomme jamais.
@@ -106,6 +110,7 @@ export async function registerAccountRoutes(app: FastifyInstance, { db, guards, 
       if (body[key] === undefined) continue;
       const v = typeof body[key] === 'string' ? body[key]!.trim() : '';
       if (v.length < 1 || v.length > 40) throw new ApiError(400, 'INVALID_NAME_PART', 'Indique ton prénom et ton nom (40 signes au plus).');
+      assertCleanText(contentFilter, v);
       fields[col] = v;
     }
     if (body.sports !== undefined) {

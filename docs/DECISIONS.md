@@ -6690,6 +6690,214 @@ Choix d'Aymen : **OpenStreetMap + Leaflet, gratuit** (« Oui, lance »). Aucun c
   épingle déplacée → nom mis à jour → match publié → « Itinéraire » ouvre Google Maps sur la position exacte ; en arabe, « Je ne trouve pas
   mon terrain » → carte d'Alger. Liseré blanc entre deux images de carte trouvé sur les captures et corrigé. Aucune erreur console.
 
+## Lot B « Créer un match (B), inviter un ami, alertes, bloquer un joueur » (pack du 18/11/2026, GO d'Aymen)
+
+Pack `Moubarat-pack-lot-B.zip` (consignes, textes FR/AR, maquettes). Une branche par phase, chaînée depuis `match-libre/phase-8-adresses`.
+Réponses d'Aymen à l'état des lieux (phase 0, 18/11/2026) : en-tête du détail d'abord (phase 0 bis) ; carte Google Maps à terme, la phase 1
+construite sur la carte actuelle mais isolée dans UN composant, et aucune image de tile.openstreetmap.org en production ; le prénom
+existe déjà (`profiles.first_name`, rempli par /me/access-setup) — /matches/by-code le renverra, le pseudo en secours ; alertes : web et
+Android d'abord (vérifier la délégation des notifications et POST_NOTIFICATIONS de l'app Play Store), iPhone plus tard ; filtre des
+insultes ajouté au lot, côté serveur, liste montrée à Aymen avant activation, et vérification des conditions d'utilisation.
+
+### Phase 0 bis — Le nouvel en-tête du détail du match (branche `lot-b/phase-0bis-entete`)
+
+Source : le dossier « Match libre » mis à jour (`Moubarat-pack-Claude-Code.zip`, 18/11/2026 2 h 35, §7 et planches Dv1/Dp2 révisées).
+- L'heure est seule sur sa ligne : « jusqu'à 21:00 · 1 h 30 » disparaît.
+- « FOOT · 5V5 · LOISIR » devient une fine capsule : ballon (raquette pour le padel), format, barres de niveau et niveau, chrono et
+  durée en minutes (« 90 min », arabe « 90 دقيقة »). Le mot « FOOT » n'est plus écrit.
+- L'adresse devient une carte arrondie : petit plan dessiné avec un repère rouge, adresse, « Itinéraire » en rouge ; toute la carte
+  se touche et ouvre Google Maps (position de l'épingle pour un match libre qui en a une).
+- Arabe : l'adresse reste en lettres latines, y compris la wilaya d'un match libre (avant : « الجزائر ») — consigne du lot B.
+- Mode clair : le terrain vert garde des couleurs claires FIXES (« ÉQUIPE A », phrase d'aide, ronds des joueurs, « + ») — contraste
+  mesuré par le pack à 1,0 et 1,9 pour 1 avant ; le badge « Centre partenaire » (fond toujours sombre) garde un texte clair fixe, il
+  était illisible en clair (défaut trouvé sur les captures, corrigé dans la même phase).
+- La fiche d'un centre (Réserver, S3) gardait l'ancienne ligne d'adresse avec les mêmes classes : elle est conservée telle quelle sous
+  des noms à part (`mv-addrline`, `mv-routebtn`), hors lot.
+- 2 textes arabes ajoutés, repris des maquettes (« {n} دقيقة », « الاتجاهات في خرائط غوغل ») ; « jusqu’à {fin} · {duree} » retiré.
+
+### Phase 1 — « Créer un match » en deux écrans (proposition B, branche `lot-b/phase-1-creer`)
+
+Maquettes `1_Creer_un_match` (Cm-B1, Cm-B1b, Cm-B2). Pour le match libre, deux écrans remplacent les quatre (Lieu, « Où exactement ? »,
+Créneau, Détails) : `CreerLibre.tsx` et `CreerCarte.tsx` sont retirés.
+- **« Où tu joues ? »** (`CreerOu.tsx`) : la carte s'ouvre dès « Créer un match » (accueil, menu « + », Jouer), sur la ville du profil ;
+  la position n'est demandée qu'au toucher de « Ma position » (refus : rien de bloquant). Centres partenaires sur la carte (logo
+  Moubarat) et dans le tiroir « TERRAINS MOUBARAT PRÈS DE TOI », du plus proche au plus loin (depuis la position si elle est connue,
+  sinon depuis le centre de la ville) ; section absente sans centre dans la ville. Recherche : 3 centres au plus, puis 5 adresses au
+  plus ; sans résultat, « Aucun lieu trouvé » et « Montrer mon terrain sur la carte ». Un centre (ligne ou épingle) mène au parcours
+  partenaire actuel, inchangé.
+- **Mode épingle** : par « Mon terrain n'est pas dans la liste », une adresse choisie ou un simple glissement de la carte. Épingle fixe,
+  adresse sous la carte (rue, quartier · wilaya), « Nom du terrain » obligatoire, proposé « Terrain · {quartier} » (jamais le nom du
+  commerce le plus proche ; une adresse choisie dans la recherche garde son propre nom). « C'est ici » enregistre le nom, le quartier,
+  l'adresse et la position. Épingle à moins de 120 m d'un centre : « C'est {centre} ? » (oui : parcours partenaire, non : match libre).
+- **« Ton match »** (`CreerTonMatch.tsx`), une seule page avec les rangées de la page Réserver : lieu et « Modifier » (retour à la carte,
+  rouverte sur le lieu), Quand ?, Durée 1 h 30, À quelle heure ? (aucune heure d'avance), Format 5V5, Niveau Loisir, mot replié ; pied de
+  page toujours visible (rappel, « Choisis une heure » inactif puis « Publier mon match », « Publier en privé ») ; bouton inactif pendant
+  l'envoi (un seul match). À 360 pt, les six formats tiennent sur une ligne (vérifié), sinon la rangée défile.
+- **Carte isolée** : `MatchMap.tsx` est le SEUL composant lié à une bibliothèque de carte (Leaflet aujourd'hui) ; le passage à Google
+  Maps ne touchera que lui. **Aucune image de tile.openstreetmap.org en production** (décision d'Aymen) : sans `VITE_MAP_TILES_URL`, la
+  production affiche « Carte indisponible. Réessaie. » (le tiroir reste utilisable : centres, recherche d'adresses) ; les images
+  d'OpenStreetMap ne servent qu'en développement. En thème sombre, elles sont assombries par un filtre en attendant un vrai style Google.
+- **Serveur** : migration 0051 (`matches.place_address`, retour arrière testé), core `createFreeMatch` garde l'adresse (120 signes,
+  +2 tests, core **200**) ; la recherche d'adresses renvoie aussi la rue et le quartier (capitales d'OpenStreetMap remises en forme).
+- **Cas limites** : accord « numéro visible » coupé : la fenêtre « Pas possible » s'ouvre dès « Où tu joues ? ». Les plafonds de
+  réservations (règle 23) ne concernent pas le match libre (acté en phase 5) ; restriction après absences et chevauchement ne sont connus
+  que du serveur : ils s'expliquent à la publication (même fenêtre), faute de route de vérification préalable — à décider si Aymen veut
+  mieux. « Créer un match » n'ouvre plus « Ton créneau » d'abord : cette liste reste ouverte après « C'est bien moi » (règle 21) et depuis
+  une réservation (Mes matchs).
+- **Détail du match libre** : la carte d'adresse montre la rue sous l'épingle quand elle existe, sinon le quartier.
+- **Textes arabes** : 20 ajoutés depuis `textes-fr-ar-lot-B.json` (à faire relire, comme le dit le pack) ; « Réessayer » garde la
+  traduction déjà dans l'app (« أعد المحاولة »).
+- **À savoir** : la version en ligne (phase adresses, 18/11 à 2 h 07) charge encore les images de tile.openstreetmap.org. Cette phase les
+  retire de la production ; elle ne partira en ligne qu'après le test d'Aymen et avec un fond de carte réglé (Google).
+
+### Phase 2 — Inviter un ami (branche `lot-b/phase-2-inviter`)
+
+Maquettes `2_Inviter_un_ami` (message, page d'invitation, prénom, « C'est bon, tu joues ! »).
+- **Message partagé** (`lib/matchLink.ts`, `inviteMessage`) : jour, heure, lieu (« (wilaya) »), prix pour un match de centre seulement, places
+  qui manquent, lien COMPLET — dans la langue de l'app de l'organisateur (avant : toujours « On joue ? Rejoins le match : … » en français).
+  Pluriels arabes du pack. En arabe, le lien porte `?l=ar` pour que l'aperçu soit en arabe (seul écart avec le format du pack, qui écrit
+  le lien sans paramètre). Les symboles ⚽ 📍 💰 en tête de ligne sont ceux du message validé par Aymen : c'est un texte envoyé dans
+  WhatsApp, pas un écran de l'app (la règle « zéro emoji » vaut pour l'interface). Utilisé par « Trouver {n} joueurs », « Partager »
+  (détail du match, vue organisateur) et l'écran « match en ligne » (match libre et match de centre).
+- **Aperçu du lien** : l'API sert `GET /og/m/:code?l=fr|ar` (titre « Match 5v5 · ven. 20 nov. à 19:30 », description « {lieu} · il
+  manque 9 joueurs ») et `GET /og/m/:code/image.png` (1200 × 630, dessinée par satori et rendue par resvg — bibliothèques libres, polices
+  de l'app). Code inconnu, match annulé ou passé : « Moubarat Sport » / « Organise ton match, trouve des joueurs. ». Côté site, un relais
+  Vercel (`apps/player/middleware.ts`, Routing Middleware) pose les balises og:* sur la page `/m/CODE` (les robots de WhatsApp
+  n'exécutent pas le JavaScript) ; une panne de l'API laisse partir la page sans aperçu, jamais une erreur. **Vérifiable seulement une
+  fois déployé chez Vercel** (pas de relais en développement) : la fonction d'injection est testée, l'API aussi.
+- **Page d'invitation sans compte** (`LienMatch.tsx`, refaite) : « {prénom} t'invite à jouer » — `/matches/by-code` renvoie désormais le
+  PRÉNOM de l'organisateur (`profiles.first_name`, le pseudo en secours) ; carte avec la capsule du détail (composant `MatchCapsule`
+  partagé), l'heure, le jour, « Dans 2 jours », le lieu et son adresse, aucun prix pour un match libre ; « Rejoindre le match » et « Crée
+  ton compte en 1 minute, tu reviens direct ici. » ; « J'ai déjà un compte » en haut. Match annulé : « Ce match n'est plus disponible. »
+- **Inscription courte d'un invité** : seulement en arrivant par un lien. « Ton numéro » (accords, inchangé) → « Ton code » → « Comment tu
+  t'appelles ? » (prénom seul ; pseudo proposé « karim.b27 », repris par le serveur s'il est libre). Serveur : `POST /me/guest-setup`
+  (prénom, accords, sport et ville du match ; aucun mot de passe) et migration 0052 `users.access_setup_at` (la passerelle d'accès est
+  franchie, avec ou sans mot de passe : `needsAccessSetup = password_hash IS NULL AND access_setup_at IS NULL` — aucun compte existant
+  ne change). Puis l'invité est INSCRIT au match (équipe choisie par le serveur) et voit « C'est bon, tu joues ! » : l'organisateur avec
+  son numéro et « Appeler » (règle 31), « Choisir un mot de passe » facultatif (`POST /me/password/initial`, une seule fois, seulement
+  pour un compte qui n'en a jamais eu), « Voir le match ». Sans mot de passe, il se reconnecte par « Mot de passe oublié » (code SMS), qui
+  lui en pose un. Match rempli pendant l'inscription : « Le match vient d'être complet. » et « Voir les autres matchs du jour ».
+- **Lien du groupe WhatsApp** : déjà réservé aux inscrits et à l'organisateur (vérifié, test ajouté) — rien à changer.
+- **Tests** : API `guest-invite.test.ts` (6), `og.test.ts` (4), retour arrière 0052 ; app `matchLink.test.ts` (le test de l'ancien
+  message remplacé par ceux du nouveau, demande du pack), `ogMeta.test.ts` (2).
+- **Vérifié en vrai** (base de dev, code SMS de développement) : lien → « Rejoindre le match » → numéro → code → « Yacine » (pseudo
+  « yacine.b07 », celui affiché) → inscrit → « C'est bon, tu joues ! » avec le numéro de l'organisateur. Comptes de test retirés ensuite.
+
+### Phase 3 — Les alertes sur le téléphone (branche `lot-b/phase-3-alertes`)
+
+Décision d'Aymen : le web et Android d'abord ; l'iPhone quand il aura la clé Apple et une version à envoyer.
+- **Canal** : la norme Web Push (gratuite, aucun service tiers à payer ; clés VAPID). Serveur : migration 0053 (`push_devices` accepte la
+  plateforme `web` avec ses deux clés de chiffrement), `WebPushProvider` (bibliothèque libre `web-push`), un aiguillage par plateforme
+  (`RoutingPushProvider` : iPhone par APNs, web par Web Push), routes `GET /push/web-key`, `PUT`/`DELETE /me/push-devices/web`. Les
+  alertes envoyées sont EXACTEMENT celles de la cloche (rappel 3 h avant, place libérée, joueur qui rejoint ou part, match modifié ou
+  annulé…) : elles respectent donc déjà les réglages de Profil › Notifications, appliqués quand l'alerte est écrite. Un abonnement
+  expiré (404/410) est retiré tout seul. Sans clés VAPID, rien n'est envoyé par le web et l'app n'affiche pas la carte.
+- **App** : `lib/webPush.ts` (abonnement du navigateur), le service worker affiche l'alerte et ouvre l'écran Notifications au toucher,
+  `AlertsCard` — « Sois prévenu avant le match » (joueur) / « Sois prévenu quand des joueurs arrivent » (organisateur). La permission
+  n'est demandée qu'au toucher de « Activer les alertes », montré : après avoir rejoint un match (détail), après avoir publié (écran
+  « match en ligne », libre et centre), sur « C'est bon, tu joues ! », et dans Profil › Notifications, où la phrase « pas sur l'écran de
+  ton téléphone » est remplacée par « Choisis les alertes que tu reçois sur ton téléphone. » (gardée là où le téléphone ne sait pas
+  recevoir d'alertes web : iPhone hors écran d'accueil, serveur sans clés). À la déconnexion, le navigateur se désabonne.
+- **Refusées** : « Les alertes sont coupées dans les réglages de ton téléphone. » Le bouton « Ouvrir les réglages » du pack n'est PAS
+  affiché : un site (ni l'app Android qui l'affiche) ne peut pas ouvrir lui-même les réglages du téléphone ; la phrase dit où aller.
+- **Android (vérification demandée par Aymen)** : l'app Play Store 1.0.4 n'a PAS la délégation des notifications
+  (`enableNotifications: false`, aucune permission POST_NOTIFICATIONS). **Il faut une nouvelle version Play Store** : la configuration est
+  prête (`apps/android/twa-manifest.json` : `enableNotifications: true`, version 1.0.5, code 7) ; la construire et l'envoyer revient à
+  Aymen (clé de signature) — rien n'a été envoyé. En attendant, les alertes marchent dans Chrome sur Android (site web).
+- **iPhone** : inchangé (APNs déjà prêt côté serveur, attend la clé Apple et une nouvelle version).
+- **Non vérifié en vrai** : la réception d'une alerte sur un téléphone. Le navigateur de test sans fenêtre refuse d'office les
+  notifications ; l'envoi est couvert par les tests (`web-push.test.ts` : abonnement, envoi, abonnement expiré, aiguillage) et la carte
+  a été vue dans ses 4 variantes (FR/AR, sombre/clair). À tester sur téléphone dès que les clés VAPID de production sont posées.
+- **Textes arabes** : section « alertes » du pack ; 2 textes sans maquette ajoutés en provisoires.
+
+### Phase 4 — Bloquer un joueur, et le filtre des insultes (branche `lot-b/phase-4-bloquer`)
+
+- **Bloquer** (maquettes 3_Bloquer) : le bouton « … » du détail du match ouvre « Que veux-tu faire ? » — « Signaler ce match »,
+  « Signaler un joueur » (le signalement existant, inchangé) et « Bloquer un joueur » → « Qui veux-tu bloquer ? » → « Bloquer {nom} ? ».
+  Serveur : migration 0054 (`user_blocks`, une ligne par paire, retour arrière testé), `modules/blocks` (`GET`/`POST /me/blocks`,
+  `DELETE /me/blocks/:userId`). Effets, **dans les deux sens** : le fil des matchs (et ses compteurs par jour) ne montre plus les matchs
+  organisés par l'autre ; rejoindre, ouvrir le lien ou le détail d'un match de quelqu'un qui m'a bloqué → 404 `MATCH_UNAVAILABLE`
+  « Ce match n'est plus disponible. » (même réponse qu'un match inconnu : le bloqué n'apprend pas qu'il est bloqué). **Personne n'est
+  prévenu**, rien n'est retiré : un joueur déjà inscrit garde sa place (le retirer reste l'outil de l'organisateur). Lever un blocage :
+  Profil › Confidentialité › Joueurs bloqués. Le lien d'un match devenu inaccessible mène à un écran « Ce match n'est plus disponible. »
+  au lieu d'un retour silencieux à l'accueil.
+- **Filtre des insultes** (demande d'Aymen : « côté serveur… montre-moi la liste avant de l'activer ») : `lib/content-filter.ts`,
+  **éteint par défaut** (`CONTENT_FILTER_ENABLED=true` pour l'allumer). Vérifie pseudo, prénom, nom, nom/lieu/adresse/mot d'un match,
+  nom d'équipe ; refus `400 CONTENT_REFUSED`. Mot ENTIER seulement (jamais un morceau : Concorde, couscous, كسكس, Nike passent),
+  accents, chiffres déguisés, lettres répétées ou espacées, arabe normalisé. Liste courte et sans mot ambigu, à relire :
+  `docs/FILTRE-INSULTES.md` (5 points à trancher). Pas appliqué aux textes du centre ni au motif d'un signalement.
+- **CGU** : l'article 9 interdit le harcèlement mais ne dit pas en toutes lettres « tolérance zéro » pour les contenus choquants, ni
+  signalement/blocage — ce qu'Apple (règle 1.2) et Google demandent. Texte légal NON modifié ; proposition de clause pour l'avocat :
+  `docs/PROPOSITION-CGU-CONTENUS.md`.
+- **Limite connue (antérieure au lot)** : les messages d'erreur du serveur restent en français quand l'app est en arabe (l'app affiche
+  le message tel que le serveur l'envoie). Le refus du filtre et « Ce match n'est plus disponible. » ont leur traduction dans fr-ar.json,
+  utilisée là où l'écran passe par `t()`.
+- **Textes arabes** : section « bloquer » du pack ; textes sans maquette en provisoires (à relire par un arabophone).
+
+### Phase 5 — Google en réserve (branche `lot-b/phase-5-google`, 19/11/2026)
+
+Aymen avait choisi Google (TomTom 0/6, OpenStreetMap 2/6, Google 5/6 sur ses six adresses). Le code est écrit et testé : recherche par
+Google Places (New) pour une app qui se déclare `places-google`, OpenStreetMap en secours automatique (Google muet, plafond atteint, clé
+refusée), carte Google Maps avec Leaflet en secours (`MatchMap.tsx` choisit, `map/GoogleMap.tsx`, `map/LeafletMap.tsx`). Le compte
+Google Cloud a été créé (projet « Moubarat Sport », 3 services activés, 2 clés restreintes), mais son compte de facturation est resté
+« clôturé » malgré une réouverture ; Aymen a ensuite décidé (19/11) : **on garde OpenStreetMap et on l'enrichit**. Le code Google reste
+**éteint** tant que `GOOGLE_PLACES_SERVER_KEY` et `GOOGLE_MAPS_BROWSER_KEY` ne sont pas posées sur le serveur (elles ne le sont pas) :
+aucun appel à Google, aucun coût. Les deux clés existent dans `apps/api/.env.google.local` (jamais commité) ; à supprimer dans la
+console Google si l'option est abandonnée.
+
+### Phase 6 — « Nos lieux d'abord » (branche `lot-b/phase-6-lieux`, 19/11/2026, maquette validée par Aymen)
+
+Décision d'Aymen : garder OpenStreetMap, « ajouter les terrains manquants et laisser les joueurs l'enrichir pour nous avec le temps »,
+avec l'adresse écrite ET l'épingle sur la carte. Maquette : https://claude.ai/artifact/HoXhQY3HLsoiPp6oTszj5q (« code-le »).
+- **Données** : migration 0055 — `places` (nom, quartier, adresse, wilaya, position en Algérie ; À VÉRIFIER / VÉRIFIÉ / MASQUÉ ; source
+  joueur / console / fichier ; « sur OpenStreetMap »), `matches.place_id` (un match libre rattaché à un lieu : « 12 matchs joués ici »),
+  `place_reports` (« Signaler une erreur »). Module `apps/api/src/modules/places/community.ts`.
+- **Recherche** (« Où tu joues ? ») : centres partenaires, puis **terrains de la communauté** (vérifiés, plus ceux que j'ai ajoutés), puis
+  adresses OpenStreetMap ; les terrains de la communauté apparaissent aussi sur la carte (rond or).
+- **Ajouter** : en mode épingle, « Ajouter ce terrain à Moubarat » (cochée par défaut) — le match publié crée un lieu « à vérifier »,
+  visible tout de suite pour son auteur, pour tous après vérification. 10 lieux par joueur et par jour au plus (au-delà, le match se
+  crée sans fiche). Le filtre des insultes (éteint) s'applique au nom.
+- **Doublons** : à « C'est ici », si un terrain de la communauté est à moins de 150 m, « C'est l'un de ces terrains ? » → « C'est lui »
+  (le match prend ses nom, adresse et position) ou « Non, c'est un autre terrain ». Le serveur rattache aussi d'office un même nom
+  (replié) à moins de 150 m, sans nouvelle fiche.
+- **Détail du match** : « TERRAIN DE LA COMMUNAUTÉ » (ou « À VÉRIFIER » pour son auteur), « N matchs joués ici », « Signaler une erreur »
+  (mauvais nom, mauvaise position, terrain fermé, autre).
+- **Console › Lieux** : filtres (tous, à vérifier, vérifiés, signalés, masqués), Vérifier, Corriger (nom, adresse, position collée depuis
+  une carte), Fusionner (les matchs et signalements suivent), Masquer / Réafficher, Signalements traités, **Ajouter un lieu** (vérifié
+  d'office), **Importer un fichier Excel ou CSV** (en-têtes nom, quartier, adresse, wilaya, latitude, longitude — chaque ligne « à
+  vérifier », doublons ignorés), « Ajouter à OpenStreetMap » (ouvre l'éditeur d'OSM à la position ; on y ajoute le lieu à la main puis
+  « C'est fait »). Chaque action est journalisée (Journal de la console).
+- **Jamais de copie de Google** (conditions de Google ; OpenStreetMap supprime toute donnée qui en vient) : sources admises = un joueur,
+  la console (appel au gérant, visite, page du centre), un fichier public (liste du ministère si sa licence le permet).
+- **Corrigé au passage** : les fenêtres de l'écran « Où tu joues ? » (« C'est {centre} ? », depuis la phase 1) s'ouvraient DERRIÈRE le
+  tiroir (z-index 80 contre 700) ; la carte du mode épingle passe de 610 à 520 px pour laisser la place à la case.
+- **Vérifié en vrai** (base de dev, compte console jetable supprimé ensuite) : ajout console, import CSV, recherche, ajout par un joueur,
+  doublon → « C'est lui », publication, détail, signalement, vérification dans la console ; aucune erreur console ; données de test
+  nettoyées. Captures : `.claude/captures/lot-b/phase-6`.
+- **Textes arabes** : 20 textes et 1 pluriel (« {n} matchs joués ici ») ajoutés en PROVISOIRE, à relire par un arabophone.
+
+### Phase 7 — La carte Moubarat (branche `lot-b/phase-7-carte`, 19/11/2026, aperçu validé par Aymen : « branche-la »)
+
+- **Pourquoi** : on garde OpenStreetMap (phase 6) mais leurs images de carte sont interdites en production (décision du 18/11) — sans fond
+  de carte autorisé, « Où tu joues ? » afficherait « Carte indisponible ». La carte devient une carte VECTORIELLE dessinée par MapLibre
+  (bibliothèque libre) avec un style à nous (`components/map/moubaratStyle.ts`) : nuit (fond #0E1319 comme l'app) et clair (crème
+  #F4F3EF), routes discrètes, mer bleue, **terrains de sport en vert**, le rouge réservé aux centres et aux actions.
+- **Données de la carte** : OpenFreeMap (tuiles du schéma OpenMapTiles, issues d'OpenStreetMap) — gratuit, sans compte ni clé, usage
+  commercial autorisé, mention « OpenFreeMap © OpenMapTiles · © OpenStreetMap » obligatoire (en bas à droite). Aucune garantie de service :
+  si un jour c'est trop lent, on héberge notre propre fichier de l'Algérie (`VITE_MAP_VECTOR_URL` / `VITE_MAP_GLYPHS_URL`, sans code).
+- **Ordre des cartes** (`MatchMap.tsx`, toujours le seul composant utilisé par les écrans) : Google si une clé est posée (en réserve,
+  éteint) → carte Moubarat → Leaflet en dernier secours. La carte Moubarat se charge à la demande (fichier à part de 220 Ko compressés,
+  seulement à l'ouverture de « Créer un match ») ; si ce fichier ne se charge pas (hors ligne, nouvelle version), l'écran ne plante pas.
+- **Arabe** : noms de lieux en arabe avec le module de MapLibre pour l'écriture de droite à gauche (`@mapbox/mapbox-gl-rtl-text` 0.2.3,
+  servi par l'app elle-même ; la 0.3.0 n'est pas chargée par MapLibre 4). Sans lui, les lettres n'étaient pas reliées.
+- **Rien ne change pour le joueur** : mêmes épingles (logo des centres, rond or des terrains de la communauté, point bleu), mêmes gestes
+  (glisser = poser son terrain, toucher un centre = son parcours), rotation et inclinaison désactivées.
+- **Trouvé et corrigé en vérifiant** : la feuille de style de MapLibre écrasait la position du cadre de la carte (carte vide) —
+  `.mm.maplibregl-map` ; et un fichier de carte introuvable faisait planter tout l'écran — garde `LoadGuard`.
+- **Vérifié en vrai** (app 5178, FR/AR × sombre/clair) : la carte Moubarat se dessine, un glissement passe en mode épingle et trouve
+  l'adresse, le toucher d'un centre ouvre son parcours, aucune erreur. Version de production construite. Captures :
+  `.claude/captures/lot-b/phase-7` et l'aperçu `.claude/captures/lot-b/carte-moubarat`.
+
 ### Audit final — Lot 2 « exploitation et capacité » (18/11/2026, GO d'Aymen « Oui, Lot 2 »)
 
 Choix d'Aymen avant de commencer : export limité à **3 mois** ; **version minimale de l'app** construite dans ce lot (demande
@@ -6719,7 +6927,7 @@ charge**, les réglages Render/Vercel et la préproduction restent aux développ
   - **Analytics** : `GET /venues/:id/analytics/overview?today=` — une lecture des 60 jours, puis chaque vue calculée par les
     MÊMES fonctions que les routes unitaires (inchangées) ; l'écran passe de 22 appels à 2. 304 → 138 ms, et une connexion au
     lieu de dix. Test : chaque vue identique à sa route unitaire.
-  - **Recherches** : migration 0056 (extension `pg_trgm`, six index trigrammes — PASSATION §4.22) ; la recherche de
+  - **Recherches** : migration 0056 (extension `pg_trgm`, six index trigrammes — PASSATION §4.27) ; la recherche de
     réservations du CRM devient une UNION de recherches indexées (mêmes critères mot pour mot). CRM par nom 104 → 7 ms, par
     numéro « 0555 » 264 → 115 ms (ce début de numéro est porté par beaucoup de comptes : beaucoup de candidats) ; joueurs de la
     console 120 → 7 ms. La liste des centres de la console n'a pas de recherche côté serveur (filtre dans le navigateur) : coût
@@ -6740,14 +6948,14 @@ charge**, les réglages Render/Vercel et la préproduction restent aux développ
   « Ouvrir l'App Store » dans l'app iPhone. Une requête sans en-tête passe toujours (CRM, console, builds d'avant ce lot —
   impossibles à forcer), une valeur illisible aussi ; sondes, support et textes juridiques restent ouverts. Vérifié en direct
   (API locale relancée avec un minimum à 9.0.0) : écran en français et en arabe, sans traduction manquante. **Pour que ce soit
-  utile sur iPhone, il faut un nouveau build** (le build 1.0 n'envoie pas sa version) — PASSATION §4.23.
+  utile sur iPhone, il faut un nouveau build** (le build 1.0 n'envoie pas sa version) — PASSATION §4.28.
 - **2e — Déploiement et capacité (MS-031, MS-032, MS-034, MS-074)** : choix d'Aymen « documentation + script » — rien n'est
-  réglé dans Render, Vercel ni GitHub (aucun accès aux comptes ici). PASSATION §4.24, à l'intention des développeurs : mettre
+  réglé dans Render, Vercel ni GitHub (aucun accès aux comptes ici). PASSATION §4.29, à l'intention des développeurs : mettre
   l'API en ligne avant les fronts (Deploy Hooks Vercel appelés par la vérification GitHub une fois l'API à jour ; en attendant,
   tout changement d'API reste compatible avec les fronts en ligne) ; sauvegarde avant migration (vérifier la restauration à un
   instant donné de l'offre Render, sinon `pg_dump` avant un déploiement qui migre) ; préproduction par copie du Blueprint —
   avec, à signaler à Aymen, l'offre Vercel « Hobby » réservée à un usage non commercial et le coût d'une préproduction ;
   test de charge `apps/api/scripts/load-test.mjs` (lectures seulement, sans dépendance, refuse la production sauf
   confirmation explicite), essayé sur une API locale (10 utilisateurs simultanés : 158 requêtes/s, médiane 55 ms, 0 erreur) —
-  la vraie mesure est à faire sur la préproduction et à reporter dans §4.24.
+  la vraie mesure est à faire sur la préproduction et à reporter dans §4.29.
 
