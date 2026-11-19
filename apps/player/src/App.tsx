@@ -27,6 +27,7 @@ import { SupportScreen } from './components/SupportScreen.js';
 import { ProfileEdit } from './components/ProfileEdit.js';
 import { NoticeScreen } from './components/NoticeScreen.js';
 import { AccordsScreen } from './components/AccordsScreen.js';
+import { BlockedPlayersScreen } from './components/BlockedPlayersScreen.js';
 import { PaymentsScreen } from './components/PaymentsScreen.js';
 import { BottomNav } from './components/BottomNav.js';
 import { HomeScreen } from './components/HomeScreen.js';
@@ -39,7 +40,7 @@ import { HOME, type Route, type Tab } from './nav.js';
 import { useAppStore, type AppStore } from './state/useAppStore.js';
 import { loadToken } from './lib/session.js';
 import { clearPendingMatch, codeFromPath, loadPendingMatch, saveGuestJoin, savePendingMatch, takeGuestJoin } from './lib/matchLink.js';
-import { MatchJustFull, TuJoues } from './components/TuJoues.js';
+import { MatchJustFull, MatchUnavailable, TuJoues } from './components/TuJoues.js';
 import { AlertsCard } from './components/AlertsCard.js';
 import type { GuestInvite } from './components/AuthFlow.js';
 import { installNativeBridge, on, post } from './lib/native.js';
@@ -97,7 +98,7 @@ export function App() {
       clearPendingMatch();
       setPendingCode(null);
       window.history.replaceState(null, '', '/');
-      if (!(res.ok && res.matchId)) { setRoute(HOME); return; }
+      if (!(res.ok && res.matchId)) { setRoute(res.ok ? HOME : { name: 'match', mode: 'unavailable', message: res.message }); return; }
       const matchId = res.matchId;
       if (res.mine) { setRoute({ name: 'match', mode: 'organizer', matchId }); return; }
       // Lot B, phase 2 : l'invité qui vient de créer son compte est inscrit tout de suite (équipe choisie par le serveur).
@@ -348,6 +349,7 @@ function renderRoute(
         const team = entry.players.find((p) => p.userId === store.me?.id)?.team ?? null;
         return <TuJoues match={entry.match} team={team} code={route.code} store={store} onSeeMatch={() => setRoute({ name: 'match', mode: 'detail', matchId: route.matchId })} alertsSlot={<AlertsCard store={store} variant="player" />} />;
       }
+      if (route.mode === 'unavailable') return <MatchUnavailable message={route.message} onHome={() => setRoute(HOME)} />;
       if (route.mode === 'full') {
         return <MatchJustFull onOtherMatches={() => setRoute({ name: 'tab', tab: 'explorer', explorerDay: route.dayStart })} onHome={() => setRoute(HOME)} />;
       }
@@ -433,6 +435,8 @@ function renderRoute(
       return <NotifSettingsScreen store={store} onBack={goBack} />;
     case 'notice':
       return <NoticeScreen onBack={goBack} onNavigate={setRoute} />;
+    case 'blocked':
+      return <BlockedPlayersScreen store={store} onBack={() => setRoute({ name: 'notice' })} />;
     case 'accords':
       return <AccordsScreen store={store} onBack={() => setRoute({ name: 'notice' })} onNavigate={setRoute} />;
     case 'tab':

@@ -415,7 +415,7 @@ Monorepo pnpm workspaces :
 - **Lot B « Créer un match (B), inviter un ami, alertes, bloquer un joueur » (18/11/2026, pack d'Aymen)** : une branche par phase depuis
   `match-libre/phase-8-adresses` — 0 bis nouvel en-tête du détail du match (`lot-b/phase-0bis-entete`) ; 1 « Créer un match » en deux
   écrans, carte + épingle + « Ton match » (`lot-b/phase-1-creer`, migration 0051, carte isolée dans `MatchMap.tsx`, aucune image
-  OpenStreetMap en production — PASSATION §4.22). Rien en production sans le test d'Aymen. Détail : `docs/DECISIONS.md`. Les anciennes apps
+  OpenStreetMap en production — PASSATION §4.22) ; 2 inviter un ami (`lot-b/phase-2-inviter`, inscription courte d'un invité, aperçu des liens, migration 0052) ; 3 alertes web (`lot-b/phase-3-alertes`, Web Push, migration 0053 — Android : nouvelle version Play Store 1.0.5 nécessaire) ; 4 bloquer un joueur + filtre des insultes ÉTEINT (`lot-b/phase-4-bloquer`, migration 0054, `CONTENT_FILTER_ENABLED`, liste à relire : `docs/FILTRE-INSULTES.md`, clause CGU pour l'avocat : `docs/PROPOSITION-CGU-CONTENUS.md`) — PASSATION §4.23-4.24. Rien en production sans le test d'Aymen. Détail : `docs/DECISIONS.md`. Les anciennes apps
   (iPhone 1.0/1.0.1, Android 1.0.4) ne reçoivent ni match libre ni 9v9 : un client à jour se déclare par l'en-tête
   `X-Moubarat-Features` (`apps/api/src/lib/client-features.ts`, envoyé par l'app joueur, le CRM et la console). Note de version FR/AR :
   `docs/NOTE-DE-VERSION-match-libre.md`. Mission autopilote de mise en ligne : `JOURNAL_AUTOPILOTE.md`. Détail : `docs/DECISIONS.md`.

@@ -607,6 +607,8 @@ export interface VenuePhotosTable {
 }
 
 export interface Database {
+  /** Migration 0054 (lot B, phase 4) : joueurs bloqués. */
+  user_blocks: UserBlocksTable;
   venue_photos: VenuePhotosTable;
   users: UsersTable;
   profiles: ProfilesTable;
@@ -648,4 +650,11 @@ export interface Database {
   venue_requests: VenueRequestsTable;
   legal_acceptances: LegalAcceptancesTable;
   rate_limit_counters: RateLimitCountersTable;
+}
+
+/** Migration 0054 (lot B, phase 4) : `blocker_id` a bloqué `blocked_id`. */
+export interface UserBlocksTable {
+  blocker_id: string;
+  blocked_id: string;
+  created_at: Generated<Date>;
 }

@@ -11,6 +11,7 @@ import { ACCOUNT_SUSPENDED_CODE, ACCOUNT_SUSPENDED_MESSAGE, type Guards } from '
 import type { SmsProvider } from '../lib/sms.js';
 import { hashPassword, newOtpCode, newSessionToken, sha256, verifyPassword } from '../lib/crypto.js';
 import { ApiError, badRequest, must } from '../lib/http.js';
+import { assertCleanText } from '../lib/content-filter.js';
 import { checkLoginThrottle, clearLoginThrottle, clearLoginThrottleForKeys, foldedName, ipFingerprint, recordLoginFailure, throttleKey } from '../lib/login-throttle.js';
 import { checkRateLimit, type RateLimiter } from '../lib/rate-limit.js';
 import { needsLegalConsent, recordLegalConsent, recordAgeConsent } from '../modules/legal/service.js';
@@ -19,6 +20,8 @@ import { isNameTakenViolation, nameKeyOf, nameTaken } from '../lib/display-name.
 
 interface Deps {
   db: Db; guards: Guards; sms: SmsProvider;
+  /** Lot B, phase 4 : filtre des insultes (CONTENT_FILTER_ENABLED, lib/content-filter.ts). Absent = éteint. */
+  contentFilter?: boolean;
   /** Audit 07-09/09/2026 (S12) : compteurs additionnels au quota par numéro
       du core — par IP appelante et global (coût SMS total). Optionnels : un
       test qui ne les fournit pas garde l'ancien comportement (quota par
@@ -51,7 +54,7 @@ function accessAlreadySet(): ApiError {
 }
 
 export async function registerAuthRoutes(
-  app: FastifyInstance, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter }: Deps,
+  app: FastifyInstance, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter, contentFilter = false }: Deps,
 ): Promise<void> {
 
   /* Demande d'un code OTP. Cooldown 60 s + quota 3/15 min = règles core.
@@ -428,6 +431,7 @@ export async function registerAuthRoutes(
       }
       if (!pseudo) throw badRequest('Choisis un pseudo.', 'NAME_REQUIRED');
       must(validatePlayerPseudo(pseudo));
+      assertCleanText(contentFilter, pseudo, firstName, lastName);
       must(validatePlayerPassword(password));
 
       const hash = await hashPassword(password);

@@ -129,3 +129,18 @@ export function MatchJustFull({ onOtherMatches, onHome }: { onOtherMatches: () =
     </section>
   );
 }
+
+/** Lot B, phase 4 : le lien d'un match devenu inaccessible (joueur bloqué par l'organisateur, match annulé ou inconnu) — le message du
+    serveur (« Ce match n'est plus disponible. »), jamais un retour silencieux sur l'accueil. */
+export function MatchUnavailable({ message, onHome }: { message: string; onHome: () => void }) {
+  const t = useT();
+  return (
+    <section className="au-screen tj" id="s-match-indisponible">
+      <div className="tj-check tj-check--full" aria-hidden="true"><Icon id="i-x" /></div>
+      <h1 className="tj-h1">{t(message)}</h1>
+      <footer className="tj-foot">
+        <button type="button" className="mv-cta mb-tap" onClick={onHome}>{t('Retour à l’accueil')}</button>
+      </footer>
+    </section>
+  );
+}

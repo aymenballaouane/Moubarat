@@ -17,7 +17,9 @@ import { fromPgRange, toPgRange } from '../../lib/pgrange.js';
 import { decodeCursor, isoMicros, pageLimit, pageOf } from '../../lib/cursor.js';
 import { algiersDateOf, dayStartMs } from '../../lib/algiers.js';
 import { feedConditions, feedDayCounts, parseFeedFilters, type FeedQuery } from './feed.js';
+import { assertNotBlockedFrom, isBlockedBy, matchUnavailable } from '../blocks/routes.js';
 import { ApiError, badRequest, must, notFound } from '../../lib/http.js';
+import { assertCleanText } from '../../lib/content-filter.js';
 import { rowToBooking } from '../bookings/service.js';
 import { playerCancelSummary } from '../bookings/cascade.js';
 import { writeAudit } from '../../audit/log.js';
@@ -26,7 +28,11 @@ import {
   syncMatchLifecycle, userCommitments, withRosterCounts, describeConflict, assertPhoneVisible, knowsFreeMatches, assertVisibleToClient,
 } from './service.js';
 
-interface Deps { db: Db; guards: Guards; }
+interface Deps {
+  db: Db; guards: Guards;
+  /** Lot B, phase 4 : filtre des insultes (CONTENT_FILTER_ENABLED, lib/content-filter.ts). Absent = éteint. */
+  contentFilter?: boolean;
+}
 
 const SKILL_LEVELS = ['LOISIR', 'INTERMEDIAIRE', 'COMPETITION'] as const;
 const SPORTS = ['FOOTBALL', 'PADEL', 'BASKET'] as const;
@@ -85,7 +91,7 @@ function assertCanEditOwnMatch(row: { organizer_id: string; status: string }, us
   if (row.status === 'CANCELLED' || row.status === 'PLAYED') throw new ApiError(409, 'MATCH_NOT_OPEN', 'Ce match est terminé ou annulé.');
 }
 
-export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: Deps): Promise<void> {
+export async function registerMatchRoutes(app: FastifyInstance, { db, guards, contentFilter = false }: Deps): Promise<void> {
 
   /* Création — TOUJOURS depuis une réservation déjà posée (chemin B — le
      chemin A « réserver puis créer dans la foulée » s'obtient en enchaînant
@@ -109,6 +115,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     const visibility = b.visibility === 'PRIVATE' ? 'PRIVATE' : 'OPEN';
     /* « Un petit mot pour les joueurs » (lot 6) : facultatif, texte brut, 280 signes au plus ; vide = pas de mot. */
     const note = parseNote(b.note);
+    assertCleanText(contentFilter, note, typeof b.title === 'string' ? b.title : null);
     const now = Date.now();
 
     const created = await withCommittedPush(() => db.transaction().execute(async (trx) => {
@@ -219,6 +226,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     const cleanName = placeName.trim().replace(/\s+/g, ' ');
     const title = (typeof b.title === 'string' && b.title.trim() !== '' ? b.title.trim()
       : cleanName.length >= 3 ? cleanName : `${cleanName} ${format.toUpperCase()}`).slice(0, 40);
+    assertCleanText(contentFilter, placeName, placeArea, placeAddress, title, note);
     const now = Date.now();
 
     const result = createFreeMatch({
@@ -270,6 +278,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
       const found = await db.selectFrom('matches').selectAll().where('code', '=', code).executeTakeFirst();
       if (!found) throw notFound('Ce lien ne mène à aucun match.');
       assertVisibleToClient(found, req.headers);   // match libre : jamais à une ancienne app
+      await assertNotBlockedFrom(db, found, req.auth?.userId);   // lot B, phase 4 : « Ce match n'est plus disponible. »
       const synced = await syncMatchLifecycle(db, found, Date.now());
       // Lot B, phase 2 : « {prénom} t'invite à jouer » — le PRÉNOM de l'organisateur (profiles.first_name), son pseudo s'il n'en a pas.
       const organizer = await db.selectFrom('users').leftJoin('profiles', 'profiles.user_id', 'users.id')
@@ -297,6 +306,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
     { preHandler: (req) => guards.tryAuth(req) }, async (req, reply) => {
       const row = await loadMatch(db, req.params.id);
       assertVisibleToClient(row, req.headers);   // match libre : jamais à une ancienne app
+      await assertNotBlockedFrom(db, row, req.auth?.userId);   // lot B, phase 4
       if (row.visibility === 'PRIVATE') {
         const allowed = req.auth && (
           req.auth.userId === row.organizer_id
@@ -385,7 +395,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
   app.get<{ Querystring: FeedQuery & { limit?: string; cursor?: string } }>('/matches',
     { preHandler: (req) => guards.tryAuth(req) }, async (req, reply) => {
       const now = new Date();
-      const filters = { ...parseFeedFilters(req.query), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers) };
+      const filters = { ...parseFeedFilters(req.query), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers), ...(req.auth ? { viewerId: req.auth.userId } : {}) };
       const limit = pageLimit(req.query.limit, { def: 50, max: 100 });
       const cursor = decodeCursor(req.query.cursor, ['iso', 'uuid']);
       const conds = feedConditions(filters, now);
@@ -414,14 +424,14 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
 
   /* Décompte des matchs du fil PAR JOUR d'Alger (bandeau de jours de l'Explorer) : `from` (YYYY-MM-DD, défaut
      aujourd'hui), `days` (1 à 62 — le calendrier « Choisis un jour » —, défaut 7), `sport`, `venueId`. Jours sans match absents de `counts`. Public, comme le fil. */
-  app.get<{ Querystring: { sport?: string; venueId?: string; from?: string; days?: string } }>('/matches/day-counts', async (req, reply) => {
+  app.get<{ Querystring: { sport?: string; venueId?: string; from?: string; days?: string } }>('/matches/day-counts', { preHandler: (req) => guards.tryAuth(req) }, async (req, reply) => {
     const now = new Date();
     const { sport, venueId } = parseFeedFilters(req.query);
     const days = pageLimit(req.query.days, { def: 7, max: 62 });
     let fromStart: number;
     try { fromStart = dayStartMs(req.query.from ?? algiersDateOf(now.getTime())); }
     catch { throw badRequest('Paramètre from attendu au format YYYY-MM-DD.'); }
-    const counts = await feedDayCounts(db, { ...(sport ? { sport } : {}), ...(venueId ? { venueId } : {}), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers) }, fromStart, days, now);
+    const counts = await feedDayCounts(db, { ...(sport ? { sport } : {}), ...(venueId ? { venueId } : {}), includeFree: knowsFreeMatches(req.headers), hiddenFormats: hiddenFormats(req.headers), ...(req.auth ? { viewerId: req.auth.userId } : {}) }, fromStart, days, now);
     return reply.send({ from: algiersDateOf(fromStart), days, counts });
   });
 
@@ -480,6 +490,8 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
       // notifications/push.ts.
       await withCommittedPush(() => db.transaction().execute(async (trx) => {
         const row = await loadMatchForUpdate(trx, req.params.id);
+        // Lot B, phase 4 : un joueur bloqué par l'organisateur ne rejoint pas — même réponse que par le lien.
+        if (await isBlockedBy(trx, row.organizer_id, req.auth!.userId)) throw matchUnavailable();
         // Un match ISSU D'UN DÉFI (challenge_id non nul) a un effectif fermé :
         // les deux capitaines, inscrits d'office à l'acceptation — jamais un
         // tiers. Le core ne le vérifie pas lui-même (canJoinMatch ignore
@@ -555,6 +567,7 @@ export async function registerMatchRoutes(app: FastifyInstance, { db, guards }: 
   app.put<{ Params: { id: string }; Body: { note?: string | null } }>('/matches/:id/note',
     { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
       const note = parseNote((req.body ?? {}).note);
+      assertCleanText(contentFilter, note);
       await db.transaction().execute(async (trx) => {
         const row = await loadMatchForUpdate(trx, req.params.id);
         assertCanEditOwnMatch(row, req.auth!.userId);

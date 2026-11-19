@@ -6809,3 +6809,27 @@ Décision d'Aymen : le web et Android d'abord ; l'iPhone quand il aura la clé A
   notifications ; l'envoi est couvert par les tests (`web-push.test.ts` : abonnement, envoi, abonnement expiré, aiguillage) et la carte
   a été vue dans ses 4 variantes (FR/AR, sombre/clair). À tester sur téléphone dès que les clés VAPID de production sont posées.
 - **Textes arabes** : section « alertes » du pack ; 2 textes sans maquette ajoutés en provisoires.
+
+### Phase 4 — Bloquer un joueur, et le filtre des insultes (branche `lot-b/phase-4-bloquer`)
+
+- **Bloquer** (maquettes 3_Bloquer) : le bouton « … » du détail du match ouvre « Que veux-tu faire ? » — « Signaler ce match »,
+  « Signaler un joueur » (le signalement existant, inchangé) et « Bloquer un joueur » → « Qui veux-tu bloquer ? » → « Bloquer {nom} ? ».
+  Serveur : migration 0054 (`user_blocks`, une ligne par paire, retour arrière testé), `modules/blocks` (`GET`/`POST /me/blocks`,
+  `DELETE /me/blocks/:userId`). Effets, **dans les deux sens** : le fil des matchs (et ses compteurs par jour) ne montre plus les matchs
+  organisés par l'autre ; rejoindre, ouvrir le lien ou le détail d'un match de quelqu'un qui m'a bloqué → 404 `MATCH_UNAVAILABLE`
+  « Ce match n'est plus disponible. » (même réponse qu'un match inconnu : le bloqué n'apprend pas qu'il est bloqué). **Personne n'est
+  prévenu**, rien n'est retiré : un joueur déjà inscrit garde sa place (le retirer reste l'outil de l'organisateur). Lever un blocage :
+  Profil › Confidentialité › Joueurs bloqués. Le lien d'un match devenu inaccessible mène à un écran « Ce match n'est plus disponible. »
+  au lieu d'un retour silencieux à l'accueil.
+- **Filtre des insultes** (demande d'Aymen : « côté serveur… montre-moi la liste avant de l'activer ») : `lib/content-filter.ts`,
+  **éteint par défaut** (`CONTENT_FILTER_ENABLED=true` pour l'allumer). Vérifie pseudo, prénom, nom, nom/lieu/adresse/mot d'un match,
+  nom d'équipe ; refus `400 CONTENT_REFUSED`. Mot ENTIER seulement (jamais un morceau : Concorde, couscous, كسكس, Nike passent),
+  accents, chiffres déguisés, lettres répétées ou espacées, arabe normalisé. Liste courte et sans mot ambigu, à relire :
+  `docs/FILTRE-INSULTES.md` (5 points à trancher). Pas appliqué aux textes du centre ni au motif d'un signalement.
+- **CGU** : l'article 9 interdit le harcèlement mais ne dit pas en toutes lettres « tolérance zéro » pour les contenus choquants, ni
+  signalement/blocage — ce qu'Apple (règle 1.2) et Google demandent. Texte légal NON modifié ; proposition de clause pour l'avocat :
+  `docs/PROPOSITION-CGU-CONTENUS.md`.
+- **Limite connue (antérieure au lot)** : les messages d'erreur du serveur restent en français quand l'app est en arabe (l'app affiche
+  le message tel que le serveur l'envoie). Le refus du filtre et « Ce match n'est plus disponible. » ont leur traduction dans fr-ar.json,
+  utilisée là où l'écran passe par `t()`.
+- **Textes arabes** : section « bloquer » du pack ; textes sans maquette en provisoires (à relire par un arabophone).

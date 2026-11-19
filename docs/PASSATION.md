@@ -961,6 +961,14 @@ contrainte `matches_place_position`). Additive, sans coupure. Retour arrière à
 - **Android** : nouvelle version Play Store nécessaire pour les alertes (délégation des notifications) — configuration prête dans
   `apps/android/twa-manifest.json` (1.0.5, code 7), à construire avec la clé de signature (`apps/android/README.md`).
 
+### 4.24 Lot B : bloquer un joueur et filtre des insultes (migration 0054, 19/11/2026)
+
+- **Migration 0054** (`user_blocks`). Additive. Retour arrière : `migrations/retour/0054_user_blocks.sql` (supprime les blocages).
+  Ordre complet des retours du lot : 0054, 0053, 0052, 0051, 0050, 0049, 0048, 0047.
+- **`CONTENT_FILTER_ENABLED`** : seule la valeur exacte `true` allume le filtre des insultes (`apps/api/src/lib/content-filter.ts`).
+  Absente = éteint (défaut voulu : Aymen doit d'abord relire la liste, `docs/FILTRE-INSULTES.md`). L'allumer ou l'éteindre ne
+  touche aucune donnée ; seuls les textes écrits APRÈS l'activation sont vérifiés (un pseudo déjà en base n'est pas renommé).
+
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 
 Chaque point ci-dessous a été soit vérifié (test automatisé, ou vérification manuelle décrite),

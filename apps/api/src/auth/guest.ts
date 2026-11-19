@@ -5,6 +5,7 @@ import type { Db } from '../db/client.js';
 import type { Guards } from './guards.js';
 import { hashPassword } from '../lib/crypto.js';
 import { ApiError, badRequest, must } from '../lib/http.js';
+import { assertCleanText } from '../lib/content-filter.js';
 import { isNameTakenViolation } from '../lib/display-name.js';
 import { recordAgeConsent } from '../modules/legal/service.js';
 
@@ -45,8 +46,8 @@ export function acceptedHint(base: string, hint: unknown): string | null {
   return /^[a-z]\d{2}$/.test(hint.slice(base.length + 1)) ? hint : null;
 }
 
-export async function registerGuestRoutes(app: FastifyInstance, deps: { db: Db; guards: Guards }): Promise<void> {
-  const { db, guards } = deps;
+export async function registerGuestRoutes(app: FastifyInstance, deps: { db: Db; guards: Guards; contentFilter?: boolean }): Promise<void> {
+  const { db, guards, contentFilter = false } = deps;
 
   app.post<{ Body: { firstName?: unknown; pseudo?: unknown; ageConfirmed?: unknown; phoneVisible?: unknown; promoOptIn?: unknown; sport?: unknown; city?: unknown } }>(
     '/me/guest-setup', { preHandler: (req) => guards.requireAuth(req) }, async (req, reply) => {
@@ -54,6 +55,7 @@ export async function registerGuestRoutes(app: FastifyInstance, deps: { db: Db; 
       if (!req.auth!.needsAccessSetup) throw new ApiError(409, 'ACCESS_ALREADY_SET', 'Ton compte est déjà prêt.');
       const firstName = cleanFirstName(req.body?.firstName);
       if (!firstName) throw badRequest('Indique ton prénom (2 à 30 lettres).', 'FIRST_NAME_INVALID');
+      assertCleanText(contentFilter, firstName, typeof req.body?.pseudo === 'string' ? req.body.pseudo : null);
       if (req.body?.ageConfirmed !== true) throw badRequest('Confirme que tu as 18 ans ou plus.', 'AGE_CONFIRMATION_REQUIRED');
       if (req.body?.phoneVisible !== true) throw badRequest('L’accord « numéro visible » est obligatoire pour continuer.', 'PHONE_VISIBLE_REQUIRED');
       const sport = typeof req.body?.sport === 'string' && (SPORTS as readonly string[]).includes(req.body.sport) ? (req.body.sport as (typeof SPORTS)[number]) : null;

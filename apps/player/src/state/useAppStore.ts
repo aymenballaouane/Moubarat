@@ -929,6 +929,18 @@ export function useAppStore() {
       } catch { return []; }
     },
 
+    /* --- Lot B, phase 4 : bloquer un joueur --- */
+    blockPlayer: async (userId: string): Promise<ActionResult> => {
+      try { await apiFetch('/me/blocks', { method: 'POST', token, body: { userId } }); return { ok: true }; }
+      catch (e) { return actionResultFromError(e); }
+    },
+    unblockPlayer: async (userId: string): Promise<ActionResult> => {
+      try { await apiFetch(`/me/blocks/${encodeURIComponent(userId)}`, { method: 'DELETE', token }); return { ok: true }; }
+      catch (e) { return actionResultFromError(e); }
+    },
+    loadBlocked: async (): Promise<{ userId: string; name: string }[]> => {
+      try { return (await apiFetch<{ blocked: { userId: string; name: string }[] }>('/me/blocks', { token })).blocked; } catch { return []; }
+    },
     /** Lot B, phase 2 : « Choisir un mot de passe » (facultatif) pour un compte d'invité qui n'en a pas — POST /me/password/initial. */
     setInitialPassword: async (password: string): Promise<ActionResult> => {
       try { await apiFetch('/me/password/initial', { method: 'POST', token, body: { password } }); return { ok: true }; }

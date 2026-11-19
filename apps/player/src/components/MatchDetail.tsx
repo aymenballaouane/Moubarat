@@ -9,7 +9,7 @@ import { MatchHead } from './MatchHead.js';
 import { AlertsCard } from './AlertsCard.js';
 import { MatchPitch } from './MatchPitch.js';
 import { MatchConfirmSheet } from './MatchSheets.js';
-import { ReportSheet, type ReportTarget } from './ReportSheet.js';
+import { MatchMoreSheet } from './MatchMoreSheet.js';
 import { hhmm, epochMinutesOfDay, epochDayLabel } from '../lib/format.js';
 import { useLang, useT, useTn } from '../lib/i18n.js';
 import { reportRefusal } from '../lib/pasPossible.js';
@@ -247,14 +247,10 @@ export function MatchDetail({ match, players, onExit, store }: MatchDetailProps)
       )}
 
       {sheet === 'report' ? (
-        <ReportSheet
-          targets={[
-            { type: 'MATCH', id: match.id, label: t('Ce match') } satisfies ReportTarget,
-            ...active.filter((p) => p.userId !== meId).map((p) => ({ type: 'PLAYER' as const, id: p.userId, label: nameOf(p.userId) })),
-          ]}
-          send={(target, reason, note) => store.sendReport(target, reason, note)}
-          onClose={() => setSheet(null)}
-          onSent={(duplicate) => { setSheet(null); toast.show(duplicate ? t('Tu as déjà signalé ça : le support s’en occupe.') : t('Merci, c’est transmis au support Moubarat.')); }}
+        <MatchMoreSheet
+          matchId={match.id} store={store}
+          players={active.filter((p) => p.userId !== meId).map((p) => ({ userId: p.userId, name: nameOf(p.userId) }))}
+          onClose={() => setSheet(null)} onToast={(m) => toast.show(m)}
         />
       ) : null}
 

@@ -36,6 +36,8 @@ export interface Env {
   pushProvider: 'apns' | null;
   /** Lot B, phase 3 : clés VAPID des alertes web (WEB_PUSH_PUBLIC_KEY / WEB_PUSH_PRIVATE_KEY / WEB_PUSH_SUBJECT), `null` = coupées. */
   webPush: { publicKey: string; privateKey: string; subject: string } | null;
+  /** Lot B, phase 4 : filtre des insultes sur les textes écrits par les joueurs. Seule la chaîne exacte `true` l'allume (défaut : éteint, docs/FILTRE-INSULTES.md). */
+  contentFilterEnabled: boolean;
   /** Configuration APNs complète — `null` tant qu'une des cinq variables
       manque, auquel cas server.ts se replie sur NullPushProvider avec un
       avertissement au démarrage. La clé privée (.p8, PEM) vient UNIQUEMENT
@@ -210,6 +212,7 @@ export function readEnv(overrides: Partial<Env> = {}): Env {
       const subject = process.env.WEB_PUSH_SUBJECT?.trim();
       return publicKey && privateKey && subject ? { publicKey, privateKey, subject } : null;
     })(),
+    contentFilterEnabled: process.env.CONTENT_FILTER_ENABLED === 'true',
     apns: (() => {
       const keyId = process.env.APNS_KEY_ID;
       const teamId = process.env.APNS_TEAM_ID;

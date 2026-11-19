@@ -11,6 +11,7 @@ import { makePlatformGuards } from './auth/platform-guards.js';
 import { registerAuthRoutes } from './auth/routes.js';
 import { registerGuestRoutes } from './auth/guest.js';
 import { registerOgRoutes } from './modules/og/routes.js';
+import { registerBlockRoutes } from './modules/blocks/routes.js';
 import { registerPlatformAuthRoutes } from './platform/auth/routes.js';
 import { registerPlatformAccountRoutes } from './platform/accounts/routes.js';
 import { registerPlatformVenueRoutes } from './platform/venues/routes.js';
@@ -277,8 +278,8 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
   // Phase adresses (18/11/2026) : recherches d'adresses par joueur (le service OpenStreetMap public est gratuit mais limité).
   const placesLimiter = createSharedRateLimiter(db, { name: 'places', max: env.placesMaxPerHour, window: 'hour', log: limiterLog });
 
-  await registerAuthRoutes(app, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter });
-  await registerGuestRoutes(app, { db, guards });   // lot B, phase 2 : inscription courte d'un invité
+  await registerAuthRoutes(app, { db, guards, sms, otpIpLimiter, otpSendHourLimiter, otpSendDayLimiter, playerLoginIpLimiter, contentFilter: env.contentFilterEnabled });
+  await registerGuestRoutes(app, { db, guards, contentFilter: env.contentFilterEnabled });   // lot B, phase 2 : inscription courte d'un invité
   await registerPlatformAuthRoutes(app, { db, guards: platformGuards, loginIpLimiter });
   await registerPlatformAccountRoutes(app, { db, guards: platformGuards });
   await registerPlatformVenueRoutes(app, { db, guards: platformGuards });
@@ -303,13 +304,14 @@ export async function buildServer({ db, env, logger = true, smsProvider, pushPro
     },
   });
   // MS-011 (audit final, 12/11/2026) : équipes et défis servis seulement si la fonction est allumée (env.ts).
-  if (env.teamsChallengesEnabled) await registerTeamRoutes(app, { db, guards, inviteLimiter: teamInviteLimiter });
-  await registerMatchRoutes(app, { db, guards });
+  if (env.teamsChallengesEnabled) await registerTeamRoutes(app, { db, guards, inviteLimiter: teamInviteLimiter, contentFilter: env.contentFilterEnabled });
+  await registerMatchRoutes(app, { db, guards, contentFilter: env.contentFilterEnabled });
   await registerPlaceRoutes(app, { guards, baseUrl: env.placesSearchUrl, limiter: placesLimiter });
   await registerOgRoutes(app, { db });   // lot B, phase 2 : aperçu des liens de match (balises og:* et image)
+  await registerBlockRoutes(app, { db, guards });   // lot B, phase 4 : bloquer un joueur
   await registerNotificationRoutes(app, { db, guards });
   await registerPushRoutes(app, { db, guards, webPushPublicKey: env.webPush?.publicKey ?? null });
-  await registerAccountRoutes(app, { db, guards, nameLimiter: nameChangeLimiter });
+  await registerAccountRoutes(app, { db, guards, nameLimiter: nameChangeLimiter, contentFilter: env.contentFilterEnabled });
   await registerProfileRoutes(app, { db, guards });
   await registerAbsenceRoutes(app, { db, guards, platformGuards });
   await registerReportRoutes(app, { db, guards, platformGuards });

@@ -6,7 +6,7 @@ import { MatchHead } from './MatchHead.js';
 import { MatchPitch } from './MatchPitch.js';
 import { CancelReservationSheet } from './CancelReservationSheet.js';
 import { MatchConfirmSheet } from './MatchSheets.js';
-import { ReportSheet, type ReportTarget } from './ReportSheet.js';
+import { MatchMoreSheet } from './MatchMoreSheet.js';
 import { epochDayLabel, epochMinutesOfDay, hhmm } from '../lib/format.js';
 import { useLang, useT, useTn } from '../lib/i18n.js';
 import { useToast } from '../lib/useToast.js';
@@ -315,14 +315,10 @@ export function OrganizerMatchView({ match, players, onExit, store }: OrganizerM
       ) : null}
 
       {sheet?.kind === 'report' ? (
-        <ReportSheet
-          targets={[
-            { type: 'MATCH', id: match.id, label: t('Ce match') } satisfies ReportTarget,
-            ...rows.map((r) => ({ type: 'PLAYER' as const, id: r.userId, label: r.name })),
-          ]}
-          send={(target, reason, note) => store.sendReport(target, reason, note)}
-          onClose={() => setSheet(null)}
-          onSent={(duplicate) => { setSheet(null); toast.show(duplicate ? t('Tu as déjà signalé ça : le support s’en occupe.') : t('Merci, c’est transmis au support Moubarat.')); }}
+        <MatchMoreSheet
+          matchId={match.id} store={store}
+          players={rows.map((r) => ({ userId: r.userId, name: r.name }))}
+          onClose={() => setSheet(null)} onToast={(m) => toast.show(m)}
         />
       ) : null}
 

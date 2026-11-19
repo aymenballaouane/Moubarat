@@ -33,6 +33,26 @@ beforeAll(async () => {
 });
 afterAll(() => stack.teardown());
 
+describe('retour arrière de 0054 (joueurs bloqués)', () => {
+  it('refuse tant qu’un blocage existe ; défait la migration sinon ; le migrateur la réapplique', async () => {
+    await q('INSERT INTO user_blocks (blocker_id, blocked_id) VALUES ($1, $2)', [seed.users.sofiane, seed.users.karim]);
+    await expect(runRetour('0054_user_blocks.sql')).rejects.toThrow(/0054 refusé/);
+    await q('DELETE FROM user_blocks');
+    await runRetour('0054_user_blocks.sql');
+    expect((await q<{ n: number }>("SELECT count(*)::int AS n FROM information_schema.tables WHERE table_name = 'user_blocks'"))[0]!.n).toBe(0);
+    expect(await migrate(stack.pool)).toEqual(['0054_user_blocks']);
+  });
+});
+
+describe('retour arrière de 0053 (alertes web)', () => {
+  it('retire les abonnements web et la plateforme web ; le migrateur la réapplique', async () => {
+    await runRetour('0053_web_push.sql');
+    const cols = (await q<{ c: string }>("SELECT column_name AS c FROM information_schema.columns WHERE table_name = 'push_devices'")).map((r) => r.c);
+    expect(cols).not.toContain('web_keys');
+    expect(await migrate(stack.pool)).toEqual(['0053_web_push']);
+  });
+});
+
 describe('retour arrière de 0052 (inscription courte d’un invité)', () => {
   it('refuse tant qu’un compte d’invité sans mot de passe existe ; défait la migration sinon ; le migrateur la réapplique', async () => {
     await q("UPDATE users SET access_setup_at = now() WHERE id = $1 AND password_hash IS NULL", [seed.users.sofiane]);

@@ -84,6 +84,8 @@ export type Route =
   /** Lot B, phase 2 : « C'est bon, tu joues ! » après l'inscription courte d'un invité ; « Le match vient d'être complet. » sinon. */
   | { name: 'match'; mode: 'joined'; matchId: string; code: string }
   | { name: 'match'; mode: 'full'; dayStart: number }
+  /** Lot B, phase 4 : le lien d'un match inaccessible (« Ce match n'est plus disponible. »). */
+  | { name: 'match'; mode: 'unavailable'; message: string }
   | { name: 'teams'; visitTeamId?: string }
   /** opponentId : pre-selectionne l'adversaire et ouvre le compose — cible
       du CTA « Defier cette equipe » de la page equipe visiteur. challengeId :
@@ -103,7 +105,9 @@ export type Route =
   | { name: 'notice' }
   /** Lot 11 — sous Profil : Réglages des notifications (trois interrupteurs). */
   | { name: 'notif-settings' }
-  | { name: 'accords' };
+  | { name: 'accords' }
+  /** Lot B, phase 4 : Profil › Confidentialité › Joueurs bloqués. */
+  | { name: 'blocked' };
 
 export const HOME: Route = { name: 'tab', tab: 'home' };
 
