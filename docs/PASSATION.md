@@ -983,6 +983,18 @@ contrainte `matches_place_position`). Additive, sans coupure. Retour arrière à
   limitée au site). **Ne pas les poser** sans décision d'Aymen : la décision du 19/11/2026 est de rester sur OpenStreetMap. Sans elles,
   rien n'est appelé chez Google.
 
+### 4.26 Lot B : la carte Moubarat (MapLibre + OpenFreeMap, 19/11/2026)
+
+- **Aucune clé, aucun compte, aucun coût.** Domaines appelés par l'app joueur sur l'écran « Créer un match » : `tiles.openfreemap.org`
+  (tuiles vectorielles et polices des noms). Si une politique de sécurité de contenu (CSP) est ajoutée un jour, l'autoriser en
+  `connect-src` et `worker-src blob:` (MapLibre dessine dans des tâches de fond).
+- **Variables (facultatives, app joueur, au moment du build)** : `VITE_MAP_VECTOR_URL` (TileJSON des tuiles, défaut
+  `https://tiles.openfreemap.org/planet`), `VITE_MAP_GLYPHS_URL` (polices, défaut OpenFreeMap). À poser seulement pour héberger nos propres
+  tuiles de l'Algérie (par exemple un fichier PMTiles servi par notre CDN) — à trancher par les développeurs si OpenFreeMap devient lent.
+- **Mention obligatoire** : « OpenFreeMap © OpenMapTiles · © OpenStreetMap », en bas à droite de la carte — ne jamais la masquer.
+- Leaflet reste le dernier secours (`VITE_MAP_TILES_URL`, inchangé) ; sans lui, en production, la carte dit « Carte indisponible » si
+  MapLibre ne peut pas fonctionner (navigateur sans WebGL).
+
 ## 5. État exact, point par point (audit du 04-05/09/2026)
 
 Chaque point ci-dessous a été soit vérifié (test automatisé, ou vérification manuelle décrite),

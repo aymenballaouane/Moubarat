@@ -42,3 +42,14 @@ body[data-theme="clair"] .mm-mk__tile--community { background: #FFF6DA; color: #
   content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%);
   border-radius: 999px; background: #4DA3FF; border: 2.5px solid #FFFFFF; box-sizing: border-box;
 }
+
+/* Lot B, phase 7 — la carte Moubarat (MapLibre, VectorMap.tsx) : la mention obligatoire au-dessus du bord du tiroir, comme Leaflet. */
+.mm .maplibregl-ctrl-bottom-right, .mm .maplibregl-ctrl-bottom-left { bottom: 26px; }
+.mm .maplibregl-ctrl-attrib { font-size: 10px; background: rgba(10,10,15,.62); color: #C5CCD6; border-radius: 6px 0 0 0; }
+.mm .maplibregl-ctrl-attrib a { color: #9CC3FF; }
+body[data-theme="clair"] .mm .maplibregl-ctrl-attrib { background: rgba(255,255,255,.8); color: #374151; }
+body[data-theme="clair"] .mm .maplibregl-ctrl-attrib a { color: #0B57D0; }
+.mm .maplibregl-canvas:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+/* La feuille de MapLibre pose `.maplibregl-map { position: relative }`, chargée APRÈS celle-ci : sans cette règle plus précise, le cadre
+   de la carte perd sa hauteur (carte vide). */
+.mm.maplibregl-map { position: absolute; inset: 0; }

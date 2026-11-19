@@ -6875,3 +6875,25 @@ avec l'adresse écrite ET l'épingle sur la carte. Maquette : https://claude.ai/
   doublon → « C'est lui », publication, détail, signalement, vérification dans la console ; aucune erreur console ; données de test
   nettoyées. Captures : `.claude/captures/lot-b/phase-6`.
 - **Textes arabes** : 20 textes et 1 pluriel (« {n} matchs joués ici ») ajoutés en PROVISOIRE, à relire par un arabophone.
+
+### Phase 7 — La carte Moubarat (branche `lot-b/phase-7-carte`, 19/11/2026, aperçu validé par Aymen : « branche-la »)
+
+- **Pourquoi** : on garde OpenStreetMap (phase 6) mais leurs images de carte sont interdites en production (décision du 18/11) — sans fond
+  de carte autorisé, « Où tu joues ? » afficherait « Carte indisponible ». La carte devient une carte VECTORIELLE dessinée par MapLibre
+  (bibliothèque libre) avec un style à nous (`components/map/moubaratStyle.ts`) : nuit (fond #0E1319 comme l'app) et clair (crème
+  #F4F3EF), routes discrètes, mer bleue, **terrains de sport en vert**, le rouge réservé aux centres et aux actions.
+- **Données de la carte** : OpenFreeMap (tuiles du schéma OpenMapTiles, issues d'OpenStreetMap) — gratuit, sans compte ni clé, usage
+  commercial autorisé, mention « OpenFreeMap © OpenMapTiles · © OpenStreetMap » obligatoire (en bas à droite). Aucune garantie de service :
+  si un jour c'est trop lent, on héberge notre propre fichier de l'Algérie (`VITE_MAP_VECTOR_URL` / `VITE_MAP_GLYPHS_URL`, sans code).
+- **Ordre des cartes** (`MatchMap.tsx`, toujours le seul composant utilisé par les écrans) : Google si une clé est posée (en réserve,
+  éteint) → carte Moubarat → Leaflet en dernier secours. La carte Moubarat se charge à la demande (fichier à part de 220 Ko compressés,
+  seulement à l'ouverture de « Créer un match ») ; si ce fichier ne se charge pas (hors ligne, nouvelle version), l'écran ne plante pas.
+- **Arabe** : noms de lieux en arabe avec le module de MapLibre pour l'écriture de droite à gauche (`@mapbox/mapbox-gl-rtl-text` 0.2.3,
+  servi par l'app elle-même ; la 0.3.0 n'est pas chargée par MapLibre 4). Sans lui, les lettres n'étaient pas reliées.
+- **Rien ne change pour le joueur** : mêmes épingles (logo des centres, rond or des terrains de la communauté, point bleu), mêmes gestes
+  (glisser = poser son terrain, toucher un centre = son parcours), rotation et inclinaison désactivées.
+- **Trouvé et corrigé en vérifiant** : la feuille de style de MapLibre écrasait la position du cadre de la carte (carte vide) —
+  `.mm.maplibregl-map` ; et un fichier de carte introuvable faisait planter tout l'écran — garde `LoadGuard`.
+- **Vérifié en vrai** (app 5178, FR/AR × sombre/clair) : la carte Moubarat se dessine, un glissement passe en mode épingle et trouve
+  l'adresse, le toucher d'un centre ouvre son parcours, aucune erreur. Version de production construite. Captures :
+  `.claude/captures/lot-b/phase-7` et l'aperçu `.claude/captures/lot-b/carte-moubarat`.
