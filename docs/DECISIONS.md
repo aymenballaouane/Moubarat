@@ -6967,3 +6967,19 @@ charge**, les réglages Render/Vercel et la préproduction restent aux développ
   confirmation explicite), essayé sur une API locale (10 utilisateurs simultanés : 158 requêtes/s, médiane 55 ms, 0 erreur) —
   la vraie mesure est à faire sur la préproduction et à reporter dans §4.29.
 
+## Préparation des stores : Android 1.0.5, iPhone 1.0.2 et correctif de la carte (20/11/2026, demande d'Aymen)
+
+Demande d'Aymen : tout préparer pour qu'il n'ait plus que les derniers gestes manuels dans les consoles. **Rien n'a été envoyé aux stores**
+(l'envoi d'une build iPhone vers TestFlight passe par l'étiquette `ios-v…`, laissée à son feu vert). Marche à suivre :
+`docs/STORES-MARCHE-A-SUIVRE.md`.
+
+- **MapLibre 4.7.1 → 6.16.0** : faille critique dans 4.7.1 (GHSA-jrc7-96c5-q579, aucune 4.x corrigée) — trouvée parce que la vérification
+  GitHub échouait à `pnpm audit` depuis la phase 7. Les machines de GitHub démarrent de nouveau (bloquées le 17/11). Adaptations : import
+  `* as maplibregl` (plus d'export par défaut), adresse de la tâche de fond donnée explicitement, fichier publié en `.js` pour l'app
+  iPhone (PASSATION §4.26). Module arabe 0.2.3 gardé : les noms arabes restent reliés. Vérifié : carte en français clair et sombre et en
+  arabe, en développement et dans la version de production servie localement, aucune erreur ; app joueur 363 tests verts.
+- **Android 1.0.5** : projet généré mis à jour à la main (notifications, permission Android 13, petite icône blanche) — `apps/android/README.md`.
+  Compilé sans signature ; la signature et l'essai sur téléphone restent à faire.
+- **iPhone 1.0.2** (`MARKETING_VERSION`) : la 1.0.1 (build 8) est dans TestFlight ; la 1.0.2 embarquera le match libre et le lot B.
+  `APP_VERSION` (version du code, 1.1.0) inchangé : aucun changement d'API à imposer. Rappel : la clause des CGU sur les contenus
+  (`docs/PROPOSITION-CGU-CONTENUS.md`) attend l'avocat avant la soumission à Apple.

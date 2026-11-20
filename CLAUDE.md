@@ -419,6 +419,8 @@ Monorepo pnpm workspaces :
   (iPhone 1.0/1.0.1, Android 1.0.4) ne reçoivent ni match libre ni 9v9 : un client à jour se déclare par l'en-tête
   `X-Moubarat-Features` (`apps/api/src/lib/client-features.ts`, envoyé par l'app joueur, le CRM et la console). Note de version FR/AR :
   `docs/NOTE-DE-VERSION-match-libre.md`. Mission autopilote de mise en ligne : `JOURNAL_AUTOPILOTE.md`. Détail : `docs/DECISIONS.md`.
+- **Stores préparés (20/11/2026, branche `stores/v1.0.5`)** : MapLibre 4.7.1 → 6.16.0 (faille critique, cause de l'échec de la vérification GitHub) ;
+  Android 1.0.5 (notifications) compilé sans signature ; iPhone 1.0.2. Rien envoyé aux stores — marche à suivre : `docs/STORES-MARCHE-A-SUIVRE.md`.
 - **Suite** : paliers B/C du cadrage (scalabilité : état des lieux et périmètre à valider avec Aymen avant de
   coder, documentation d'exploitation dans `docs/PASSATION.md` pour les développeurs) ; puis mot de passe CRM en libre-service (en attente d'une clé Resend
   d'Aymen), notifications du personnel CRM, recherche/reçus/exports — ordre convenu avec Aymen,

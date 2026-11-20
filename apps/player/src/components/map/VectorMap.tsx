@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';   // MapLibre 6 : plus d'export par défaut (module ESM)
 import 'maplibre-gl/dist/maplibre-gl.css';
-// Module arabe 0.2.3 (licence BSD) : celui que documente MapLibre 4 — la 0.3.0 n'est pas chargée par ses tâches de fond. Servi comme fichier
+// MapLibre 6 charge sa tâche de fond d'un fichier séparé, à côté du sien : Vite regroupe la bibliothèque ailleurs, on lui donne donc
+// l'adresse exacte (servie par l'app elle-même, comme le module arabe).
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
+// Module arabe 0.2.3 (licence BSD) : choisi avec MapLibre 4, gardé avec MapLibre 6 (20/11/2026, correctif de sécurité) — la 0.3.0 n'est pas chargée par ses tâches de fond. Servi comme fichier
 // par Vite depuis l'app elle-même, jamais d'un autre site.
 import rtlPluginUrl from '@mapbox/mapbox-gl-rtl-text/mapbox-gl-rtl-text.min.js?url';
 import { moubaratStyle, type MapTheme } from './moubaratStyle.js';
@@ -13,6 +16,8 @@ import '../../styles/match-map.css';
    (map/types.ts). Chargé à la demande (MatchMap.tsx, React.lazy) : la bibliothèque ne pèse pas sur l'ouverture de l'app.
    Échec (navigateur sans WebGL, tuiles injoignables 12 s) : `onFail`, MatchMap passe à la carte de secours. Noms arabes : module RTL
    embarqué dans l'app (jamais chargé d'un autre site), sans quoi les lettres ne sont pas reliées. */
+
+maplibregl.setWorkerUrl(workerUrl);
 
 let rtlRequested = false;
 function ensureRtlPlugin() {

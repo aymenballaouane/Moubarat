@@ -1001,6 +1001,11 @@ contrainte `matches_place_position`). Additive, sans coupure. Retour arrière à
   `https://tiles.openfreemap.org/planet`), `VITE_MAP_GLYPHS_URL` (polices, défaut OpenFreeMap). À poser seulement pour héberger nos propres
   tuiles de l'Algérie (par exemple un fichier PMTiles servi par notre CDN) — à trancher par les développeurs si OpenFreeMap devient lent.
 - **Mention obligatoire** : « OpenFreeMap © OpenMapTiles · © OpenStreetMap », en bas à droite de la carte — ne jamais la masquer.
+- **MapLibre 6.16.0 depuis le 20/11/2026** (4.7.1 avait une faille critique, GHSA-jrc7-96c5-q579, corrigée en 6.4.1 ; elle faisait échouer
+  `pnpm audit` de la vérification GitHub). La version 6 charge sa tâche de fond d'un fichier séparé : `VectorMap.tsx` lui donne son adresse
+  (`setWorkerUrl`, fichier servi par l'app elle-même) et `vite.config.ts` le publie en `.js` au lieu de `.mjs` (l'app iPhone, Capacitor,
+  ne connaît pas le type `.mjs` et le servirait en `application/octet-stream`, refusé pour une tâche de fond). Ne pas retirer ces deux
+  réglages lors d'une prochaine montée de version sans revérifier la carte dans l'app iPhone.
 - Leaflet reste le dernier secours (`VITE_MAP_TILES_URL`, inchangé) ; sans lui, en production, la carte dit « Carte indisponible » si
   MapLibre ne peut pas fonctionner (navigateur sans WebGL).
 

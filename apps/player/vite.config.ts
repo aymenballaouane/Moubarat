@@ -21,4 +21,14 @@ const withoutRemoteFonts = (): Plugin => ({
 export default defineConfig({
   plugins: [withoutRemoteFonts(), react()],
   server: { port: 5175, host: true, fs: { allow: ['../..'] } },
+  /* MapLibre 6 (20/11/2026) : sa tâche de fond est un fichier « .mjs » (components/map/VectorMap.tsx). L'app iPhone (Capacitor) sert les
+     fichiers avec un type déduit de l'extension et ne connaît pas « .mjs » (application/octet-stream → tâche de fond refusée) : on le
+     publie en « .js ». */
+  build: {
+    rollupOptions: {
+      output: {
+        assetFileNames: (asset) => ((asset.names?.[0] ?? '').endsWith('.mjs') ? 'assets/[name]-[hash].js' : 'assets/[name]-[hash][extname]'),
+      },
+    },
+  },
 });

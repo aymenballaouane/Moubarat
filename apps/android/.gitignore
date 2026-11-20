@@ -6,3 +6,4 @@ app/
 app-release-*.aab
 app-release-*.apk
 *.idsig
+sauvegarde-*/

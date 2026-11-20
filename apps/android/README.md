@@ -35,3 +35,23 @@ Le projet Android (`app/`, généré, **non versionné**) a été corrigé à la
 6. **Nom affiché « Moubarat Sport »** (`name` et `launcherName` de `twa-manifest.json`, `app/build.gradle`) : sous l’icône du lanceur Android le nom peut être tronqué (> 12 signes) — à vérifier sur un téléphone ; sinon remettre `launcherName` à « Moubarat » (le nom de la fiche Play n’en dépend pas).
 
 Méthode pour obtenir une trace sans câble USB : un écran d'erreur dans l'app elle-même (capture d'écran du testeur) — ni Android vitals ni le rapport de pré-lancement ne répondent sur une piste de test interne avec un seul testeur.
+
+## Version 1.0.5 (20/11/2026) : délégation des notifications — à refaire après chaque `bubblewrap init`/`update`
+
+Les alertes web (lot B, phase 3, `docs/PASSATION.md` §4.23) n'arrivent dans l'app Android que si elle délègue les notifications.
+`twa-manifest.json` (versionné) porte `enableNotifications: true`, version 1.0.5, code 7. Le projet généré (`app/`, non versionné) a été
+mis à jour **à la main**, sans `bubblewrap update` (qui aurait effacé les réglages ci-dessus) ; une copie de la 1.0.4 est gardée dans
+`sauvegarde-1.0.4/` (non versionnée). Ce qui a changé, à reproduire si le projet est régénéré :
+
+1. `app/build.gradle` : `versionCode 7`, `versionName "1.0.5"`, `enableNotifications: true` dans `twaManifest`.
+2. `app/src/main/AndroidManifest.xml` : `<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>` (Android 13+) ;
+   dans le service `.DelegationService`, la méta-donnée `android.support.customtabs.trusted.SMALL_ICON` = `@drawable/ic_notification_icon` ;
+   l'activité `com.google.androidbrowserhelper.trusted.NotificationPermissionRequestActivity` (c'est elle qui affiche la demande de permission).
+   Ce sont exactement les ajouts du modèle de Bubblewrap 1.27.0 quand les notifications sont activées.
+3. `app/src/main/res/drawable-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}/ic_notification_icon.png` (24 à 96 px) : le signe Moubarat **en blanc sur
+   fond transparent** (Android n'affiche que la silhouette d'une petite icône ; Bubblewrap aurait pris l'icône pleine, qui donne un carré
+   blanc).
+
+Vérifié le 20/11/2026 : `gradlew bundleRelease assembleRelease` (sans signature) réussit, et le manifeste fusionné contient la version 7,
+la permission, la petite icône et l'activité. **Pas encore essayé sur un vrai téléphone** : la signature (mot de passe de la clé) et le
+premier essai reviennent à la personne qui publie — `docs/STORES-MARCHE-A-SUIVRE.md`.
