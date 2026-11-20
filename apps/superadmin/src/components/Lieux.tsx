@@ -156,7 +156,7 @@ export function Lieux({ token }: { token: string }) {
               <input className="mb-field__control" maxLength={60} value={editing.form.area} onChange={(e) => setEditing({ ...editing, form: { ...editing.form, area: e.target.value } })} /></label>
             <label className="mb-field"><span className="mb-field__label">Adresse</span>
               <input className="mb-field__control" maxLength={120} value={editing.form.address} onChange={(e) => setEditing({ ...editing, form: { ...editing.form, address: e.target.value } })} /></label>
-            <PositionFields value={editing.form.pos} onChange={(pos) => setEditing({ ...editing, form: { ...editing.form, pos } })} />
+            <PositionFields source="osm" value={editing.form.pos} onChange={(pos) => setEditing({ ...editing, form: { ...editing.form, pos } })} />
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8 }}>
               <button type="submit" className="mb-btn mb-btn--sm" disabled={busy === 'save'}>{busy === 'save' ? '…' : 'Enregistrer'}</button>
               <button type="button" className="mb-btn mb-btn--sm mb-btn--secondary" onClick={() => setEditing(null)}>Annuler</button>

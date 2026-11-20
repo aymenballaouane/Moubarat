@@ -8,7 +8,17 @@ import { outsideAlgeria, parseCoordinates } from '../lib/coords.js';
 
 export interface PositionValue { position: string; lat: string; lng: string }
 
-export function PositionFields({ value, onChange }: { value: PositionValue; onChange: (next: PositionValue) => void }) {
+/* `source="osm"` (écran Lieux, 20/11/2026) : un lieu de la communauté ne se recopie jamais depuis Google (règle de l'écran,
+   docs/DECISIONS.md lot B phase 6) ; le libellé renvoie donc vers OpenStreetMap. Le collage reconnaît les mêmes formats. */
+export function PositionFields({ value, onChange, source = 'google' }: {
+  value: PositionValue; onChange: (next: PositionValue) => void; source?: 'google' | 'osm';
+}) {
+  const label = source === 'osm'
+    ? 'Position — colle « latitude, longitude » (OpenStreetMap, ou relevée sur place)'
+    : 'Position — colle « latitude, longitude » depuis Google Maps';
+  const formatHint = source === 'osm'
+    ? 'Format non reconnu — colle deux nombres « latitude, longitude ».'
+    : 'Format non reconnu — colle deux nombres « latitude, longitude » (ou un lien Google Maps).';
   const parsed = value.position.trim() ? parseCoordinates(value.position) : null;
   const latN = Number(value.lat), lngN = Number(value.lng);
   const outside = value.lat !== '' && value.lng !== '' && Number.isFinite(latN) && Number.isFinite(lngN)
@@ -22,13 +32,13 @@ export function PositionFields({ value, onChange }: { value: PositionValue; onCh
   return (
     <>
       <label className="mb-field" style={{ gridColumn: '1 / -1' }}>
-        <span className="mb-field__label">Position — colle « latitude, longitude » depuis Google Maps</span>
+        <span className="mb-field__label">{label}</span>
         <input className="mb-field__control" placeholder="36.7538, 3.0588" autoComplete="off" value={value.position}
           onChange={(e) => onPositionChange(e.target.value)} data-testid="centre-position" />
         {value.position.trim() ? (
           parsed
             ? <span className="sa-view-note" role="status">Latitude {parsed.lat} · Longitude {parsed.lng}</span>
-            : <span className="mb-field__error">Format non reconnu — colle deux nombres « latitude, longitude » (ou un lien Google Maps).</span>
+            : <span className="mb-field__error">{formatHint}</span>
         ) : null}
       </label>
       <label className="mb-field">
