@@ -13,8 +13,15 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { deflateSync, crc32 } from 'node:zlib';
 
-const [,, svgPath, outDir] = process.argv;
-if (!svgPath || !outDir) { console.error('usage: node scripts/pwa-icons.mjs <icon.svg> <outDir>'); process.exit(1); }
+// Option : --ios <fichier.png> écrit en plus l'icône de l'app iPhone (1024×1024,
+// RGB sans alpha), qui est aussi l'icône affichée sur l'App Store :
+//   node scripts/pwa-icons.mjs design/moubarat-icon.svg apps/player/public/icons \
+//     --ios apps/ios/ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
+const args = process.argv.slice(2);
+const iosIdx = args.indexOf('--ios');
+const iosPath = iosIdx >= 0 ? args.splice(iosIdx, 2)[1] : null;
+const [svgPath, outDir] = args;
+if (!svgPath || !outDir || (iosIdx >= 0 && !iosPath)) { console.error('usage: node scripts/pwa-icons.mjs <icon.svg> <outDir> [--ios <AppIcon.png>]'); process.exit(1); }
 
 const INK = [5, 5, 5];
 const SS = 4; // suréchantillonnage par axe
@@ -91,11 +98,17 @@ function chunk(type, data) {
   const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td) >>> 0);
   return Buffer.concat([len, td, crc]);
 }
-function encodePng(size, rgba) {
-  const stride = size * 4; const raw = Buffer.alloc((stride + 1) * size);
-  for (let y = 0; y < size; y++) { raw[y * (stride + 1)] = 0; rgba.copy(raw, y * (stride + 1) + 1, y * stride, (y + 1) * stride); }
+// noAlpha : PNG RGB sans canal alpha (type 2) — exigé par Apple pour l'icône 1024
+// de l'App Store (« ne doit pas contenir de canal alpha », même opaque).
+function encodePng(size, rgba, noAlpha = false) {
+  const bpp = noAlpha ? 3 : 4;
+  const stride = size * bpp; const raw = Buffer.alloc((stride + 1) * size);
+  for (let y = 0; y < size; y++) {
+    raw[y * (stride + 1)] = 0;
+    for (let x = 0; x < size; x++) for (let c = 0; c < bpp; c++) raw[y * (stride + 1) + 1 + x * bpp + c] = rgba[(y * size + x) * 4 + c];
+  }
   const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(size, 0); ihdr.writeUInt32BE(size, 4);
-  ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+  ihdr[8] = 8; ihdr[9] = noAlpha ? 2 : 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0)),
@@ -108,4 +121,9 @@ for (const o of OUTPUTS) {
   const png = encodePng(o.size, render(svg, o.size, o.scale));
   writeFileSync(`${outDir}/${o.name}`, png);
   console.log(`${o.name}: ${o.size}×${o.size}, échelle ${o.scale}, ${png.length} octets`);
+}
+if (iosPath) {
+  const png = encodePng(1024, render(svg, 1024, 1), true);
+  writeFileSync(iosPath, png);
+  console.log(`${iosPath}: 1024×1024, RGB sans alpha, ${png.length} octets`);
 }
