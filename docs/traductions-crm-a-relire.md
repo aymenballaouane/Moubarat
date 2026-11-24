@@ -1,6 +1,6 @@
 # CRM Moubarat en arabe — traductions à faire relire
 
-*Document produit par `pnpm --filter @moubarat/crm traductions:relire` (ne pas modifier à la main : il est régénéré). 932 textes.*
+*Document produit par `pnpm --filter @moubarat/crm traductions:relire` (ne pas modifier à la main : il est régénéré). 935 textes.*
 
 Toutes les traductions arabes du CRM ont été rédigées par Claude (choix d’Aymen du 15/11/2026) : **aucune n’a été relue par un
 arabophone**. Elles sont affichées telles quelles aux postes réglés en arabe. Merci de les relire en pensant à un gérant ou un
@@ -189,6 +189,9 @@ Chacun revient dans de nombreux textes : une correction ici sera reportée parto
 | Rien à surveiller — journée saine. | لا شيء للمتابعة — يوم سليم. | |
 | Prochaines heures | الساعات القادمة | |
 | Plus rien au planning — journée terminée ou libre. | لا شيء آخر في جدول الحجوزات — يوم منتهٍ أو فارغ. | |
+| {n} autres créneaux | توقيتات أخرى (العدد: {n}) | |
+| À partir de {heure} | ابتداءً من {heure} | |
+| vs {jour} | مقارنة بـ {jour} | |
 | = {jour} | مثل {jour} | |
 | {n} DA | {n} دج | |
 | {n} pts | {n} نقطة | |
@@ -425,11 +428,11 @@ Chacun revient dans de nombreux textes : une correction ici sera reportée parto
 | DA | دج | |
 | CA · 7 jours (hebdo) | رقم الأعمال · 7 أيام (أسبوعي) | |
 | CA · 30 jours (mensuel) | رقم الأعمال · 30 يومًا (شهري) | |
+| Panier moyen · 7 j | متوسط السلة · 7 أيام | |
 | CA perdu annulations · 7 j | رقم الأعمال الضائع بسبب الإلغاءات · 7 أيام | |
 | CA perdu no-shows · 7 j | رقم الأعمال الضائع بسبب الغيابات · 7 أيام | |
 | Taux de no-show · 7 j | نسبة الغياب · 7 أيام | |
 | Taux de remplissage · 7 j | نسبة الإشغال · 7 أيام | |
-| Panier moyen · 7 j | متوسط السلة · 7 أيام | |
 | Tendance — CA encaissé · 14 derniers jours | المنحى — رقم الأعمال المحصَّل · آخر 14 يومًا | |
 | Remplissage par terrain — {jour}, sur les heures réelles | نسبة الإشغال حسب الملعب — {jour}، على أوقات العمل الفعلية | |
 | Chargement… | جارٍ التحميل… | |
