@@ -51,6 +51,12 @@ export function LoginScreen({ onLoggedIn }: LoginScreenProps) {
       <form className="cm-login__card" onSubmit={submit}>
         {/* P1-15 (lot A) : la langue se choisit dès la connexion (réglage du poste). */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}><LangToggle /></div>
+        {/* Design P3-21 (24/11/2026) : le signe « Rivalité » (design/moubarat-icon.svg, tracé repris à l'identique) — le camp
+            blanc suit la couleur du texte pour rester visible en mode clair, le camp rouge reste rouge marque. */}
+        <svg className="cm-login__mark" viewBox="0 0 256 256" aria-hidden="true">
+          <polygon points="30,40 118,40 82,128 118,216 30,216 66,128" fill="currentColor" />
+          <polygon points="226,40 138,40 174,128 138,216 226,216 190,128" fill="var(--primary)" />
+        </svg>
         <p className="cm-login__eyebrow">— MOUBARAT</p>
         <h1 className="cm-login__title">{t('Espace centre')}</h1>
         <label className="mb-field">

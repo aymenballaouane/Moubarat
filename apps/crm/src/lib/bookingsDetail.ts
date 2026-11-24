@@ -90,6 +90,14 @@ export function dayTitle(dateIso: string): string {
   return `${DAY_NAMES_SHORT[weekdayOf(dateIso)]}. ${d} ${MONTH_NAMES[m - 1]}`;
 }
 
+/** Design P3-20 (24/11/2026) : étiquette courte sous une barre de tendance — « Lun 23 » ; en arabe « 23/11 » (chiffres
+    0-9, sans nom de jour, trop long sous une barre). */
+export function dayShort(dateIso: string): string {
+  const [, m, d] = dateIso.split('-').map(Number) as [number, number, number];
+  if (getLang() === 'ar') return `${d}/${m}`;
+  return `${DAY_NAMES_SHORT[weekdayOf(dateIso)]} ${d}`;
+}
+
 /** P1-15 (CRM en arabe, lot C) : « الأربعاء 30 سبتمبر » (avec l'année si `withYear`) — Intl en UTC sur la date civile,
     mois du Maghreb (ar-DZ), chiffres 0-9. Le français garde son format écrit à la main ci-dessus. */
 export function arabicDate(dateIso: string, withYear: boolean): string {

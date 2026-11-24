@@ -55,12 +55,14 @@ function ClientCard({ c, open, onOpen }: { c: ApiClient; open: boolean; onOpen: 
         <b style={{ color: 'var(--text)' }}>{bidi(c.name)}</b>
         {pill ? <span className={`mb-status mb-status--${pill.variant}`}>{t(pill.label)}</span> : <span className="mb-status mb-status--open">{t('Nouveau')}</span>}
       </div>
-      {c.phone || c.kind === 'COUNTER' ? (
-        <div className="cm-note" style={{ margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          {c.phone ? <a href={`tel:${c.phone.replace(/\s/g, '')}`} style={{ color: 'var(--gold)' }} onClick={(e) => e.stopPropagation()}>{ltr(phoneDisplay(c.phone))}</a> : null}
-          {c.kind === 'COUNTER' ? <span className="cm-src" title={t('Sans compte Moubarat : ses réservations au comptoir et par téléphone, regroupées par numéro')}>{t('Comptoir · téléphone')}</span> : null}
-        </div>
-      ) : null}
+      {/* Design P3-16 (24/11/2026) : chaque carte dit d'où vient le client, comme le prototype — « App Moubarat » (compte
+          joueur, vert comme la puce Moubarat des réservations) ou « Comptoir · téléphone » (sans compte). */}
+      <div className="cm-note" style={{ margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {c.phone ? <a href={`tel:${c.phone.replace(/\s/g, '')}`} style={{ color: 'var(--gold)' }} onClick={(e) => e.stopPropagation()}>{ltr(phoneDisplay(c.phone))}</a> : null}
+        {c.kind === 'COUNTER'
+          ? <span className="cm-src" title={t('Sans compte Moubarat : ses réservations au comptoir et par téléphone, regroupées par numéro')}>{t('Comptoir · téléphone')}</span>
+          : <span className="cm-src ok">{t('App Moubarat')}</span>}
+      </div>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--text)' }}>
         {rel.visible ? rel.score : '—'}{' '}
         <i style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-4)', fontStyle: 'normal' }}>

@@ -822,7 +822,11 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
                   </select>
                   {/* Lecture seule (16/09/2026) : les formats se règlent avec leur prix,
                       dans la carte Tarifs — un format n'existe que s'il a un tarif. */}
-                  <span className="cf-fmt-ro" title={t('Formats et tarifs : carte Tarifs ci-dessous')}>{formatsLabel(f.formats, t)}</span>
+                  {/* Design P3-19 (24/11/2026) : formats en puces, centrées dans la ligne comme les listes voisines (lecture seule :
+                      ils se règlent dans la carte Tarifs). */}
+                  <span className="cf-fmt-ro" title={t('Formats et tarifs : carte Tarifs ci-dessous')}>
+                    {f.formats.length > 0 ? f.formats.map((fm) => <span key={fm} className="cm-src">{lf(fm)}</span>) : '—'}
+                  </span>
                   <select className="mb-field__control" aria-label={t('Couverture de {terrain}', { terrain: f.name })} value={f.indoor ? 'INDOOR' : 'OUTDOOR'} disabled={lockedFields} onChange={(e) => setIndoor(f.id, e.target.value === 'INDOOR')}>
                     <option value="OUTDOOR">{t('Extérieur')}</option><option value="INDOOR">{t('Intérieur')}</option>
                   </select>
@@ -901,11 +905,15 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
                   <div className="cf-group"><span className="fn">{f.name}</span><span className="m">{t(SPORT_LABELS[f.sport])} · {formatsLabel(f.formats, t)}</span></div>
                   {f.formatPrices.map((p) => {
                     const same = peers[p.format] ?? [];
+                    /* Design P3-19 (24/11/2026) : l'avertissement « même tarif » une seule fois par groupe — sur le premier format du
+                       groupe, qui nomme les autres — au lieu de le répéter sur chacun (Double ET Simple, sur chaque terrain). */
+                    const posOf = (fm: string) => f.formatPrices.findIndex((q) => q.format === fm);
+                    const warnHere = same.length > 0 && same.every((o) => posOf(o) > posOf(p.format));
                     return (
                       <div className="cf-fmt" key={p.format}>
                         <div className="cf-fmt__head">
                           <span className="cf-fmt__name">{lf(p.format)}</span>
-                          {same.length > 0 ? (
+                          {warnHere ? (
                             <span className="cf-warn" role="status" data-testid="tariff-identical">
                               {t('Même tarif que {formats} — jamais différencié, à régler si ce format doit coûter autre chose', { formats: same.map(lf).join(' · ') })}
                             </span>
@@ -964,7 +972,7 @@ export function Centre({ role, venueId, venueName, token, modulesCaisse, onToggl
                       />
                       <span className="cm-note">{t('DA / h')}</span>
                       <select
-                        className="mb-field__control" value={draft.copyFrom} aria-label={t('Bandes tarifaires du format à ajouter à {terrain}', { terrain: f.name })}
+                        className="mb-field__control cf-copy" value={draft.copyFrom} aria-label={t('Bandes tarifaires du format à ajouter à {terrain}', { terrain: f.name })}
                         onChange={(e) => setFmtAdd((m) => ({ ...m, [f.id]: { ...draft, copyFrom: e.target.value as MatchFormat | '' } }))}
                       >
                         {sourcesWithBands.map((fm) => <option key={fm} value={fm}>{t('Bandes : copier de {format}', { format: lf(fm) })}</option>)}

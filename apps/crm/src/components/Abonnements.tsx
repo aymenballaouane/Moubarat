@@ -194,7 +194,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
       <div className="cm-form">
         <label>
           <span>{t('Nom / entreprise')}</span>
-          <input className="mb-field__control" maxLength={24} style={{ minWidth: 150 }} value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="mb-field__control" maxLength={24} style={{ width: 180 }} value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <label>
           <span>{t('Jour')}</span>
@@ -225,7 +225,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
         <label>
           <span>{t('Prix / séance (DA)')}</span>
           <input
-            className="mb-field__control" inputMode="numeric" style={{ maxWidth: 110 }} value={price} placeholder="—"
+            className="mb-field__control" inputMode="numeric" style={{ width: 124 }} value={price} placeholder="—"
             aria-invalid={price !== '' && parsePrice(price) === null}
             onChange={(e) => { setPrice(e.target.value); setPriceTouched(true); }}
           />
@@ -275,7 +275,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
             </span>
             <span className="mb-status mb-status--open">{t('Actif')}</span>
             {priceEdit?.sub.id !== r.id ? (
-              <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setPriceEdit({ sub: r, draft: r.pricePerSessionDa !== null ? fmt(r.pricePerSessionDa) : '' })}>
+              <button type="button" className="mb-btn mb-btn--secondary mb-btn--sm" onClick={() => setPriceEdit({ sub: r, draft: r.pricePerSessionDa !== null ? fmt(r.pricePerSessionDa) : '' })}>
                 {r.pricePerSessionDa !== null ? t('Modifier le prix') : t('Fixer le prix')}
               </button>
             ) : null}

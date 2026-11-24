@@ -554,3 +554,27 @@ body.mb {
 :root[dir="rtl"] textarea, :root[dir="rtl"] input:not([type]), :root[dir="rtl"] input[type="text"], :root[dir="rtl"] input[type="search"] { unicode-bidi: plaintext; }
 /* Bouton de langue : la même forme que « Mode clair » ; le libellé arabe a sa propre police, sans capitales forcées. */
 .cm-lang { font-family: 'IBM Plex Sans Arabic', var(--font-body); }
+
+/* Design P3-14 (24/11/2026) : en-tête en pastilles (prototype : .mb-chip) — réglages, séparateur, compte, sortie. */
+.cm-right__sep { width: 1px; height: 22px; background: var(--line-strong); margin: 0 4px; }
+.cm-account { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Design P3-17 (24/11/2026) : Personnel — actions d'un membre sur UNE ligne, alignées à droite (plus de boutons empilés
+   de largeurs différentes). */
+.cm-table .cm-actions-row { flex-wrap: nowrap; justify-content: flex-end; }
+/* Design P3-19 (24/11/2026) : Centre — formats en puces centrées ; sélecteur « Bandes : copier de … » assez large pour
+   être lu en entier. */
+.cf-row .cf-fmt-ro { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.cf-row .cf-fmt-ro .cm-src { margin-top: 0; font-size: 10px; padding: 2px 7px; }
+.cf-row .mb-field__control.cf-copy { flex: 0 1 280px; max-width: 280px; }
+/* Design P3-20 (24/11/2026) : tendance lisible sans survol — montant au-dessus, jour dessous, aujourd'hui en or. */
+.cm-trend { height: auto; align-items: stretch; }
+.cm-trend__col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.cm-trend__col .bar { height: 68px; display: flex; align-items: flex-end; }
+.cm-trend__col .bar b { flex: 1; }
+.cm-trend__col .v, .cm-trend__col .d { font-family: var(--font-mono); font-size: 9px; letter-spacing: .02em; color: var(--text-4); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-trend__col .v { color: var(--text-3); }
+.cm-trend__col.today .bar b { background: linear-gradient(180deg, var(--gold), rgba(242, 183, 5, .3)); }
+.cm-trend__col.today .d { color: var(--gold); }
+/* Design P3-21 : signe « Rivalité » en tête de la carte de connexion. */
+.cm-login__mark { display: block; width: 44px; height: 44px; color: var(--text); margin-bottom: 10px; }
+.cm-table .cm-actions-row .mb-btn { white-space: nowrap; }

@@ -26,6 +26,8 @@ interface DashboardProps {
       réservations honorées non encaissées ») — bascule alors sur
       Réservations à la bonne date, sans fiche précise imposée. */
   onOpenReservation: (bookingId: string | null, date: string) => void;
+  /** Design P3-15 (24/11/2026) : nombre de lignes « À faire » d'AUJOURD'HUI — le compteur du menu (comme le prototype). */
+  onTodayActionsCount?: (n: number) => void;
 }
 
 interface ClientReliabilityApi { visible: boolean; score: number | null }
@@ -73,7 +75,7 @@ function Cmp({ c }: { c: KpiComparison | undefined }) {
   );
 }
 
-export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReservation }: DashboardProps) {
+export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReservation, onTodayActionsCount }: DashboardProps) {
   const setDay = onDayChange;
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
   const [hoursLabel, setHoursLabel] = useState('—');
@@ -219,6 +221,7 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
       ];
       if (mine !== requestSeq.current) return;   // les fiabilités des organisateurs ont pu arriver après un changement de jour
       setActions(nextActions);
+      if (day === todayAlgiers()) onTodayActionsCount?.(nextActions.length);
 
       setUpcoming(upcomingFromApi(rows, dayStart, now).map((u) => ({
         id: u.bookingId, time: hhmm(u.startMin), title: bidi(u.title),

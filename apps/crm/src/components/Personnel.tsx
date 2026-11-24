@@ -234,7 +234,7 @@ export function Personnel({ role, venueId, token, onToast }: PersonnelProps) {
             <tbody>
               {staff.map((s) => (
                 <tr key={s.accountId}>
-                  <td>{bidi(s.name)}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{bidi(s.name)}</td>
                   <td className="cm-mono">{s.email}</td>
                   <td>
                     {canManage ? (

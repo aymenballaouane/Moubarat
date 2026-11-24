@@ -37,7 +37,7 @@ type ViewId = 'dash' | 'plan' | 'resa' | 'subs' | 'stats' | 'clients' | 'teams' 
    de son écran côté API (la même, jamais une règle de plus) : un rôle ne voit que les écrans qu'il peut ouvrir. Staff, en
    lecture seule (choix d'Aymen), ne voit que le Planning. Équipes est retiré du menu : l'écran liste les équipes ayant joué
    un défi, fonction désactivée — il restait toujours vide. Le composant reste dans le code. */
-interface NavItem { id: ViewId; label: string; icon: string; badge?: number; needs: CenterAction }
+interface NavItem { id: ViewId; label: string; icon: string; badge?: number | string; needs: CenterAction }
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'dash', label: 'Dashboard', icon: 'i-home', needs: 'CREATE_BOOKING' },
@@ -154,8 +154,27 @@ export function App() {
   const [resaOpen, setResaOpen] = useState<{ date: string; bookingId: string | null; nonce: number } | null>(null);
   /* P1-6 : les écrans visibles pour ce rôle ; un écran hors de cette liste n'est jamais affiché (y compris par un lien d'un
      autre écran — ex. un Staff qui clique une réservation dans le Planning reste sur le Planning). */
-  const navItems = role ? navItemsFor(role, modulesCaisse) : [];
+  /* Design P3-15 (24/11/2026) : compteurs du menu, comme le prototype — Dashboard = lignes « À faire » du jour (remonté
+     par le Dashboard lui-même, jamais un second calcul), Caisse = « ! » tant que la caisse du jour n'est pas ouverte
+     (relu à chaque changement d'écran : ouvrir la caisse puis revenir fait disparaître le « ! »). */
+  const [dashCount, setDashCount] = useState<number | null>(null);
+  const [cashClosed, setCashClosed] = useState(false);
+  const navItems = (role ? navItemsFor(role, modulesCaisse) : []).map((item) => (
+    item.id === 'dash' && dashCount ? { ...item, badge: dashCount }
+      : item.id === 'caisse' && cashClosed ? { ...item, badge: '!' }
+        : item
+  ));
   const canOpen = (id: ViewId) => navItems.some((i) => i.id === id);
+  const venueIdForCash = venue?.id ?? null;
+  const cashBadgeOn = modulesCaisse && role !== null && canCenterAct(role, 'CASH_SESSION').ok;
+  useEffect(() => {
+    if (!token || !venueIdForCash || !cashBadgeOn) { setCashClosed(false); return; }
+    let cancelled = false;
+    apiFetch<{ session: unknown | null }>(`/venues/${venueIdForCash}/cash/sessions/current`, { token })
+      .then((r) => { if (!cancelled) setCashClosed(r.session === null); })
+      .catch(() => { if (!cancelled) setCashClosed(false); }); // en cas d'échec : pas de « ! » inventé
+    return () => { cancelled = true; };
+  }, [token, venueIdForCash, cashBadgeOn, view]);
   useEffect(() => {
     if (role && navItems.length > 0 && !canOpen(view)) setView(navItems[0]!.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -295,20 +314,23 @@ export function App() {
             <b>{venue.name}</b>
             <span>{[venue.wilaya, venue.address].filter((s) => s && s.trim().length > 0).join(' · ') || '—'}</span>
           </div>
+          {/* Design P3-14 (24/11/2026) : en pastilles, comme le prototype — trois réglages du poste (langue, thème, aide),
+              puis le compte connecté (pastille active, ouvre « Mon compte »), puis la sortie, à part. */}
           <div className="cm-right">
             {/* P1-15 (lot A) : FR / عربي — la langue de ce poste. */}
-            <LangToggle />
-            <button
-              type="button"
-              className="mb-btn mb-btn--ghost mb-btn--sm"
-              onClick={() => setTheme((th) => (th === 'dark' ? 'light' : 'dark'))}
-            >
+            <LangToggle className="mb-chip" />
+            <button type="button" className="mb-chip" onClick={() => setTheme((th) => (th === 'dark' ? 'light' : 'dark'))}>
               {theme === 'dark' ? t('Mode clair') : t('Mode sombre')}
             </button>
             {/* P1-16 (15/11/2026) : l'Aide porte aussi la liste de démarrage et les premiers pas — toujours présente. */}
-            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setHelpOpen(true)}>{t('Aide')}</button>
-            <i>{t('Connecté : {name}', { name: accountName ?? '' })}</i>
-            <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setAccountOpen(true)}>{t('Mon compte')}</button>
+            <button type="button" className="mb-chip" onClick={() => setHelpOpen(true)}>{t('Aide')}</button>
+            <span className="cm-right__sep" aria-hidden="true" />
+            <button
+              type="button" className="mb-chip mb-chip--on cm-account" onClick={() => setAccountOpen(true)}
+              title={t('Mon compte')} aria-label={`${t('Mon compte')} — ${t('Connecté : {name}', { name: accountName ?? '' })}`}
+            >
+              {accountName ?? t('Mon compte')}
+            </button>
             <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={logout}>{t('Déconnexion')}</button>
           </div>
         </div>
@@ -333,7 +355,7 @@ export function App() {
             {view === 'dash' ? (
               <Dashboard
                 role={role} venueId={venue.id} token={token} day={day} onDayChange={setDay}
-                onOpenReservation={openInReservations}
+                onOpenReservation={openInReservations} onTodayActionsCount={setDashCount}
               />
             ) : view === 'plan' ? (
               <Planning

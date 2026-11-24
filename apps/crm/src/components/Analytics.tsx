@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { dayLabel, dayTitle, shiftDate, todayAlgiers, firstOfMonthAlgiers, exportRangeTooLong } from '../lib/bookingsDetail.js';
+import { dayLabel, dayShort, dayTitle, shiftDate, todayAlgiers, firstOfMonthAlgiers, exportRangeTooLong } from '../lib/bookingsDetail.js';
 import {
   pctChange, noShowRatePct, panierMoyenDa, revenuePerOpenHourDa, type BookingCounts,
 } from '../lib/analyticsDetail.js';
@@ -235,14 +235,17 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
           })()}
 
           <p className="cm-sec">{t('Tendance — CA encaissé · 14 derniers jours')}</p>
+          {/* Design P3-20 (24/11/2026) : chaque barre dit son montant (au-dessus) et son jour (dessous) — plus besoin de
+              survoler pour lire la tendance. */}
           <div className="cm-trend">
             {overview.trend.map((p) => (
-              <b
-                key={p.date}
-                className={p.date === today ? 'today' : ''}
-                style={{ height: `${Math.max(4, Math.round((p.collectedDa / trendMax) * 100))}%` }}
-                data-v={`${dayLabel(p.date)} · ${da(p.collectedDa)}`}
-              />
+              <div className={`cm-trend__col${p.date === today ? ' today' : ''}`} key={p.date} title={`${dayLabel(p.date)} · ${da(p.collectedDa)}`}>
+                <span className="v">{fmt(p.collectedDa)}</span>
+                <span className="bar">
+                  <b style={{ height: `${Math.max(4, Math.round((p.collectedDa / trendMax) * 100))}%` }} />
+                </span>
+                <span className="d">{dayShort(p.date)}</span>
+              </div>
             ))}
           </div>
 
