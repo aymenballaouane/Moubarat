@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { canCenterAct, type CenterRole } from '@moubarat/core';
 import {
-  dayLabel, shiftDate, todayAlgiers, dayStartMs, weekdayOf,
+  dayLabel, dayTitle, shiftDate, todayAlgiers, dayStartMs, weekdayOf,
   type ApiBookingRow, type ApiSubscriptionOccurrence,
 } from '../lib/bookingsDetail.js';
 import { hoursFromApi, asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
@@ -234,7 +234,7 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
         <button className="nav" type="button" aria-label={t('Jour précédent')} onClick={() => setDay((d) => shiftDate(d, -1))}>
           <Icon id="i-back" />
         </button>
-        <b>{dayLabel(day)}</b>
+        <b>{dayTitle(day)}</b>
         <button className="nav" type="button" aria-label={t('Jour suivant')} onClick={() => setDay((d) => shiftDate(d, 1))}>
           <Icon id="i-arrow" />
         </button>

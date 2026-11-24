@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { dayLabel, shiftDate, todayAlgiers, firstOfMonthAlgiers, exportRangeTooLong } from '../lib/bookingsDetail.js';
+import { dayLabel, dayTitle, shiftDate, todayAlgiers, firstOfMonthAlgiers, exportRangeTooLong } from '../lib/bookingsDetail.js';
 import {
   pctChange, noShowRatePct, panierMoyenDa, revenuePerOpenHourDa, type BookingCounts,
 } from '../lib/analyticsDetail.js';
@@ -178,7 +178,7 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
       {tabs}
       <div className="cm-day">
         <button className="nav" type="button" aria-label={t('Jour précédent')} onClick={() => setDay((d) => shiftDate(d, -1))}>‹</button>
-        <b>{dayLabel(day)}</b>
+        <b>{dayTitle(day)}</b>
         <button className="nav" type="button" aria-label={t('Jour suivant')} onClick={() => setDay((d) => shiftDate(d, 1))}>›</button>
       </div>
 

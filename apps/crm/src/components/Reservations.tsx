@@ -4,7 +4,7 @@ import type { ReservationRow } from '../data/reservationsDemo.js';
 import { dateLabelLong, hitsCountLabel, searchHitsFromApi, type ApiBookingSearchHit, type SearchHit } from '../lib/searchDetail.js';
 import { Pill, STATUS_PILL } from './StatusPill.js';
 import {
-  dayLabel, shiftDate, todayAlgiers, dayStartMs,
+  dayLabel, dayTitle, shiftDate, todayAlgiers, dayStartMs,
   reservationRowsFromApi, summaryFromApi, subscriptionReservationRowsFromApi,
   type ApiBookingRow, type ApiSubscriptionOccurrence, type ReservationsSummaryTotals,
   type SubscriptionReservationRow,
@@ -673,7 +673,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
     <section className="cm-view on">
       <div className="cm-day">
         <button className="nav" type="button" aria-label={t('Jour précédent')} onClick={() => setDate((d) => shiftDate(d, -1))}>‹</button>
-        <b>{dayLabel(date)}</b>
+        <b>{dayTitle(date)}</b>
         <button className="nav" type="button" aria-label={t('Jour suivant')} onClick={() => setDate((d) => shiftDate(d, 1))}>›</button>
         {/* CRM-2 (27/09/2026) : « Aller à une date », même contrôle que le prototype gelé (barre du Planning, #pl-date) ;
             une valeur vide est ignorée. « Aujourd'hui » ramène d'un saut lointain, comme au Planning. */}
@@ -694,7 +694,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
 
       <div className="cm-form" style={{ alignItems: 'center' }}>
         <input
-          className="mb-field__control cm-search" style={{ margin: 0 }}
+          className="mb-field__control cm-search cm-search--wide" style={{ margin: 0 }}
           placeholder={t('Retrouver une réservation (référence, nom, téléphone)…')}
           aria-label={t('Retrouver une réservation par référence, nom ou téléphone')}
           value={search} onChange={(e) => setSearch(e.target.value)}
@@ -712,7 +712,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
             <p className="cm-note" style={{ margin: 0 }}>{t('Aucune réservation ne correspond à « {recherche} ».', { recherche: debounced })}</p>
           ) : hits.map((h) => (
             <div
-              key={h.id} className="cm-riskrow" role="button" tabIndex={0} title={t('Ouvrir sa fiche')}
+              key={h.id} className="cm-riskrow cm-riskrow--neutral" role="button" tabIndex={0} title={t('Ouvrir sa fiche')}
               onClick={() => openHit(h)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openHit(h); } }}
             >
@@ -765,7 +765,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
               return (
                 <div key={item.id}>
                   <div
-                    className="cm-riskrow"
+                    className="cm-riskrow cm-riskrow--neutral"
                     style={{ marginBottom: isOpen ? 0 : 8 }}
                     onClick={() => setOpenId(isOpen ? null : item.id)}
                     role="button"
@@ -795,7 +795,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
             return (
               <div key={item.id}>
                 <div
-                  className="cm-riskrow"
+                  className="cm-riskrow cm-riskrow--neutral"
                   style={{ marginBottom: isOpen ? 0 : 8 }}
                   onClick={() => setOpenId(isOpen ? null : item.id)}
                   role="button"

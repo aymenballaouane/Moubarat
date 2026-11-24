@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 import { canCenterAct, CLOSURE_REASON_LABELS, ROLE_LABELS, type CenterRole, type ClosureReason } from '@moubarat/core';
 import type { TimelineBlock } from '../data/planningDemo.js';
 import {
-  dayLabel, shiftDate, todayAlgiers, dayStartMs, weekdayOf,
+  dayLabel, dayTitle, shiftDate, todayAlgiers, dayStartMs, weekdayOf,
   timelineBlocksFromApi, subscriptionBlocksFromApi, type ApiBookingRow, type ApiSubscriptionOccurrence,
 } from '../lib/bookingsDetail.js';
 import { hoursFromApi, asFieldStatus, formatLabel, type ApiVenueDetail } from '../lib/venueDetail.js';
@@ -443,7 +443,7 @@ export function Planning({ role, venueId, token, onToast, day, onDayChange, open
         <b style={{
           fontFamily: 'var(--font-display)', fontSize: 'var(--fs-d4)', color: 'var(--text)',
           textTransform: 'uppercase', minWidth: 150, textAlign: 'center',
-        }}>{dayLabel(date)}</b>
+        }}>{dayTitle(date)}</b>
         <button type="button" className="nav mb-btn mb-btn--ghost mb-btn--sm" style={{ minWidth: 34 }} aria-label={t('Jour suivant')} onClick={() => setDate((d) => shiftDate(d, 1))}>›</button>
         {/* CRM-2 (27/09/2026) : « Aller à une date » — présent dans le prototype gelé (crm-valide.html, #pl-date),
             jamais câblé jusqu'ici ; une valeur vide (champ effacé) est ignorée, comme dans le prototype. */}
@@ -711,7 +711,7 @@ function TimelineBlockView({ block: b, pct, total, onOpen }: {
       onKeyDown={openable ? (e) => { if (e.key === 'Enter' || e.key === ' ') onOpen!(b.id); } : undefined}
     >
       <b>{b.title}{b.status === 'PAID' ? <em> ✓</em> : b.status === 'NO_SHOW' ? ' ✕' : ''}</b>
-      <span>{b.subtitle}</span>
+      <span className="tl-meta">{b.subtitle.split(' · ').map((part, i) => <span key={i}>{i > 0 ? `· ${part}` : part}</span>)}</span>
     </div>
   );
 }

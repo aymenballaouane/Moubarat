@@ -81,6 +81,15 @@ export function dayLabel(dateIso: string): string {
   return `${DAY_NAMES_SHORT[weekdayOf(dateIso)]}. ${d} ${MONTH_NAMES[m - 1]}`;
 }
 
+/** Design P1-4 (24/11/2026) : titre d'une navigation jour par jour — TOUJOURS la date (« Mar. 24 nov. »), même
+    aujourd'hui, comme le prototype gelé (`label(d)`, crm-valide.html). « Aujourd'hui » reste le libellé du bouton
+    de retour et de `dayLabel` dans les phrases. */
+export function dayTitle(dateIso: string): string {
+  const [, m, d] = dateIso.split('-').map(Number) as [number, number, number];
+  if (getLang() === 'ar') return arabicDate(dateIso, false);
+  return `${DAY_NAMES_SHORT[weekdayOf(dateIso)]}. ${d} ${MONTH_NAMES[m - 1]}`;
+}
+
 /** P1-15 (CRM en arabe, lot C) : « الأربعاء 30 سبتمبر » (avec l'année si `withYear`) — Intl en UTC sur la date civile,
     mois du Maghreb (ar-DZ), chiffres 0-9. Le français garde son format écrit à la main ci-dessus. */
 export function arabicDate(dateIso: string, withYear: boolean): string {
