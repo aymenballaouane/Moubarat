@@ -23,7 +23,9 @@ export interface DashboardKpis {
    (mêmes horaires, même rythme de la semaine) — un chiffre seul ne disait pas si la journée était bonne. La couleur suit le
    sens de l'indicateur : une hausse des no-shows est ROUGE (règle de la charte : une métrique négative qui monte). */
 export type KpiKey = keyof DashboardKpis;
-export interface KpiComparison { label: string; tone: 'up-good' | 'up-bad' | 'flat' }
+/** Design P2-11 (24/11/2026) : `label` = la phrase entière (info-bulle) ; l'écran l'affiche en deux lignes voulues —
+    `value` (l'écart, en couleur) puis `ref` (« vs mar. 17 nov. », en gris) — au lieu d'une phrase coupée au hasard. */
+export interface KpiComparison { label: string; value: string; ref: string; tone: 'up-good' | 'up-bad' | 'flat' }
 
 const KPI_UNIT: Record<KpiKey, 'da' | 'pts' | 'n'> = {
   collectedDa: 'da', engagedDa: 'da', occupancyPct: 'pts', bookingsCount: 'n', moubaratSharePct: 'pts', noShows: 'n',
@@ -36,7 +38,8 @@ const KPI_LOWER_IS_BETTER: ReadonlySet<KpiKey> = new Set<KpiKey>(['noShows']);
     le signe « − » passerait derrière le nombre. */
 export function compareKpi(key: KpiKey, today: number, lastWeek: number, refLabel: string, t: TFn = fill): KpiComparison {
   const diff = today - lastWeek;
-  if (diff === 0) return { label: t('= {jour}', { jour: refLabel }), tone: 'flat' };
+  const ref = t('vs {jour}', { jour: refLabel });
+  if (diff === 0) return { label: t('= {jour}', { jour: refLabel }), value: '=', ref, tone: 'flat' };
   const sign = diff > 0 ? '+' : '−';
   const abs = Math.abs(diff);
   const unit = KPI_UNIT[key];
@@ -44,7 +47,7 @@ export function compareKpi(key: KpiKey, today: number, lastWeek: number, refLabe
     : unit === 'pts' ? (abs > 1 ? t('{n} pts', { n: ltr(`${sign}${abs}`) }) : t('{n} pt', { n: ltr(`${sign}${abs}`) }))
       : ltr(`${sign}${abs}`);
   const better = KPI_LOWER_IS_BETTER.has(key) ? diff < 0 : diff > 0;
-  return { label: t('{valeur} vs {jour}', { valeur: value, jour: refLabel }), tone: better ? 'up-good' : 'up-bad' };
+  return { label: t('{valeur} vs {jour}', { valeur: value, jour: refLabel }), value, ref, tone: better ? 'up-good' : 'up-bad' };
 }
 
 /** Chantier Abonnements (06/09/2026), décision d'Aymen : un abonné occupe

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CONFIDENCE_LABELS, type ReliabilityV1 } from '@moubarat/core';
 import { apiFetch, errorText } from '../lib/api.js';
-import { da } from '../lib/format.js';
+import { da, phoneDisplay } from '../lib/format.js';
 import { hhmm } from '../lib/time.js';
 import { dateLabelLong, historyRowsFromApi, type ApiClientBookingHistoryRow, type HistoryRow } from '../lib/searchDetail.js';
 import { Pill } from './StatusPill.js';
@@ -57,7 +57,7 @@ function ClientCard({ c, open, onOpen }: { c: ApiClient; open: boolean; onOpen: 
       </div>
       {c.phone || c.kind === 'COUNTER' ? (
         <div className="cm-note" style={{ margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          {c.phone ? <a href={`tel:${c.phone.replace(/\s/g, '')}`} style={{ color: 'var(--gold)' }} onClick={(e) => e.stopPropagation()}>{c.phone}</a> : null}
+          {c.phone ? <a href={`tel:${c.phone.replace(/\s/g, '')}`} style={{ color: 'var(--gold)' }} onClick={(e) => e.stopPropagation()}>{ltr(phoneDisplay(c.phone))}</a> : null}
           {c.kind === 'COUNTER' ? <span className="cm-src" title={t('Sans compte Moubarat : ses réservations au comptoir et par téléphone, regroupées par numéro')}>{t('Comptoir · téléphone')}</span> : null}
         </div>
       ) : null}
@@ -67,9 +67,19 @@ function ClientCard({ c, open, onOpen }: { c: ApiClient; open: boolean; onOpen: 
           / 100 · {rel.visible && rel.confidence ? t(CONFIDENCE_LABELS[rel.confidence]) : ''}
         </i>
       </div>
+      {/* Design P2-10 (24/11/2026) : chaque compteur est insécable — la ligne se coupe ENTRE deux compteurs, jamais
+          au milieu (« 1 no- / show »). */}
       <div className="cm-note">
-        {pluriel(c.bookingsCount, t('{n} résa', { n: c.bookingsCount }), t('{n} résas', { n: c.bookingsCount }))} · {pluriel(honored, t('{n} honorée', { n: honored }), t('{n} honorées', { n: honored }))} ·{' '}
-        {pluriel(c.cancelledEarly, t('{n} annulée tôt', { n: c.cancelledEarly }), t('{n} annulées tôt', { n: c.cancelledEarly }))} · {pluriel(c.cancelledLate, t('{n} tardive', { n: c.cancelledLate }), t('{n} tardives', { n: c.cancelledLate }))} · {t('{n} no-show', { n: c.noShow })}
+        {[
+          pluriel(c.bookingsCount, t('{n} résa', { n: c.bookingsCount }), t('{n} résas', { n: c.bookingsCount })),
+          pluriel(honored, t('{n} honorée', { n: honored }), t('{n} honorées', { n: honored })),
+          pluriel(c.cancelledEarly, t('{n} annulée tôt', { n: c.cancelledEarly }), t('{n} annulées tôt', { n: c.cancelledEarly })),
+          pluriel(c.cancelledLate, t('{n} tardive', { n: c.cancelledLate }), t('{n} tardives', { n: c.cancelledLate })),
+          t('{n} no-show', { n: c.noShow }),
+        ].flatMap((part, i) => [
+          ...(i > 0 ? [' · '] : []),
+          <span key={i} style={{ whiteSpace: 'nowrap' }}>{part}</span>,
+        ])}
       </div>
     </div>
   );

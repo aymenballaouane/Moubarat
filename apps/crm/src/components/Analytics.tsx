@@ -61,7 +61,7 @@ function Delta({ pct, bad, neutral }: { pct: number | null; bad?: boolean; neutr
   const good = bad ? !up : up;
   return (
     <span className={`cm-delta${neutral ? '' : ` ${good ? 'up' : 'dn'}`}`}>
-      {up ? '▲' : '▼'} {Math.abs(pct)} %
+      {up ? '▲' : '▼'} {fmt(Math.abs(pct))} %
     </span>
   );
 }
@@ -192,47 +192,47 @@ export function Analytics({ venueId, venueName = '', token }: AnalyticsProps) {
       ) : (
         <>
           <p className="cm-sec">{t('Chiffre d\'affaires — 7 derniers jours comparés aux 7 précédents · 30 jours comparés aux 30 précédents')}</p>
-          <div className="cm-fin">
-            <div className="cm-kpi">
-              <span>{t('CA encaissé · aujourd’hui')}</span><b>{fmt(overview.today.collected)}</b><i>{t('DA')}</i>
-            </div>
-            <div className="cm-kpi">
-              <span>{t('CA · 7 jours (hebdo)')}</span><b>{fmt(overview.curr7.overall.collected)}</b><i>{t('DA')}</i>
-              <Delta pct={pctChange(overview.curr7.overall.collected, overview.prev7.overall.collected)} />
-            </div>
-            <div className="cm-kpi">
-              <span>{t('CA · 30 jours (mensuel)')}</span><b>{fmt(overview.curr30.collected)}</b><i>{t('DA')}</i>
-              <Delta pct={pctChange(overview.curr30.collected, overview.prev30.collected)} />
-            </div>
-            <div className="cm-kpi">
-              <span>{t('CA perdu annulations · 7 j')}</span><b>{fmt(overview.curr7.overall.lostCancelled)}</b><i>{t('DA')}</i>
-            </div>
-            <div className="cm-kpi">
-              <span>{t('CA perdu no-shows · 7 j')}</span><b>{fmt(overview.curr7.overall.lostNoShow)}</b><i>{t('DA')}</i>
-              <Delta pct={pctChange(overview.curr7.overall.lostNoShow, overview.prev7.overall.lostNoShow)} bad />
-            </div>
-            {(() => {
-              const noShowRate = noShowRatePct(overview.curr7.counts.overall);
-              const noShowRatePrev = noShowRatePct(overview.prev7.counts.overall);
-              const panier = panierMoyenDa(overview.curr7.overall.collected, overview.curr7.counts.overall);
-              const panierPrev = panierMoyenDa(overview.prev7.overall.collected, overview.prev7.counts.overall);
-              return (
-                <>
-                  <div className="cm-kpi">
-                    <span>{t('Taux de no-show · 7 j')}</span><b>{noShowRate ?? '—'}</b><i>%</i>
-                    {noShowRate !== null ? <Delta pct={pctChange(noShowRate, noShowRatePrev ?? 0)} bad /> : null}
-                  </div>
-                  <div className="cm-kpi">
-                    <span>{t('Taux de remplissage · 7 j')}</span><b>{Math.round(overview.occ7.overall * 100)}</b><i>%</i>
-                  </div>
-                  <div className="cm-kpi">
-                    <span>{t('Panier moyen · 7 j')}</span><b>{fmt(panier ?? 0)}</b><i>{t('DA')}</i>
-                    {panier !== null ? <Delta pct={pctChange(panier, panierPrev ?? 0)} /> : null}
-                  </div>
-                </>
-              );
-            })()}
-          </div>
+          {/* Design P2-13 (24/11/2026) : 8 tuiles en deux rangées de 4 (plus de trou dans une grille de 3) — 1re rangée
+              ce qui rentre (CA jour/7 j/30 j, panier moyen), 2e rangée ce qui se perd et les taux. */}
+          {(() => {
+            const noShowRate = noShowRatePct(overview.curr7.counts.overall);
+            const noShowRatePrev = noShowRatePct(overview.prev7.counts.overall);
+            const panier = panierMoyenDa(overview.curr7.overall.collected, overview.curr7.counts.overall);
+            const panierPrev = panierMoyenDa(overview.prev7.overall.collected, overview.prev7.counts.overall);
+            return (
+              <div className="cm-fin">
+                <div className="cm-kpi">
+                  <span>{t('CA encaissé · aujourd’hui')}</span><b>{fmt(overview.today.collected)}</b><i>{t('DA')}</i>
+                </div>
+                <div className="cm-kpi">
+                  <span>{t('CA · 7 jours (hebdo)')}</span><b>{fmt(overview.curr7.overall.collected)}</b><i>{t('DA')}</i>
+                  <Delta pct={pctChange(overview.curr7.overall.collected, overview.prev7.overall.collected)} />
+                </div>
+                <div className="cm-kpi">
+                  <span>{t('CA · 30 jours (mensuel)')}</span><b>{fmt(overview.curr30.collected)}</b><i>{t('DA')}</i>
+                  <Delta pct={pctChange(overview.curr30.collected, overview.prev30.collected)} />
+                </div>
+                <div className="cm-kpi">
+                  <span>{t('Panier moyen · 7 j')}</span><b>{fmt(panier ?? 0)}</b><i>{t('DA')}</i>
+                  {panier !== null ? <Delta pct={pctChange(panier, panierPrev ?? 0)} /> : null}
+                </div>
+                <div className="cm-kpi">
+                  <span>{t('CA perdu annulations · 7 j')}</span><b>{fmt(overview.curr7.overall.lostCancelled)}</b><i>{t('DA')}</i>
+                </div>
+                <div className="cm-kpi">
+                  <span>{t('CA perdu no-shows · 7 j')}</span><b>{fmt(overview.curr7.overall.lostNoShow)}</b><i>{t('DA')}</i>
+                  <Delta pct={pctChange(overview.curr7.overall.lostNoShow, overview.prev7.overall.lostNoShow)} bad />
+                </div>
+                <div className="cm-kpi">
+                  <span>{t('Taux de no-show · 7 j')}</span><b>{noShowRate !== null ? fmt(noShowRate) : '—'}</b><i>%</i>
+                  {noShowRate !== null ? <Delta pct={pctChange(noShowRate, noShowRatePrev ?? 0)} bad /> : null}
+                </div>
+                <div className="cm-kpi">
+                  <span>{t('Taux de remplissage · 7 j')}</span><b>{Math.round(overview.occ7.overall * 100)}</b><i>%</i>
+                </div>
+              </div>
+            );
+          })()}
 
           <p className="cm-sec">{t('Tendance — CA encaissé · 14 derniers jours')}</p>
           <div className="cm-trend">

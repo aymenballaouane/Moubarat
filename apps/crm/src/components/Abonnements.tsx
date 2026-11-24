@@ -7,7 +7,8 @@ import { apiFetch, errorText } from '../lib/api.js';
 import { hhmm } from '../lib/time.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { Icon } from './Icon.js';
-import { da } from '../lib/format.js';
+import { da, fmt } from '../lib/format.js';
+import { parseDaAmount } from '../lib/amount.js';
 import { useLang, useT, bidi } from '../lib/i18n.js';
 
 interface AbonnementsProps { role: CenterRole; venueId: string; token: string; onToast: (message: string) => void }
@@ -26,7 +27,8 @@ function nextWeekdayDate(from: string, weekday: number): string {
 }
 
 /** Un prix saisi valide : un entier de DA strictement positif, sinon `null`. */
-const parsePrice = (raw: string): number | null => (/^\s*\d+\s*$/.test(raw) && Number(raw) > 0 ? Number(raw) : null);
+/* Design P2-8 (24/11/2026) : « 2 700 » (espace des milliers, comme le pré-remplissage l'écrit désormais) accepté, comme en Caisse. */
+const parsePrice = (raw: string): number | null => { const n = parseDaAmount(raw); return n !== null && n > 0 ? n : null; };
 
 const HOUR_OPTIONS: number[] = [];
 for (let m = 480; m <= 1380; m += 30) HOUR_OPTIONS.push(m);
@@ -113,7 +115,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
     ).then((res) => {
       if (cancelled) return;
       const hit = res.starts.find((x) => x.startMin === startMin);
-      setPrice(hit && hit.byFormat.length > 0 ? String(Math.min(...hit.byFormat.map((q) => q.totalDa))) : '');
+      setPrice(hit && hit.byFormat.length > 0 ? fmt(Math.min(...hit.byFormat.map((q) => q.totalDa))) : '');
     }).catch(() => { if (!cancelled) setPrice(''); });
     return () => { cancelled = true; };
   }, [canEdit, fieldId, weekday, startMin, durationMin, priceTouched, token]);
@@ -273,7 +275,7 @@ export function Abonnements({ role, venueId, token, onToast }: AbonnementsProps)
             </span>
             <span className="mb-status mb-status--open">{t('Actif')}</span>
             {priceEdit?.sub.id !== r.id ? (
-              <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setPriceEdit({ sub: r, draft: r.pricePerSessionDa !== null ? String(r.pricePerSessionDa) : '' })}>
+              <button type="button" className="mb-btn mb-btn--ghost mb-btn--sm" onClick={() => setPriceEdit({ sub: r, draft: r.pricePerSessionDa !== null ? fmt(r.pricePerSessionDa) : '' })}>
                 {r.pricePerSessionDa !== null ? t('Modifier le prix') : t('Fixer le prix')}
               </button>
             ) : null}

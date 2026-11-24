@@ -3,6 +3,7 @@ import { canCenterAct, type CenterRole } from '@moubarat/core';
 import { auditTimeLabel, roleLabel } from '../lib/auditDetail.js';
 import { apiFetch, errorText } from '../lib/api.js';
 import { Icon } from './Icon.js';
+import { prettyAuditText } from '../lib/format.js';
 import { useT } from '../lib/i18n.js';
 
 interface JournalProps { role: CenterRole; venueId: string; token: string }
@@ -95,7 +96,7 @@ export function Journal({ role, venueId, token }: JournalProps) {
       ) : entries.map((e) => (
         <div className="cm-mvt" key={e.id}>
           <b>{e.actorName} · {roleLabel(e.actorRole, t)} · {auditTimeLabel(e.at, t)}</b>
-          <span> — {e.summary}</span>
+          <span> — {prettyAuditText(e.summary)}</span>
         </div>
       ))}
       {load.kind === 'ready' && nextCursor !== null ? (

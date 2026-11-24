@@ -132,6 +132,7 @@ body.mb {
 .cm-kpi i { font-family: var(--font-mono); font-size: 10px; color: var(--text-4); font-style: normal; margin-inline-start: 3px; }
 /* P1-8 (15/11/2026) : comparaison au même jour de la semaine passée ; no-shows en rouge (métrique négative). */
 .cm-kpi__cmp { display: block; margin-top: 4px; font-family: var(--font-mono); font-size: 10px; color: var(--text-4); }
+.cm-kpi__ref { display: block; margin-top: 2px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cm-kpi__cmp--up-good { color: var(--success); }
 .cm-kpi__cmp--up-bad { color: var(--danger); }
 .cm-kpi--bad b { color: var(--danger); }
@@ -333,7 +334,7 @@ body.mb {
 .cm-delta { font-family: var(--font-mono); font-size: 10px; margin-inline-start: 6px; }
 .cm-delta.up { color: var(--success); }
 .cm-delta.dn { color: var(--danger); }
-.cm-fin { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.cm-fin { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
 .cm-fin .cm-kpi b { font-size: var(--fs-d4); }
 
 .cm-bars { display: grid; gap: 10px; margin-bottom: 16px; }

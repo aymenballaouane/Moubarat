@@ -13,7 +13,6 @@ import { apiFetch, errorText } from '../lib/api.js';
 import { fmt, da } from '../lib/format.js';
 import { ltr, useLang, useT, bidi } from '../lib/i18n.js';
 import { hhmm } from '../lib/time.js';
-import { Icon } from './Icon.js';
 
 interface DashboardProps {
   role: CenterRole; venueId: string; token: string;
@@ -59,10 +58,19 @@ interface ApiUnclosed {
    /analytics/* (Manager+, trop restrictif pour un écran vu par tous les
    rôles). Détail complet des choix (dénominateurs, matchHealth, « score
    partiel ») dans lib/dashboardDetail.ts. */
+/** Design P2-12 : « Prochaines heures » tient sur une rangée (6 colonnes, crm.css .cm-next). */
+const NEXT_MAX = 6;
+
 /** La ligne de comparaison sous un indicateur (P1-8). */
 function Cmp({ c }: { c: KpiComparison | undefined }) {
   if (!c) return null;
-  return <small className={`cm-kpi__cmp cm-kpi__cmp--${c.tone}`}>{c.label}</small>;
+  // Design P2-11 (24/11/2026) : deux lignes voulues (l'écart en couleur, le jour de référence en gris), plus jamais
+  // une phrase coupée au hasard (« vs mar. 17 / nov. ») ; la phrase entière reste en info-bulle.
+  return (
+    <small className={`cm-kpi__cmp cm-kpi__cmp--${c.tone}`} title={c.label}>
+      {c.value}<span className="cm-kpi__ref">{c.ref}</span>
+    </small>
+  );
 }
 
 export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReservation }: DashboardProps) {
@@ -231,13 +239,9 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
   return (
     <section className="cm-view on">
       <div className="cm-day">
-        <button className="nav" type="button" aria-label={t('Jour précédent')} onClick={() => setDay((d) => shiftDate(d, -1))}>
-          <Icon id="i-back" />
-        </button>
+        <button className="nav" type="button" aria-label={t('Jour précédent')} onClick={() => setDay((d) => shiftDate(d, -1))}>‹</button>
         <b>{dayTitle(day)}</b>
-        <button className="nav" type="button" aria-label={t('Jour suivant')} onClick={() => setDay((d) => shiftDate(d, 1))}>
-          <Icon id="i-arrow" />
-        </button>
+        <button className="nav" type="button" aria-label={t('Jour suivant')} onClick={() => setDay((d) => shiftDate(d, 1))}>›</button>
         <span className="hrs">{hoursLabel}</span>
       </div>
 
@@ -296,14 +300,30 @@ export function Dashboard({ role, venueId, token, day, onDayChange, onOpenReserv
                 <span>{t('Plus rien au planning — journée terminée ou libre.')}</span>
               </div>
             ) : (
-              upcoming.map((u) => (
-                <div key={u.id} role="button" tabIndex={0} onClick={() => onOpenReservation(u.id, day)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenReservation(u.id, day); }}>
-                  <b>{u.time}</b>
-                  <span>{u.title}{u.playersLabel ? ` · ${u.playersLabel}` : ''}</span>
-                  <i>{u.field} &middot; {da(u.amountDa)}</i>
-                </div>
-              ))
+              <>
+                {/* Design P2-12 (24/11/2026) : une seule rangée de 6 — au-delà, la 6e case dit combien il en reste et
+                    ouvre la première d'entre elles dans Réservations (plus de 7e carte seule sur sa ligne). */}
+                {(upcoming.length > NEXT_MAX ? upcoming.slice(0, NEXT_MAX - 1) : upcoming).map((u) => (
+                  <div key={u.id} role="button" tabIndex={0} onClick={() => onOpenReservation(u.id, day)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenReservation(u.id, day); }}>
+                    <b>{u.time}</b>
+                    <span>{u.title}{u.playersLabel ? ` · ${u.playersLabel}` : ''}</span>
+                    <i>{u.field} &middot; {da(u.amountDa)}</i>
+                  </div>
+                ))}
+                {upcoming.length > NEXT_MAX ? (() => {
+                  const rest = upcoming.slice(NEXT_MAX - 1);
+                  const first = rest[0]!;
+                  return (
+                    <div role="button" tabIndex={0} title={t('Ouvrir dans Réservations')} onClick={() => onOpenReservation(first.id, day)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenReservation(first.id, day); }}>
+                      <b>{ltr(`+${rest.length}`)}</b>
+                      <span>{t('{n} autres créneaux', { n: rest.length })}</span>
+                      <i>{t('À partir de {heure}', { heure: first.time })}</i>
+                    </div>
+                  );
+                })() : null}
+              </>
             )}
           </div>
         </>

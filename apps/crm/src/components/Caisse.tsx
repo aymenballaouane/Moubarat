@@ -3,7 +3,7 @@ import { canCenterAct, type CenterRole } from '@moubarat/core';
 import { auditTimeLabel } from '../lib/auditDetail.js';
 import { parseDaAmount } from '../lib/amount.js';
 import { apiFetch, ApiError, errorText } from '../lib/api.js';
-import { da } from '../lib/format.js';
+import { da, fmt } from '../lib/format.js';
 import { Icon } from './Icon.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { useT, type TFn } from '../lib/i18n.js';
@@ -57,7 +57,7 @@ export function Caisse({ role, venueId, token, onToast }: CaisseProps) {
   const [expected, setExpected] = useState(0);
   const [lastClosed, setLastClosed] = useState<ApiCashSession | null>(null);
 
-  const [floatInput, setFloatInput] = useState('50000');
+  const [floatInput, setFloatInput] = useState(() => fmt(50000));
   const [openError, setOpenError] = useState<string | null>(null);
   const [collectAmount, setCollectAmount] = useState('');
   const [collectRef, setCollectRef] = useState('');

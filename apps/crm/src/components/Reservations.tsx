@@ -11,7 +11,7 @@ import {
 } from '../lib/bookingsDetail.js';
 import { asFieldStatus, type ApiVenueDetail } from '../lib/venueDetail.js';
 import { apiFetch, errorText } from '../lib/api.js';
-import { da } from '../lib/format.js';
+import { da, phoneDisplay } from '../lib/format.js';
 import { ltr, useLang, useT, type TFn, bidi } from '../lib/i18n.js';
 import { hhmm } from '../lib/time.js';
 import { ConfirmModal } from './ConfirmModal.js';
@@ -154,7 +154,7 @@ function Fiche({ row, onOpenPlanning, actions }: { row: ReservationRow; onOpenPl
       {row.customerPhone ? (
         <div className="cm-line">
           <span>{t('Téléphone')}</span>
-          <b><a href={`tel:${row.customerPhone.replace(/\s/g, '')}`} style={{ color: 'var(--gold)' }}>{row.customerPhone}</a></b>
+          <b><a href={`tel:${row.customerPhone.replace(/\s/g, '')}`} style={{ color: 'var(--gold)' }}>{ltr(phoneDisplay(row.customerPhone))}</a></b>
         </div>
       ) : null}
       {row.claimStatus ? (
@@ -720,7 +720,7 @@ export function Reservations({ role, venueId, token, onToast, day, onDayChange, 
                 <b>{nameRef(h)}</b>
                 <span className="cm-note" style={{ margin: '2px 0 0' }}>
                   {dateLabelLong(h.date)} · {range(h.startMin, h.durationMin)} · {h.field} · {da(h.amountDa)}
-                  {h.customerPhone ? ` · ${ltr(h.customerPhone)}` : ''}
+                  {h.customerPhone ? ` · ${ltr(phoneDisplay(h.customerPhone))}` : ''}
                 </span>
               </span>
               <SrcChip row={h} />
